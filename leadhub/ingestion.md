@@ -85,34 +85,56 @@ application ingest orders.
 
 ## Deduplication by email or phone
 
-Unlike the form path, which requires an email, ingestion can deduplicate on **phone** too.
-That is what makes it usable for a booking system or a phone-order flow where an address is
-optional.
+Ingestion resolves a contact in two passes: by email first, then by **normalized phone**.
+The second pass is what catches the same person arriving from a booking system under an
+address they no longer use.
 
-A contact resolved by phone with no email is a real contact with a real timeline. It simply
-cannot be a [Marketing](/marketing/) subscriber, because consent needs an address.
+::: warning An email is still mandatory
+`LeadHub::ingest()` returns `null` for a `SourceEvent` without an email, before any
+resolution runs. Phone is a *secondary* match on an event that already carries an address,
+not a way in without one. A phone-only event is dropped, and because the return is `null`
+rather than an exception, a backfill loop that ignores the return value drops it silently.
+
+Check the return value, or fall back to a placeholder address you control.
+:::
+
+A contact matched by phone keeps the email it already had. It can be a
+[Marketing](/marketing/) subscriber like any other, since consent is tied to that address.
 
 ## Backfilling history
 
-Two commands exist for the migration case, and both are idempotent:
+There is no backfill command. Backfilling is a one-off shaped by your own tables, so
+LeadHub gives you the idempotent primitive and you write the loop:
 
-```bash
-php artisan crm:backfill-leadhub --dry-run
-php artisan crm:backfill-leadhub --source=orders
+```php
+Order::query()
+    ->where('created_at', '<', $cutoff)
+    ->chunkById(500, function ($orders) {
+        foreach ($orders as $order) {
+            LeadHub::ingest(new SourceEvent(
+                email: $order->email,
+                sourceType: 'order',
+                sourceId: $order->id,
+                dedupeKey: 'order:'.$order->id,
+                occurredAt: $order->created_at,
+            ));
+        }
+    });
 ```
 
-The backfill replays historical rows from registered sources through the normal ingestion
-path, with notifications and CRM sync muted so a replay does not email your team about
-three-year-old leads.
-
-Run the dry run first, always. Then the real run. A second run is a no-op, which is the point
-of the dedupe keys.
+`dedupeKey` is what makes a re-run safe: `IngestionService` looks the key up before it
+writes and returns the existing event instead of creating a second one. Run the loop
+twice and the second pass changes nothing.
 
 ::: warning A source with no natural dedupe key
-Some sources have nothing stable to key on — a `users` table with no per-event identity, for
-example. Those need a guard in the command itself rather than relying on `dedupe_key`, and
-re-running without one duplicates.
+Some tables have nothing stable to key on. Without a `dedupeKey` the idempotency check is
+skipped entirely and a second run duplicates every row, so derive one from something that
+cannot change — the primary key, not a timestamp or a status.
 :::
+
+Backfills fire the same events as live ingestion, so any Automations recipe listening for
+them will run against three-year-old leads. Disable those recipes for the duration, or
+scope them by `occurred_at`.
 
 ## Ingesting from an inbound webhook
 

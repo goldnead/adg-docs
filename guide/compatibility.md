@@ -92,3 +92,7 @@ from their first migration.
 
 Table of Contents, Identity Contracts and Email Templates are not brand-scoped,
 because none of them persists anything that could belong to a brand.
+
+**Suppression is the deliberate exception.** It persists brand-owned rows and still does not use
+`HasBrand`: the scope would hide the global rows from the one query that must never fail open.
+See [Suppression → Brands and scope](/suppression/brands).

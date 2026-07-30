@@ -54,6 +54,22 @@ export const addons = [
     ],
   },
   {
+    slug: 'suppression',
+    name: 'Suppression',
+    package: 'goldnead/statamic-suppression',
+    layer: 'foundation',
+    license: 'MIT',
+    tagline:
+      'The authoritative answer to "may we send to this address at all?", shared by every addon that queues mail.',
+    icon: '⊘',
+    troubleshooting: false,
+    pages: [
+      { text: 'Asking the gate', link: 'gate' },
+      { text: 'Recording and releasing', link: 'recording' },
+      { text: 'Brands and scope', link: 'brands' },
+    ],
+  },
+  {
     slug: 'webhook-manager',
     name: 'Webhook Manager',
     package: 'goldnead/statamic-webhook-manager',

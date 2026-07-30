@@ -21,6 +21,7 @@ works, just badly. This page starts from the problem.
 | Build metrics, funnels or a dashboard | read from [Activity](/activity/querying) | Activity itself, which deliberately computes nothing |
 | Isolate two client brands in one install | [Brand Context](/brand-context/) | two installs, if the content is genuinely shared |
 | Record who did something without coupling to your User model | [Identity Contracts](/identity-contracts/) | |
+| Stop sending to a mailbox that bounced, from every addon at once | [Suppression](/suppression/) | a per-addon block list, which only one of them keeps |
 | Put a table of contents on an article | [Table of Contents](/toc/) | |
 
 ## Transport or orchestration

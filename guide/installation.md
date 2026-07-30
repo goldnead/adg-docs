@@ -23,6 +23,7 @@ would.
 | --- | --- | --- |
 | [Brand Context](/brand-context/installation) | yes (`brands`, `brand_user`) | multi-brand mode only |
 | [Identity Contracts](/identity-contracts/installation) | no | no |
+| [Suppression](/suppression/installation) | yes (`suppressions`, `suppression_events`) | no |
 | [Webhook Manager](/webhook-manager/installation) | yes | yes |
 | [Automations](/automations/installation) | yes | yes |
 | [LeadHub](/leadhub/installation) | yes (eloquent driver) | yes |

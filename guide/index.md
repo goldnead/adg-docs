@@ -13,7 +13,7 @@ for the point at which you install the second one.
 
 | Layer | Addons | What it is for |
 | --- | --- | --- |
-| Foundation | [Brand Context](/brand-context/), [Identity Contracts](/identity-contracts/) | Install-once packages the others build on. Inert on their own. |
+| Foundation | [Brand Context](/brand-context/), [Identity Contracts](/identity-contracts/), [Suppression](/suppression/) | Install-once packages the others build on. Inert on their own. |
 | Integration | [Webhook Manager](/webhook-manager/), [Automations](/automations/) | Getting data in and out of the site, and reacting to events. |
 | CRM & marketing | [LeadHub](/leadhub/), [Marketing](/marketing/), [Email Templates](/email-templates/) | Contacts, consent, campaigns. |
 | Platform | [Activity](/activity/), [Notifications](/notifications/) | Shared services any domain addon can record into. |

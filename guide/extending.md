@@ -79,6 +79,7 @@ than guessing at the front end.
 | [Email Templates](/email-templates/importing) | import sources | `EmailTemplateSource` |
 | [Identity Contracts](/identity-contracts/extending) | identity resolvers, contact locator, anonymous id resolver | `ProvidesIdentity`, `IdentityResolver`, `ContactLocator`, `AnonymousIdResolver` |
 | [Brand Context](/brand-context/scoping) | the `HasBrand` trait on your own models | — |
+| [Suppression](/suppression/gate) | the gate contract, if you replace the database one | `Gate` |
 
 ## Turning an application event into a trigger
 

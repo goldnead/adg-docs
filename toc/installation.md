@@ -2,7 +2,7 @@
 
 <AddonHeader />
 
-<Requirements laravel="Any version Statamic 6 supports" database="Not required" />
+<Requirements php="7.4+" statamic="3.x, 4.x, 5.x or 6.x" laravel="Any version your Statamic supports" database="Not required" />
 
 ```bash
 composer require goldnead/statamic-toc

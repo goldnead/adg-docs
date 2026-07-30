@@ -111,6 +111,44 @@ Three routes, all of which end in the same state:
 Turn `global_opt_out` on if unsubscribing from one list should mean "do not contact me at all",
 which sets LeadHub's `do_not_contact` and stops every CRM push too.
 
+### The preference centre <Badge type="tip" text="1.7.0" />
+
+An unsubscribe token identifies **one subscription**, one address on one list, so the link has
+always been per list. What was missing was everything after the click: the confirmation page
+said "you have been removed from X" and stopped, never mentioning the four other lists the same
+brand runs.
+
+Since 1.7.0 the unsubscribe page is the entry rather than the end. The unsubscribe still happens
+on arrival, unchanged, and the page then shows every list of that brand with its current state
+and lets each one be switched:
+
+```
+GET  /!/marketing/preferences/{token}
+POST /!/marketing/preferences/{token}
+```
+
+The `POST` takes `action=save` with a `lists[]` selection, or `action=unsubscribe_all`.
+
+There is no login, and that is a decision rather than an omission. Almost no subscriber has an
+account on the site that mails them, and a registration form standing between a person and their
+unsubscribe is a dark pattern with a password field on it. The token is the credential. It is
+also the only thing the request carries: there is no session to read a brand from, so the brand
+is derived from the token via `SetBrandFromRouteValue` on `Subscription.token`, exactly as the
+unsubscribe route does.
+
+::: warning "Unsubscribe from everything" means every list of this brand
+Not the CRM-wide opt-out. Somebody done with one brand's mailings has said nothing about another
+brand's, and nothing at all about transactional mail, which does not rest on consent in the first
+place. Where `unsubscribe.global_opt_out` is on, it still applies through the ordinary
+unsubscribe path, not through this button.
+:::
+
+The page renders from `preferences.blade.php`. Publish the views to restyle it:
+
+```bash
+php artisan vendor:publish --tag=marketing-views
+```
+
 ## Storage
 
 | What | Where |

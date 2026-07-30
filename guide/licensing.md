@@ -9,6 +9,7 @@ on the addon.
 | --- | --- |
 | [Brand Context](/brand-context/) | MIT |
 | [Identity Contracts](/identity-contracts/) | MIT |
+| [Suppression](/suppression/) | MIT |
 | [Webhook Manager](/webhook-manager/) | MIT |
 | [LeadHub](/leadhub/) | MIT |
 | [Marketing](/marketing/) | MIT |

@@ -52,6 +52,64 @@ Not `Goldnead\Automations`. This has cost real time.
 
 All three node contracts extend the shared `AutomationNode`.
 
+## More than one output <Badge type="tip" text="1.7.0" />
+
+An edge leaves a node from an **output handle**, so a node with one handle can only ever
+continue in one direction. Before 1.7.0 the canvas gave every third-party node exactly one
+`default` handle no matter what its class declared, which made a custom switch impossible to
+wire up.
+
+Declare `outputSpec()` and the canvas, the validator and the node itself all read that one
+declaration:
+
+```php
+use Goldnead\StatamicAutomations\Support\NodeOutputs;
+
+public static function outputSpec(): array
+{
+    return NodeOutputs::spec([[
+        'outputs' => [
+            ['handle' => 'matched', 'label' => 'Matched'],
+            ['handle' => 'default', 'label' => 'Everything else'],
+        ],
+    ]], primary: 'matched');
+}
+```
+
+Outputs may depend on config — a switch with three cases has different handles from one with
+five — and the canvas has to follow that while the user is typing, without a round trip. So
+what crosses to the browser is not a list of handles but a small spec both sides evaluate
+against the node's live config. A clause may derive its handles from a `key_value` field:
+
+```php
+NodeOutputs::spec([[
+    'from' => [
+        'field' => 'cases',           // a key_value config field
+        'handle' => 'value',          // which side of the pair is the handle
+        'label' => 'key',
+        'handle_fallback' => 'default',
+    ],
+    'append' => [['handle' => 'default', 'label' => 'Default']],
+]]);
+```
+
+Clauses are first-match-wins, and `when` gates one on a config field (`is` / `not`, compared
+as strings, with `default` standing in for an empty value). Leave the last clause
+unconditional — a node whose clauses all miss has no outputs at all.
+
+`primary` names the handle **Duplicate** attaches to. Omit it and duplication keeps attaching
+to the first output, which is the pre-1.7.0 behaviour.
+
+::: tip You usually do not need this
+Nodes without an `outputSpec()` still work. A single `default` handle is the default, a type
+ending in `.branch` still gets `true`/`false`, and a legacy `outputs()` method is honoured as a
+fixed list. Only declare a spec when the handles depend on config.
+:::
+
+The payload carries `version` (currently `1`). A canvas that meets a **higher** version than it
+understands falls back to a single `default` handle and logs a console warning rather than
+guessing — so a node built against a future grammar degrades instead of drawing wrong edges.
+
 ## Schema-driven config forms
 
 A node declares its configuration, and the Control Panel renders it. You write PHP and a
