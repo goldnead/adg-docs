@@ -9,7 +9,7 @@
 | `leadhub:followups:digest [--brand=]` | The daily due/overdue summary mail. Scheduled. |
 | `leadhub:followups:due [--brand=]` | Fires `LeadHubFollowupDue`. Scheduled daily. |
 | `leadhub:segments:sweep [--brand=]` | Re-materialise time-based segment rules. Scheduled daily. |
-| `leadhub:storage:migrate --from= --to= [--dry-run]` | Move data between drivers |
+| `leadhub:storage:migrate --from= --to= [--brand=] [--dry-run]` | Move data between drivers. `--brand` required on a multi-brand install; `--to=flat` refuses with more than one brand. |
 | `leadhub:stache:warm [--clear]` | Rebuild the flat-driver JSON indexes |
 | `leadhub:brand-integrity [--repair]` | Verify the per-brand unique indexes and rows |
 | `leadhub:scoring:import [--dry-run] [--force] [--brand=]` | Copy the config point table into the per-brand table |

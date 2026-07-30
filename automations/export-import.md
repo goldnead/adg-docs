@@ -90,6 +90,25 @@ Practically: `automations:sync` is a deploy step, not a live binding. Editing a 
 does nothing until it runs.
 :::
 
+::: warning One folder cannot hold two brands
+`resources/automations/` is a flat directory of `{handle}.json`, and handles are unique
+**per brand** — two brands may each own a `welcome-flow`.
+
+So on a multi-brand install the command **requires `--brand`** and refuses without it,
+rather than having one brand's export overwrite another's:
+
+```bash
+php artisan automations:sync --from=db --brand=acme
+```
+
+Run it once per brand with `automations.file_storage.path` pointed at a directory of its
+own. Single-brand installs need none of this.
+
+Before **1.7.1** the command took no brand at all. Worse than a no-op: `detectDirection()`
+asks whether the database holds any automations, the fail-closed scope answered "none", and
+a bare run could import the files over automations it could not see.
+:::
+
 ## A deploy-time workflow
 
 For an agency running the same flows across several sites, or for a team that wants flows

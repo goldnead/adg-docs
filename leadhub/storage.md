@@ -149,9 +149,37 @@ consumer reading contact ids from the flat store.
 
 ## Multi-brand on the flat driver
 
-A query cannot be scoped, so isolation is by directory. Files still in the un-prefixed layout
-are read as the **default brand's**, so a single-brand install that later enables multi-brand
-keeps working.
+::: danger LeadHub's flat driver is single-brand
+It has **no brand concept at all**. `FileStore` is a singleton bound to one path
+(`leadhub.storage.flat.path`), and nothing in the flat repositories reads or writes a brand.
+`content/leadhub/contacts/` is one undifferentiated set of YAML files.
+
+So on a multi-brand install with `LEADHUB_DRIVER=flat`, every brand reads every brand's
+contacts. There is no isolation to lose because there was never any.
+
+**Use the eloquent driver if you run multi-brand.** That is where the per-brand uniqueness,
+the global scope and every CRM-core module live anyway.
+:::
+
+`leadhub:storage:migrate` enforces this rather than letting you walk into it:
+
+- `--to=flat` with more than one brand is **rejected** — migrating a second brand into the
+  same directory would merge the two, and nothing in the files could tell them apart
+  afterwards.
+- `--from=flat` with more than one brand **requires `--brand`**, because one flat store
+  cannot be split across several.
+
+Both need LeadHub **1.10.4**. Before that the command took no brand at all, read an empty
+database through the fail-closed scope, and reported a successful migration of nothing.
+
+To keep a brand on flat storage deliberately, give it a directory of its own by pointing
+`leadhub.storage.flat.path` somewhere per brand before you migrate.
+
+::: tip Marketing is the other way round
+Marketing's flat driver **does** isolate by directory — `content/marketing/acme/lists/…` —
+and ships `marketing:migrate-flat-brands` to move an existing single-brand layout into it.
+Do not assume the two addons behave the same here; they do not.
+:::
 
 See [Brands & multi-tenancy](/guide/brands#what-is-scoped-and-what-is-not).
 

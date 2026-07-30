@@ -138,23 +138,44 @@ BrandContext::runFor('acme', fn () => Artisan::call('leadhub:segments:sweep'));
 deliberate: they query through `withoutGlobalScopes()` and run across all brands as
 operator actions on the whole store.
 
-::: warning Two operator commands are still brand-blind
-`leadhub:storage:migrate` and `automations:sync` do not set a brand. On a multi-brand
-install they meet the same fail-closed scope and will move or sync **nothing**.
+## Commands that write files ask which brand
 
-Unlike the scheduled commands, you are watching when you run these — a storage
-migration reporting `0 contacts` is obvious rather than silent — so the consequence
-is wasted time, not lost work. Until they iterate brands, wrap them:
+Two commands write to a directory rather than a table, and a directory has no brand
+column:
 
-```php
-BrandContext::runFor('acme', fn () => Artisan::call('leadhub:storage:migrate', [
-    '--from' => 'eloquent', '--to' => 'flat',
-]));
+```bash
+php artisan leadhub:storage:migrate --from=eloquent --to=flat --brand=acme
+php artisan automations:sync --from=db --brand=acme
 ```
 
-Both need a decision about per-brand layout before they can iterate on their own —
-where a second brand's YAML and JSON files should live is a design question, not a
-mechanical fix.
+They do **not** iterate brands, and that is deliberate. `content/leadhub/` and
+`resources/automations/` each hold one undifferentiated set, so sweeping every brand
+into one would merge contacts, or have one brand's `welcome-flow.json` overwrite
+another's. On a multi-brand install both now **refuse** rather than guess, naming the
+brands and the reason. Point the configured path at a directory of its own and run
+them once per brand.
+
+Single-brand installs are unaffected: no option, no prompt.
+
+::: warning Before LeadHub 1.10.4 and Automations 1.7.1
+Neither took a brand, so both met the fail-closed scope and read an empty database.
+
+`leadhub:storage:migrate` reported `0 contact(s) processed` and `Migration complete`
+— you would then switch `LEADHUB_DRIVER` and find the site empty, having been told
+the move succeeded.
+
+`automations:sync` was worse, because it asks the database a question before
+deciding what to do: seeing no automations, it concluded the **files** were the
+source of truth, and a bare run could import over automations it could not see.
+:::
+
+::: tip The flat drivers are single-brand
+LeadHub's flat driver has no brand concept at all — `FileStore` is bound to one path
+and nothing in the flat repositories reads or writes a brand. Marketing's flat driver
+*does* isolate by directory and ships `marketing:migrate-flat-brands`.
+
+If you run multi-brand, use the eloquent driver for LeadHub. See
+[LeadHub → Storage drivers](/leadhub/storage#multi-brand-on-the-flat-driver).
 :::
 
 If you write your own command against these addons, wrap the work:

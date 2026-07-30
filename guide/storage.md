@@ -90,7 +90,17 @@ php artisan leadhub:stache:warm --clear    # full rebuild
 
 ## Flat files and brands
 
-A query cannot be scoped, so the flat drivers isolate by directory:
+A query cannot be scoped, so a flat driver has to isolate by directory instead. **The two
+flat drivers in the suite do not agree on this**, and the difference matters before you
+enable multi-brand:
+
+| Addon | Flat driver under multi-brand |
+| --- | --- |
+| **Marketing** | Isolates by directory, and ships `marketing:migrate-flat-brands` to move an existing layout into it |
+| **LeadHub** | **No brand concept at all.** One directory, no brand in the files — every brand reads every brand's contacts. Use the eloquent driver. |
+| **Webhook Manager** | Isolates by directory |
+
+Marketing's layout:
 
 ```
 content/marketing/

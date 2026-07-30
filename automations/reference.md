@@ -9,7 +9,7 @@
 | `automations:run-due [--brand=]` | Resume runs whose delay has elapsed |
 | `automations:run-scheduled [--brand=]` | Start time-triggered automations |
 | `automations:prune` | Delete runs past the retention window |
-| `automations:sync` | Synchronise definitions with `resources/automations/*.json` |
+| `automations:sync [--brand=]` | Synchronise definitions with `resources/automations/*.json`. `--brand` required on a multi-brand install. |
 
 All are registered in the scheduler except `automations:sync`, which is a deploy step.
 
