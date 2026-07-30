@@ -1,0 +1,125 @@
+# Queues & scheduling
+
+Most of the suite dispatches work off the request thread, and several addons
+register scheduled commands. Neither the queue worker nor the scheduler is
+optional in production.
+
+```bash
+php artisan queue:work
+php artisan schedule:work        # or a cron entry calling schedule:run
+```
+
+## What is queued
+
+| Addon | Queued work | With `QUEUE_CONNECTION=sync` |
+| --- | --- | --- |
+| Webhook Manager | every outbound delivery, every retry | the HTTP request happens inside the request that triggered it; a slow endpoint becomes your page load |
+| Automations | every automation run | a five-node flow with a delay runs inline, and the delay cannot work at all |
+| LeadHub | CRM connector pushes, CSV exports past the threshold | a HubSpot outage becomes a slow form submission |
+| Marketing | campaign sending, per-recipient messages | a campaign send blocks the request that started it |
+| Activity | `recordLater()` only; `record()` is synchronous | fine, but see below |
+| Notifications | mail channel delivery | a mail transport hiccup slows the action that notified |
+
+Webhook Manager's own documentation puts it plainly: a queue driver other than
+`sync` is strongly recommended. For Automations and Marketing it is closer to
+required.
+
+### Dedicated queues
+
+Two addons let you isolate their work so a backlog of automation runs does not
+delay your transactional mail:
+
+```php
+// config/automations.php
+'queue' => env('STATAMIC_AUTOMATIONS_QUEUE', 'default'),
+'queue_connection' => env('STATAMIC_AUTOMATIONS_QUEUE_CONNECTION', null),
+```
+
+Webhook Manager has the same pair under its `queue` key. If you use them,
+remember to actually run a worker for that queue:
+
+```bash
+php artisan queue:work --queue=automations,default
+```
+
+### Context is captured at dispatch, not in the worker
+
+`Activity::recordLater()` captures the actor and the request context **at dispatch
+time**. By the time the job runs, the request that caused it is long gone; there
+is no session, no authenticated user, and in multi-brand mode no current brand.
+
+The same reasoning applies to anything you queue yourself against these addons:
+resolve the identity and the brand while you still have them, and pass them in.
+
+## What is scheduled
+
+Three addons register commands with Laravel's scheduler automatically, and one
+leaves the scheduling to you.
+
+| Command | Frequency | Registered by | Purpose |
+| --- | --- | --- | --- |
+| `marketing:send-scheduled` | every minute | Marketing | dispatches campaigns whose send time has arrived |
+| `leadhub:followups:digest` | daily at `notifications.digest.time` | LeadHub | the daily due/overdue follow-up summary |
+| `leadhub:followups:due` | daily | LeadHub | fires `LeadHubFollowupDue` for follow-ups that became due |
+| `leadhub:segments:sweep` | daily | LeadHub | re-materialises segment membership for time-based rules |
+| `automations:run-due` | frequently | Automations | resumes runs whose delay has elapsed |
+| `automations:run-scheduled` | frequently | Automations | starts time-triggered automations |
+| `automations:prune` | daily | Automations | deletes runs past `runs.prune_after_days` (30) |
+| `webhook-manager:prune` | daily | Webhook Manager | purges old deliveries and logs |
+| `notifications:send-digests` | **you decide** | — | the notification digest |
+
+Notifications deliberately does not schedule itself. A send window is an audience
+decision, not a package default, so register it in your own scheduler:
+
+```php
+// routes/console.php or App\Console\Kernel
+Schedule::command('notifications:send-digests --frequency=daily')->dailyAt('07:00');
+Schedule::command('notifications:send-digests --frequency=weekly')->mondays()->at('08:00');
+```
+
+### Without the scheduler
+
+The failures are quiet, which is what makes this worth stating:
+
+- Scheduled campaigns simply never send. No error, no failed job.
+- Automation delays never resume. The run sits in a waiting state forever.
+- Segment membership goes stale for any rule involving time (`within_days`,
+  `older_than_days`), while rules driven by mutations stay perfectly fresh —
+  producing a segment that is half-correct, which is worse than obviously broken.
+- Delivery and run tables grow without bound.
+
+## Multi-brand and the console
+
+A scheduled command has no session, so in multi-brand mode it has no current
+brand, and the fail-closed scope means it sees nothing. Every scheduled command
+in the suite already handles this by iterating brands, and every one of them
+accepts `--brand=` to narrow the run:
+
+```bash
+php artisan automations:run-due --brand=acme
+php artisan webhook-manager:health --brand=acme
+php artisan leadhub:scoring:import --brand=acme
+```
+
+If you write your own command against these addons, wrap the work:
+
+```php
+BrandContext::runFor($handle, fn () => /* … */);
+```
+
+See [Brands & multi-tenancy](/guide/brands).
+
+## Failed jobs
+
+Configure Laravel's failed-job table and watch it. The suite's fail-safe
+guarantee means an addon will not break the caller, but a queued job that fails
+after its retries is genuinely lost work:
+
+- Webhook Manager records the failure as a `Delivery` and, if configured, alerts
+  and trips the circuit breaker. That one is visible.
+- A LeadHub CRM push retries with backoff and lands in the **Sync log** either
+  way. Also visible.
+- A Marketing message failure is recorded per recipient.
+
+Anything else follows Laravel's normal rules, so `queue:failed` is still part of
+your operations routine.

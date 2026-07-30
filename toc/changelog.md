@@ -1,0 +1,41 @@
+---
+title: Table of Contents changelog
+editLink: false
+---
+
+# Changelog
+
+<AddonHeader slug="toc" />
+
+Release notes for `goldnead/statamic-toc`, as published with the package.
+
+Cross-version upgrade notes for the whole suite are in
+[Upgrading](/guide/upgrading).
+
+All notable changes to `statamic-toc` will be documented in this file.
+
+## ???-??-?? v1.05
+
+- Support for Statamic v6
+
+## 2021-07-08 v1.0.4
+
+- Support Level-Start
+- Refactor & document code.
+
+## 2021-07-08 v1.03
+
+- Fix ToC not displaying in some situations.
+
+## 2021-07-07 v1.02
+
+- Added support for HTML-Mode in Bard
+- Minor fixes
+
+## 2021-07-06 v1.0.1
+
+- Remove Debugging-Function
+
+## 2021-07-06 v1.0.0
+
+- Implemented all required features.

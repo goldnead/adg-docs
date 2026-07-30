@@ -1,0 +1,236 @@
+/**
+ * Brand layer on top of the VitePress default theme.
+ *
+ * Accent is the goldnead gold (#e8b931). It is used at 600/700 in light mode so
+ * link text keeps a WCAG-AA contrast ratio against white, and at 400 in dark
+ * mode where the same hue would otherwise glare.
+ */
+
+:root {
+  --gn-gold-50: #fffdf5;
+  --gn-gold-100: #fff9e0;
+  --gn-gold-200: #fff0b8;
+  --gn-gold-300: #ffe580;
+  --gn-gold-400: #f5d04a;
+  --gn-gold-500: #e8b931;
+  --gn-gold-600: #c99b1d;
+  --gn-gold-700: #a67d14;
+  --gn-gold-800: #7a5c0f;
+  --gn-gold-900: #4d3a0a;
+
+  --vp-c-brand-1: var(--gn-gold-700);
+  --vp-c-brand-2: var(--gn-gold-600);
+  --vp-c-brand-3: var(--gn-gold-500);
+  --vp-c-brand-soft: rgba(232, 185, 49, 0.16);
+
+  --vp-button-brand-bg: var(--gn-gold-600);
+  --vp-button-brand-hover-bg: var(--gn-gold-700);
+  --vp-button-brand-active-bg: var(--gn-gold-800);
+  --vp-button-brand-border: transparent;
+  --vp-button-brand-text: #1a1a1a;
+  --vp-button-brand-hover-text: #ffffff;
+
+  --vp-home-hero-name-color: transparent;
+  --vp-home-hero-name-background: linear-gradient(
+    120deg,
+    var(--gn-gold-700) 20%,
+    var(--gn-gold-500)
+  );
+  --vp-home-hero-image-background-image: linear-gradient(
+    -45deg,
+    rgba(232, 185, 49, 0.45),
+    rgba(166, 125, 20, 0.35)
+  );
+  --vp-home-hero-image-filter: blur(56px);
+}
+
+.dark {
+  --vp-c-brand-1: var(--gn-gold-400);
+  --vp-c-brand-2: var(--gn-gold-500);
+  --vp-c-brand-3: var(--gn-gold-600);
+  --vp-button-brand-bg: var(--gn-gold-500);
+  --vp-button-brand-hover-bg: var(--gn-gold-400);
+  --vp-button-brand-text: #1a1a1a;
+  --vp-button-brand-hover-text: #1a1a1a;
+  --vp-home-hero-name-background: linear-gradient(
+    120deg,
+    var(--gn-gold-300) 20%,
+    var(--gn-gold-500)
+  );
+}
+
+/* ---------- Addon grid on the hub page ---------- */
+
+.gn-layers {
+  display: flex;
+  flex-direction: column;
+  gap: 2.5rem;
+  margin-top: 2rem;
+}
+
+.gn-layer__head {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--vp-c-divider);
+}
+
+.gn-layer__title {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--vp-c-text-2);
+}
+
+.gn-layer__note {
+  font-size: 0.8125rem;
+  color: var(--vp-c-text-3);
+}
+
+.gn-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.gn-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1.25rem;
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 12px;
+  background: var(--vp-c-bg-soft);
+  text-decoration: none !important;
+  color: inherit;
+  transition:
+    border-color 0.2s,
+    transform 0.2s;
+}
+
+.gn-card:hover {
+  border-color: var(--vp-c-brand-1);
+  transform: translateY(-2px);
+}
+
+.gn-card__top {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+}
+
+.gn-card__icon {
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  flex: none;
+  border-radius: 8px;
+  background: var(--vp-c-brand-soft);
+  color: var(--vp-c-brand-1);
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.gn-card__name {
+  font-weight: 600;
+  font-size: 1.0625rem;
+  color: var(--vp-c-text-1);
+}
+
+.gn-card__tagline {
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: var(--vp-c-text-2);
+}
+
+.gn-card__pkg {
+  margin-top: auto;
+  padding-top: 0.5rem;
+  font-family: var(--vp-font-family-mono);
+  font-size: 0.75rem;
+  color: var(--vp-c-text-3);
+  overflow-wrap: anywhere;
+}
+
+/* ---------- Addon page header ---------- */
+
+.gn-addon-header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  margin: -0.5rem 0 1.5rem;
+}
+
+.gn-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.25rem 0.625rem;
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 999px;
+  background: var(--vp-c-bg-soft);
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--vp-c-text-2);
+  white-space: nowrap;
+}
+
+.gn-chip--pkg {
+  font-family: var(--vp-font-family-mono);
+}
+
+.gn-chip--accent {
+  border-color: transparent;
+  background: var(--vp-c-brand-soft);
+  color: var(--vp-c-brand-1);
+}
+
+/* ---------- Requirements block ---------- */
+
+.gn-req {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 0.75rem;
+  margin: 1.25rem 0;
+  padding: 1rem 1.25rem;
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 10px;
+  background: var(--vp-c-bg-soft);
+}
+
+.gn-req__item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.gn-req__label {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--vp-c-text-3);
+}
+
+.gn-req__value {
+  font-family: var(--vp-font-family-mono);
+  font-size: 0.875rem;
+  color: var(--vp-c-text-1);
+}
+
+/* ---------- Tables ---------- */
+
+.vp-doc table {
+  display: table;
+  width: 100%;
+}
+
+.vp-doc td,
+.vp-doc th {
+  vertical-align: top;
+}

@@ -1,0 +1,94 @@
+# Compatibility
+
+## Platform
+
+| | Supported |
+| --- | --- |
+| PHP | 8.2, 8.3, 8.4 |
+| Statamic | 6.0+ |
+| Laravel | 11.x, 12.x, 13.x |
+| Node | 18+, and only if you rebuild an addon's CP bundle from source |
+| Database | MySQL 8+, PostgreSQL, SQLite |
+
+Statamic 5 is not supported. LeadHub's v0.3 Control Panel rewrite moved to
+Inertia + Vue 3, which is Statamic 6 only; pin to `^0.2.x` if you are stuck on
+Statamic 5, and expect no further releases on that line.
+
+## Databases
+
+The addons are developed against SQLite and released against MySQL, and the
+difference matters more than it sounds:
+
+- SQLite has no InnoDB key-length limit, no fixed column widths and no
+  per-character byte cost. A schema MySQL refuses outright can pass a fully
+  green SQLite test run. That is not a hypothetical: it is how one release
+  reached production with a schema MySQL could not build.
+- Four addons therefore ship a `phpunit.mysql.xml` and a unit test
+  (`IndexKeyLengthTest`) that compiles the migrations through Laravel's MySQL
+  grammar and measures every index against InnoDB's 3072-byte limit.
+
+If you run PostgreSQL, everything works, but you are on a less-travelled path
+than MySQL. Report anything odd.
+
+## Inter-addon constraints
+
+Only one hard dependency exists between the domain addons:
+
+| Package | Requires | Why |
+| --- | --- | --- |
+| `statamic-marketing` | `statamic-leadhub` | A subscriber is a LeadHub contact. There is no separate subscriber table. |
+
+Everything else is a `suggest` plus a runtime `class_exists` check. The version
+constraints that matter when both are installed:
+
+| If you use | You need at least | Otherwise |
+| --- | --- | --- |
+| Marketing's segment targeting | LeadHub `^1.1` | The campaign sends to the whole list; no error |
+| Automations' LeadHub nodes | LeadHub `^1.0` | The nodes do not appear in the library |
+| Marketing's ESP inbound action | Webhook Manager `^1.0` | Bounces are not processed automatically |
+| Notifications' LeadHub digest source | LeadHub `^1.0` | The digest omits open tasks |
+| Activity's bundled producers | LeadHub / Marketing installed | The producers do not attach |
+
+Optional integrations degrade rather than fail. The pattern throughout the suite
+is a capability check on the facade root, not a version comparison:
+
+```php
+if (method_exists(LeadHub::getFacadeRoot(), 'segmentMemberIds')) {
+    // segments are available
+}
+```
+
+::: tip Why `getFacadeRoot()`
+`method_exists()` on a facade class returns `false` for anything the facade
+forwards through `__callStatic`. Checking the facade class instead of its root is
+a real bug that shipped once: every LeadHub action node silently failed on every
+install that had LeadHub. Always resolve the root first.
+:::
+
+## Front-end assets
+
+| Addon | Ships compiled CP assets | Needs a build from a clone |
+| --- | --- | --- |
+| Webhook Manager | yes, `resources/dist/build/` | yes, `npm install && npm run build` |
+| Automations | yes, `resources/dist/build/` | yes |
+| LeadHub | yes, `resources/dist/` | yes |
+| Marketing | yes | yes |
+| others | no CP JavaScript of their own | no |
+
+Two Statamic 6 specifics worth knowing if you fork one of these:
+
+- Statamic 6 reads an addon's Vite config **only** from the service provider's
+  `$vite` property. `extra.statamic.vite` in `composer.json` is ignored.
+- `@statamic/cms`'s Vite plugin needs `@vitejs/plugin-vue` in the project that
+  resolves it, not in the addon.
+
+## Multi-brand
+
+Brand Context is a dependency of Webhook Manager, Automations, LeadHub,
+Marketing, Activity and Notifications. All six are brand-aware, and all six
+behave identically on a single-brand install. There is no partial support to
+check for: if an addon depends on `brand-context`, its records carry `brand_id`
+from their first migration.
+
+Table of Contents, Identity Contracts and Email Templates are not brand-scoped,
+because none of them persists anything that could belong to a brand.
