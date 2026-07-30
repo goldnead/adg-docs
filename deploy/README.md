@@ -34,7 +34,9 @@ therefore aborts the deploy, which is the intended behaviour.
 | Reverse proxy | `n8n-docker-caddy-caddy-1` |
 | Caddyfile | `/root/n8n-docker-caddy/caddy_config/Caddyfile` |
 | Deploy log | `/var/log/adg-docs-deploy.log` |
-| DNS | Cloudflare zone `adriangoldner.dev` |
+| DNS | Cloudflare zone `adriangoldner.dev`, A record `docs` → `157.90.224.18`, proxied |
+| GitHub webhook | id `658909925`, push events on `main` |
+| Hook definition | `deploy-adg-docs` in `/opt/webhook/hooks.json` |
 
 ## First-time setup
 
