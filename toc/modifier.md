@@ -102,47 +102,38 @@ content twice.
 - **It only adds ids to headings.** It does not add `<a>` anchors, permalink icons
   or `aria` attributes. If you want a clickable "¶" next to each heading, that is
   CSS and a `::after`, or front-end JavaScript over the ids this gives you.
-- **It stops at `h3` by default**, and `h4` and below come back untouched:
+- **It does not respect the tag's `from` and `depth`.** The modifier adds an id to
+  every heading it finds, `h1` through `h6`, whatever the list is configured to show.
+  That is the right default: a link in the list must resolve, but a heading that is
+  not in the list is harmless with an id on it.
 
   ```html
-  <h1 id="a">A</h1><h2 id="b">B</h2><h3 id="c">C</h3><h4>D</h4>
+  <h1 id="a">A</h1><h2 id="b">B</h2><h3 id="c">C</h3><h4 id="d">D</h4>
   ```
 
-  If your list goes deeper than three levels, its links to the `h4`s resolve to
-  nothing.
+- **A heading that already has an id keeps exactly that one.** The modifier leaves
+  it alone and the list links to it rather than to a slug of the title, so you can
+  hand-write the anchors that matter and let the modifier fill in the rest:
 
-::: danger The tag's `depth` leaks into the modifier
-The tag and the modifier share one parser instance for the whole request, and the
-tag's `depth` overwrites the level the modifier injects up to. Render
-`{{ toc depth="1" }}` before `{{ content | toc }}` and only `h1` gets an id:
+  ```html
+  <!-- in and out --> <h2 id="mine">Kept</h2>
+  ```
 
-```html
-<h1 id="a">A</h1><h2>B</h2><h3>C</h3>
-```
-
-So the modifier's reach depends on a parameter you set somewhere else on the page,
-and narrowing the list quietly breaks the anchors under it. Keep `depth` at its
-default on any page where the modifier also runs, or set the same `depth` in both
-places.
-:::
-
-::: danger A heading that already has an id gets a second one
-The check for an existing id misses one in the last attribute position, so the
-modifier appends its own:
-
-```html
-<!-- in  --> <h2 id="mine">Kept</h2>
-<!-- out --> <h2 id="mine" id="kept">Kept</h2>
-```
-
-Two `id` attributes on one element is invalid HTML and a browser keeps only the
-first, while the list links to `#kept`. The anchor silently does nothing.
-
-Until this is fixed, either let the modifier own every id or write your own anchors
-without it. Do not mix the two on the same field.
-:::
 - **Chaining order matters** if you also run other modifiers that rewrite HTML. Put
   `toc` last, so it sees the final markup.
 - **It logs a deprecation on PHP 8.2 and up.** The parser still calls
   `mb_convert_encoding(..., 'HTML-ENTITIES', ...)`, deprecated since 8.2, so every
   render writes a notice to your log. Harmless, but it will fill a log file.
+  Removing it means dropping PHP 7.4, so it waits for the v2 line.
+
+::: warning Upgrade to 1.10 if you are on anything older
+Three defects made anchors point at nothing, and all three are fixed in 1.10:
+id injection stopped at `h3`; the tag's `depth` leaked into the modifier through a
+parser shared for the whole request, so `{{ toc depth="1" }}` above an article
+stripped the ids from every `h2` below it; and a heading that already had an id got
+a second one, which is invalid HTML and left the list linking to an anchor the
+browser had discarded.
+
+Nothing else changed for a document whose headings had no hand-written ids and whose
+list stayed at the default depth.
+:::
