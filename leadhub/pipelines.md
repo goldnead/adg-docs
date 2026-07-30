@@ -26,6 +26,11 @@ confidence, and with full stage-transition history.
 | **Kanban board** | Drag opportunities between stages |
 | **Pipeline management** | Define pipelines and their stages |
 
+<Figure
+  src="leadhub-pipeline"
+  alt="The Kanban board with Discovery, Proposal sent, Negotiation, Won and Lost columns, each card showing a value and a confidence percentage"
+  caption="The board. Won and Lost are terminal, and the header totals open, won and lost value separately." />
+
 Pipeline slugs are unique **per brand**.
 
 ### Events

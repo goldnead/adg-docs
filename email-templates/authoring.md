@@ -4,6 +4,11 @@
 
 Templates are entries in the `et_templates` collection. **Content → Email Templates**.
 
+<Figure
+  src="email-templates-entry"
+  alt="A template entry open in the publish form, with title, subject, description and a Bard body"
+  caption="An ordinary publish form. The body is Bard, which is what lets Statamic's native Live Preview work on it." />
+
 ## The fields
 
 | Field | Notes |

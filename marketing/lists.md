@@ -7,6 +7,11 @@ one list, and it *is* the consent record.
 
 **Marketing → Lists**, behind `manage marketing lists`.
 
+<Figure
+  src="marketing-lists"
+  alt="The mailing list screen showing two lists with their handles, double-opt-in setting and subscriber counts"
+  caption="Two lists, one relationship each. A campaign narrows a list with a segment rather than adding a second list." />
+
 ## Creating a list
 
 | Field | Notes |

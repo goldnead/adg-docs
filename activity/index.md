@@ -78,6 +78,11 @@ range; open a single fact to read its properties and context.
 
 No counts, no charts, no aggregates. That is the design, not a gap.
 
+<Figure
+  src="activity-inspector"
+  alt="The activity ledger listing facts with their event type, actor, source and timestamp"
+  caption="Facts only. Actors appear as join keys rather than names, which is what lets `activity:anonymize` remove the person without removing the fact." />
+
 ## Next
 
 - [Installation](/activity/installation)

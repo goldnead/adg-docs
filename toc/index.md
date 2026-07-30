@@ -31,6 +31,11 @@ The first block renders the list. The second renders the article with an `id` on
 every heading, so the links land. **You need both**, and they must run on the same
 content, or the anchors will not match.
 
+<Figure
+  src="toc-frontend"
+  alt="An article page with a nested On this page list in the right column, its links matching the headings in the article"
+  caption="The tag built the nested list on the right; the modifier put the matching ids on the headings on the left. Markup and styling are entirely yours." />
+
 ## How it works
 
 The tag parses the content for headings and returns an associative, nested array

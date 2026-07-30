@@ -12,6 +12,11 @@ you follow up with the right leads at the right time.
 It is **not** a full CRM. It is the missing layer between your website forms and your
 sales tools — and it can grow into a lightweight CRM when you turn the opt-in modules on.
 
+<Figure
+  src="leadhub-contacts"
+  alt="The LeadHub contact list, showing status, engagement score, tags, source, owner and follow-up columns"
+  caption="Contacts, filterable by status, tag, source, owner, follow-up state and engagement score." />
+
 ## What you get out of the box
 
 - **Contacts from forms** — every submission becomes a contact, deduplicated by email

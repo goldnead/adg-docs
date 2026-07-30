@@ -88,8 +88,10 @@ BrandContext::runFor($handle, fn () => $this->doTheWork());
 ```
 
 Or use the `RunsForEachBrand` trait for a command that should sweep all of them.
-Every scheduled command in the suite already does this and accepts `--brand=` to
-narrow the run.
+Most of the suite's commands already do this and accept `--brand=` to narrow the
+run — but `leadhub:segments:sweep`, `leadhub:followups:digest` and
+`leadhub:followups:due` do not, and see nothing when run bare on a multi-brand
+install. See [Queues & scheduling](/guide/queues#multi-brand-and-the-console).
 
 ::: tip Never inherited
 The brand is set explicitly on every request and never carried over from the last

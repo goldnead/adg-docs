@@ -70,6 +70,64 @@ put it in a code span instead.
 
 `antlers` is aliased to Shiki's `handlebars` grammar, `blade` to `php`.
 
+## Screenshots
+
+`public/screenshots/*.png` are captured with Playwright against a **local** hub
+checkout, at 1560×980 and a 2× device scale factor.
+
+```bash
+cd ~/Documents/WebDev/hub
+php artisan serve --port=8123
+
+cd ~/Documents/WebDev/adg-docs
+node scripts/shoot-screenshots.mjs              # all
+node scripts/shoot-screenshots.mjs leadhub      # name filter
+```
+
+Embed one with the global component:
+
+```md
+<Figure
+  src="leadhub-contacts"
+  alt="…"
+  caption="…" />
+```
+
+### Where the data comes from
+
+The hub checkout carries QA data and, in the case of email templates, **real
+customer content**. Everything in the screenshots therefore lives in its own
+`demo` brand (`Acme Studio`), seeded by three scripts in the hub checkout:
+
+| Script | Seeds |
+| --- | --- |
+| `seed-docs-demo.php` | the brand, the CP user, contacts, tags, timeline, notes, follow-ups, pipeline, opportunities, tasks, segments |
+| `seed-docs-demo2.php` | lists, subscriptions, campaigns, messages, webhooks, activities, notifications |
+| `seed-docs-deliveries.php` | 30 days of webhook deliveries with a realistic latency spread |
+| `seed-docs-automations.php` | two automations whose node handles and config match the addon's own schemas |
+
+Run them with `php artisan tinker --execute="require 'seed-docs-demo.php';"`. They
+clear and re-seed the `demo` brand only, and never touch another brand.
+
+After seeding segments, materialise their membership — the sweep command takes no
+`--brand` and sees nothing without a brand context:
+
+```php
+BrandContext::runFor('demo', fn () => Artisan::call('leadhub:segments:sweep'));
+```
+
+### Two guards, and why they exist
+
+**Login is asserted.** An earlier version silently captured 21 perfect pictures of
+the login form, because `waitForURL(/\/cp/)` matched the login URL itself. The
+script now fails loudly if a page bounces to login.
+
+**Email templates are refused if foreign entries are present.** Those entries are
+ordinary Statamic entries, so the `demo` brand does **not** isolate them — brand
+scoping is an Eloquent mechanism. The guard refuses rather than capturing customer
+content, leaving the existing correct image in place. To re-shoot them, move the
+other entries out of `content/collections/et_templates/` first.
+
 ## Changelogs
 
 ```bash

@@ -91,15 +91,44 @@ The failures are quiet, which is what makes this worth stating:
 ## Multi-brand and the console
 
 A scheduled command has no session, so in multi-brand mode it has no current
-brand, and the fail-closed scope means it sees nothing. Every scheduled command
-in the suite already handles this by iterating brands, and every one of them
-accepts `--brand=` to narrow the run:
+brand, and the fail-closed scope means it sees nothing.
+
+Most of the suite's commands handle this by iterating brands, and accept
+`--brand=` to narrow the run:
 
 ```bash
 php artisan automations:run-due --brand=acme
+php artisan automations:run-scheduled --brand=acme
 php artisan webhook-manager:health --brand=acme
+php artisan webhook-manager:prune --brand=acme
+php artisan marketing:send-scheduled --brand=acme
 php artisan leadhub:scoring:import --brand=acme
+php artisan notifications:send-digests --frequency=daily --brand=acme
 ```
+
+::: danger Three LeadHub commands do not
+`leadhub:segments:sweep`, `leadhub:followups:digest` and `leadhub:followups:due`
+take no `--brand=` option and do **not** iterate brands. Run bare on a multi-brand
+install they see nothing, and they say so quietly:
+
+```
+$ php artisan leadhub:segments:sweep
+Swept 0 segment(s): 0 entered, 0 left.
+```
+
+That reads like "nothing to do" and means "I could not see anything". Wrap the call
+until this is fixed upstream:
+
+```php
+BrandContext::runFor('acme', fn () => Artisan::call('leadhub:segments:sweep'));
+```
+
+On a **single-brand** install all three work as expected, which is why this is easy
+to miss.
+:::
+
+`activity:prune` and `activity:anonymize` also take no `--brand=`, but there it is
+deliberate: they run across all brands as operator actions on the whole store.
 
 If you write your own command against these addons, wrap the work:
 

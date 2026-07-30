@@ -13,6 +13,11 @@ It is not a full n8n replacement. It is the **missing automation layer** for Sta
 websites, and it is the **orchestration** layer of this suite: multi-step workflows,
 where [Webhook Manager](/webhook-manager/) is the single reliable request.
 
+<Figure
+  src="automations-builder"
+  alt="The visual flow builder showing a trigger, a filter, a branch into two actions, a delay and a final action, each marked READY"
+  caption="A trigger, a filter, a branch, a three-day delay and four actions. Every node reports its own validation state." />
+
 ## Why it exists
 
 Typical website automations otherwise demand custom Laravel events and listeners,

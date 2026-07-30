@@ -10,6 +10,11 @@ One row per attempt. A hook that succeeds on the third try leaves three rows, no
 with a counter, because the first two failures are the evidence you need when the
 destination's owner says nothing was wrong.
 
+<Figure
+  src="webhook-manager-delivery-detail"
+  alt="A failed delivery showing the trigger, three attempts, the duration, the full request with a masked signature header, and a 502 response"
+  caption="A terminal failure. The signature header is masked; reading it unmasked is the separate `view sensitive payloads` permission." />
+
 ## Reading a delivery
 
 **Webhooks → Deliveries**, filterable by hook, status and date range.
@@ -125,6 +130,11 @@ first you hear of it is from the person who expected the data.
 **Webhooks → Insights** shows delivery volume, the success-rate trend, latency
 percentiles (p50, p95, p99), an error breakdown and the top-failing endpoints,
 filterable by day range and by webhook.
+
+<Figure
+  src="webhook-manager-insights"
+  alt="The insights dashboard with delivery volume bars, a success-rate trend line and latency percentile bars"
+  caption="p50 189 ms against a p99 of 8.9 s: one destination timing out, which a mean would have hidden completely." />
 
 p95 and p99 are the useful ones. A p50 of 120 ms with a p99 of 14 seconds means one
 destination in a hundred is timing out, which a mean would hide completely.

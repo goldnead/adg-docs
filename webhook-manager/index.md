@@ -12,6 +12,11 @@ button. It does not own workflows — that is
 [Automations](/automations/), and the two are not interchangeable. See
 [Boundaries](/guide/boundaries#transport-vs-orchestration).
 
+<Figure
+  src="webhook-manager-outbound"
+  alt="The outbound webhook list showing four hooks with their triggers, destinations, auth schemes and enabled state"
+  caption="Outbound hooks. Each one is a trigger, a destination and a retry policy." />
+
 ## What it does
 
 - **Outbound webhooks** triggered by Statamic events, with conditional execution,

@@ -9,6 +9,11 @@ dependency in either direction.
 The point is that an editor can write the email. The body is a Bard field, Statamic's own Live Preview
 works on it, and the slug is a stable reference any addon can resolve.
 
+<Figure
+  src="email-templates-collection"
+  alt="The Email Templates collection listing three templates with their slugs and published state"
+  caption="Templates are ordinary Statamic entries. The slug is the cross-addon reference, so treat it as fixed." />
+
 ## What it does
 
 - Registers a native `et_templates` collection and blueprint: **Title**, **Subject**, **Body** (Bard),

@@ -87,6 +87,9 @@ docs.adriangoldner.dev {
     }
 
     header /assets/* Cache-Control "public, max-age=31536000, immutable"
+
+    # Screenshots are stable but not content-hashed, so a week rather than a year.
+    header /screenshots/* Cache-Control "public, max-age=604800"
 }
 ```
 

@@ -101,6 +101,22 @@ php artisan schedule:work
 php artisan leadhub:segments:sweep
 ```
 
+## Every segment shows 0 members
+
+The rules match contacts, the segment list says **0**, and the sweep reports success.
+
+On a **multi-brand** install this is the sweep never seeing anything:
+`leadhub:segments:sweep` takes no `--brand=` option and does not iterate brands, so
+it meets the fail-closed scope and finds no segments — then says
+`Swept 0 segment(s): 0 entered, 0 left.`, which reads like "nothing to do".
+
+```php
+BrandContext::runFor('acme', fn () => Artisan::call('leadhub:segments:sweep'));
+```
+
+The same applies to `leadhub:followups:digest` and `leadhub:followups:due`. A
+single-brand install is unaffected.
+
 ## A segment matches nobody
 
 An **empty rule set matches nobody**, deliberately. Express "everyone" as no segment at all.

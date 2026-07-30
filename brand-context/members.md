@@ -18,6 +18,11 @@ BrandMembers::brandsOf($user);      // which brands does this user belong to?
 The Control Panel screen is under **Users → Brand Members**. It always acts on the
 brand in the switcher, and it appears only in multi-brand mode.
 
+<Figure
+  src="brand-members"
+  alt="The Brand Members screen listing three users, each badged Unassigned — counts everywhere, with an Assign button"
+  caption="Every user on a fresh install is badged &quot;Unassigned — counts everywhere&quot;. The first assignment is what narrows that user down." />
+
 ## The rule that will surprise you
 
 > **A user with no membership at all counts as a member of every brand.**

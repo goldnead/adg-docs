@@ -112,6 +112,11 @@ started sending cannot be recalled.
 Per campaign: open rate, click rate, bounces and unsubscribes, plus the per-recipient message
 records behind them.
 
+<Figure
+  src="marketing-campaign-report"
+  alt="A sent campaign's report with recipient and send counts, open and click rates, failures, bounces, and a per-recipient table"
+  caption="The per-recipient rows are what make &quot;did this person get it&quot; answerable, and where a bounce is recorded." />
+
 Treat **click rate** as the real number. Open tracking is structurally unreliable — image-blocking
 clients never report an open, prefetching clients report opens nobody made — so a low open rate may
 be your audience's mail client rather than your subject line. See

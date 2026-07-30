@@ -22,6 +22,11 @@ This is by far the most common cause of "LeadHub does nothing".
 A form mapping's `form_handle` is unique **per brand**, so two brands can each map their own
 form of the same handle.
 
+<Figure
+  src="leadhub-dashboard"
+  alt="The LeadHub dashboard with KPI tiles, latest activity, follow-ups due today and overdue follow-ups"
+  caption="Until a form is mapped this screen shows nothing but a &quot;Configure forms&quot; prompt — which is the most common cause of &quot;LeadHub does nothing&quot;." />
+
 ## Deduplication
 
 Contacts are deduplicated on `email_normalized`:

@@ -31,6 +31,11 @@ flagged as unavailable rather than one that fails at run time.
 **Automations → Templates**, then install. You get a new automation, **disabled**, with
 the nodes laid out and configured as far as the template can configure them.
 
+<Figure
+  src="automations-templates"
+  alt="The template library listing the curated starting flows that ship with the addon"
+  caption="Installing a template copies it into a user-owned automation, so an addon update never changes a flow you are running." />
+
 Then do the two things the template cannot do for you:
 
 1. **Fill in what is specific to you** — the recipient address, the destination URL, the

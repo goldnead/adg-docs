@@ -8,6 +8,11 @@ time-based rules.
 
 Build them under **LeadHub → Segments**, with a live "matching contacts" preview.
 
+<Figure
+  src="leadhub-segments"
+  alt="The segments list showing three active segments with their handles and member counts"
+  caption="Member counts are materialised. A count of 0 for rules that clearly match is the symptom described below." />
+
 ```php
 'features' => ['segments' => true],   // eloquent or flat; see below
 ```
@@ -73,6 +78,28 @@ one that is obviously broken — nothing reports a problem and the numbers look 
 php artisan schedule:work
 php artisan leadhub:segments:sweep
 ```
+:::
+
+::: danger On multi-brand, the sweep needs a brand or it silently does nothing
+`leadhub:segments:sweep` takes **no `--brand=` option** and does not iterate brands.
+Run bare with multi-brand on, it meets the fail-closed scope, finds no segments, and
+reports success:
+
+```
+$ php artisan leadhub:segments:sweep
+Swept 0 segment(s): 0 entered, 0 left.
+```
+
+That reads as "nothing to do" and means "I could not see anything". Wrap it:
+
+```php
+BrandContext::runFor('acme', fn () => Artisan::call('leadhub:segments:sweep'));
+```
+
+The symptom is a segment list showing **0 members** for rules that clearly match
+contacts. A single-brand install is unaffected, which is why it is easy to miss.
+
+The same applies to `leadhub:followups:digest` and `leadhub:followups:due`.
 :::
 
 ## Enter and leave events

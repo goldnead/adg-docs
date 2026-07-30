@@ -9,6 +9,11 @@ follow-ups, score changes and anything you record through the
 It is the answer to "what is going on with this person", in the order a salesperson wants to
 read it.
 
+<Figure
+  src="leadhub-timeline"
+  alt="A contact's timeline showing a score change, a tag, a status change and the originating form submission, alongside the attribution panel"
+  caption="The timeline, with the attribution captured from the originating submission on the right." />
+
 ## What lands on a timeline
 
 | Entry | Written when |

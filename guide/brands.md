@@ -45,8 +45,26 @@ BrandContext::runFor('acme', fn () => Contact::create([...]));
 ```
 
 Or use the `RunsForEachBrand` trait in a command that should sweep all of them.
-Every scheduled command in the suite already does this and accepts `--brand=` to
-narrow it.
+
+Most of the suite's scheduled commands already do this and accept `--brand=` to
+narrow the run. **Four do not**, and on a multi-brand install they see nothing when
+run bare:
+
+| Command | `--brand=` | Behaviour with no brand |
+| --- | --- | --- |
+| `leadhub:segments:sweep` | **no** | reports `Swept 0 segment(s)` |
+| `leadhub:followups:digest` | **no** | no digest |
+| `leadhub:followups:due` | **no** | no events fired |
+| `activity:prune` | no, by design | runs across all brands — an operator action |
+
+For the three LeadHub commands, wrap the call:
+
+```php
+BrandContext::runFor('acme', fn () => Artisan::call('leadhub:segments:sweep'));
+```
+
+`activity:prune` is the deliberate exception: a retention sweep is an operator
+action on the whole store, not a brand-scoped query.
 
 Explicit cross-brand access is opt-in and deliberately ugly to type:
 

@@ -5,6 +5,11 @@
 A **run** is one execution of an automation. Every run records its context and, node by
 node, what each node was handed and what it produced.
 
+<Figure
+  src="automations-runs"
+  alt="The run history listing runs with completed, stopped, failed and waiting statuses, each with a trigger and a duration"
+  caption="`stopped` is a normal outcome, not a failure. Keeping it distinct from `completed` is what answers &quot;did this fire and choose not to act&quot;." />
+
 ## Run statuses
 
 | Status | Means |

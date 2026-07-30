@@ -35,6 +35,11 @@ None of them could be reused by the next domain that needed notifying, which is 
 - **A read-only CP inspector** at **Tools → Notifications**
 - **Optional realtime** — a content-free refresh signal
 
+<Figure
+  src="notifications-inspector"
+  alt="The notifications inspector listing persisted notifications with their type, recipient, read state and digest state"
+  caption="The inspector answers &quot;did this person get it&quot;, which is the question support actually asks. The row is written whatever the preferences say." />
+
 ## Three guarantees
 
 **A recipient must be identifiable.** Notifying an anonymous visitor returns `null` — there would be no way
