@@ -96,7 +96,7 @@ subscriptions.
 
 | Field | Value |
 | --- | --- |
-| URL | `https://example.com/!/webhooks/inbound/esp-events` |
+| URL | `https://example.com/webhooks/inbound/esp-events` |
 | Verifier | static header, `X-Webhook-Token` |
 | Secret | `MARKETING_ESP_WEBHOOK_SECRET` from your environment |
 | Action | `marketing.process_esp_event` |
@@ -112,12 +112,12 @@ Then enter that URL and header in your provider's webhook settings, and verify b
 
 ```bash
 # correct token → 200
-curl -X POST https://example.com/!/webhooks/inbound/esp-events \
+curl -X POST https://example.com/webhooks/inbound/esp-events \
   -H 'X-Webhook-Token: <secret>' -H 'Content-Type: application/json' \
   -d '{"event":"bounce","email":"a@example.com"}'
 
 # wrong token → 401
-curl -X POST https://example.com/!/webhooks/inbound/esp-events \
+curl -X POST https://example.com/webhooks/inbound/esp-events \
   -H 'X-Webhook-Token: nope' -d '{}'
 ```
 

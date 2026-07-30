@@ -112,12 +112,19 @@ typo.
 | --- | --- | --- | --- |
 | Marketing | by directory | `marketing:migrate-flat-brands` | 1.6 |
 | LeadHub | by directory | `leadhub:migrate-flat-brands` | **1.11** |
-| Webhook Manager | by directory | — | |
+| Webhook Manager | by directory | `webhook-manager:migrate-flat-brands` | **1.9** |
 
-::: warning LeadHub before 1.11 had no brand concept in its flat driver
-One directory, no brand in the files, so every brand read every brand's contacts while the
-eloquent driver scoped correctly. If you run `LEADHUB_DRIVER=flat` with multi-brand on,
-upgrade and then run `leadhub:migrate-flat-brands`.
+::: danger The flat drivers had no brand concept before LeadHub 1.11 and Webhook Manager 1.9
+One directory, no brand in the files, so every brand read every brand's records while the
+eloquent driver scoped correctly. The same install therefore isolated or did not depending
+on a value that reads like a storage preference.
+
+In Webhook Manager this leaked credentials, not just data: a webhook config carries a
+destination URL **and the token it authenticates with**, and firing a hook from the wrong
+brand posts one tenant's payload to another tenant's endpoint.
+
+If you run either flat driver with multi-brand on, upgrade and run the migration command
+above. Treat any token that sat in a shared directory as exposed and rotate it.
 :::
 
 Files still sitting in the un-prefixed layout are read as the default brand's,

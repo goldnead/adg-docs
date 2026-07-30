@@ -120,7 +120,25 @@ content/webhooks/
 
 Files still in the un-prefixed layout are read as the **default brand's**, so a
 single-brand install that later enables multi-brand keeps working. Move them when the
-second brand arrives.
+second brand arrives:
+
+```bash
+php artisan webhook-manager:migrate-flat-brands --dry-run
+php artisan webhook-manager:migrate-flat-brands
+```
+
+It only ever moves, never overwrites, never deletes, and a second run does nothing.
+
+::: danger Before 1.9 the flat driver had no brand concept at all
+`content/webhooks/` was one undifferentiated set and every brand read every brand's
+hooks. That is worse here than elsewhere: a webhook config carries a destination URL
+**and the credentials it authenticates with**, so the leak handed over bearer tokens,
+and firing a hook from the wrong brand posted one tenant's payload to another tenant's
+endpoint. The eloquent driver scoped correctly the whole time.
+
+If you ran `flat` with multi-brand on, upgrade, run the migration, and rotate every
+token that sat in the shared directory.
+:::
 
 ## After switching
 

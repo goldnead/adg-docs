@@ -6,14 +6,25 @@ An inbound endpoint is a stable HTTPS URL that receives an external request, ver
 it, and routes it to a named **action handler**.
 
 ```
-https://example.com/!/webhooks/inbound/<endpoint-handle>
+https://example.com/webhooks/inbound/<endpoint-handle>
 ```
 
-The `!` prefix is Statamic's convention for addon routes. The prefix is configurable:
+The prefix is configurable:
 
 ```php
-'inbound' => ['route_prefix' => '!/webhooks/inbound'],
+'inbound' => ['route_prefix' => 'webhooks/inbound'],
 ```
+
+::: warning Changed in 1.8.0
+Before 1.8.0 the endpoint answered on `/!/webhooks/inbound/...`. `!/` is Statamic's
+prefix for its own utility routes, which is not something you type into a provider's
+webhook field, so the addon moved off it. The old prefix stays routable through
+`inbound.legacy_route_prefixes` so existing senders keep working. Empty that array
+once every sender points at the new URL.
+:::
+
+The endpoint does not run on the `web` middleware stack. It has no session and no
+CSRF token, so putting it there makes every external delivery fail with a 419.
 
 ## Creating one
 
@@ -92,13 +103,13 @@ Test the two cases that matter, in this order:
 
 ```bash
 # correct credential → 200
-curl -X POST https://example.com/!/webhooks/inbound/esp-events \
+curl -X POST https://example.com/webhooks/inbound/esp-events \
   -H 'Content-Type: application/json' \
   -H 'X-Webhook-Token: <the secret>' \
   -d '{"event":"bounce","email":"a@example.com"}'
 
 # wrong credential → 401
-curl -X POST https://example.com/!/webhooks/inbound/esp-events \
+curl -X POST https://example.com/webhooks/inbound/esp-events \
   -H 'X-Webhook-Token: nope' -d '{}'
 ```
 
@@ -113,7 +124,7 @@ payloads onto subscriptions.
 
 | Field | Value |
 | --- | --- |
-| URL | `https://example.com/!/webhooks/inbound/esp-events` |
+| URL | `https://example.com/webhooks/inbound/esp-events` |
 | Verifier | static header, `X-Webhook-Token` |
 | Secret | `MARKETING_ESP_WEBHOOK_SECRET` from your environment |
 | Action | `marketing.process_esp_event` |

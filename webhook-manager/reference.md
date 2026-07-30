@@ -11,6 +11,7 @@
 | `webhook-manager:health [--brand=]` | Counts and recent failures |
 | `webhook-manager:seed-examples` | Install sample fixtures |
 | `webhook-manager:storage:migrate --from= --to= [--dry-run]` | Move config between drivers |
+| `webhook-manager:migrate-flat-brands [--brand=] [--dry-run]` | Move a pre-1.9 flat layout into a brand directory |
 
 All available as `php please …` or `php artisan …`.
 
@@ -140,8 +141,9 @@ Namespace `Goldnead\WebhookManager\Events`.
 | `logging.mask_payload_keys` | `password, secret, token, api_key, apikey` |
 | `pruning.deliveries_after_days` | `30` |
 | `pruning.logs_after_days` | `60` |
-| `inbound.route_prefix` | `!/webhooks/inbound` |
-| `inbound.middleware` | `['web']` |
+| `inbound.route_prefix` | `webhooks/inbound` |
+| `inbound.middleware` | `[SubstituteBindings::class]` |
+| `inbound.legacy_route_prefixes` | `['!/webhooks/inbound']` |
 | `inbound.max_payload_kb` | `512` |
 | `inbound.rate_limit_per_minute` | `60` |
 | `inbound.replay_protection_ttl_seconds` | `600` |

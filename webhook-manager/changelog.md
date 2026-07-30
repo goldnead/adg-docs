@@ -12,6 +12,93 @@ Release notes for `goldnead/statamic-webhook-manager`, as published with the pac
 Cross-version upgrade notes for the whole suite are in
 [Upgrading](/guide/upgrading).
 
+## 1.9.0 — 2026-07-30
+
+### Fixed — the flat driver leaked webhook credentials between brands
+
+It had no brand concept at all. `FileStore` was a singleton bound to one path and nothing under `Repositories/FlatFile` read or wrote a brand, so `content/webhooks/` held one undifferentiated set and **every brand read every brand's hooks**. The eloquent driver scoped correctly the whole time, so the same install isolated or did not depending on a value that reads like a storage preference.
+
+**This is worse here than in a CRM.** A webhook config carries a destination URL *and the credentials it authenticates with*. A cross-brand read is not "one tenant sees another's data" — it hands over a bearer token. A test in `FlatDriverBrandIsolationTest` asserts precisely that, and it failed before this release:
+
+```
+Failed asserting that '…"auth_config":{"token":"super-secret-token"}…'
+does not contain "super-secret-token".
+```
+
+Firing a hook from the wrong brand also posts one tenant's payload to another tenant's endpoint.
+
+**Brands now live in the path:**
+
+```
+content/webhooks/{brand}/outbound/{handle}.yaml
+content/webhooks/{brand}/inbound/{handle}.yaml
+content/webhooks/{brand}/rules/{handle}.yaml
+content/webhooks/{brand}/templates/{handle}.yaml
+```
+
+A `brand:` key inside each YAML was rejected: the handle is the filename, so a key would give every definition two identities that can disagree, and a missing or misspelt one would fall through to the default brand — a leak that reads like a typo. With a directory the isolation is structural and visible in `ls`.
+
+The semantics live in one class, `Storage\BrandSegments`, matching `statamic-marketing` and `statamic-leadhub` so all three flat drivers behave the same way.
+
+- **Single-brand installs change nothing.** No directory, no move, nothing to run.
+- **The pre-brand layout is read as the default brand's**, and only that brand's, so an install that enables multi-brand does not lose its hooks.
+- **Fail closed.** Multi-brand with no current brand reads nothing rather than everything, matching the eloquent global scope.
+- A write lands where the definition already lives, so an un-migrated install gains no second copy that shadows the original.
+
+### Added — `webhook-manager:migrate-flat-brands`
+
+Moves the pre-brand layout into a brand directory.
+
+```bash
+php artisan webhook-manager:migrate-flat-brands --dry-run
+php artisan webhook-manager:migrate-flat-brands
+php artisan webhook-manager:migrate-flat-brands --brand=acme
+```
+
+Only ever moves. Never overwrites — a target that already exists means a finished migration or a genuine conflict, and neither is resolved by clobbering — never deletes, and a second run is a no-op.
+
+### Notes
+
+Segment resolution is memoised per brand identity; it is consulted on every file operation and the key carries the brand, so a `BrandContext::runFor()` switch inside one process invalidates it.
+
+`tests/Feature/FlatDriverBrandIsolationTest.php` and `MigrateFlatBrandsCommandTest.php` cover this. Five of the six isolation cases failed before the change; the sixth is the single-brand case, which must not change and does not.
+
+> Found by auditing all three flat drivers after the same defect was fixed in `statamic-leadhub` 1.11.0. `statamic-marketing` has been correct since 1.6 and needed nothing.
+## 1.8.0 — 2026-07-29
+
+### Fixed — the inbound endpoint was published on a URL nobody could send to
+
+The endpoint answered on `/!/webhooks/inbound/{handle}`. `!/` is Statamic's prefix for its own utility routes; it is not a string anyone types into a provider's webhook field, and every other place in this addon that named the prefix already spelled it without one — `InboundController` passed `webhooks/inbound` to the CP, `SettingsController` reported `/webhooks/inbound`, and only `config/webhook-manager.php` said `!/webhooks/inbound`. Two of those three were wrong about the addon's own routing table.
+
+A POST to the URL those defaults implied did not 404. It fell through to Statamic's front-end catch-all `Route::any('/{segments?}')`, which is in the `web` middleware group, which contains `ValidateCsrfToken` — so it came back **419 “CSRF token mismatch”**, with or without credentials, identically for a correct token and a forged one. That is a convincing impersonation of a broken authentication layer, and it is why this was diagnosed as a CSRF problem on the endpoint. The endpoint was never reached.
+
+The canonical prefix is now `webhooks/inbound`. `!/webhooks/inbound` stays routable through `inbound.legacy_route_prefixes`, so a sender already configured against the old URL keeps working; set that config key to `[]` once none is. The CP, the settings screen and the router now all read the same value, so the URL an operator copies out of the CP is the URL that is routed.
+
+### Changed — the inbound endpoint no longer runs the `web` middleware group
+
+It was registered through Statamic's `$routes['web']` hook, which drops every route it registers into the application's `web` group. For a machine-to-machine endpoint that group is wrong end to end: `ValidateCsrfToken` rejects a sender that by definition has no session token, `StartSession` writes a session file per delivery that nothing ever reads, and `EncryptCookies`, `ShareErrorsFromSession` and whatever the host app appends — Inertia handling, last-seen writes, redirect handlers — all run on a request that will only ever be answered with JSON.
+
+The previous fix for this was `->withoutMiddleware([ValidateCsrfToken::class])` on the route. That removes exactly one member of the group, and only for as long as the host application registers that precise class name; a host on the older `VerifyCsrfToken` alias, or one that subclasses it, gets a route that is silently back under CSRF. The endpoint is now registered by `WebhookManagerServiceProvider::bootInboundRoutes()` outside Statamic's hook, declaring its complete stack (`SubstituteBindings`) rather than inheriting one and undoing a piece of it. Nothing is removed because nothing is inherited.
+
+Registration still happens during `bootAddon()`, which Statamic fires from its `$app->booted()` callback *before* it loads its own route files — so the endpoint is still matched ahead of the front-end catch-all, exactly as it was.
+
+The stack is `webhook-manager.inbound.middleware` and it is the complete list, not an addition to `web`. Putting `'web'` back in it restores the 419.
+
+### Fixed — `basic` auth authenticated everyone when it was not configured
+
+`BasicAuthVerifier::verify()` compared the configured username and password against the request's with `hash_equals` — correct, constant-time — but did not first check that anything was configured. `hash_equals('', '')` is `true`, and a request with no `Authorization` header has an empty user and an empty password, so an endpoint saved with `auth_type = basic` and an empty or half-filled `auth_config` passed both comparisons and went on to parsing, mapping and action dispatch. It now fails closed unless both a username and a password are set.
+
+No endpoint on any environment we can see uses `basic`; the one configured inbound endpoint uses `static_header`, which was never affected. The exposure mattered more the moment the route stopped sitting behind `web`, since the verifier is now the only thing in front of it.
+
+### Known — configured but not enforced
+
+Two columns on `webhook_inbounds` are accepted by the CP, validated, cast and stored, and then never consulted at request time:
+
+- **`rate_limit_config`** — there is no rate limiting on the inbound endpoint. `webhook-manager.inbound.rate_limit_per_minute` is likewise only ever read back out to the settings screen. An endpoint is as available as the webserver in front of it.
+- **`IpAllowlistVerifier`** — implemented, correct, and never passed to `AuthSchemeRegistry::registerDefaults()`, so `ip_allowlist` cannot be selected or matched.
+
+`replay_protection_enabled`, `max_payload_kb`, `allowed_methods` and `expected_content_type` *are* enforced, in `InboundRequestProcessor`, in that order, before the action dispatcher runs. These two are not, and are listed here rather than quietly implemented.
+
 ## 1.7.3 — 2026-07-28
 
 ### Fixed — the brand-scoping migration guessed which brand your data belongs to

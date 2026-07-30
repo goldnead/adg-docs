@@ -115,16 +115,24 @@ Applied by `webhook-manager:prune`, which is scheduled daily.
 
 ```php
 'inbound' => [
-    'route_prefix' => '!/webhooks/inbound',
-    'middleware' => ['web'],
+    'route_prefix' => 'webhooks/inbound',
+    'legacy_route_prefixes' => ['!/webhooks/inbound'],
+    'middleware' => [SubstituteBindings::class],
     'max_payload_kb' => 512,
     'rate_limit_per_minute' => 60,
     'replay_protection_ttl_seconds' => 600,
 ],
 ```
 
-The `!` prefix is Statamic's convention for addon routes. `replay_protection_ttl_seconds`
-is how long a seen signature is remembered, so a captured request cannot be resent.
+`middleware` is the **complete** stack of the inbound route, not a list appended to
+`web`. Putting `web` back adds CSRF validation to an endpoint that external senders
+call without a token, and every delivery starts failing with a 419.
+
+`legacy_route_prefixes` keeps senders configured against a pre-1.8.0 release routable.
+Empty it once none are left.
+
+`replay_protection_ttl_seconds` is how long a seen signature is remembered, so a
+captured request cannot be resent.
 
 ::: tip 60 requests a minute is a real limit
 An ESP delivering a burst of bounce notifications can exceed it. Raise it before
