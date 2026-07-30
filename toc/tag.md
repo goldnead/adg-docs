@@ -55,10 +55,12 @@ loop, a global, or a string you assembled yourself.
 | `field` | Name of the field to read. | string | `"article"` |
 | `content` | The content itself: a Bard array, an HTML string, or `null`. | string / array / null | `null` |
 | `from` | The heading level the list starts at. | string | `h1` |
+| `to` | The deepest level the list shows, as an absolute level. Wins over `depth`. | string | `null` |
 | `exclude` | Leave headings out of the list. Comma-separated text, or a delimited regex. | string | `null` |
 | `when` | Switch the tag off without removing it from the template. | bool | `true` |
 
-`exclude` and `when` were added in **1.9**.
+`exclude` and `when` were added in **1.9**, `to` in **2.0**. Every default in this table can
+be changed in [the config file](/toc/installation#configuration).
 
 ### `depth` and `from` together
 
@@ -77,6 +79,21 @@ that case:
 That gives you `h2` and `h3` as a two-level tree, with the `h2`s at root level.
 Leaving `from` at its `h1` default instead would nest every `h2` one level deep
 under nothing, and `is_root` would be `false` for all of them.
+
+### `to`, if the arithmetic annoys you <Badge type="tip" text="2.0" />
+
+`to` says the same thing as `depth` without the counting: it is the deepest level
+the list shows, absolute rather than relative to `from`.
+
+```antlers
+{{# these two are the same list #}}
+{{ toc from="h2" depth="3" }}
+{{ toc from="h2" to="h4" }}
+```
+
+`depth` keeps working and nothing needs changing. When both are given, `to` wins.
+A `to` above `from` is clamped to `from`, so the list never comes back empty
+because of a typo in one of the two.
 
 ### `exclude`
 
@@ -129,11 +146,19 @@ Returns the number of headings found, as an integer.
 {{ /if }}
 ```
 
-::: danger Pass the same parameters, or you count a different set
-`{{ toc:count }}` defaults `depth` to **6**, while `{{ toc }}` defaults it to **3**.
-Called bare next to a default list, it can report headings the list does not show.
+::: warning Changed in 2.0
+`{{ toc:count }}` now counts what the list shows, using the parameters you give it.
+Before 2.0 it forced `depth` to **6** internally and reported every heading in the
+document while the list underneath showed three levels.
 
-Give it the same `field`, `depth` and `from` as the list itself:
+If you used a bare count to ask "does this page have any headings at all", say so:
+
+```antlers
+{{ if {toc:count depth="6"} > 0 }}
+```
+
+If you used it to decide whether to render the list, pass it the list's parameters
+and the two now agree:
 
 ```antlers
 {{ if {toc:count field="article" from="h2" depth="2"} > 3 }}

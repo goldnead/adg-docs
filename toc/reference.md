@@ -17,18 +17,22 @@ Everything the addon exposes, on one page.
 | `field` | string | `"article"` | Name of the field to read |
 | `content` | string / array / null | `null` | The content itself: a Bard array or an HTML string |
 | `from` | string | `h1` | The heading level the tree starts at |
+| `to` | string | `null` | The level the tree stops at, absolute. Wins over `depth` |
 | `exclude` | string | `null` | Comma-separated substrings, or a delimited regex. Matches case-insensitively. |
 | `when` | bool | `true` | Falsy (`false`, `'false'`, `0`, `'0'`) returns an empty list |
 
-`exclude` and `when` require **1.9**.
+`exclude` and `when` require **1.9**, `to` requires **2.0**. Every default is
+configurable in `config/statamic-toc.php` from 2.0 on.
 
 ## `toc:count` tag
 
 `{{ toc:count }}` — returns the number of headings as an integer.
 
-Takes the same parameters as the list, **except that `depth` defaults to `6`, not
-`3`**. Pass `field`, `depth` and `from` explicitly or you will count a different set
-than the list renders.
+Takes the same parameters as the list and counts what the list shows.
+
+**Changed in 2.0.** Before 2.0 it forced `depth` to `6` internally, so a bare count
+next to a default list reported a larger number than the list rendered. To count
+every heading in the document, ask for it: `{{ toc:count depth="6" }}`.
 
 ### Item variables
 
@@ -76,7 +80,9 @@ None. There is no config file and nothing to publish.
 
 ## Requirements
 
-<Requirements php="7.4+" statamic="3.x, 4.x, 5.x or 6.x" laravel="Any version your Statamic supports" database="Not required" />
+<Requirements php="8.2+" statamic="5.x or 6.x" laravel="Any version your Statamic supports" database="Not required" />
+
+The 1.x line stays on PHP 7.4+ and Statamic 3.x through 6.x.
 
 ## Behaviour guarantees
 
@@ -93,20 +99,23 @@ None. There is no config file and nothing to publish.
 - The modifier adds ids to **every** heading it finds, regardless of the tag's
   `from` and `depth`. Deliberate: a link in the list must resolve, and a heading
   outside the list is harmless with an id.
-- Separate `{{ toc }}` calls disambiguate duplicates independently, so the same
-  heading text in two different calls can produce the same id. Concatenate into one
-  variable if that is a risk.
+- Two `{{ toc }}` calls on **different fields** number their duplicates
+  independently, so the same heading text in two fields can produce the same id.
+  Concatenate into one variable if that is a risk. Within one document, 2.0 decides
+  every anchor once, so repeated calls no longer renumber each other.
 - No `{{ toc_html }}` or prebuilt markup. You write the list.
 - No scroll-spy or current-section highlighting. See
   [Recipes](/toc/recipes#highlight-the-current-section).
 - `exclude` drops headings from the **list** only; the modifier still gives them ids.
   That is intended, so an excluded heading remains linkable from elsewhere.
-- `{{ toc:count }}` defaults `depth` to `6` while `{{ toc }}` defaults to `3`. Pass
-  the same parameters to both or they disagree.
+- The `mb_convert_encoding` deprecation notice on PHP 8.2+ is fixed in 2.0. The 1.x
+  line still logs it, because removing it means dropping PHP 7.4.
 
 ## Version notes
 
 | Version | |
 | --- | --- |
+| **2.0** | Requires PHP 8.2 and Statamic 5 or 6; the 1.x line keeps Statamic 3 and 4. Extraction split into `Extractors/{Bard,Html,Markdown}` behind a `Detector`, so content is no longer taken for Markdown because it contains a `#`. Tag and modifier read anchors from **one registry**, so repeated calls on a document stop renumbering each other and `exclude` no longer shifts the anchors of the rest. New `to` parameter and an optional config file. **Breaking:** `{{ toc:count }}` counts what the list shows. The `mb_convert_encoding` deprecation is gone. |
+| **1.10** | Three anchor fixes: ids are injected into `h1`–`h6` rather than stopping at `h3`; the tag's `depth` no longer leaks into the modifier through a shared parser; a heading that already has an id keeps exactly that one and the list links to it. A Tailwind starter-kit partial. |
 | **1.9** | `exclude` and `when` parameters. Headings inside **nested Bard sets** (columns, grids, replicators) are found — before this only top-level nodes were scanned. Headings with inline formatting keep their full text; previously one starting with a mark was dropped and one containing a mark was cut short. Malformed Bard nodes are skipped rather than fatal. Headings that normalise to an empty string are left out. |
 | **1.8** | Statamic 6 support. |

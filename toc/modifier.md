@@ -121,12 +121,12 @@ content twice.
 
 - **Chaining order matters** if you also run other modifiers that rewrite HTML. Put
   `toc` last, so it sees the final markup.
-- **It logs a deprecation on PHP 8.2 and up.** The parser still calls
-  `mb_convert_encoding(..., 'HTML-ENTITIES', ...)`, deprecated since 8.2, so every
-  render writes a notice to your log. Harmless, but it will fill a log file.
-  Removing it means dropping PHP 7.4, so it waits for the v2 line.
+- **On the 1.x line it logs a deprecation on PHP 8.2 and up.** The parser there
+  still calls `mb_convert_encoding(..., 'HTML-ENTITIES', ...)`, deprecated since 8.2,
+  so every render writes a notice to your log. Harmless, but it will fill a log file.
+  Fixed in 2.0; removing it meant dropping PHP 7.4, which is why 1.x keeps it.
 
-::: warning Upgrade to 1.10 if you are on anything older
+::: warning Upgrade to 1.10 or 2.0 if you are on anything older
 Three defects made anchors point at nothing, and all three are fixed in 1.10:
 id injection stopped at `h3`; the tag's `depth` leaked into the modifier through a
 parser shared for the whole request, so `{{ toc depth="1" }}` above an article

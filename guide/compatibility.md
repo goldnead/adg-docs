@@ -10,9 +10,13 @@
 | Node | 18+, and only if you rebuild an addon's CP bundle from source |
 | Database | MySQL 8+, PostgreSQL, SQLite |
 
-Statamic 5 is not supported. LeadHub's v0.3 Control Panel rewrite moved to
-Inertia + Vue 3, which is Statamic 6 only; pin to `^0.2.x` if you are stuck on
+Statamic 5 is not supported by the suite. LeadHub's v0.3 Control Panel rewrite moved
+to Inertia + Vue 3, which is Statamic 6 only; pin to `^0.2.x` if you are stuck on
 Statamic 5, and expect no further releases on that line.
+
+[Table of Contents](/toc/) is the exception, because it has no Control Panel screen
+to be tied to a Statamic version: 2.x runs on Statamic 5 and 6, and the maintained
+1.x line goes back to Statamic 3 on PHP 7.4.
 
 ## Databases
 

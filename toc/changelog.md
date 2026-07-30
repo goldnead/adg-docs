@@ -14,6 +14,59 @@ Cross-version upgrade notes for the whole suite are in
 
 All notable changes to `statamic-toc` will be documented in this file.
 
+## 2026-07-30 v2.0.0
+
+A rewrite of the internals behind an unchanged template API. Every tag parameter and every
+template variable from v1 still works and the output has the same shape; `UPGRADE.md` lists
+every behaviour that differs, and `&#123;&#123; toc:count }}` is the one likely to need an edit.
+
+
+- Requires PHP 8.2 and Statamic 5 or 6. Statamic 3 and 4 stay on the v1 line.
+- `league/commonmark` is a declared dependency instead of something the addon
+  hoped Statamic would bring along.
+- Heading extraction moved out of `Parser` into `Extractors/{Bard,Html,Markdown}`
+  behind one interface, chosen by an explicit `Detector`. Content is no longer
+  taken for markdown because it contains a `#`, and HTML without headings no
+  longer falls through the markdown branch.
+- Extractors report every heading at every level plus any id already on it.
+  Filtering by level moved to the caller, which is what lets the tag and the
+  modifier eventually share one set of headings.
+- Dropped `mb_convert_encoding(..., 'HTML-ENTITIES', ...)`, deprecated since
+  PHP 8.2, and `CommonMarkConverter::convertToHtml()`, deprecated in
+  league/commonmark 2.
+- The tag and the modifier now read their anchors from one shared registry
+  instead of each running its own slug pass. Four defects go away with it:
+  headings below the third level get ids; a `from` above a repeated heading no
+  longer shifts the anchors under it; a hand-written id is used by the list
+  instead of being slugged past; and two modifier calls on one page stop
+  renumbering each other.
+- A heading that already carries an id keeps exactly that one. The old check
+  missed an id in the last attribute position and appended a second, which is
+  invalid HTML and left the anchor pointing nowhere.
+- Excluding a heading from the list no longer changes the anchors of the
+  others.
+- New `to` parameter on the tag, an absolute level: `&#123;&#123; toc from="h2" to="h4" }}`.
+  `depth` keeps working and says the same thing relative to `from`; when both
+  are given, `to` wins.
+- **Breaking:** `&#123;&#123; toc:count }}` counts what the list shows. It used to force
+  the depth to 6 and report a different number than the list right underneath
+  it. Templates that relied on the old number to ask "are there any headings at
+  all" want `&#123;&#123; toc:count depth="6" }}`.
+- Options live in one immutable `Options` object instead of two mutable level
+  fields recomputed from each other. `Parser::flattenFrom()`, an empty stub
+  marked TODO since 2021, is gone.
+- An optional config file for the defaults, `field`, `from`, `depth`, `to` and
+  `flat`. Publish it with `--tag=statamic-toc-config`. Without it the same
+  defaults apply as before. Closes the oldest open issue, #6 from 2021.
+- Removed `package.json`. The addon has no JavaScript and no build step; the
+  file declared an index.js that does not exist, stub scripts that exit with an
+  error, and MIT, which contradicted the actual licence.
+- `UPGRADE.md` documents every behaviour change from v1.
+- CI runs PHP 8.2, 8.3 and 8.4 across Statamic 5 and 6.
+- Carries everything from v1.10, including the three anchor fixes and the guard against a
+  malformed Bard node whose `attrs` arrive as an object. The v1.10 regression tests run
+  unchanged against the rewrite, which is what says the two lines agree.
+
 ## 2026-07-30 v1.10
 
 ### Fixed — three ways an anchor pointed at nothing

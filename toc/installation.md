@@ -2,14 +2,51 @@
 
 <AddonHeader />
 
-<Requirements php="7.4+" statamic="3.x, 4.x, 5.x or 6.x" laravel="Any version your Statamic supports" database="Not required" />
+<Requirements php="8.2+" statamic="5.x or 6.x" laravel="Any version your Statamic supports" database="Not required" />
 
 ```bash
 composer require goldnead/statamic-toc
 ```
 
-That is the whole installation. There is no config file to publish, no migration
-to run, and nothing to build. The tag and the modifier are available immediately.
+That is the whole installation. There is no migration to run and nothing to build.
+The tag and the modifier are available immediately, and the [config file](#configuration)
+is optional.
+
+::: tip On Statamic 3 or 4? Stay on the 1.x line
+2.0 requires PHP 8.2 and Statamic 5 or 6. The 1.x line is maintained for everyone
+else and carries the same anchor fixes:
+
+```bash
+composer require "goldnead/statamic-toc:^1.10"
+```
+
+Both lines take the same templates. See [UPGRADE.md](https://github.com/goldnead/statamic-toc/blob/main/UPGRADE.md)
+for the full list of behaviour differences.
+:::
+
+## Configuration <Badge type="tip" text="2.0" />
+
+Optional. Without it the defaults below apply, which are the ones the addon has
+always used.
+
+```bash
+php artisan vendor:publish --tag=statamic-toc-config
+```
+
+```php
+// config/statamic-toc.php
+return [
+    'field' => 'article',   // the field the tag reads with no field= or content=
+    'from' => 'h1',         // the level the list starts at
+    'depth' => 3,           // how many levels it spans, counted from `from`
+    'to' => null,           // the level it stops at, absolute; wins over depth
+    'flat' => false,        // a flat array instead of a nested tree
+];
+```
+
+A tag parameter always wins over the config. Setting `field` here is the usual
+reason to publish it at all: if your Bard field is called `content` rather than
+`article`, this is where you say so once instead of in every template.
 
 ## Verifying it works
 
@@ -62,6 +99,34 @@ The other three causes, in order of likelihood:
 {{ toc :content="bard" }}       {{# the value of the field #}}
 {{ toc content="{bard}" }}      {{# also the value #}}
 ```
+
+## The starter kit <Badge type="tip" text="1.10" />
+
+A Tailwind-styled partial, if you want a working list before you style your own:
+
+```antlers
+{{ partial:statamic-toc::starter-kit }}
+```
+
+Publish the views to change the markup:
+
+```bash
+php artisan vendor:publish --tag=statamic-toc-views
+```
+
+## Upgrading to 2.0
+
+Every tag parameter and template variable from v1 still works and the output has the
+same shape, so most sites bump the version and are done. Two things need a look:
+
+- **`{{ toc:count }}` counts what the list shows.** It used to force `depth` to 6
+  internally and report a different number than the list right underneath it. See
+  [the count tag](/toc/tag#the-toc-count-tag).
+- **Some ids shift.** Collision suffixes were counted separately per side and per
+  field before 2.0, so a `#titel-2` style anchor you link to from outside may move.
+  Ids you wrote by hand are now used verbatim and never move.
+
+`UPGRADE.md` in the repository lists every difference.
 
 ## Upgrading from 1.8
 
