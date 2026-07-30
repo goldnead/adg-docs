@@ -96,16 +96,31 @@ No blueprint changes at all. Pass the field to the tag as content:
 {{ body | toc }}
 ```
 
-## Bard sets and headings inside them
+## Nested Bard structures
 
-Headings that live inside a Bard **set** — a custom "callout" set with its own
-`title` field, say — are not headings in the rendered content unless your set's
-template renders them as `<h2>`, `<h3>` and so on.
+Headings inside **nested Bard nodes** — columns, grids, replicators — are found.
 
-If it does, and if the modifier runs over the rendered result, they will get ids
-and appear in the tree. If your set renders the title as a `<div>` with a heading
-class, it will not, and no configuration will make it: the addon reads headings,
-not intentions.
+::: warning This needed 1.9
+Before that, only top-level nodes were scanned, so a heading inside a two-column set
+was invisible to the tag while still rendering on the page: the article had a
+section the table of contents did not list.
+
+1.9 also fixed headings with **inline formatting**. A heading starting with a bold
+or linked word used to be dropped entirely, and one containing formatting mid-way
+was cut short at the mark ([#26](https://github.com/goldnead/statamic-toc/issues/26)).
+Malformed Bard nodes — missing `attrs`, empty `content`, a non-numeric level — are
+now skipped rather than fatal.
+
+If you are on 1.8 or earlier and headings are missing from the list but present in
+the article, that is this.
+:::
+
+## Bard sets that render their own headings
+
+A custom set — a "callout" with its own `title` field, say — is only a heading if its
+**template renders one**. If the set outputs `<h2>`, it is in the tree. If it outputs
+a `<div>` with a heading class, it is not, and no configuration will change that: the
+addon reads headings, not intentions.
 
 The practical rule: **if it is a heading in the HTML, it is in the table of
 contents.**

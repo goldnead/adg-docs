@@ -17,6 +17,18 @@ Everything the addon exposes, on one page.
 | `field` | string | `"article"` | Name of the field to read |
 | `content` | string / array / null | `null` | The content itself: a Bard array or an HTML string |
 | `from` | string | `h1` | The heading level the tree starts at |
+| `exclude` | string | `null` | Comma-separated substrings, or a delimited regex. Matches case-insensitively. |
+| `when` | bool | `true` | Falsy (`false`, `'false'`, `0`, `'0'`) returns an empty list |
+
+`exclude` and `when` require **1.9**.
+
+## `toc:count` tag
+
+`{{ toc:count }}` — returns the number of headings as an integer.
+
+Takes the same parameters as the list, **except that `depth` defaults to `6`, not
+`3`**. Pass `field`, `depth` and `from` explicitly or you will count a different set
+than the list renders.
 
 ### Item variables
 
@@ -87,3 +99,14 @@ None. There is no config file and nothing to publish.
 - No `{{ toc_html }}` or prebuilt markup. You write the list.
 - No scroll-spy or current-section highlighting. See
   [Recipes](/toc/recipes#highlight-the-current-section).
+- `exclude` drops headings from the **list** only; the modifier still gives them ids.
+  That is intended, so an excluded heading remains linkable from elsewhere.
+- `{{ toc:count }}` defaults `depth` to `6` while `{{ toc }}` defaults to `3`. Pass
+  the same parameters to both or they disagree.
+
+## Version notes
+
+| Version | |
+| --- | --- |
+| **1.9** | `exclude` and `when` parameters. Headings inside **nested Bard sets** (columns, grids, replicators) are found — before this only top-level nodes were scanned. Headings with inline formatting keep their full text; previously one starting with a mark was dropped and one containing a mark was cut short. Malformed Bard nodes are skipped rather than fatal. Headings that normalise to an empty string are left out. |
+| **1.8** | Statamic 6 support. |

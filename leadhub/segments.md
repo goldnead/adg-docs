@@ -80,26 +80,26 @@ php artisan leadhub:segments:sweep
 ```
 :::
 
-::: danger On multi-brand, the sweep needs a brand or it silently does nothing
-`leadhub:segments:sweep` takes **no `--brand=` option** and does not iterate brands.
-Run bare with multi-brand on, it meets the fail-closed scope, finds no segments, and
-reports success:
+On a multi-brand install the sweep iterates brands, and `--brand=` narrows it:
+
+```bash
+php artisan leadhub:segments:sweep --brand=acme
+```
+
+::: warning Before 1.10.3 the sweep silently did nothing on multi-brand
+It did not iterate brands and took no `--brand`, so it met the fail-closed scope,
+found no segments, and reported success:
 
 ```
-$ php artisan leadhub:segments:sweep
 Swept 0 segment(s): 0 entered, 0 left.
 ```
 
-That reads as "nothing to do" and means "I could not see anything". Wrap it:
+The symptom was a segment list showing **0 members** for rules that clearly matched,
+and campaigns narrowed by a segment sending to nobody. Single-brand installs were
+unaffected, which is why it survived four releases.
 
-```php
-BrandContext::runFor('acme', fn () => Artisan::call('leadhub:segments:sweep'));
-```
-
-The symptom is a segment list showing **0 members** for rules that clearly match
-contacts. A single-brand install is unaffected, which is why it is easy to miss.
-
-The same applies to `leadhub:followups:digest` and `leadhub:followups:due`.
+Fixed in `^1.10.3`, along with `leadhub:followups:digest` and
+`leadhub:followups:due`.
 :::
 
 ## Enter and leave events

@@ -6,15 +6,19 @@
 
 | Command | Purpose |
 | --- | --- |
-| `leadhub:followups:digest` | The daily due/overdue summary mail. Scheduled. |
-| `leadhub:followups:due` | Fires `LeadHubFollowupDue`. Scheduled daily. |
-| `leadhub:segments:sweep` | Re-materialise time-based segment rules. Scheduled daily. |
+| `leadhub:followups:digest [--brand=]` | The daily due/overdue summary mail. Scheduled. |
+| `leadhub:followups:due [--brand=]` | Fires `LeadHubFollowupDue`. Scheduled daily. |
+| `leadhub:segments:sweep [--brand=]` | Re-materialise time-based segment rules. Scheduled daily. |
 | `leadhub:storage:migrate --from= --to= [--dry-run]` | Move data between drivers |
 | `leadhub:stache:warm [--clear]` | Rebuild the flat-driver JSON indexes |
 | `leadhub:brand-integrity [--repair]` | Verify the per-brand unique indexes and rows |
 | `leadhub:scoring:import [--dry-run] [--force] [--brand=]` | Copy the config point table into the per-brand table |
 | `crm:backfill-leadhub [--source=] [--dry-run]` | Replay historical rows through ingestion |
 | `crm:migrate-to-leadhub` | Migrate a bespoke CRM into LeadHub |
+
+All brand-aware commands iterate every brand by default and take `--brand=<handle|id>`
+to narrow the run. The three scheduled ones gained that in **1.10.3**; before it they
+saw an empty database on a multi-brand install and reported success.
 
 ## Facade
 

@@ -55,6 +55,10 @@ loop, a global, or a string you assembled yourself.
 | `field` | Name of the field to read. | string | `"article"` |
 | `content` | The content itself: a Bard array, an HTML string, or `null`. | string / array / null | `null` |
 | `from` | The heading level the list starts at. | string | `h1` |
+| `exclude` | Leave headings out of the list. Comma-separated text, or a delimited regex. | string | `null` |
+| `when` | Switch the tag off without removing it from the template. | bool | `true` |
+
+`exclude` and `when` were added in **1.9**.
 
 ### `depth` and `from` together
 
@@ -73,6 +77,75 @@ that case:
 That gives you `h2` and `h3` as a two-level tree, with the `h2`s at root level.
 Leaving `from` at its `h1` default instead would nest every `h2` one level deep
 under nothing, and `is_root` would be `false` for all of them.
+
+### `exclude`
+
+Leaves individual headings out of the **list**. They still get their ids from the
+[modifier](/toc/modifier), so nothing about the rendered article changes — only the
+navigation is shorter.
+
+A comma-separated string matches **case-insensitively on any part** of the heading
+text:
+
+```antlers
+{{ toc exclude="Introduction, Footnotes" }}
+```
+
+A **delimited pattern** is treated as a regular expression:
+
+```antlers
+{{ toc exclude="/^Appendix/i" }}
+```
+
+::: warning Substring, not equality
+`exclude="Notes"` also removes "Release notes" and "Notes on pricing". If you mean
+the whole heading, anchor a regex: `exclude="/^Notes$/"`.
+
+Empty tokens are skipped, so a trailing comma cannot accidentally match everything.
+An invalid regex falls back to the string match rather than throwing.
+:::
+
+### `when`
+
+Switches the tag off without removing it from the template:
+
+```antlers
+{{ toc :when="show_toc" }}
+```
+
+When it evaluates to `false`, the tag returns an empty list and `no_results` is
+`true` — so the same `{{ if no_results }}` branch you already use for a short article
+also covers "the editor turned it off".
+
+Falsy means `false`, `'false'`, `0` or `'0'`.
+
+## The `toc:count` tag
+
+Returns the number of headings found, as an integer.
+
+```antlers
+{{ if {toc:count field="article" depth="3"} > 0 }}
+  …
+{{ /if }}
+```
+
+::: danger Pass the same parameters, or you count a different set
+`{{ toc:count }}` defaults `depth` to **6**, while `{{ toc }}` defaults it to **3**.
+Called bare next to a default list, it can report headings the list does not show.
+
+Give it the same `field`, `depth` and `from` as the list itself:
+
+```antlers
+{{ if {toc:count field="article" from="h2" depth="2"} > 3 }}
+  {{ toc field="article" from="h2" depth="2" }} … {{ /toc }}
+{{ /if }}
+```
+:::
+
+Inside the tag pair you already have `total_results` and `no_results`, so
+`toc:count` is for deciding things **outside** it — whether to render the surrounding
+`<nav>` and its heading at all. See
+[Recipes](/toc/recipes#hide-the-whole-block-when-there-are-no-headings).
 
 ## Variables on each item
 

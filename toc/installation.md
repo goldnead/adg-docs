@@ -63,6 +63,24 @@ The other three causes, in order of likelihood:
 {{ toc content="{bard}" }}      {{# also the value #}}
 ```
 
+## Upgrading from 1.8
+
+1.9 is worth taking. Two of its fixes change what appears in your list rather than
+only how it behaves:
+
+- **Headings inside nested Bard sets** — columns, grids, replicators — are now found.
+  Before this only top-level nodes were scanned, so a heading inside a two-column set
+  rendered on the page and was missing from the navigation.
+- **Headings with inline formatting** keep their full text. One starting with a bold
+  or linked word was dropped entirely; one containing formatting mid-way was cut
+  short at the mark.
+
+So expect the list to get **longer** after the upgrade. That is the bug being fixed,
+not a regression.
+
+It also adds the [`exclude`](/toc/tag#exclude) and [`when`](/toc/tag#when) parameters
+and the [`toc:count`](/toc/tag#the-toc-count-tag) tag.
+
 ## Upgrading from the old docs
 
 If you arrived here from `goldnead.github.io/statamic-toc`, that site documented

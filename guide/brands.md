@@ -46,25 +46,22 @@ BrandContext::runFor('acme', fn () => Contact::create([...]));
 
 Or use the `RunsForEachBrand` trait in a command that should sweep all of them.
 
-Most of the suite's scheduled commands already do this and accept `--brand=` to
-narrow the run. **Four do not**, and on a multi-brand install they see nothing when
-run bare:
+Every scheduled command in the suite does this and accepts `--brand=` to narrow the
+run — with one deliberate exception:
 
-| Command | `--brand=` | Behaviour with no brand |
+| Command | `--brand=` | |
 | --- | --- | --- |
-| `leadhub:segments:sweep` | **no** | reports `Swept 0 segment(s)` |
-| `leadhub:followups:digest` | **no** | no digest |
-| `leadhub:followups:due` | **no** | no events fired |
-| `activity:prune` | no, by design | runs across all brands — an operator action |
+| `activity:prune`, `activity:anonymize` | no | Deliberate: a retention sweep is an operator action on the whole store, not a brand-scoped query. |
 
-For the three LeadHub commands, wrap the call:
+::: warning LeadHub before 1.10.3
+`leadhub:segments:sweep`, `leadhub:followups:digest` and `leadhub:followups:due` did
+not iterate brands and took no `--brand`. They met the fail-closed scope, queried an
+empty database, and reported success — `Swept 0 segment(s)` reads as "nothing to do"
+and meant "I could not see anything".
 
-```php
-BrandContext::runFor('acme', fn () => Artisan::call('leadhub:segments:sweep'));
-```
-
-`activity:prune` is the deliberate exception: a retention sweep is an operator
-action on the whole store, not a brand-scoped query.
+Fixed in `^1.10.3`. See
+[Queues & scheduling](/guide/queues#multi-brand-and-the-console).
+:::
 
 Explicit cross-brand access is opt-in and deliberately ugly to type:
 

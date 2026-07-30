@@ -88,10 +88,17 @@ BrandContext::runFor($handle, fn () => $this->doTheWork());
 ```
 
 Or use the `RunsForEachBrand` trait for a command that should sweep all of them.
-Most of the suite's commands already do this and accept `--brand=` to narrow the
-run — but `leadhub:segments:sweep`, `leadhub:followups:digest` and
-`leadhub:followups:due` do not, and see nothing when run bare on a multi-brand
-install. See [Queues & scheduling](/guide/queues#multi-brand-and-the-console).
+Every scheduled command in the suite does this and accepts `--brand=` to narrow the
+run.
+
+::: tip Use the trait rather than rolling your own
+Its docblock counts where this has gone wrong before: *"has now been found in four
+separate commands across three addons"* — and LeadHub's three scheduled commands
+were numbers five, six and seven, fixed in `statamic-leadhub` 1.10.3.
+
+The failure mode is always the same and always silent: the command reports
+`0 processed` and exits successfully while doing nothing at all.
+:::
 
 ::: tip Never inherited
 The brand is set explicitly on every request and never carried over from the last

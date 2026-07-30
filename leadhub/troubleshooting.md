@@ -105,17 +105,22 @@ php artisan leadhub:segments:sweep
 
 The rules match contacts, the segment list says **0**, and the sweep reports success.
 
-On a **multi-brand** install this is the sweep never seeing anything:
-`leadhub:segments:sweep` takes no `--brand=` option and does not iterate brands, so
-it meets the fail-closed scope and finds no segments — then says
+On a **multi-brand** install running LeadHub **before 1.10.3**, this is the sweep never
+seeing anything: it did not iterate brands and took no `--brand`, so it met the
+fail-closed scope and found no segments — then said
 `Swept 0 segment(s): 0 entered, 0 left.`, which reads like "nothing to do".
 
-```php
-BrandContext::runFor('acme', fn () => Artisan::call('leadhub:segments:sweep'));
+```bash
+composer update goldnead/statamic-leadhub   # ^1.10.3
+php artisan leadhub:segments:sweep
 ```
 
-The same applies to `leadhub:followups:digest` and `leadhub:followups:due`. A
-single-brand install is unaffected.
+The same applied to `leadhub:followups:digest` and `leadhub:followups:due`. Single-brand
+installs were unaffected.
+
+If you are already on 1.10.3+ and still see zero, the sweep is working and the rules are
+not matching — check the [rule vocabulary](/leadhub/segments#rule-vocabulary), and
+remember that an **empty rule set matches nobody**.
 
 ## A segment matches nobody
 

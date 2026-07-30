@@ -106,29 +106,56 @@ php artisan leadhub:scoring:import --brand=acme
 php artisan notifications:send-digests --frequency=daily --brand=acme
 ```
 
-::: danger Three LeadHub commands do not
-`leadhub:segments:sweep`, `leadhub:followups:digest` and `leadhub:followups:due`
-take no `--brand=` option and do **not** iterate brands. Run bare on a multi-brand
-install they see nothing, and they say so quietly:
+```bash
+php artisan leadhub:segments:sweep --brand=acme
+php artisan leadhub:followups:digest --brand=acme
+php artisan leadhub:followups:due --brand=acme
+```
+
+::: warning Before LeadHub 1.10.3, those last three did nothing
+They did not iterate brands and took no `--brand`, so on a multi-brand install they
+met the fail-closed scope and queried an empty database — then reported success:
 
 ```
 $ php artisan leadhub:segments:sweep
 Swept 0 segment(s): 0 entered, 0 left.
 ```
 
-That reads like "nothing to do" and means "I could not see anything". Wrap the call
-until this is fixed upstream:
+That reads as "nothing to do" and meant "I could not see anything". The visible
+symptom was a segment list stuck at **0 members** for rules that clearly matched,
+campaigns narrowed by a segment sending to nobody, and `LeadHubFollowupDue` never
+firing.
+
+Single-brand installs were never affected, which is why it survived four releases.
+Upgrade to `^1.10.3`; if you cannot yet, wrap the call:
 
 ```php
 BrandContext::runFor('acme', fn () => Artisan::call('leadhub:segments:sweep'));
 ```
-
-On a **single-brand** install all three work as expected, which is why this is easy
-to miss.
 :::
 
-`activity:prune` and `activity:anonymize` also take no `--brand=`, but there it is
-deliberate: they run across all brands as operator actions on the whole store.
+`activity:prune` and `activity:anonymize` take no `--brand=`, and there it is
+deliberate: they query through `withoutGlobalScopes()` and run across all brands as
+operator actions on the whole store.
+
+::: warning Two operator commands are still brand-blind
+`leadhub:storage:migrate` and `automations:sync` do not set a brand. On a multi-brand
+install they meet the same fail-closed scope and will move or sync **nothing**.
+
+Unlike the scheduled commands, you are watching when you run these — a storage
+migration reporting `0 contacts` is obvious rather than silent — so the consequence
+is wasted time, not lost work. Until they iterate brands, wrap them:
+
+```php
+BrandContext::runFor('acme', fn () => Artisan::call('leadhub:storage:migrate', [
+    '--from' => 'eloquent', '--to' => 'flat',
+]));
+```
+
+Both need a decision about per-brand layout before they can iterate on their own —
+where a second brand's YAML and JSON files should live is a design question, not a
+mechanical fix.
+:::
 
 If you write your own command against these addons, wrap the work:
 

@@ -84,28 +84,72 @@ rather than putting the check inside the `<li>`:
 {{ /toc }}
 ```
 
-If that reads awkwardly to you, it is because it is. The cleaner alternative is a
-partial with the count passed in:
+If that reads awkwardly to you, it is because it is. Since 1.9 there is a cleaner
+way: `{{ toc:count }}` gives you the number **outside** the tag pair, so the wrapper
+markup can be branched on normally.
 
 ```antlers
-{{ partial:article/toc :headings="article" }}
+{{ if {toc:count field="article" from="h2" depth="2"} > 0 }}
+  <nav aria-label="Table of contents">
+    <p class="label">On this page</p>
+    <ol>
+      {{ toc field="article" from="h2" depth="2" }}
+        <li><a href="#{{ toc_id }}">{{ toc_title }}</a></li>
+      {{ /toc }}
+    </ol>
+  </nav>
+{{ /if }}
 ```
 
-and inside the partial, one `{{ toc }}` call whose `total_results` you can branch
-on before emitting any wrapper markup.
+::: warning Give `toc:count` the same parameters
+It defaults `depth` to **6**, the list to **3**. Called bare, it can count headings
+the list will not show — and then you render an empty `<nav>` with a heading above
+it, which is the exact thing you were trying to avoid.
+:::
 
 ## Only show it on long articles
 
-A three-heading table of contents is noise. `total_results` is available in the
-tag scope, so gate on it:
+A three-heading table of contents is noise. Gate the whole block on the count:
 
 ```antlers
-{{ toc from="h2" }}
-  {{ if total_results > 3 }}
-    <li><a href="#{{ toc_id }}">{{ toc_title }}</a></li>
-  {{ /if }}
+{{ if {toc:count field="article" from="h2" depth="2"} > 3 }}
+  <nav aria-label="Table of contents"> … </nav>
+{{ /if }}
+```
+
+`total_results` is also available inside the tag scope, but it can only hide the
+items, not the wrapper.
+
+## Let the editor turn it off
+
+`when` switches the tag off without touching the template. Pair it with a toggle
+field on the entry:
+
+```antlers
+{{ toc :when="show_toc" from="h2" }}
+  <li><a href="#{{ toc_id }}">{{ toc_title }}</a></li>
 {{ /toc }}
 ```
+
+With the toggle off the tag returns an empty list and `no_results` is `true`, so the
+same branch that handles a heading-less article handles this too.
+
+## Leave headings out of the list
+
+`exclude` drops headings from the navigation while the modifier still gives them
+ids, so nothing about the article changes:
+
+```antlers
+{{ toc from="h2" exclude="Footnotes, About the author" }}
+```
+
+For anything more precise than a substring, use a delimited regex:
+
+```antlers
+{{ toc from="h2" exclude="/^(Appendix|Notes)$/i" }}
+```
+
+Both require 1.9.
 
 ## Highlight the current section
 
