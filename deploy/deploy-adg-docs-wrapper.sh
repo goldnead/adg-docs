@@ -1,16 +1,20 @@
-#!/usr/bin/env bash
+#!/bin/sh
 #
 # Called by the GitHub webhook, from INSIDE the adriangoldner-webhook container.
 #
-# That container has neither git nor Node, but it does have the Docker socket — so
-# the real work runs in a throwaway `node:22` container with the repo and the webroot
-# bind-mounted. Same pattern as /opt/recipes/deploy-recipes-wrapper.sh, which uses
-# alpine/git for the same reason.
+# POSIX sh, not bash: that container is Alpine and has no bash. (The first version of
+# this script used `#!/usr/bin/env bash` and the hook fired into nothing — webhook
+# reported "triggered successfully" and no log line was ever written.)
+#
+# The container has neither git nor Node either, but it does have the Docker socket —
+# so the real work runs in a throwaway `node:22` container with the repo and the
+# webroot bind-mounted. Same pattern as /opt/recipes/deploy-recipes-wrapper.sh, which
+# uses alpine/git for the same reason.
 #
 # For a manual deploy on the host, use deploy-adg-docs.sh instead: the host has both
 # git and Node 22 and does not need any of this.
 
-set -uo pipefail
+set -u
 
 REPO=/opt/adg-docs
 WEBROOT=/srv/adg-docs
@@ -20,7 +24,8 @@ log() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*" >> "$LOG"; }
 
 log "=== webhook deploy start ==="
 
-# node:22 (bookworm, not -alpine) ships git, which is why it can do both halves.
+# node:22 (bookworm, not -alpine) ships git, which is why one container can do both
+# halves. --network host is not needed; the default bridge reaches GitHub.
 docker run --rm \
     -v "$REPO":/repo \
     -v "$WEBROOT":/webroot \
@@ -50,10 +55,10 @@ docker run --rm \
 
 STATUS=$?
 
-if [ $STATUS -eq 0 ]; then
+if [ "$STATUS" -eq 0 ]; then
     log "=== webhook deploy ok ==="
 else
     log "=== webhook deploy FAILED (exit $STATUS) — live site untouched ==="
 fi
 
-exit $STATUS
+exit "$STATUS"
