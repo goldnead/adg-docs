@@ -169,12 +169,12 @@ deciding what to do: seeing no automations, it concluded the **files** were the
 source of truth, and a bare run could import over automations it could not see.
 :::
 
-::: tip The flat drivers are single-brand
-LeadHub's flat driver has no brand concept at all — `FileStore` is bound to one path
-and nothing in the flat repositories reads or writes a brand. Marketing's flat driver
-*does* isolate by directory and ships `marketing:migrate-flat-brands`.
+::: tip Both flat drivers isolate by directory
+Since Marketing 1.6 and LeadHub **1.11**. Each ships a `…:migrate-flat-brands` command to
+move an existing pre-brand layout into a brand directory; both only ever move, never
+overwrite, and are a no-op on a second run.
 
-If you run multi-brand, use the eloquent driver for LeadHub. See
+Before LeadHub 1.11 its flat driver had no brand concept at all. See
 [LeadHub → Storage drivers](/leadhub/storage#multi-brand-on-the-flat-driver).
 :::
 

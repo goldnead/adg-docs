@@ -149,37 +149,73 @@ consumer reading contact ids from the flat store.
 
 ## Multi-brand on the flat driver
 
-::: danger LeadHub's flat driver is single-brand
-It has **no brand concept at all**. `FileStore` is a singleton bound to one path
-(`leadhub.storage.flat.path`), and nothing in the flat repositories reads or writes a brand.
-`content/leadhub/contacts/` is one undifferentiated set of YAML files.
+Brands live in the **path**, not in the file:
 
-So on a multi-brand install with `LEADHUB_DRIVER=flat`, every brand reads every brand's
-contacts. There is no isolation to lose because there was never any.
+```
+content/leadhub/
+  acme/
+    contacts/{uuid}.yaml
+    events/{uuid}.jsonl
+    tags.yaml
+  contoso/
+    contacts/{uuid}.yaml
+```
 
-**Use the eloquent driver if you run multi-brand.** That is where the per-brand uniqueness,
-the global scope and every CRM-core module live anyway.
+A read never opens another brand's file, and a file in the wrong place is visible in `ls`
+and in a diff.
+
+::: tip Why not a `brand:` key in each file
+A contact's filename is its uuid, so listing one brand's contacts by key would mean opening
+**every other brand's file** to discover it is not yours — an O(all brands) read for every
+query, on the driver whose whole point is that there is no database.
+
+And a missing or misspelt key falls through to the default brand: a leak that reads like a
+typo. With a directory the isolation is structural rather than a filter somebody has to
+remember to apply.
 :::
 
-`leadhub:storage:migrate` enforces this rather than letting you walk into it:
+**Single-brand installs change nothing.** No directory appears, nothing moves, there is
+nothing to run.
 
-- `--to=flat` with more than one brand is **rejected** — migrating a second brand into the
-  same directory would merge the two, and nothing in the files could tell them apart
-  afterwards.
-- `--from=flat` with more than one brand **requires `--brand`**, because one flat store
-  cannot be split across several.
+### The pre-brand layout keeps working
 
-Both need LeadHub **1.10.4**. Before that the command took no brand at all, read an empty
-database through the fail-closed scope, and reported a successful migration of nothing.
+Files still directly under `content/leadhub/` are read as the **default brand's** — and only
+the default brand's, ever. They were written before brands existed, so they belong to the
+brand every existing row was backfilled onto. An install that enables multi-brand never
+opens to an empty contact list.
 
-To keep a brand on flat storage deliberately, give it a directory of its own by pointing
-`leadhub.storage.flat.path` somewhere per brand before you migrate.
+Make the arrangement explicit when a second brand arrives:
 
-::: tip Marketing is the other way round
-Marketing's flat driver **does** isolate by directory — `content/marketing/acme/lists/…` —
-and ships `marketing:migrate-flat-brands` to move an existing single-brand layout into it.
-Do not assume the two addons behave the same here; they do not.
+```bash
+php artisan leadhub:migrate-flat-brands --dry-run   # show the moves
+php artisan leadhub:migrate-flat-brands             # do them
+php artisan leadhub:migrate-flat-brands --brand=acme
+php artisan leadhub:stache:warm --clear             # rebuild the indexes
+```
+
+It only ever **moves**: never overwrites, never deletes, and a second run is a no-op.
+
+### Fail closed
+
+Multi-brand with no current brand — a console run, a queue worker — reads **nothing**, not
+everything. That matches the eloquent driver's global scope, so the two drivers agree about
+the one case where guessing would leak.
+
+### The index is per brand too
+
+`storage/app/leadhub/index/{brand}/…`. A shared index over correctly isolated files would be
+the worst version of this bug: the data on disk right and the answer wrong.
+
+::: warning Requires 1.11.0
+Before that the flat driver had **no brand concept at all** — one directory, no brand in the
+files, so on a multi-brand install every brand read every brand's contacts. If you are on
+1.10.x with `LEADHUB_DRIVER=flat` and multi-brand on, you have no isolation. Upgrade, then
+run `leadhub:migrate-flat-brands`.
 :::
+
+`leadhub:storage:migrate` still refuses to move several brands into one flat store in a
+single run (1.10.4): the guard is about that command, not about where files land, and it
+stays useful now that a per-brand target exists. Migrate one brand at a time.
 
 See [Brands & multi-tenancy](/guide/brands#what-is-scoped-and-what-is-not).
 

@@ -90,23 +90,35 @@ php artisan leadhub:stache:warm --clear    # full rebuild
 
 ## Flat files and brands
 
-A query cannot be scoped, so a flat driver has to isolate by directory instead. **The two
-flat drivers in the suite do not agree on this**, and the difference matters before you
-enable multi-brand:
-
-| Addon | Flat driver under multi-brand |
-| --- | --- |
-| **Marketing** | Isolates by directory, and ships `marketing:migrate-flat-brands` to move an existing layout into it |
-| **LeadHub** | **No brand concept at all.** One directory, no brand in the files — every brand reads every brand's contacts. Use the eloquent driver. |
-| **Webhook Manager** | Isolates by directory |
-
-Marketing's layout:
+A query cannot be scoped, so the flat drivers isolate by **directory** instead — brands live
+in the path, never as a key inside the file:
 
 ```
 content/marketing/
   acme/lists/newsletter.yaml
   contoso/lists/updates.yaml
+
+content/leadhub/
+  acme/contacts/{uuid}.yaml
+  contoso/contacts/{uuid}.yaml
 ```
+
+A read never opens another brand's file, and a file in the wrong place shows up in `ls` and
+in a diff. A `brand:` key would make isolation a filter somebody has to remember, and a
+missing or misspelt one would fall through to the default brand — a leak that reads like a
+typo.
+
+| Addon | Isolates | Migration command | Since |
+| --- | --- | --- | --- |
+| Marketing | by directory | `marketing:migrate-flat-brands` | 1.6 |
+| LeadHub | by directory | `leadhub:migrate-flat-brands` | **1.11** |
+| Webhook Manager | by directory | — | |
+
+::: warning LeadHub before 1.11 had no brand concept in its flat driver
+One directory, no brand in the files, so every brand read every brand's contacts while the
+eloquent driver scoped correctly. If you run `LEADHUB_DRIVER=flat` with multi-brand on,
+upgrade and then run `leadhub:migrate-flat-brands`.
+:::
 
 Files still sitting in the un-prefixed layout are read as the default brand's,
 so a single-brand install that switches multi-brand on keeps working. Move them

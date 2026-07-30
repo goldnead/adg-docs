@@ -11,6 +11,7 @@
 | `leadhub:segments:sweep [--brand=]` | Re-materialise time-based segment rules. Scheduled daily. |
 | `leadhub:storage:migrate --from= --to= [--brand=] [--dry-run]` | Move data between drivers. `--brand` required on a multi-brand install; `--to=flat` refuses with more than one brand. |
 | `leadhub:stache:warm [--clear]` | Rebuild the flat-driver JSON indexes |
+| `leadhub:migrate-flat-brands [--brand=] [--dry-run]` | Move the pre-brand flat layout into a brand directory. Only moves; never overwrites; no-op on a second run. **1.11+** |
 | `leadhub:brand-integrity [--repair]` | Verify the per-brand unique indexes and rows |
 | `leadhub:scoring:import [--dry-run] [--force] [--brand=]` | Copy the config point table into the per-brand table |
 | `crm:backfill-leadhub [--source=] [--dry-run]` | Replay historical rows through ingestion |
@@ -189,6 +190,7 @@ Statamic 5 is not supported from 0.3.0 onward; pin `^0.2.x` if you need it.
 | Segments | pivot table | mirrored onto contact YAML |
 | Sync log table | yes | skipped; timeline entry still written |
 | Queued exports | yes | no |
+| Brand isolation | global scope | by directory, **1.11+** (none before) |
 | Recommended size | any | ≤500 contacts, ≤10k events |
 
 ## Not built yet

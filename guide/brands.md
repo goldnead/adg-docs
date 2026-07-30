@@ -84,19 +84,30 @@ member of every brand.*
 flat driver isolate by directory instead:
 
 ```
-content/marketing/
-  acme/lists/newsletter.yaml
-  contoso/lists/updates.yaml
+content/marketing/            content/leadhub/
+  acme/lists/newsletter.yaml    acme/contacts/{uuid}.yaml
+  contoso/lists/updates.yaml    contoso/contacts/{uuid}.yaml
 ```
 
-A single-brand install keeps the plain `content/marketing/lists/…` layout, and
-files still in it are read as the default brand's even after multi-brand is
-switched on. Move them when a second brand appears:
+The brand is in the **path**, never a key inside the file. A read then never opens
+another brand's file, and a file in the wrong place is visible in `ls` and in a
+diff — where a key would make isolation a filter somebody has to remember, and a
+misspelt one would fall through to the default brand.
+
+A single-brand install keeps the plain un-prefixed layout, and files still in it
+are read as the default brand's — and only the default brand's — even after
+multi-brand is switched on. Move them when a second brand appears:
 
 ```bash
 php artisan marketing:migrate-flat-brands --dry-run
 php artisan marketing:migrate-flat-brands
+
+php artisan leadhub:migrate-flat-brands --dry-run     # LeadHub 1.11+
+php artisan leadhub:migrate-flat-brands
+php artisan leadhub:stache:warm --clear
 ```
+
+Both only ever move, never overwrite, and are a no-op on a second run.
 
 **Public routes** have no session, so a confirmation link in an email would hit
 the fail-closed scope and find nothing. The brand comes from the token in the URL
