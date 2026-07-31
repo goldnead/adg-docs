@@ -84,6 +84,24 @@ blocked.
 Suppression is enforced **at send time**, so a suppressed address is skipped even if the campaign's
 audience includes it.
 
+### Where the answer comes from <Badge type="tip" text="1.8.0" />
+
+From [Suppression](/suppression/), a foundation package shared with every other addon that queues
+mail, rather than from this addon's own state. Every path here that puts a mail on the wire asks it:
+`StartCampaignJob` once per batch, `SendMessageJob` per message, `CampaignSender`, and the double
+opt-in mail. From **1.8.1** the [preference centre](/marketing/concepts#the-preference-centre) asks
+it too, which matters because that page is the one surface that writes consent *back*.
+
+Before 1.8.0 only `StartCampaignJob` checked anything, and what it checked was LeadHub's
+`do_not_contact` rather than the suppression table. An address blocked *during* a long campaign was
+still mailed by a queue that had stopped listening.
+
+::: danger The gate throws rather than answering wrong
+If it cannot answer it raises `SuppressionCheckFailed` instead of returning "not suppressed". A send
+that does not happen is recoverable; a send to a complainant is not. See
+[Asking the gate](/suppression/gate).
+:::
+
 ## ESP feedback webhooks
 
 Bounces and complaints are not something this addon can observe. They come from your provider, and

@@ -32,6 +32,19 @@ It is "collect this, and mention it in the next summary". A type with `['digest'
 notify time, and if nothing runs the digest command, sends none at all.
 :::
 
+### Both mail paths ask the suppression gate <Badge type="tip" text="1.1.0" />
+
+`MailChannel` and the weekly digest both consult [Suppression](/suppression/) before sending, and
+skip a recipient whose address is suppressed. The dependency arrived at `^1.0` in 1.1.0.
+
+This is not a feature this addon asked for. A hard bounce is a property of the **mailbox**, not of
+the relationship that produced the send, so it says nothing about which addon happens to be
+sending. Before 1.1.0 an address [Marketing](/marketing/suppression) had already given up on kept
+receiving assignment notifications and a weekly digest from the same application, damaging the same
+sending reputation.
+
+`in_app` is unaffected. Suppression is about mailboxes, and an in-app row is not one.
+
 ## Digests
 
 ```bash

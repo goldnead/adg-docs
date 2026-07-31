@@ -84,14 +84,23 @@ Store and pass whatever the user typed. The gate handles the rest.
 
 ## Who asks it today
 
-::: warning No released addon consumes this package yet
-Suppression 1.0.0 ships as a standalone foundation. [Marketing](/marketing/suppression)
-currently enforces suppression through its own ESP event processing, and its integration with
-this package is in progress rather than released. [Notifications](/notifications/) does not ask
-at all yet, which is exactly the gap the package exists to close.
+| Addon | Since | Where it asks |
+| --- | --- | --- |
+| [Marketing](/marketing/suppression) | **1.8.0** | Every path that puts a mail on the wire: `StartCampaignJob` (once per batch), `SendMessageJob`, `CampaignSender` and the double opt-in mail in `SubscriptionService` |
+| [Marketing](/marketing/suppression) | **1.8.1** | The preference page, which is the one surface that writes consent **back** |
+| [Notifications](/notifications/) | **1.1.0** | The immediate mail channel and the weekly digest |
 
-Until those land, this is a package you call from your own code.
+Before those releases the same dead mailbox was written to from three or four places that never
+asked, and the one place that did asked a narrower question — LeadHub's `do_not_contact` and the
+subscription's own status, neither of which is the table the gate reads.
+
+::: tip This is the whole argument for the separate package
+A hard bounce is a property of the mailbox, not of the relationship that produced the send, so it
+says nothing about which addon happens to be sending. An address Marketing had given up on kept
+receiving assignment notifications and a weekly digest from the same application, damaging the
+same sending reputation. Had the list lived inside Marketing, that separation would have bought
+nothing.
 :::
 
-Wherever you call it, the rule is the same: immediately before constructing any queued mail,
-once per batch rather than once per recipient.
+In your own code the rule is the same: ask immediately before constructing any queued mail, once
+per batch rather than once per recipient.
