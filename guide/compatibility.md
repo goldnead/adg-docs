@@ -14,9 +14,10 @@ Statamic 5 is not supported by the suite. LeadHub's v0.3 Control Panel rewrite m
 to Inertia + Vue 3, which is Statamic 6 only; pin to `^0.2.x` if you are stuck on
 Statamic 5, and expect no further releases on that line.
 
-[Table of Contents](/toc/) is the exception, because it has no Control Panel screen
-to be tied to a Statamic version: 2.x runs on Statamic 5 and 6, and the maintained
-1.x line goes back to Statamic 3 on PHP 7.4.
+[Table of Contents](/toc/) is the partial exception, because it has no Control Panel
+screen to be tied to a Statamic version: 2.x runs on Statamic 5 as well as 6. Its v1
+line went back to Statamic 3 on PHP 7.4 and is no longer maintained; `v1.10` stays
+installable for anyone already pinned to it.
 
 ## Databases
 

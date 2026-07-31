@@ -12,16 +12,14 @@ That is the whole installation. There is no migration to run and nothing to buil
 The tag and the modifier are available immediately, and the [config file](#configuration)
 is optional.
 
-::: tip On Statamic 3 or 4? Stay on the 1.x line
-2.0 requires PHP 8.2 and Statamic 5 or 6. The 1.x line is maintained for everyone
-else and carries the same anchor fixes:
+::: warning Statamic 3 and 4 are no longer supported
+2.0 requires PHP 8.2 and Statamic 5 or 6, and the v1 line is not maintained any further.
 
-```bash
-composer require "goldnead/statamic-toc:^1.10"
-```
+`v1.10` stays installable — a published tag does not disappear, so an existing
+`composer.json` pinned to it keeps resolving. It will receive no more fixes, and it
+still logs the `mb_convert_encoding` deprecation on PHP 8.2 and up.
 
-Both lines take the same templates. See [UPGRADE.md](https://github.com/goldnead/statamic-toc/blob/main/UPGRADE.md)
-for the full list of behaviour differences.
+If you are on Statamic 3 or 4, the upgrade path is Statamic itself.
 :::
 
 ## Configuration <Badge type="tip" text="2.0" />

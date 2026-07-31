@@ -82,7 +82,8 @@ None. There is no config file and nothing to publish.
 
 <Requirements php="8.2+" statamic="5.x or 6.x" laravel="Any version your Statamic supports" database="Not required" />
 
-The 1.x line stays on PHP 7.4+ and Statamic 3.x through 6.x.
+`v1.10` runs on PHP 7.4+ and Statamic 3.x through 6.x. It stays installable but is no
+longer maintained.
 
 ## Behaviour guarantees
 
@@ -108,14 +109,15 @@ The 1.x line stays on PHP 7.4+ and Statamic 3.x through 6.x.
   [Recipes](/toc/recipes#highlight-the-current-section).
 - `exclude` drops headings from the **list** only; the modifier still gives them ids.
   That is intended, so an excluded heading remains linkable from elsewhere.
-- The `mb_convert_encoding` deprecation notice on PHP 8.2+ is fixed in 2.0. The 1.x
-  line still logs it, because removing it means dropping PHP 7.4.
+- The `mb_convert_encoding` deprecation notice on PHP 8.2+ is fixed in 2.0. `v1.10`
+  still logs it, and will not be fixed there — removing it meant dropping PHP 7.4,
+  which is the whole reason 2.0 exists.
 
 ## Version notes
 
 | Version | |
 | --- | --- |
-| **2.0** | Requires PHP 8.2 and Statamic 5 or 6; the 1.x line keeps Statamic 3 and 4. Extraction split into `Extractors/{Bard,Html,Markdown}` behind a `Detector`, so content is no longer taken for Markdown because it contains a `#`. Tag and modifier read anchors from **one registry**, so repeated calls on a document stop renumbering each other and `exclude` no longer shifts the anchors of the rest. New `to` parameter and an optional config file. **Breaking:** `{{ toc:count }}` counts what the list shows. The `mb_convert_encoding` deprecation is gone. |
+| **2.0** | Requires PHP 8.2 and Statamic 5 or 6. Statamic 3 and 4 support ends here. Extraction split into `Extractors/{Bard,Html,Markdown}` behind a `Detector`, so content is no longer taken for Markdown because it contains a `#`. Tag and modifier read anchors from **one registry**, so repeated calls on a document stop renumbering each other and `exclude` no longer shifts the anchors of the rest. New `to` parameter and an optional config file. **Breaking:** `{{ toc:count }}` counts what the list shows. The `mb_convert_encoding` deprecation is gone. |
 | **1.10** | Three anchor fixes: ids are injected into `h1`–`h6` rather than stopping at `h3`; the tag's `depth` no longer leaks into the modifier through a shared parser; a heading that already has an id keeps exactly that one and the list links to it. A Tailwind starter-kit partial. |
 | **1.9** | `exclude` and `when` parameters. Headings inside **nested Bard sets** (columns, grids, replicators) are found — before this only top-level nodes were scanned. Headings with inline formatting keep their full text; previously one starting with a mark was dropped and one containing a mark was cut short. Malformed Bard nodes are skipped rather than fatal. Headings that normalise to an empty string are left out. |
 | **1.8** | Statamic 6 support. |

@@ -121,10 +121,10 @@ content twice.
 
 - **Chaining order matters** if you also run other modifiers that rewrite HTML. Put
   `toc` last, so it sees the final markup.
-- **On the 1.x line it logs a deprecation on PHP 8.2 and up.** The parser there
-  still calls `mb_convert_encoding(..., 'HTML-ENTITIES', ...)`, deprecated since 8.2,
-  so every render writes a notice to your log. Harmless, but it will fill a log file.
-  Fixed in 2.0; removing it meant dropping PHP 7.4, which is why 1.x keeps it.
+- **On `v1.10` it logs a deprecation on PHP 8.2 and up.** The parser there still calls
+  `mb_convert_encoding(..., 'HTML-ENTITIES', ...)`, deprecated since 8.2, so every
+  render writes a notice to your log. Harmless, but it will fill a log file. Fixed in
+  2.0, and not in v1 — removing it meant dropping PHP 7.4.
 
 ::: warning Upgrade to 1.10 or 2.0 if you are on anything older
 Three defects made anchors point at nothing, and all three are fixed in 1.10:
