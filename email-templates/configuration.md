@@ -32,11 +32,19 @@ configuration.
 'enabled' => true,
 ```
 
-`false` disables the addon's wiring — collection registration, nav entry, preview route — without
-uninstalling.
+`false` skips the boot-time work: the collection and blueprint are no longer ensured, the entry class
+and preview target are no longer set, and the CP nav entry disappears. Existing entries stay on disk,
+untouched.
 
-Safe to flip, because consumers use `EmailTemplates::resolve($slug, $fallback)` and fall back to their
-own file-based bodies. That is the whole reason the resolve API takes a fallback.
+Two things it does **not** turn off: the `/email-templates/live-preview` route stays registered, and
+`email-templates:import` and `EmailTemplates::resolve()` keep working, because they address the
+collection directly.
+
+On an install where no templates were ever created, consumers fall back to their own file-based
+bodies, because `EmailTemplates::resolve($slug, $fallback)` prefers a managed entry and falls back to
+the caller's. That is the whole reason the resolve API takes a fallback. Where entries already exist,
+they still win — see
+[Importing & consuming](/email-templates/importing#consuming-from-a-sibling-addon).
 
 ## `layouts` and `default_layout`
 
@@ -48,16 +56,18 @@ own file-based bodies. That is the whole reason the resolve API takes a fallback
 'default_layout' => 'transactional',
 ```
 
-Named Blade layouts a rendered template body can be wrapped in. The key is the name a consumer or a
-template refers to; the value is a Blade view path.
+Named Blade layouts a rendered template body can be wrapped in. The key is the name a template's
+**Layout** field refers to; the value is a Blade view path. The select on the entry is populated from
+the keys of this map.
 
 This is where the parts every email needs live: the outer table, the header, the footer, the
 `<!doctype>` and the styles a mail client will tolerate. Keep them **out** of the Bard body, so an
 editor cannot accidentally delete the footer and a change to the wrapper reaches every template at
 once.
 
-`default_layout` is used when nothing names one. Leaving it `null` means a bare body, which is fine for
-a fragment and wrong for a standalone email.
+`default_layout` is used when a template names no layout of its own. Leaving it `null` falls through to
+`branded_layout`, and with that unset too, a bare body — fine for a fragment and wrong for a standalone
+email.
 
 ## `branded_layout`
 
@@ -65,10 +75,29 @@ a fragment and wrong for a standalone email.
 'branded_layout' => null,
 ```
 
-A layout that takes precedence, for a multi-brand install where each brand needs its own wrapper. Set it
-to a view path, or resolve it per brand in your own code.
+The **last** step in the layout chain, and the oldest: it predates `layouts` and
+`default_layout` and exists so that installs which only ever had one wrapper keep working
+unchanged.
 
-Leave it `null` on a single-brand site.
+The full precedence, resolved identically by the send path and by Live Preview:
+
+1. The entry's own **Layout** handle, looked up in `layouts`
+2. `default_layout`, looked up in the same map
+3. `branded_layout`
+
+Each step is skipped when it is blank or does not map to anything, so an unknown handle
+falls to the next rather than throwing mid-send. If no step yields a usable view, the body
+is returned unwrapped.
+
+A single-brand site that wants one shell for everything can use `branded_layout` alone and
+never touch `layouts`. That is what it is for.
+
+::: warning It is not brand-aware
+The name is historic. `branded_layout` is a single global config value with no relation to
+[Brand Context](/brand-context/) — this addon does not require it and reads no brand when
+resolving a layout. Per-brand wrappers are your own code's job: bind a config value per
+brand, or give each brand its own `layouts` handle and set it on the entry.
+:::
 
 ## `preview.sample_data`
 
@@ -107,7 +136,12 @@ sample data permanently.
 ## What is not configurable
 
 - **The collection handle.** `et_templates`.
-- **The blueprint fields.** Title, Subject, Body, Plain text, Description.
+- **The set of blueprint fields.** Title, Subject, Preview text, Layout, Body, Plain text,
+  Description. There is no config key that adds or removes one. The blueprint is written to
+  `resources/blueprints/collections/et_templates/email_template.yaml` on first boot and is a
+  file in your repository from then on — the addon only creates it when it is missing, so
+  fields you add there survive. The **Layout** field's options are the one part driven by
+  config, and only at the moment the file is first written.
 - **The merge-variable syntax.** `{{ dotted.key }}`, substituted by
   `Support\MergeVariables::apply()`, identically in the send path and the preview.
 - **Whether unknown tags are hidden.** They are left **visible**, deliberately, so a typo is obvious

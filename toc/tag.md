@@ -59,8 +59,12 @@ loop, a global, or a string you assembled yourself.
 | `exclude` | Leave headings out of the list. Comma-separated text, or a delimited regex. | string | `null` |
 | `when` | Switch the tag off without removing it from the template. | bool | `true` |
 
-`exclude` and `when` were added in **1.9**, `to` in **2.0**. Every default in this table can
-be changed in [the config file](/toc/installation#configuration).
+`exclude` and `when` were added in **1.9**, `to` in **2.0**.
+
+Five of these defaults can be changed site-wide in
+[the config file](/toc/configuration): `field`, `from`, `depth`, `to` and `flat` (the
+config key for `is_flat`). `exclude`, `when` and `content` describe one call rather
+than a site-wide default and are tag parameters only.
 
 ### `depth` and `from` together
 
@@ -92,8 +96,9 @@ the list shows, absolute rather than relative to `from`.
 ```
 
 `depth` keeps working and nothing needs changing. When both are given, `to` wins.
-A `to` above `from` is clamped to `from`, so the list never comes back empty
-because of a typo in one of the two.
+A `to` **shallower** than `from` — `from="h3" to="h2"` — is raised to `from`, so the
+list shows that one level rather than coming back empty because of a typo in one of
+the two. A level below `h6` is clamped to `h6`.
 
 ### `exclude`
 
@@ -179,11 +184,26 @@ Inside the tag pair you already have `total_results` and `no_results`, so
 | `toc_title` | string | The heading text |
 | `toc_id` | string | The slugified title, for the anchor |
 | `id` | int | Internal id, used to link children to parents |
+| `level` | int | The heading's own HTML level: `2` for an `h2` |
 | `is_root` | bool | Whether this heading sits at root level |
+| `is_deepest_children` | bool | Whether this heading sits at the deepest level the list contains |
 | `parent` | int / null | Id of the parent item, if this is a child |
 | `has_children` | bool | Whether this item has children |
 | `children` | array | The child headings |
 | `total_children` | int | Number of children, only when `has_children` is true |
+
+`level` is absolute, so a list built with `from="h2"` has `level` `2` on its root
+items rather than `1`. Useful for indenting by level without walking the tree:
+
+```antlers
+<li class="pl-{{ level }}"><a href="#{{ toc_id }}">{{ toc_title }}</a></li>
+```
+
+`is_root` and `is_deepest_children` are relative to what the list actually holds. They
+are computed from the shallowest and deepest level still present after `from`, `to`,
+`depth` and `exclude` have been applied, so a document whose `h3`s were all excluded
+marks its `h2`s as deepest. Both are set only when true, which is what
+`{{ if is_root }}` expects.
 
 ::: warning It is `toc_title`, not `title`
 `title` would be the obvious name, and it is deliberately not used: inside an

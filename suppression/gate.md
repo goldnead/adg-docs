@@ -12,6 +12,25 @@ public function isSuppressed(string $email, ?int $brandId = null): bool;
 public function suppressedAmong(iterable $emails, ?int $brandId = null): array;
 ```
 
+## Two ways to reach it
+
+```php
+use Goldnead\Suppression\Facades\SuppressionGate;
+use Goldnead\Suppression\Contracts\Gate;
+
+SuppressionGate::isSuppressed($email);   // the facade
+app(Gate::class)->isSuppressed($email);  // the contract, resolved from the container
+```
+
+`SuppressionGate` is a facade over the `suppression.gate` binding, which is the same singleton
+`Gate::class` resolves to. It is registered as a class alias, so `\SuppressionGate::isSuppressed()`
+works too. The two forms are interchangeable; the examples below use the container form because it
+is the one that shows what is actually being depended on.
+
+Type-hint `Gate` in a constructor when you want the dependency visible in the signature, which is
+worth doing in a job or a sender class. Use the facade in a Blade view, a quick check or a tinker
+session.
+
 ## Ask before you construct the send
 
 ```php
@@ -84,7 +103,7 @@ Store and pass whatever the user typed. The gate handles the rest.
 
 ## Who asks it today
 
-| Addon | Since | Where it asks |
+| Package | Since | Where it asks |
 | --- | --- | --- |
 | [Marketing](/marketing/suppression) | **1.8.0** | Every path that puts a mail on the wire: `StartCampaignJob` (once per batch), `SendMessageJob`, `CampaignSender` and the double opt-in mail in `SubscriptionService` |
 | [Marketing](/marketing/suppression) | **1.8.1** | The preference page, which is the one surface that writes consent **back** |

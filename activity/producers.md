@@ -51,6 +51,37 @@ The practical consequence: if a bundled producer already covers an event, your r
 That is how you override one.
 :::
 
+## Registering several at once
+
+`Activity::producers()` returns the `ProducerRegistry`, which takes a whole map in one call:
+
+```php
+use Goldnead\Activity\Facades\Activity;
+
+Activity::producers()->registerMany([
+    // event class => [event type, mapper]
+    OrderPaid::class => ['commerce.purchase_completed', fn (OrderPaid $e) => [
+        'actor' => $e->customer,
+        'dedupe_key' => 'order:'.$e->order->id,
+    ]],
+
+    // or just a mapper, when the mapper returns its own `event_type`
+    OrderRefunded::class => fn (OrderRefunded $e) => [
+        'event_type' => 'commerce.order_refunded',
+        'subject' => $e->order,
+    ],
+]);
+```
+
+Each entry is either a `[string $eventType, Closure $mapper]` pair or a bare `Closure`. Every entry goes
+through `register()`, so the replace-never-add rule above applies unchanged.
+
+This is worth reaching for once a service provider registers more than two or three producers: the shape of
+the whole mapping is then readable in one place instead of spread over a column of calls.
+
+The registry also exposes `has(string $eventClass)`, `registered()` (the registered event class names) and
+`forget()` (clears everything — useful in tests, not in application code).
+
 ## Bundled producers
 
 Two ship with the package and attach themselves **only when the sibling addon is installed**:

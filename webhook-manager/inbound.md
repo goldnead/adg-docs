@@ -39,21 +39,33 @@ CSRF token, so putting it there makes every external delivery fail with a 419.
 
 ## Built-in actions
 
-| Action | Does |
-| --- | --- |
-| Create entry | Creates an entry from the payload |
-| Update entry | Updates an entry by id |
-| Create form submission | Writes a Statamic form submission |
-| Send email | Sends a token-resolved mail |
-| Send outbound webhook | Fires one of your outbound hooks |
-| Send Slack webhook | Posts to a chat destination |
-| Set field value | Sets a field on a record |
-| Write log note | Writes to your Laravel log channel |
-| Dispatch event | Dispatches a Laravel event, so your own listeners take over |
+Eight handlers ship with the addon. An endpoint picks exactly one.
 
-**Dispatch event** is the escape hatch, and often the right choice: it turns an
+| Handle | Does |
+| --- | --- |
+| `create_entry` | Creates an entry from the mapped payload |
+| `update_entry` | Updates an entry by id |
+| `upsert_entry` | Updates a matching entry, creates one if there is none |
+| `create_form_submission` | Writes a Statamic form submission |
+| `dispatch_event` | Dispatches a Laravel event, so your own listeners take over |
+| `audit_log` | Records the request and stops there |
+| `upsert_lead` | Creates or updates a LeadHub contact. Inert when LeadHub is absent |
+| `noop` | Accepts and does nothing |
+
+`noop` and `audit_log` are how you bring an integration up in two steps: point the
+counterparty at the endpoint, confirm real payloads arrive and look the way you were
+promised, then switch the action to the one that writes something.
+
+**`dispatch_event`** is the escape hatch, and often the right choice: it turns an
 inbound webhook into a domain event in your application, and everything after that is
 ordinary Laravel that you can test.
+
+These are not the same list as the **rule** actions (send email, send outbound
+webhook, set field value, and so on). Rules and inbound endpoints have separate action
+sets; see [Rules](/webhook-manager/rules).
+
+Other addons register their own. Marketing adds `marketing.process_esp_event`, used in
+the worked example below.
 
 Register your own handler by implementing
 `Goldnead\WebhookManager\Contracts\InboundActionHandlerInterface`; see
@@ -63,7 +75,7 @@ Register your own handler by implementing
 
 ```php
 'inbound' => [
-    'middleware' => ['web'],
+    'middleware' => [SubstituteBindings::class],
     'max_payload_kb' => 512,
     'rate_limit_per_minute' => 60,
     'replay_protection_ttl_seconds' => 600,
@@ -76,26 +88,65 @@ Register your own handler by implementing
 | `rate_limit_per_minute` | a caller looping |
 | `replay_protection_ttl_seconds` | a captured request being resent |
 
+### The rate limit
+
+The limit is enforced as the **first** step of the inbound pipeline, ahead of the
+method allowlist and ahead of authentication, so an over-eager caller cannot make the
+endpoint do work by getting the credential wrong quickly.
+
+- Counted **per endpoint**, keyed by the endpoint's id. One noisy integration does not
+  throttle the others, and renaming an endpoint does not reset a live counter.
+- Exceeding it answers **429** with a `Retry-After` header.
+- **Every** response out of the endpoint carries `X-RateLimit-Limit` and
+  `X-RateLimit-Remaining`, so a well-behaved sender can slow down before it is
+  rejected rather than after.
+- Rejections are logged as `inbound_rate_limited`, which is what distinguishes a limit
+  from an outage when the counterparty asks.
+
+An endpoint can override the global default:
+
+```json
+{ "per_minute": 300 }
+```
+
+in its **Rate limit** config. The per-endpoint value wins; `0` disables throttling for
+that endpoint. Setting `inbound.rate_limit_per_minute` to `0` disables it everywhere.
+
+The legacy `!/webhooks/inbound` prefix shares the same counter as the canonical URL,
+because the key is the endpoint rather than the route. The old URL is not a way around
+the limit.
+
 ::: warning 60 a minute is a real limit
 An ESP delivering a burst of bounce notifications after a campaign can exceed it
 easily, and the rejected requests look to the ESP like your endpoint being down.
 Raise it before wiring up a high-volume provider.
 :::
 
-## The 419 trap
+## Why the endpoint is not on the `web` stack
 
-`middleware => ['web']` includes CSRF. A POST from an external system has no session
-and no token, so it gets a **419**.
+`inbound.middleware` is the **complete** middleware stack of the route, not a list
+appended to `web`. It holds one entry, `SubstituteBindings`, and that is deliberate.
 
-The addon's route handles this with `withoutMiddleware(ValidateCsrfToken::class)`,
-which is why the shipped endpoint works. It is worth knowing because:
+The `web` group is built for a browser with a session. A webhook sender has neither,
+so `ValidateCsrfToken` answers every real delivery with a **419** before authentication
+is ever consulted, `StartSession` writes a session file per delivery that nothing ever
+reads, and the host application's own additions (Inertia, redirect handling) run on a
+machine endpoint that cannot use them.
 
-- Laravel's CSRF middleware **skips itself automatically in unit tests**, so a fully
-  green test suite says nothing about whether the live endpoint 419s.
-- This exact bug shipped in 1.0.0 and was only found by hitting the URL for real
-  (correct token → 200, wrong token → 401).
+Up to 1.7 the addon dealt with this by removing one member of the group with
+`withoutMiddleware(ValidateCsrfToken::class)`. Since 1.8.0 it declares the whole stack
+instead, so nothing is inherited and nothing has to be undone. Putting `'web'` back
+into `inbound.middleware` restores the 419.
 
-If you add your own public POST route anywhere, test it against a running server.
+The endpoint is not unprotected by this. Authentication is the endpoint's own
+verifier, enforced before parsing, mapping or action dispatch.
+
+::: warning A test suite cannot see a 419
+Laravel's CSRF middleware skips itself automatically in unit tests, so a fully green
+suite says nothing about whether a live endpoint 419s. This exact bug shipped in 1.0.0
+and was only found by hitting the URL for real. If you add your own public POST route
+anywhere, test it against a running server.
+:::
 
 ## Verifying a working endpoint
 

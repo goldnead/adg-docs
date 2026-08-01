@@ -108,10 +108,11 @@ dispatch(new SendWelcome($user->id, IdentityContext::current()->toArray()));
 This is the same rule Activity documents for `recordLater()`: the actor and the
 request context are captured at **dispatch**, never in the worker.
 
-## In the Control Panel
+## In a Statamic Control Panel request
 
-The CP is an ordinary authenticated HTTP context, so `current()` is the logged-in
-user, resolved through the `Authenticatable` branch.
+This package has no Control Panel surface of its own, but plenty of code that uses it
+runs inside one. A CP request is an ordinary authenticated HTTP context, so
+`current()` is the logged-in user, resolved through the `Authenticatable` branch.
 
 ::: warning Do not reach past it
 Once you have an `Identity`, use its fields. Reaching back to the raw auth user to

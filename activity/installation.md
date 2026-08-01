@@ -2,7 +2,7 @@
 
 <AddonHeader />
 
-<Requirements queue="Optional. Only recordLater() uses it." />
+<Requirements laravel="12.x or 13.x" queue="Optional. Only recordLater() uses it." />
 
 ```bash
 composer require goldnead/statamic-activity
@@ -10,9 +10,23 @@ php artisan migrate
 php artisan vendor:publish --tag=activity-config
 ```
 
-Requires `goldnead/statamic-brand-context` and `goldnead/statamic-identity-contracts`. Both are foundation
-packages and **behave inertly** in a single-brand, no-CRM application — Composer will pull them in and you
-will not notice them.
+## What comes with it
+
+Two addons are hard `require` entries, not optional integrations. Composer installs both:
+
+| Package | Constraint | |
+| --- | --- | --- |
+| [`goldnead/statamic-brand-context`](/brand-context/) | `^1.0` | Resolves the brand stamped on every row |
+| [`goldnead/statamic-identity-contracts`](/identity-contracts/) | `^1.0` | Resolves the actor behind every fact |
+
+Both are foundation packages and **behave inertly** in a single-brand, no-CRM application. You will not
+notice them, and there is nothing to configure in either one to get started.
+
+Activity also requires PHP `^8.2`, `laravel/framework` `^12.0|^13.0` and `statamic/cms` `^6.0`. Laravel 11
+is not supported from **1.1.0** onward.
+
+Nothing here needs a `repositories` entry in your project's `composer.json`. Every package in the suite
+resolves from Packagist.
 
 ## What the migration creates
 

@@ -2,7 +2,7 @@
 
 <AddonHeader />
 
-<Requirements queue="Recommended. The mail channel queues delivery." />
+<Requirements php="8.3+" statamic="6.0+" laravel="12.x / 13.x" queue="Only for realtime broadcasts. Mail is sent synchronously." />
 
 ```bash
 composer require goldnead/statamic-notifications
@@ -10,8 +10,26 @@ php artisan migrate
 php artisan vendor:publish --tag=notifications-config
 ```
 
-Requires `goldnead/statamic-brand-context` and `goldnead/statamic-identity-contracts`; both behave inertly in
-a single-brand application.
+::: warning PHP 8.3, not 8.2
+This is the one package in the suite that requires PHP `^8.3`. Everything else takes `^8.2`. An
+8.2 host can install the rest of the family and not this.
+:::
+
+## What it requires
+
+Three sibling packages, all hard requires rather than suggestions:
+
+| Package | Constraint | Why |
+| --- | --- | --- |
+| `goldnead/statamic-brand-context` | `^1.0` | Scopes every row to a brand. Inert in a single-brand application. |
+| `goldnead/statamic-identity-contracts` | `^1.0` | Answers who a recipient is without depending on your user model. |
+| `goldnead/statamic-suppression` | `^1.0` | Answers whether a mailbox may be written to at all. The mail channel and the digest both ask before sending. |
+
+Plus `statamic/cms ^6.0` and `laravel/framework ^12.0|^13.0`. Composer resolves all of them from
+Packagist, so the single `composer require` line above is the whole installation.
+
+`goldnead/statamic-leadhub` is only suggested. When it is present the bundled CRM digest source
+attaches itself; see [Digests](/notifications/digests).
 
 ## Verify the constraints, not just the migration
 
@@ -84,8 +102,22 @@ Without this, `digest`-channel notifications are collected and never sent. Nothi
 php artisan queue:work
 ```
 
-The mail channel queues delivery, so without a worker a `mail` notification is recorded and never sent —
-and notifying is fail-safe, so nothing complains.
+::: warning The mail channel does not queue
+`MailChannel` calls `Mail::to($address)->send(…)` and `NotificationMail` is a plain `Mailable`
+without `ShouldQueue`, so **an immediate mail is sent inline, inside the request or command that
+called `notify()`**. The digest command sends the same way. No worker is involved and none is
+needed for mail to arrive.
+
+The practical consequence is a latency one, not a delivery one: a request that notifies twenty
+people waits for twenty SMTP round trips. If that matters, queue the work that calls `notify()`,
+or push the mailable onto the queue yourself by overriding the `mail` channel binding — see
+[Types](/notifications/types).
+:::
+
+What a worker **is** needed for is realtime: `NotificationReceived` implements `ShouldBroadcast`,
+so the broadcast goes through the queue. Without a worker the bell simply does not update live,
+and everything else — the persisted row, the mail — is unaffected. Realtime is off by default; see
+[Realtime](/notifications/realtime).
 
 ## Verify it works
 

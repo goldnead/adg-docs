@@ -72,10 +72,16 @@ UUID into `0`, which collapses every record onto one recipient.
 
 ## Pseudonymisation
 
-`Identity::pseudonymised()` drops `email`, `name` and `meta` while keeping the
-join keys. That is what a consumer calls to honour a retention rule without
-losing the ability to count what happened, and it is the mechanism behind
-`activity:anonymize`. See [Privacy & retention](/guide/privacy).
+`Identity::pseudonymised()` returns a copy of an Identity without `email`,
+`name` and `meta`, while keeping the join keys. It is what a consumer calls to
+honour a retention rule without losing the ability to count what happened.
+
+It is **not** what `activity:anonymize` does. That command works on stored rows
+rather than on an Identity, and it nulls the join keys along with everything
+else, so a query by `contact_uuid` finds nothing afterwards. The two are easy
+to confuse and are not interchangeable. See
+[Privacy & retention](/guide/privacy) and
+[Activity → Privacy & retention](/activity/privacy).
 
 ## Anonymous visitors
 

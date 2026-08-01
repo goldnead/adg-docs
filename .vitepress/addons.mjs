@@ -10,7 +10,18 @@
  *
  * `pages` lists only the middle, addon-specific block. The two fixed blocks are
  * generated in `addonSidebar()`, which is what keeps the sections uniform.
+ *
+ * `statamic` and `php` are the chips `AddonHeader.vue` renders. They used to be
+ * hardcoded in that component, which quietly made four claims that were not
+ * true: Table of Contents also runs on Statamic 5, Identity Contracts needs no
+ * Statamic at all, Suppression only inherits it through Brand Context, and
+ * Notifications needs PHP 8.3 rather than 8.2. Both fields default to the
+ * common case, so only the exceptions carry a value.
  */
+
+/** Chip defaults, overridden per addon where the package disagrees. */
+export const STATAMIC_DEFAULT = 'Statamic 6'
+export const PHP_DEFAULT = 'PHP 8.2+'
 
 export const LAYERS = {
   foundation: 'Foundation',
@@ -35,6 +46,7 @@ export const addons = [
       { text: 'Scoping models', link: 'scoping' },
       { text: 'Brand members', link: 'members' },
       { text: 'Public routes', link: 'public-routes' },
+      { text: 'Extension points', link: 'extending' },
     ],
   },
   {
@@ -46,6 +58,7 @@ export const addons = [
     tagline:
       'One stable answer to "who did this?", so addons never depend on your User model.',
     icon: '◍',
+    statamic: 'Laravel only',
     troubleshooting: false,
     pages: [
       { text: 'The Identity object', link: 'identity-object' },
@@ -62,11 +75,13 @@ export const addons = [
     tagline:
       'The authoritative answer to "may we send to this address at all?", shared by every addon that queues mail.',
     icon: '⊘',
+    statamic: 'Statamic 6, via Brand Context',
     troubleshooting: false,
     pages: [
       { text: 'Asking the gate', link: 'gate' },
       { text: 'Recording and releasing', link: 'recording' },
       { text: 'Brands and scope', link: 'brands' },
+      { text: 'Extension points', link: 'extending' },
     ],
   },
   {
@@ -155,6 +170,23 @@ export const addons = [
     ],
   },
   {
+    slug: 'preference-center',
+    name: 'Preference Center',
+    package: 'goldnead/statamic-preference-center',
+    layer: 'crm',
+    license: 'MIT',
+    tagline:
+      'One public page for lists, notification types, cadence and blocks. No account, no Control Panel.',
+    icon: '☑',
+    pages: [
+      { text: 'The page', link: 'the-page' },
+      { text: 'Magic links', link: 'magic-links' },
+      { text: 'Sources', link: 'sources' },
+      { text: 'Extending', link: 'extending' },
+      { text: 'Migrating from Marketing', link: 'migrating-from-marketing' },
+    ],
+  },
+  {
     slug: 'email-templates',
     name: 'Email Templates',
     package: 'goldnead/statamic-email-templates',
@@ -197,6 +229,7 @@ export const addons = [
     tagline:
       'Persisted notifications with per-type preferences, in-app, mail and deduplicated digests.',
     icon: '◈',
+    php: 'PHP 8.3+',
     pages: [
       { text: 'Concepts', link: 'concepts' },
       { text: 'Notifying', link: 'notifying' },
@@ -215,7 +248,7 @@ export const addons = [
     license: 'Commercial',
     tagline: 'Automatic table of contents for Bard, Markdown and any HTML content.',
     icon: '⌗',
-    configuration: false,
+    statamic: 'Statamic 5 or 6',
     troubleshooting: false,
     pages: [
       { text: 'The toc tag', link: 'tag' },

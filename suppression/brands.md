@@ -2,7 +2,7 @@
 
 <AddonHeader />
 
-Every other addon in this family scopes a row to a brand and stops there. This one asks a
+Every other package in this family scopes a row to a brand and stops there. This one asks a
 sharper question first: **is this fact about the mailbox, or about the relationship?**
 
 ## Which facts cross the boundary

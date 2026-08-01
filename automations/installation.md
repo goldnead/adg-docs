@@ -2,14 +2,26 @@
 
 <AddonHeader />
 
-<Requirements laravel="11.x, 12.x or 13.x" queue="Required. Anything but sync." />
+<Requirements laravel="12.x or 13.x" database="MySQL or SQLite" queue="Required. Anything but sync." />
 
 ```bash
 composer require goldnead/statamic-automations
 php artisan migrate
 ```
 
-That is it. The addon ships its compiled Control Panel assets (Inertia + Vue 3) under
+## What comes with it
+
+Two packages are hard dependencies and install alongside it:
+
+| Package | Why |
+| --- | --- |
+| `goldnead/statamic-brand-context` | Automations, runs and templates are brand-scoped. A migration adds a required `brand_id` to the automations table, so this is not optional even on a single-brand site. |
+| `inertiajs/inertia-laravel` | The Control Panel screens are Inertia pages. |
+
+Neither needs configuring for a single-brand install. Brand Context ships its own
+migrations, which the `migrate` above runs.
+
+The addon ships its compiled Control Panel assets (Inertia + Vue 3) under
 `resources/dist/build/`, and Statamic publishes them to your site's
 `public/vendor/statamic-automations/` automatically on install. **There is no end-user
 build step.**
@@ -43,13 +55,13 @@ php artisan queue:work --queue=automations,default
 
 ## The scheduler is not optional either
 
-Three commands are registered:
+Two commands are registered with Laravel's scheduler automatically, both every minute and
+`withoutOverlapping`:
 
 | Command | What it does | Without the scheduler |
 | --- | --- | --- |
-| `automations:run-due` | Resumes runs whose delay has elapsed | Delayed runs wait forever |
+| `automations:run-due` | Resumes runs whose delay or wait window has elapsed | Delayed runs wait forever |
 | `automations:run-scheduled` | Starts time-triggered automations | They never start |
-| `automations:prune` | Deletes runs past 30 days | The runs table grows without bound |
 
 ```bash
 php artisan schedule:work    # or a cron entry calling schedule:run
@@ -58,10 +70,21 @@ php artisan schedule:work    # or a cron entry calling schedule:run
 The first failure is the quiet one: a flow with a three-day delay sits in a waiting
 state indefinitely, and nothing anywhere reports a problem.
 
+::: warning Pruning is yours to schedule
+`automations:prune` is **not** registered with the scheduler. Without an entry of your
+own the runs table grows without bound:
+
+```php
+// routes/console.php
+Schedule::command('automations:prune')->daily();
+```
+:::
+
 ## Verifying the install
 
-1. CP → **Automations**. The section should be there.
-2. Install a [template](/automations/templates) — one click, and you have a valid flow.
+1. CP → **Automations** in the Tools section. Its children are *Dashboard*,
+   *Automations*, *Runs*, *Audit log*, *Automation templates*, *Import* and *Settings*.
+2. Open **Automation templates** and install one — one click, and you have a valid flow.
 3. **Test** it. Test mode performs no real side effects by default.
 4. Look at the run log.
 

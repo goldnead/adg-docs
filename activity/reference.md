@@ -6,13 +6,19 @@
 
 | Command | Purpose |
 | --- | --- |
-| `activity:prune --days= [--dry-run]` | Delete rows past a retention window |
-| `activity:anonymize [--contact=] [--user=] [--anonymous-id=] [--days=]` | Strip personal fields, keep the fact |
+| `activity:prune [--days=] [--dry-run]` | Delete rows past a retention window |
+| `activity:anonymize [--contact=] [--user=] [--anonymous-id=] [--days=] [--dry-run]` | Null the identifying columns, keep the row |
 
 Both run across **all brands**. Neither is scheduled for you — a ledger's retention period is a policy
 decision.
 
-`anonymize` is idempotent.
+`prune` needs either `--days`, a `retention.days` value or at least one `retention.per_event_type` entry;
+with none of the three it reports that nothing is configured and exits.
+
+`anonymize` needs at least one of `--contact`, `--user`, `--anonymous-id` or `--days`; with none it refuses
+rather than sweeping the table. `--days` falls back to `retention.anonymize_after_days`.
+
+`anonymize` is idempotent: rows already marked `anonymized` are excluded from the query.
 
 ## Facade
 
@@ -22,21 +28,42 @@ use Goldnead\Activity\Facades\Activity;
 
 | Method | Purpose |
 | --- | --- |
-| `record($type, array $attributes = [])` | Write a fact. Never throws. |
-| `recordLater($type, array $attributes = [])` | Queue the write. Context captured **at dispatch**. |
-| `registerProducer($eventClass, $mapper, $type = null)` | Map a domain event. **Replaces** an existing mapper. |
+| `record(string $type, array $attributes = [])` | Write a fact. Never throws. Returns the `Activity` or `null`. |
+| `recordLater(string $type, array $attributes = [])` | Queue the write. Context captured **at dispatch**. Returns `void`. |
+| `write(ActivityData $data, bool $hydrate = true)` | Persist a `ActivityData` you built yourself. Pass `false` to skip actor resolution and context capture. |
+| `hydrate(ActivityData $data)` | Resolve the actor, capture context and fill the brand, without writing. Returns the completed `ActivityData`. |
+| `registerProducer(string $eventClass, Closure $mapper, ?string $type = null)` | Map a domain event. **Replaces** an existing mapper. |
+| `producers()` | The `ProducerRegistry` itself — for `registerMany()`, `has()`, `registered()`, `forget()` |
 | `query()` | Brand-scoped Eloquent builder |
+| `enabled()` | Whether recording is on (`activity.enabled`) |
+
+`write()` and `hydrate()` are the seam for a producer that has already assembled the data and does not want
+`record()` to re-derive any of it. `hydrate($data)` then `write($data, hydrate: false)` gives you the chance
+to inspect or adjust the completed row between the two steps.
 
 ### `record()` attributes
 
 | Key | Type |
 | --- | --- |
 | `actor` | `Identity` \| `ProvidesIdentity` \| `Authenticatable` \| email string |
-| `subject` | any Eloquent model |
+| `subject` | any Eloquent model — fills `subject_type` and `subject_id` |
+| `subject_type` · `subject_id` | strings, if you want to set them without a model |
+| `contact_uuid` | string — the LeadHub contact this is *about*, which is often not the actor |
+| `user_id` | string |
+| `anonymous_id` | string |
+| `session_id` | string |
+| `source` | string — used instead of the configured `activity.source` |
+| `brand_id` | int — used instead of the current brand |
 | `dedupe_key` | string \| **null** (never `''`) |
 | `event_id` | string |
 | `properties` | array |
+| `context` | array — merged over whatever `ContextCapture` collects; your keys win |
 | `occurred_at` | datetime |
+
+`contact_uuid`, `user_id` and `anonymous_id` are explicit join keys and take precedence over the ones the
+actor would have supplied. That distinction is the point: a CP user changing a contact's status is the
+actor, and the contact is who the fact is *about*. The bundled LeadHub producer sets `contact_uuid` for
+exactly this reason.
 
 ### Query scopes
 
@@ -54,6 +81,24 @@ use Goldnead\Activity\Facades\Activity;
 
 From `goldnead/statamic-identity-contracts`: `ContactLocator` (email → contact UUID) and
 `AnonymousIdResolver` (the pseudonymous visitor id).
+
+## Events
+
+| Event | Fired |
+| --- | --- |
+| `Goldnead\Activity\Events\ActivityRecorded` | Once per fact **actually written**, carrying the `Activity` as `$activity` |
+
+A deduplicated write returns the row that already existed and fires **nothing**. To a read model that is not
+a new event, and treating it as one is how a downstream counter double-counts. **1.1+**
+
+```php
+Event::listen(ActivityRecorded::class, function (ActivityRecorded $event) {
+    MyReadModel::apply($event->activity);
+});
+```
+
+This is the hook to build a read model on. Polling the table is the alternative, and it is worse in every
+respect.
 
 ## Exceptions
 
@@ -102,7 +147,11 @@ in the brand would collapse onto one row.
 | Permission | Grants |
 | --- | --- |
 | `view activity` | the read-only inspector at **Tools → Activity** |
-| `manage activity retention` | the prune and anonymise operations |
+
+One permission, because there is one thing to permit. Retention and anonymisation are artisan-only paths,
+and artisan does not consult Gates, so there is nothing a second permission could govern. A
+`manage activity retention` permission existed up to **1.0.6** and was checked nowhere; it was removed in
+**1.1.0**. Anyone who can run `php artisan` can run both commands, and access to the console is the control.
 
 ## Bundled producers
 
@@ -155,10 +204,22 @@ ACTIVITY_CP=true
 
 ## Requirements
 
-<Requirements queue="Optional. Only recordLater() uses it." />
+<Requirements laravel="12.x or 13.x" queue="Optional. Only recordLater() uses it." />
 
-Requires `goldnead/statamic-brand-context` and `goldnead/statamic-identity-contracts`. Both behave inertly in
-a single-brand, no-CRM application.
+Every entry below is a hard `require`, installed automatically by
+`composer require goldnead/statamic-activity`:
+
+| Package | Constraint |
+| --- | --- |
+| `php` | `^8.2` |
+| `laravel/framework` | `^12.0\|^13.0` |
+| `statamic/cms` | `^6.0` |
+| [`goldnead/statamic-brand-context`](/brand-context/) | `^1.0` |
+| [`goldnead/statamic-identity-contracts`](/identity-contracts/) | `^1.0` |
+
+Brand Context and Identity Contracts are not optional integrations: Activity resolves the brand and the
+actor through them on every write. Both behave inertly in a single-brand, no-CRM application, so you do not
+have to configure either one.
 
 ## Guarantees
 

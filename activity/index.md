@@ -44,7 +44,7 @@ by recording a correcting one.
 
 ## Privacy, by construction
 
-- **No raw user agent, ever.** Only a coarse category: `mobile`, `desktop`, `tablet`, `bot`.
+- **No raw user agent, ever.** Only a coarse category: `mobile`, `desktop`, `tablet`, `bot` or `unknown`.
 - **No IP addresses.** Derive a country upstream and pass it explicitly if you need one.
 - **A sanitizer runs on every write.** Secret-shaped keys are redacted at any depth; oversized payloads get
   a visible marker rather than silent truncation.

@@ -12,6 +12,69 @@ Release notes for `goldnead/statamic-brand-context`, as published with the packa
 Cross-version upgrade notes for the whole suite are in
 [Upgrading](/guide/upgrading).
 
+## 1.7.0 — 2026-08-01
+
+### Added
+
+- **Larastan at level 5**, with a committed baseline holding the eight pre-existing findings. New
+  code has to pass without adding to it.
+- **A Vitest suite for the two Vue components** — the only part of the package no PHP test can
+  reach, and one of them, `BrandSwitcher`, renders on every Control Panel page. The test that earns
+  its keep covers the teleport fallback: the switcher is placed by querying core's own header
+  markup, and if that markup changes the fallback is all that stands between a multi-brand user and
+  no way to change brand.
+- **`SECURITY.md`** with a private reporting address.
+
+### Fixed
+
+- **The brand switcher read its config through four different code paths**, three of which do not
+  exist in Statamic 6. They could not all be right, and the wrong ones turned "the data never
+  arrived" into a switcher that was quietly absent. It now reads `config.get('brandContext')` from
+  `@statamic/cms/api` and logs an actionable error when that comes back empty.
+- **Two switcher strings were English literals inside `__()`.** `Switch brand` and `Brand` now
+  resolve through `brand-context::messages`, so a German Control Panel gets German.
+
+## 1.6.0 — 2026-07-31
+
+The release that makes this package installable by someone who is not its author.
+
+### Fixed — the declared Laravel range was never installable
+
+`laravel/framework` was declared `^11.0|^12.0|^13.0`. Statamic 6 requires `^12.40|^13.0`, so the
+Laravel 11 half of that promise could never resolve on a Statamic 6 site. **The constraint is now
+`^12.40|^13.0`,** and because eight addons hard-require this package, that floor applies to most of
+the suite. The first CI run this package ever had is what surfaced it: every Laravel 11 cell failed
+at dependency resolution while every Laravel 12 cell passed.
+
+The same class of problem turned up twice more: Pest was pinned below what Laravel 13 needs, and
+`pixelfear/composer-dist-plugin` was missing from `config.allow-plugins`, which aborted any
+`prefer-lowest` install.
+
+### Fixed — `inertiajs/inertia-laravel` was never declared
+
+The Brand Members controller imports `Inertia\Inertia` and the package only ever got it transitively
+through `statamic/cms`. It is now a real `require` at `^2.0`.
+
+### Fixed — the Vite hot file pointed somewhere Vite never writes
+
+The provider looked for the dev-server hot file in `public/`, while Vite writes it next to the
+bundle. `npm run dev` therefore did nothing and every Control Panel change needed a full rebuild.
+
+### Changed
+
+- **Removing a user from a brand is confirmed.** Assigning stays a single click. Losing brand access
+  is not recoverable from that screen: the user drops out of every brand-scoped listing, and if it
+  was their only membership they fall back to counting as a member of *every* brand — a different
+  state than they were in before.
+- **The Brand Members screen is translatable.** Every string on it was an English literal passed to
+  `__()`. They are now `brand-context::messages.*` keys with `en` and `de`, and the screen has a
+  proper empty state.
+- **The middleware fallback is no longer silent.** Appending `SetBrandFromSession` instead of
+  inserting it reintroduces the exact bug the method exists to prevent, so it now throws in `local`
+  rather than degrading quietly.
+- `LICENSE.md`, CI across the PHP and Laravel range plus a real MySQL leg, Pint, and a
+  `.gitattributes` that keeps the test suite and Vite sources out of the installed package.
+
 ## 1.5.1 — 2026-07-28
 
 ### Added — the suite can finally be run against MySQL

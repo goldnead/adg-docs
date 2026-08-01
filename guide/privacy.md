@@ -1,9 +1,11 @@
 # Privacy & retention
 
-Four addons in the suite store personal data: LeadHub (contacts), Marketing
-(subscriptions and message events), Activity (facts about people) and
-Notifications (what somebody was told). This page collects the guarantees and
-the levers, because a GDPR question is never about one addon.
+Five packages in the suite store personal data: LeadHub (contacts), Marketing
+(subscriptions and message events), Activity (facts about people),
+Notifications (what somebody was told) and Suppression (addresses that must not
+be mailed). A sixth, Preference Center, stores nothing of its own but is the
+page a data subject actually uses. This page collects the guarantees and the
+levers, because a GDPR question is never about one addon.
 
 ## What is deliberately not collected
 
@@ -84,6 +86,23 @@ Marketing can also propagate an unsubscribe into a global opt-out:
 Turn it on if unsubscribing from one newsletter should mean "do not contact me at
 all". Leave it off if your lists are genuinely separate consents.
 
+### Where the data subject exercises the choice
+
+Two paths, and they are deliberately not the same thing:
+
+- **Unsubscribing** is Marketing's, unconditionally: a tokenised link in the
+  footer and an RFC 8058 one-click endpoint that mail providers POST to
+  unattended. It works with no other package installed, because ending a
+  subscription is a legal obligation and may not depend on an optional addon.
+- **Changing preferences** — lists, notification types, cadence, block state —
+  belongs to [Preference Center](/preference-center/), when it is installed.
+  Marketing resolves its footer links to that page automatically.
+
+From Marketing 1.9.0, Marketing no longer serves a preference page of its own.
+If you are upgrading, read
+[Migrating from Marketing](/preference-center/migrating-from-marketing): links
+already sitting in sent mail point at a route that no longer exists.
+
 ### Verifying the consent guarantee
 
 ```bash
@@ -108,16 +127,25 @@ php artisan activity:prune --days=365 [--dry-run]
 php artisan activity:anonymize --contact=<uuid> [--user=] [--anonymous-id=] [--days=]
 ```
 
-`prune` deletes rows. `anonymize` strips the personal fields and keeps the
-countable fact, which is usually the right answer: the purchase still happened,
-the person is no longer identifiable in the ledger. It is idempotent, so a second
-run over the same rows is a no-op.
+`prune` deletes rows. `anonymize` keeps the row and the countable fact, which is
+usually the right answer: the purchase still happened, the person is no longer
+identifiable in the ledger. It is idempotent, so a second run over the same rows
+is a no-op.
 
 Both run across **all brands**. They are operator actions on the whole store, not
 brand-scoped queries.
 
-The mechanism underneath is `Identity::pseudonymised()`, which drops `email`,
-`name` and `meta` while keeping the join keys.
+::: warning `anonymize` also drops the join keys
+It is worth being precise about what survives, because the name suggests less
+than the command does. `activity:anonymize` nulls `contact_uuid`, `user_id`,
+`anonymous_id`, `session_id`, `actor_id`, `properties` and `context`. What
+remains is the event type, the timestamp and the brand.
+
+That means a query by `contact_uuid` finds nothing after the run. If you need
+per-person counts to survive anonymisation, take them before you run it. This
+is not `Identity::pseudonymised()`, which keeps the join keys; the command does
+not use it. See [Activity → Privacy & retention](/activity/privacy).
+:::
 
 ## Immutability
 
@@ -134,14 +162,21 @@ work around: a ledger you can quietly edit is not a ledger.
 | --- | --- | --- |
 | Activity | `activity:prune --days=` | `retention` config, no automatic schedule |
 | Activity | `activity:anonymize` | manual, per subject |
-| Webhook Manager | `webhook-manager:prune` | scheduled daily |
-| Automations | `automations:prune` | `runs.prune_after_days`, default 30, `null` disables |
+| Webhook Manager | `webhook-manager:prune` | **not scheduled**; you register it |
+| Automations | `automations:prune` | `runs.prune_after_days`, default 30, `null` disables — **not scheduled**; you register it |
 | LeadHub | archive or delete a contact | manual |
-| Notifications | — | no automatic pruning in v1 |
+| Notifications | — | no automatic pruning |
 
-Deliveries and run logs are the two tables that grow fastest, and both are pruned
-by default. Activity is not: a ledger's retention period is a policy decision, so
-you have to state it.
+::: warning Nothing here prunes itself
+Deliveries and run logs are the two tables that grow fastest, and neither
+`webhook-manager:prune` nor `automations:prune` is on any scheduler. Both were
+described as scheduled daily on this page and elsewhere, and neither ever was.
+Register them yourself, or the tables grow without limit. See
+[Queues & scheduling](/guide/queues#what-is-scheduled).
+
+Activity is deliberate rather than accidental: a ledger's retention period is a
+policy decision, so you have to state it.
+:::
 
 ## What is not built yet
 

@@ -16,8 +16,9 @@ works on it, and the slug is a stable reference any addon can resolve.
 
 ## What it does
 
-- Registers a native `et_templates` collection and blueprint: **Title**, **Subject**, **Body** (Bard),
-  optional **Plain text**, **Description**. The **slug** is the stable, cross-addon reference.
+- Registers a native `et_templates` collection and blueprint: **Title**, **Subject**, **Preview text**,
+  **Layout**, **Body** (Bard), optional **Plain text**, **Description**. The **slug** is the stable,
+  cross-addon reference.
 - Adds a CP nav entry under Content, pointing at the native collection listing.
 - `email-templates:import` pulls file-based templates from sibling addons into entries, preserving the
   slug 1:1.
@@ -61,6 +62,11 @@ the preview, so typos are obvious rather than silently empty.
 Substitution is centralised in `Support\MergeVariables::apply()`, which means the send path and the
 preview replace tags identically — only the supplied data differs. See
 [Merge variables](/email-templates/merge-variables).
+
+The **Preview text** field goes through the same pass. It becomes a hidden preheader snippet
+prepended to the body, so the line the inbox shows next to the subject can be personalised
+without a second substitution path. See
+[Authoring → Preview text](/email-templates/authoring#preview-text).
 
 ## What it is not
 

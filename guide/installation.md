@@ -28,6 +28,7 @@ would.
 | [Automations](/automations/installation) | yes | yes |
 | [LeadHub](/leadhub/installation) | yes (eloquent driver) | yes |
 | [Marketing](/marketing/installation) | yes (runtime data always) | yes |
+| [Preference Center](/preference-center/installation) | no | no, four public pages instead |
 | [Email Templates](/email-templates/installation) | no (a Statamic collection) | yes |
 | [Activity](/activity/installation) | yes | yes, read-only |
 | [Notifications](/notifications/installation) | yes | yes, read-only |
@@ -57,20 +58,38 @@ defaults are the documented ones.
 ```bash
 php artisan vendor:publish --tag=brand-context-config
 php artisan vendor:publish --tag=identity-contracts-config
+php artisan vendor:publish --tag=suppression-config
 php artisan vendor:publish --tag=webhook-manager-config
 php artisan vendor:publish --tag=statamic-automations-config
 php artisan vendor:publish --tag=leadhub-config
 php artisan vendor:publish --tag=marketing-config
 php artisan vendor:publish --tag=email-templates-config
+php artisan vendor:publish --tag=preference-center-config
 php artisan vendor:publish --tag=activity-config
 php artisan vendor:publish --tag=notifications-config
+php artisan vendor:publish --tag=statamic-toc-config
 ```
 
-Table of Contents has no config file.
+One correction to an older version of this page: **Table of Contents does have
+a config file**, published under `statamic-toc-config`, alongside
+`statamic-toc-views` for its templates. It was previously listed here as having
+none.
+
+::: tip Where the config tag comes from
+Most of these tags are not registered by the addon at all. Statamic's
+`AddonServiceProvider` publishes `{slug}-config` automatically whenever
+`config/{slug}.php` exists in the package, which is why the tag name always
+tracks the addon slug rather than the package name. Addons whose slug and
+config filename differ — Automations and Email Templates — register theirs
+explicitly instead.
+:::
+
+Beyond configuration, several addons publish migrations, views or translations
+under their own tags. Those are listed on each addon's installation page.
 
 ## Queue and scheduler
 
-Several addons dispatch work off the request thread, and three of them register
+Several addons dispatch work off the request thread, and four of them register
 scheduled commands. Neither is optional in production:
 
 ```bash
@@ -111,10 +130,15 @@ STATAMIC_PRO_ENABLED=true
 Without it, LeadHub's assignment features still work but there is only ever one
 person to assign to.
 
-## Installing from a private repository
+## Installing from a local checkout
 
-The addons are distributed through the Statamic Marketplace and Packagist. If
-you are working against a private checkout, add a path or VCS repository:
+**All twelve packages are on Packagist**, so the normal case needs nothing but
+`composer require`, and the sibling packages an addon depends on resolve on
+their own. None of the packages declares a `repositories` block any more, and
+you do not need one either.
+
+The exception is development. If you are working against a local checkout of
+one of the packages, add a path or VCS repository to your own `composer.json`:
 
 ```json
 {
@@ -127,5 +151,13 @@ you are working against a private checkout, add a path or VCS repository:
 ::: warning Path repositories do not survive a deploy
 A `composer.json` that references `../statamic-*` will fail `composer install`
 on any machine that does not have those sibling directories, which includes
-every Docker build. Switch to VCS or Packagist before you deploy.
+every Docker build. Remove the `repositories` block before you deploy and let
+the package resolve from Packagist.
+:::
+
+::: tip A `repositories` block only counts in your own project
+Composer reads the `repositories` block of the root project and ignores the one
+in any package it installs. That is why a dependency can never bring its own
+source along, and why every package in this suite had to be published properly
+rather than pointing at a Git URL.
 :::

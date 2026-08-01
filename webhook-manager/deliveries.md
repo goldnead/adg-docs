@@ -38,6 +38,7 @@ data.
 
 ```php
 'retry' => [
+    'schedule' => true,
     'strategy' => 'exponential',        // none | linear | exponential
     'max_attempts' => 3,
     'base_delay_seconds' => 30,
@@ -47,11 +48,47 @@ data.
 ],
 ```
 
-Global defaults; each hook can override them.
+Global defaults; each hook can override them, except `schedule`, which is global.
 
 With the defaults, a failing delivery is retried after 30 seconds, then 60, then
-stops. The cap matters on a long strategy: exponential backoff from 30 seconds
-reaches an hour on the seventh attempt and stays there.
+stops. The cap matters on a long strategy: exponential backoff from 30 seconds is at
+1,920 seconds on the seventh attempt and hits the one-hour cap on the eighth, where it
+stays.
+
+::: danger Retries only run if the scheduler runs
+The retry is *planned* by the delivery engine and *executed* by
+`webhook-manager:dispatch-retries`, which the addon registers on Laravel's scheduler
+every minute. If your site has no `schedule:run` cron entry, nothing executes it: the
+delivery keeps a `next_retry_at`, the screen keeps saying "next retry in 30 seconds",
+and the payload is never sent.
+
+Worse, the attempts are then never exhausted, so `DeliveryFailedTerminally` never
+fires — **no alert is sent and the circuit breaker never counts**. A destination can
+be dead for a week without any of the machinery on this page reacting.
+
+See [Installation](/webhook-manager/installation#retries-need-the-scheduler).
+:::
+
+### How the dispatcher works
+
+```bash
+php please webhook-manager:dispatch-retries
+php please webhook-manager:dispatch-retries --limit=500 --brand=acme
+```
+
+Every minute it picks up the deliveries whose `next_retry_at` is due, up to `--limit`
+(200 by default), and sends each one — through `ProcessOutboundDeliveryJob` for hooks
+with queueing on, straight through the delivery engine for the rest. It runs per
+brand, because a scheduled run has no session and therefore no current brand.
+
+Each row is **claimed** before the attempt is handed off: `next_retry_at` is cleared
+in a conditional update, so a second overlapping run no longer sees the row. That
+makes a double delivery impossible and makes one specific loss possible instead — a
+process killed between the claim and the dispatch drops that one retry. For a webhook
+whose receiver may not be idempotent, that is the safe direction.
+
+Set `retry.schedule` to `false` to take the command off the scheduler and drive it
+yourself.
 
 ### Why that status list
 
@@ -63,15 +100,11 @@ condition.
 `retry_on_network_errors` covers DNS failures, connection refused and timeouts, which
 are the cases most worth retrying.
 
-### Retries need a real queue
-
-The schedule is implemented as delayed jobs. With `QUEUE_CONNECTION=sync` there is no
-delay mechanism, so a 30-second base delay cannot be honoured. Run a worker.
-
 ## Replay
 
-Replay re-sends a delivery. Individually from its detail screen, or in batches from
-the list.
+Replay re-sends a delivery, one at a time, from the delivery list or its detail
+screen. There is no bulk replay in the Control Panel; for a whole window of failures,
+use `webhook-manager:replay-failed` below.
 
 The choice that matters is **whether to re-render**:
 
@@ -158,8 +191,13 @@ and a reasonable thing to run from a monitoring check.
 ],
 ```
 
-`webhook-manager:prune` is scheduled daily. Deliveries and logs are the fastest-growing
-tables the addon owns, and with no scheduler running they grow without bound.
+`webhook-manager:prune` applies these, and the addon does **not** schedule it for you.
+Add it to your own `routes/console.php`, or these two tables — the fastest-growing the
+addon owns — grow without bound.
+
+```php
+Schedule::command('webhook-manager:prune')->daily();
+```
 
 ```bash
 php please webhook-manager:prune

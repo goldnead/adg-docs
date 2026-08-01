@@ -133,6 +133,40 @@ not as a supported mode.
 Notifications::registerChannel('slack', SlackChannel::class);
 ```
 
+The class must implement `Goldnead\Notifications\Contracts\Channel`, which is one method:
+
+```php
+use Goldnead\IdentityContracts\Identity;
+use Goldnead\Notifications\Contracts\Channel;
+use Goldnead\Notifications\Models\NotificationItem;
+
+class SlackChannel implements Channel
+{
+    public function send(NotificationItem $item, Identity $recipient): void
+    {
+        // …
+    }
+}
+```
+
+A channel never decides **whether** to deliver. The preference resolver has already done that by
+the time `send()` is called, and a channel that re-checks preferences is double-counting a
+decision somebody else owns. Doing nothing is allowed — that is exactly what `DigestChannel` does,
+leaving the item for the next run.
+
+There is one exception, and it is not a preference: **a channel that reaches a mailbox must ask
+the suppression gate first.** A hard bounce means the address is gone and a complaint means
+writing to it again carries legal weight, neither of which a recipient can consent away and
+neither of which a type may declare itself exempt from by being `required`. `MailChannel` is the
+worked example.
+
+::: warning A class that does not implement `Channel` fails at resolve time
+`ChannelRegistry::resolve()` declares a `Channel` return type, so the container hands back
+something that raises a `TypeError`. `NotificationManager` reports and swallows channel failures
+so that one broken route cannot stop the others, which means the symptom is a notification that
+persists correctly and never arrives on that channel.
+:::
+
 Or in config:
 
 ```php

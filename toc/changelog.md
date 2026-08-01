@@ -14,6 +14,27 @@ Cross-version upgrade notes for the whole suite are in
 
 All notable changes to `statamic-toc` will be documented in this file.
 
+## 2026-08-01 v2.1.0
+
+Housekeeping release. No template API changed; every tag parameter and template variable
+behaves exactly as in 2.0.0.
+
+- **The test suite is autoloaded again.** All 13 classes under `tests/Unit` declared
+  `namespace Tests\Unit` while `autoload-dev` maps `Goldnead\StatamicToc\Tests\`, so Composer
+  skipped every one of them and only PHPUnit's own file discovery still found the suite.
+- **`ParserFacade` documented a different class.** Its docblock advertised methods and an
+  `@see` belonging to something else entirely. The accessor was always right; the IDE help
+  was pointing at the wrong thing.
+- Four static-analysis findings in `Parser.php` fixed rather than baselined. `setContent(): object`
+  is deliberately left as it is, so the v2 signature does not move.
+- `require-dev` is installable again, formatting moves to Pint, Larastan runs at level 5 with an
+  empty baseline, and CI gains a `--prefer-lowest` leg.
+- `.gitattributes` keeps `tests/`, `.github/` and `docs/` out of the Composer tarball, and
+  `extra.statamic` gains `slug`, `url`, `developer` and `developer-url` so the Control Panel
+  addon card links back to the developer.
+
+The licence is unchanged and remains commercial.
+
 ## 2026-07-30 v2.0.0
 
 A rewrite of the internals behind an unchanged template API. Every tag parameter and every

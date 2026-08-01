@@ -5,6 +5,21 @@
 Push contacts to external systems when they are **created**, **updated**, or their **status
 changes**.
 
+::: danger Rotate your destination credentials if you ran a version before 1.12.0
+Up to and including **1.11.0**, LeadHub's settings screen passed the entire `leadhub` config
+to the browser as an Inertia prop. That includes `crm.destinations`, which is where the
+HubSpot token, the Brevo API key and the webhook secret live, and an Inertia prop is
+serialised into the page's HTML. Anyone who could open **LeadHub → Settings**, or read the
+HTML of a session that had it open, could read those credentials.
+
+Fixed in **1.12.0**: the controller now passes an explicit allow-list of the keys the screen
+uses, and no CRM destination values are among them.
+
+Upgrading does not undo the exposure. If you have ever configured a CRM destination on an
+installation running 1.11.0 or earlier, **rotate every token, API key and webhook secret in
+`crm.destinations`** and update the corresponding `.env` values.
+:::
+
 ```php
 'features' => ['crm_destinations' => true],
 
@@ -99,22 +114,55 @@ page is slow for a reason nobody can see.
 
 Register your own from a service provider:
 
+`extend()` takes a **driver name and a class name**. It is not a factory: there is no closure,
+and no callback is ever invoked.
+
 ```php
 use Goldnead\Leadhub\Crm\DestinationManager;
 
-app(DestinationManager::class)->extend('salesforce', function (string $key, array $config) {
-    return new \App\Leadhub\SalesforceDestination($key, $config);
-});
+app(DestinationManager::class)->extend('salesforce', \App\Leadhub\SalesforceDestination::class);
 ```
 
-Implement `Goldnead\Leadhub\Contracts\CrmDestination`:
+The manager instantiates it itself, as `new $class($key, $config)`, where `$key` is the
+destination's key in `crm.destinations` and `$config` is that entry's array. Your constructor
+has to accept exactly that:
 
 ```php
-interface CrmDestination
+namespace App\Leadhub;
+
+use Goldnead\Leadhub\Contracts\CrmDestination;
+
+class SalesforceDestination implements CrmDestination
 {
-    public function driver(): string;
-    public function push(Contact $contact): SyncResult;
+    public function __construct(
+        protected string $key,
+        protected array $config,
+    ) {}
+
+    public function driver(): string
+    {
+        return 'salesforce';
+    }
+
+    public function push(Contact $contact): SyncResult
+    {
+        // …
+    }
 }
+```
+
+Then point a destination at it:
+
+```php
+'crm' => [
+    'destinations' => [
+        'salesforce' => [
+            'driver' => 'salesforce',   // matches the name you registered
+            'enabled' => true,
+            // whatever else your constructor reads out of $config
+        ],
+    ],
+],
 ```
 
 Return a `SyncResult` rather than throwing where you can — it is what populates the sync log's

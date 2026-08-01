@@ -6,8 +6,10 @@ Identity foundation for the suite. It answers one question in a stable way —
 **who did this?** — so that addons never have to depend on a concrete
 `App\Models\User`.
 
-This package **owns no data**: no migrations, no models, no Control Panel screens.
-It ships a value object, four contracts and inert defaults.
+It is a plain Composer library rather than a Statamic addon: it requires no
+`statamic/cms`, ships no user interface and has nothing to install beyond the
+dependency itself. It **owns no data** either — no migrations, no models. What it
+ships is a value object, four contracts and inert defaults.
 
 ```php
 use Goldnead\IdentityContracts\Identity;
@@ -43,6 +45,13 @@ identity, and the application decides what one is.
 - **Four extension points** — `ProvidesIdentity`, `IdentityResolver`,
   `ContactLocator`, `AnonymousIdResolver`.
 - **Nothing else.** No tables, no UI, no scheduled work.
+
+::: warning `equals()` changed in 1.1.0
+`Identity::equals()` is now fail-closed and only reports equality it can prove.
+`Identity::anonymous()->equals(Identity::anonymous())` is `false` where it used to be
+`true`. If you deduplicate, group or authorise on `equals()`, read
+[Comparing two identities](/identity-contracts/identity-object#comparing-two-identities).
+:::
 
 ## Two guarantees worth reading twice
 

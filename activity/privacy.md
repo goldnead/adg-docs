@@ -7,7 +7,7 @@ you configure afterwards.
 
 ## What is never collected
 
-- **No raw user agent, ever.** Only a coarse category: `mobile`, `desktop`, `tablet`, `bot`. There is no
+- **No raw user agent, ever.** Only a coarse category: `mobile`, `desktop`, `tablet`, `bot` or `unknown`. There is no
   setting to store the raw string.
 - **No IP addresses**, at any setting. If you need a country, derive it upstream and pass it explicitly in
   `properties`.
@@ -93,31 +93,95 @@ php artisan activity:prune --days=365
 'per_event_type' => [
     'marketing.email_opened' => 90,      // high volume, low value
     'marketing.email_clicked' => 365,
-    'commerce.purchase_completed' => null,   // keep
 ],
 ```
 
 `marketing.email_opened` will dominate the table long before anything else does, and it is also the least
 trustworthy row you hold — see [Marketing → Tracking](/marketing/tracking#opens).
 
+::: danger Never write `null` as a retention window
+`null` is not "keep forever". The command casts the value with `(int)`, and `(int) null` is `0`, which puts
+the cut-off at **now** — so `'commerce.purchase_completed' => null` deletes every row of that type on the
+next run, and every row that arrives before the run after that.
+
+The same applies to `0`, `''` and `false`.
+:::
+
+### Exempting a type from the prune
+
+Two ways, and the second one is the one to use.
+
+**Leave it out of `per_event_type` and set no global `days`.** With `retention.days` unset, only the types
+listed in `per_event_type` are pruned at all. This is the default state and needs no configuration.
+
+**If you do set a global window**, a type listed in `per_event_type` is excluded from the global sweep —
+the command adds `whereNotIn('event_type', array_keys($perType))` before applying `days`. So give the type
+a window long enough to outlive the install rather than trying to express "never":
+
+```php
+'retention' => [
+    'days' => 365,
+    'per_event_type' => [
+        'marketing.email_opened' => 90,
+        'commerce.purchase_completed' => 36500,   // ~100 years; effectively kept
+    ],
+],
+```
+
+There is no value that means "never prune this type" while a global window is set. `36500` is the honest
+way to write it, and it is visible in a diff as a deliberate choice rather than a typo.
+
 ## Anonymisation is usually the right answer
 
 ```bash
+php artisan activity:anonymize --contact=<uuid> --dry-run
 php artisan activity:anonymize --contact=<uuid>
 php artisan activity:anonymize --user=<id>
 php artisan activity:anonymize --anonymous-id=<id>
 php artisan activity:anonymize --days=730
 ```
 
-`prune` **deletes**. `anonymize` **strips the personal fields and keeps the countable fact**, which is
-usually the right answer to a deletion request: the purchase still happened, and the person is no longer
-identifiable in the ledger.
+At least one of `--contact`, `--user`, `--anonymous-id` or `--days` is required; without one the command
+refuses rather than sweeping the table. `--days` falls back to `retention.anonymize_after_days` when the
+option is omitted but the config value is set. `--dry-run` reports the count and writes nothing.
 
-The mechanism underneath is
-[`Identity::pseudonymised()`](/identity-contracts/identity-object#pseudonymised), which drops `email`,
-`name` and `meta` while keeping the join keys.
+`prune` **deletes the row**. `anonymize` **keeps the row and empties the identifying columns**, which is
+usually the right answer to a deletion request: the purchase still happened, and the person behind it is
+gone.
 
-Anonymisation is **idempotent**: a second run over the same rows is a no-op.
+### What the run actually clears
+
+The command sets seven columns to `null` and flips `anonymized` to `true`:
+
+| Cleared | |
+| --- | --- |
+| `contact_uuid` | the LeadHub join key |
+| `user_id` | the CP / application user |
+| `anonymous_id` | the pseudonymous visitor id |
+| `session_id` | |
+| `actor_id` | the identifier inside the actor |
+| `properties` | the whole event payload |
+| `context` | referrer, device category, everything captured |
+
+What survives is the countable fact and nothing else: `brand_id`, `event_id`, `event_type`, `actor_type`,
+`source`, `subject_type`, `subject_id`, `dedupe_key`, `occurred_at`, `received_at`.
+
+::: warning The join keys are removed, not preserved
+This is the part people get wrong. After an anonymisation run, `Activity::query()->where('contact_uuid', $uuid)`
+finds **nothing** — not the anonymised rows, not a placeholder, nothing. The rows are still in the table and
+still countable by `event_type` and `occurred_at`, but they can no longer be traced to a person, which is
+the entire point.
+
+Query for what remains — a monthly count of `commerce.purchase_completed`, say — and do not build a report
+that joins anonymised history back to a contact. There is nothing left to join on.
+:::
+
+The `activities` table has no `email`, `name` or `meta` columns, so there is nothing of that shape to strip.
+Personal detail that reaches the ledger arrives inside `properties` or `context`, and both are cleared
+wholesale.
+
+Anonymisation is **idempotent**: the query excludes rows where `anonymized` is already `true`, so a second
+run over the same rows reports nothing to do.
 
 ::: tip Both commands run across all brands
 They are operator actions on the whole store, not brand-scoped queries. That is deliberate — a deletion

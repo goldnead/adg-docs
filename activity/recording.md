@@ -22,10 +22,37 @@ automatically.
 | --- | --- | --- |
 | `actor` | `Identity` \| `ProvidesIdentity` \| `Authenticatable` \| email string | Defaults to `IdentityContext::current()` |
 | `subject` | any Eloquent model | Stored as `subject_type` + `subject_id` |
+| `subject_type` · `subject_id` | string | Set them directly when there is no model to hand |
 | `dedupe_key` | string | The **fact's** fingerprint, per brand |
 | `event_id` | string | The **physical event's** id, global |
 | `properties` | array | The fact's own data. Sanitised. |
+| `context` | array | Merged over the captured request context; your keys win |
 | `occurred_at` | datetime | Defaults to now. Set it when backfilling. |
+| `source` | string | Defaults to `activity.source` (`APP_NAME`) |
+| `brand_id` | int | Defaults to the current brand, or the default brand |
+| `contact_uuid` | string | Explicit join key — the contact the fact is **about** |
+| `user_id` | string | Explicit join key |
+| `anonymous_id` | string | Explicit join key |
+| `session_id` | string | |
+
+### The actor is not always who it is about
+
+`contact_uuid`, `user_id` and `anonymous_id` are written from the actor when you do not pass them, and
+**take precedence over the actor when you do**. That is the whole reason they exist as separate arguments.
+
+A CP user changing a lead's status is the actor; the lead is the subject of the fact. Both belong on the
+row, and only one of them is the actor:
+
+```php
+Activity::record('crm.status_changed', [
+    'actor' => $currentUser,                  // who did it
+    'contact_uuid' => $contact->uuid,         // who it was about
+    'properties' => ['from' => 'new', 'to' => 'qualified'],
+]);
+```
+
+Without the explicit `contact_uuid`, that row joins to the CP user and the lead's own history never shows
+it. The bundled LeadHub producer sets `contact_uuid` for exactly this reason, and so should yours.
 
 ## Two idempotency keys
 

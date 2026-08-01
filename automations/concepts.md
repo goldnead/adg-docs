@@ -20,10 +20,14 @@ Statamic or application event
   └─ Trigger node matches → a Run is created and queued
       └─ Context built from the event payload
           └─ Nodes executed along the connections
-              ├─ Filter  → conditions false? stop, status "stopped"
-              ├─ Branch  → follow the true or false path
-              ├─ Delay   → persist and resume later via automations:run-due
-              └─ Action  → do the thing, write input/output to the node log
+              ├─ Filter   → conditions false? stop, status "stopped"
+              ├─ Branch   → follow the true or false path
+              ├─ Switch   → follow the matching case
+              ├─ Loop     → run the body once per item, then continue
+              ├─ Parallel → fan out to every branch, join, continue
+              ├─ Throttle → seen this key inside the window? stop
+              ├─ Delay    → persist and resume later via automations:run-due
+              └─ Action   → do the thing, write input/output to the node log
                   └─ Run finishes: completed | stopped | failed
 ```
 
@@ -86,12 +90,18 @@ temporarily.
 'max_call_depth' => 3,
 ```
 
-An automation whose action mutates a record that triggers the same automation is a
-loop. The engine refuses past this depth.
+An automation whose action mutates a record that triggers the same automation is a loop,
+and so is a chain of **Call Automation** nodes that comes back round. The engine refuses
+past this depth.
 
-Loop **detection in branches** is explicitly out of scope for v1, along with parallel
-execution and code nodes. The depth limit is a backstop, not a design: raising it
-lengthens a loop rather than fixing it.
+Note what this is not. There is no loop *detection*: nothing inspects the graph and warns
+you. The depth limit is a backstop, and raising it lengthens a loop rather than fixing
+it. Add a Filter that excludes the state your own action produces.
+
+Iterating deliberately is a different thing and is supported: the **Loop** node walks a
+collection, and **Parallel** fans out and joins. Run inline, as both normally are, they
+stay inside the run and the depth limit does not apply. Point either at a separate
+automation instead and it counts like any other sub-flow.
 
 ## Where this addon stops
 

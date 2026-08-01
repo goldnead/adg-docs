@@ -81,6 +81,12 @@ things a preview cannot: a template variable that does not resolve, an image URL
 
 Read it in a real mail client, not only in a browser.
 
+The preview is deliberately inert. It is HTML a Control Panel user wrote, so since 1.9.0 the
+response carries `Content-Security-Policy: sandbox; default-src 'none'` and the iframe around it
+carries `sandbox` without `allow-scripts` or `allow-same-origin`. Images and inline styles are
+handed back explicitly, because a preview without them is not a preview; scripts never are. A
+template containing a `<script>` will therefore look right and do nothing.
+
 ## Scheduling
 
 Set a send time and the campaign goes out when it arrives.

@@ -72,17 +72,47 @@ leaks.
 
 An inbound endpoint picks one verifier. Six ship with the addon:
 
-| Verifier | Verifies |
+| Handle | Verifies |
 | --- | --- |
-| No auth | nothing. The URL is the only barrier. |
-| Bearer token | a static bearer token |
-| Static header | a named header equals a configured value |
-| Basic auth | username and password |
-| HMAC signature | a signature over the raw body, with timestamp tolerance |
-| IP allowlist | the source address |
+| `none` | nothing. The URL is the only barrier. |
+| `bearer` | a static bearer token |
+| `static_header` | a named header equals a configured value |
+| `basic` | username and password |
+| `hmac` | a signature over the raw body, with timestamp tolerance |
+| `ip_allowlist` | the source address |
 
-They compose in the sense that you can put an IP allowlist in front of a proper
-verifier, but a single endpoint has one primary scheme.
+An endpoint has exactly one. There is no stacking: choosing `ip_allowlist` means the
+source address is the *only* thing checked.
+
+### The IP allowlist
+
+The auth config is a list of addresses or CIDR ranges under the key `ips`:
+
+```json
+{ "ips": ["203.0.113.7", "198.51.100.0/24", "2001:db8::/32"] }
+```
+
+Both IPv4 and IPv6 are matched, exactly or by prefix.
+
+::: warning It fails closed
+An empty or missing list rejects **everything** with a 401. An endpoint whose operator
+believes it is IP-restricted and is not would be worse, so there is no permissive
+fallback. If every request suddenly 401s on an `ip_allowlist` endpoint, look at the
+list first.
+:::
+
+The key `allow` is still read as a legacy alias, because releases before 1.10 read
+that one while the CP's own example showed `ips`. Write `ips` for anything new.
+
+::: tip Fixed in 1.10.0
+Before 1.10.0 the verifier was selectable in the CP but never registered, so an
+endpoint set to `ip_allowlist` answered 401 to every delivery regardless of the
+address. If you configured one and gave up on it, it works now.
+:::
+
+An allowlist is only as trustworthy as the address your application sees. Behind a
+proxy or a CDN, that is the proxy unless Laravel's `TrustProxies` is configured for
+it. Check what you actually receive before relying on this.
 
 ### Replay protection
 
@@ -110,13 +140,16 @@ and a bad one for anything that writes content.
 
 ## The 419 trap
 
-Inbound routes run through the `web` middleware group by default, which includes
-CSRF. A POST from an external system has no session and no token, so it gets a
-**419**.
+A POST from an external system has no session and no CSRF token, so any public POST
+route left inside Laravel's `web` middleware group answers **419** before your
+verifier is ever asked.
 
-The addon's own inbound route handles this with
-`withoutMiddleware(ValidateCsrfToken::class)`. If you build your own public POST
-endpoint, you have to do the same.
+The addon's inbound route is not in that group. It declares its own complete stack
+(`SubstituteBindings`, nothing else) rather than inheriting `web` and removing a piece
+of it, which is what it did up to 1.7. See
+[Inbound endpoints](/webhook-manager/inbound#why-the-endpoint-is-not-on-the-web-stack).
+
+If you build your own public POST endpoint, do the same.
 
 ::: warning A test suite cannot see this
 Laravel's CSRF middleware skips itself automatically in unit tests. A fully green

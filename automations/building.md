@@ -5,27 +5,48 @@
 ## The loop
 
 1. CP → **Automations → New automation**.
-2. Drag a **Trigger** from the node library onto the canvas.
+2. Click the **+** in the middle of the empty canvas. That arms the node library on the
+   left; the next node you click there becomes the trigger.
 3. Configure it. A trigger's config form is generated from its schema, so it shows only
    what that trigger actually needs.
-4. Add **Filter** or **Branch** nodes if you need conditions.
-5. Add **Action** nodes.
-6. Connect nodes by dragging between handles.
-7. **Validate**.
-8. **Test** with sample data.
-9. Toggle **Enabled**.
+4. Click the **+** under the trigger and pick the next node — a **Filter** or **Branch**
+   if you need conditions, then your **Action** nodes.
+5. **Validate**.
+6. **Test** with sample data.
+7. Toggle **Enabled**.
 
 Or start from a [template](/automations/templates) and edit it, which is faster for any
-of the eight common patterns.
+of the eleven common patterns.
+
+## The canvas places and connects nodes for you
+
+There is no dragging. Nodes are not movable, connections are not drawn by hand, and the
+layout is computed from the graph.
+
+**Adding a node.** Every open output carries a **+**. Click it and the node library on
+the left switches into pick mode with a banner naming the spot; the next node you click
+lands exactly there, already connected. Clicking the same **+** again cancels.
+
+**Inserting between two nodes.** Every connection carries its own **+** at its midpoint.
+Click it, pick a node, and it is spliced in with both edges rewired.
+
+**Everything else about a node** — rename, duplicate, remove — is in the menu on the node
+card itself.
+
+This is a deliberate trade. You cannot arrange a flow into a picture, and in exchange a
+flow cannot end up with an orphan node, a dangling edge or two nodes sitting on top of
+each other. Branch outputs are labelled *If true* and *If false* on the canvas, and a
+Switch's outputs follow the cases you configure.
 
 ## One trigger per automation
 
 A flow has exactly one entry point. Two triggers means two automations, which is more
 verbose and much easier to reason about when one of them misbehaves.
 
-If two events should do the same thing, build the flow once for the more common trigger
-and have the second automation's action be a webhook to the same destination — or accept
-the duplication. Sharing a subflow is not something v1 does.
+If two events should do the same thing, put the shared work in its own automation on a
+*Manual* trigger and have both callers end in a **Call Automation** node. That is the
+supported way to share a subflow, and it keeps the shared part in one place. Nesting is
+capped by `max_call_depth`, default `3`.
 
 ## Filter or Branch
 
@@ -107,6 +128,33 @@ The builder autosaves as you work, so a closed tab does not lose the canvas.
 
 Autosave is not the same as enabling: a saved automation with `Enabled` off does nothing.
 That separation is why autosave is safe.
+
+## Version history
+
+Every save snapshots the automation's graph, so an edit is reversible.
+
+Snapshots are stored as **Statamic Revisions** — flat-file YAML in the revisions store,
+under a key that keeps automation history away from entry and term revisions. Automation
+history therefore sits alongside content history and travels with it.
+
+The builder lists the stored versions newest first, with who saved each one, and reverts
+to any of them in one step. A revert is itself a save, so it is snapshotted too and can
+be undone.
+
+```php
+'versioning' => [
+    'enabled' => true,
+    'keep' => 25,
+],
+```
+
+`keep` caps how many revisions are retained per automation; older ones are pruned as new
+ones are written. Set `enabled` to `false` and saves stop being snapshotted, which also
+means there is nothing to revert to.
+
+Version history is per automation and is not the same thing as the
+[audit log](/automations/runs#the-audit-log), which records who did what across all of
+them.
 
 ## Ordering, and what happens on failure
 

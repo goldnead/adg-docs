@@ -52,7 +52,21 @@ Brevo service, behind a `BREVO_SYNC_ENABLED` gate so a migration command can mut
 Two directions, both auto-detected:
 
 **Out.** Marketing events become outbound webhook triggers, so you configure the destination in the
-Control Panel rather than writing a listener.
+Control Panel rather than writing a listener. Six handles are registered:
+
+| Trigger handle | Fired by |
+| --- | --- |
+| `marketing.subscriber.subscribed` | `MarketingSubscribed` |
+| `marketing.subscriber.pending` | `SubscriptionPending` |
+| `marketing.subscriber.unsubscribed` | `MarketingUnsubscribed` |
+| `marketing.campaign.sent` | `CampaignSent` |
+| `marketing.message.bounced` | `MessageBounced` |
+| `marketing.message.complained` | `MessageComplained` |
+
+The subscription payloads carry `unsubscribe_url` — always this addon's own endpoint — and
+`preferences_url`, which points at the [Preference Center](/preference-center/) where that addon is
+installed. The two are deliberately different keys: `unsubscribe_url` has always meant the endpoint
+that unsubscribes, and a downstream consumer wiring it into a mail should keep getting that.
 
 **In.** The inbound action `marketing.process_esp_event` maps Mailgun and Postmark bounce and complaint
 webhooks onto subscriptions. Without this path, **your bounce and complaint numbers stay at zero
@@ -100,9 +114,25 @@ To move your existing file-based templates into CP-editable entries:
 php artisan email-templates:import
 ```
 
+## Preference Center <Badge type="tip" text="1.9.0" />
+
+Detected, not configured. `Support\PreferenceLink` is the one place that decides where a
+subscriber's link goes, and every call site asks it rather than building a URL:
+
+| Method | For | Resolves to |
+| --- | --- | --- |
+| `manage($token)` | a person — the footer link, `preferences_url` | the [Preference Center](/preference-center/) where installed, this addon's unsubscribe otherwise |
+| `oneClick($token)` | a machine — the `List-Unsubscribe` header, `unsubscribe_url` | always this addon's endpoint |
+
+Detection is `class_exists()` on the centre's facade **and** `Route::has()` on its token route. The
+second check is not belt-and-braces: the centre registers that route only where Marketing is
+present, so class-present and route-absent is a state that occurs, and `route()` on a name that was
+never registered throws.
+
 ## Activity
 
-With [Activity](/activity/) installed, a bundled producer records Marketing facts into the ledger:
+With [Activity](/activity/) installed, its Marketing producer records Marketing facts into the
+ledger:
 
 ```
 marketing.subscription_pending | subscription_confirmed | unsubscribed
@@ -110,8 +140,10 @@ marketing.campaign_sending | campaign_sent
 marketing.email_sent | email_opened | email_clicked | email_bounced | email_complained
 ```
 
-The producer attaches itself only when Marketing is present, and event type names follow the platform
-catalogue rather than PHP class names, so consumers survive a class rename.
+The producer lives in the Activity addon, not in this one — Marketing ships no Activity code and
+knows nothing about the ledger. It attaches itself only when Marketing is present, and event type
+names follow the platform catalogue rather than PHP class names, so consumers survive a class
+rename.
 
 This is not a duplication of Marketing's own message events: those are per-campaign reporting; the
 ledger is the site's cross-domain record. See

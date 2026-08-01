@@ -33,22 +33,42 @@ If you set `WEBHOOK_MANAGER_QUEUE_NAME`, the worker has to be told about that qu
 php artisan queue:work --queue=webhooks,default
 ```
 
-## Retries do not happen, or happen immediately
+## A delivery is stuck on "next retry in 30 seconds"
 
-The retry schedule is implemented as delayed jobs. With `QUEUE_CONNECTION=sync` there
-is no delay mechanism at all, so a 30-second base delay cannot be honoured.
+**Almost always: no scheduler.** Retries are executed by
+`webhook-manager:dispatch-retries`, which the addon puts on Laravel's scheduler every
+minute. Without a `schedule:run` cron entry nothing runs it, and the delivery waits
+forever for an attempt that will not come.
 
-Also check `retry.max_attempts` and whether the response status is in
-`retry_on_status` — a `422` is deliberately not retried, because retrying an unchanged
-request against a validation error is noise.
+```bash
+php artisan schedule:list      # webhook-manager:dispatch-retries should be listed
+php please webhook-manager:dispatch-retries    # run it once, by hand
+```
+
+If the command runs by hand but not on its own, the cron entry is missing. See
+[Installation](/webhook-manager/installation#retries-need-the-scheduler).
+
+Two related symptoms of the same cause, worth recognising: **no failure alert ever
+arrives**, and **the circuit breaker never disables a hook**. Both hang off
+`DeliveryFailedTerminally`, which only fires once the attempts are exhausted — and
+attempts that never run are never exhausted.
+
+Other causes, once the scheduler is confirmed running:
+
+- `retry.schedule` is `false`, which takes the command off the scheduler on purpose.
+- `retry.max_attempts` is already reached.
+- The response status is not in `retry_on_status` — a `422` is deliberately not
+  retried, because retrying an unchanged request against a validation error is noise.
+- `retry.strategy` is `none`.
 
 ## An inbound endpoint returns 419
 
-CSRF. The route runs through the `web` middleware group, and an external POST has no
-session and no token.
+CSRF, which means the route is running inside the `web` middleware group. The addon's
+own endpoint is not: since 1.8.0 it declares its complete stack instead of inheriting
+`web`.
 
-The shipped route handles this with `withoutMiddleware(ValidateCsrfToken::class)`. If
-you see a 419, either you are on a version before 1.0.1 or the route is your own.
+So a 419 means one of three things: you are on a release before 1.8.0, `'web'` has
+been put back into `inbound.middleware`, or the route is your own.
 
 ::: warning Your tests cannot see this
 Laravel's CSRF middleware skips itself in unit tests, so a green suite proves nothing
@@ -71,13 +91,38 @@ For an HMAC verifier, in order of likelihood:
 For a static-header verifier, check that the secret is actually set. An endpoint
 created before its secret existed is deliberately left **disabled**.
 
+For an `ip_allowlist` verifier, check that the list is not empty and that it is under
+the key `ips`. The verifier fails closed, so an empty list rejects everything. Check
+also which address your application actually sees: behind a proxy or CDN that is the
+proxy's, unless Laravel's `TrustProxies` is configured.
+
+::: tip On 1.9 or earlier, `ip_allowlist` 401s no matter what
+The verifier was selectable but never registered, so the endpoint rejected every
+request regardless of the address. Fixed in 1.10.0.
+:::
+
 ## An inbound endpoint intermittently returns 429
 
-`inbound.rate_limit_per_minute` is 60. An ESP delivering a burst of bounce
-notifications after a campaign exceeds that easily, and from their side it looks like
-your endpoint being down.
+The per-endpoint rate limit. `inbound.rate_limit_per_minute` is 60 by default, and an
+ESP delivering a burst of bounce notifications after a campaign exceeds that easily.
+From their side it looks like your endpoint being down.
 
-Raise it before wiring up a high-volume provider.
+Confirm it rather than guessing: a rejected request carries `Retry-After`, and every
+response from the endpoint carries `X-RateLimit-Limit` and `X-RateLimit-Remaining`.
+Rejections are also logged as `inbound_rate_limited`, which is what tells a limit apart
+from an outage.
+
+Raise the endpoint's own **Rate limit** value (`{"per_minute": 300}`) rather than the
+global default, so one chatty provider does not loosen the limit for the others. `0`
+disables it.
+
+The legacy `!/webhooks/inbound` URL shares the same counter, so switching a sender back
+to it does not help.
+
+::: tip On 1.9 or earlier there is no 429
+The limit was stored and displayed but never enforced. If you are seeing a 429 on an
+older release, it comes from your webserver or a proxy, not from the addon.
+:::
 
 ## The signature is always wrong on the receiving end
 
@@ -162,16 +207,16 @@ needs `CACHE_STORE=array` and an existing SQLite file.
 
 ## The deliveries table is enormous
 
-Pruning is scheduled, so this means no scheduler is running:
-
-```bash
-php artisan schedule:work
-```
-
-Or run it once and then fix the scheduler:
+The addon does not schedule `webhook-manager:prune` for you. Run it once, then add it
+to your own scheduler:
 
 ```bash
 php please webhook-manager:prune
+```
+
+```php
+// routes/console.php
+Schedule::command('webhook-manager:prune')->daily();
 ```
 
 Also check `logging.mode`. `full` stores every byte of every body, which is a

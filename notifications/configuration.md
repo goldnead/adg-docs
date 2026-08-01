@@ -31,11 +31,19 @@ return [
 
     'list_limit' => 30,
 
+    'cp' => [
+        'enabled' => env('NOTIFICATIONS_CP_ENABLED', true),
+    ],
+
+    'sources' => [
+        'leadhub' => env('NOTIFICATIONS_SOURCE_LEADHUB', true),
+    ],
+
     'preferences_url' => env('NOTIFICATIONS_PREFERENCES_URL'),
 ];
 ```
 
-Six keys. Most of the addon's behaviour lives in **type registrations**, which are code rather than config —
+Eight keys. Most of the addon's behaviour lives in **type registrations**, which are code rather than config —
 see [Types](/notifications/types).
 
 ## `enabled`
@@ -110,8 +118,43 @@ them. See [Realtime](/notifications/realtime).
 'list_limit' => 30,
 ```
 
-How many notifications the list endpoint returns. The in-app bell is a recent view, not an archive — the
-inspector is where you go for history.
+The default limit for `Notifications::forRecipient()` and the ceiling on what your own list
+endpoint hands back. The in-app bell is a recent view, not an archive — the inspector is where you
+go for history.
+
+The Control Panel inspector does **not** use this. Its page size is Statamic's own CP setting,
+which an operator can change from the listing itself.
+
+## `cp.enabled`
+
+```php
+'cp' => [
+    'enabled' => env('NOTIFICATIONS_CP_ENABLED', true),
+],
+```
+
+The read-only inspector under **Tools → Notifications**. Set it to `false` to remove the screen
+entirely: the nav item is not registered and the routes are not loaded.
+
+Leaving it on is not a permission decision. Both the nav item and every controller action are
+gated by `view notifications` regardless, so this is the switch for "this install has no use for
+the screen at all" rather than for "not everybody may see it".
+
+## `sources.leadhub`
+
+```php
+'sources' => [
+    'leadhub' => env('NOTIFICATIONS_SOURCE_LEADHUB', true),
+],
+```
+
+Whether the bundled LeadHub digest source attaches itself. It only ever attaches when
+`goldnead/statamic-leadhub` is actually installed — the check is a class-existence one — so the
+default `true` does nothing on an install without LeadHub.
+
+Set it to `false` to keep the source out even when LeadHub is present. The reason to do that is
+if you want to contribute those follow-ups yourself, on your own query, instead of through the
+bundled source. See [Digests](/notifications/digests).
 
 ## `preferences_url`
 
@@ -134,6 +177,9 @@ from. See [Preferences](/notifications/preferences).
   whether it happened.
 - **Whether unregistered types deliver.** They do, in-app, using whatever the producer passed — so a missing
   registration never silently swallows somebody's notification.
+- **Whether mail is queued.** It is not. `MailChannel` sends inline, and no setting changes that.
+  Queue the caller instead. See [Installation](/notifications/installation#a-queue-worker).
+- **The CP page size.** That is Statamic's own listing setting, not `list_limit`.
 
 ## Environment summary
 
@@ -141,5 +187,7 @@ from. See [Preferences](/notifications/preferences).
 NOTIFICATIONS_ENABLED=true
 NOTIFICATIONS_DIGEST_FREQUENCY=weekly
 NOTIFICATIONS_REALTIME=false
+NOTIFICATIONS_CP_ENABLED=true
+NOTIFICATIONS_SOURCE_LEADHUB=true
 NOTIFICATIONS_PREFERENCES_URL=https://example.com/account/notifications
 ```

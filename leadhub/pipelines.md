@@ -147,8 +147,9 @@ php artisan leadhub:storage:migrate --from=flat --to=eloquent
 
 ## Automations and webhooks
 
-The opportunity and task events are **not** in Automations' curated LeadHub trigger set, and
-they **are** in Webhook Manager's auto-registered trigger list where the bridge covers them.
+The opportunity events are in neither curated set. Automations does not expose them, and the
+Webhook Manager bridge does not register them either: of the seven opportunity and task
+events, only `LeadHubTaskAssigned` becomes a webhook trigger (`leadhub.task.assigned`).
 
 For an automation on `LeadHubOpportunityWon`, register it as a
 [custom event trigger](/automations/extending#turning-an-application-event-into-a-trigger):

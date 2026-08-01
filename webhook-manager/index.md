@@ -27,8 +27,8 @@ button. It does not own workflows — that is
   hand-write a payload template.
 - **Delivery snapshots** with full request and response bodies, status, error
   classification, attempt count, retry schedule and replay support.
-- **Replay** failed deliveries individually or in batches, optionally re-rendering
-  against current data.
+- **Replay** a failed delivery from the CP, or a whole window of them from the console,
+  optionally re-rendering against current data.
 - **Failure alerting and a circuit breaker** — throttled email and Slack alerts when
   a delivery fails for good, and automatic disabling of a hook after too many
   consecutive failures.
@@ -72,10 +72,17 @@ button. It does not own workflows — that is
 
 ## Status
 
-Stable on Statamic 6 with Laravel 11, 12 and 13. Outbound webhooks, the delivery
+Stable on Statamic 6 with Laravel 12 and 13. Outbound webhooks, the delivery
 engine with retries and replay, inbound endpoints, the rule engine, payload
 templates and the full Vue + Inertia Control Panel are implemented and covered by
 the test suite.
+
+::: warning Retries need a cron
+Retries are executed by a scheduled command. On a site without a `schedule:run` cron
+entry they do not happen at all, and no failure alert is sent either. Set this up
+before you rely on the addon:
+[Retries need the scheduler](/webhook-manager/installation#retries-need-the-scheduler).
+:::
 
 This addon is the **reference implementation** for the rest of the suite: its
 `vite.config.js`, its Vitest setup and its component-test approach are what the
@@ -88,7 +95,7 @@ other CP-heavy addons were ported from.
 - [Concepts](/webhook-manager/concepts) — the delivery pipeline end to end
 - [Outbound webhooks](/webhook-manager/outbound) — triggers, presets, scoping
 - [Payload templates](/webhook-manager/templates) — the token renderer
-- [Authentication & signing](/webhook-manager/auth) — five schemes, both directions
+- [Authentication & signing](/webhook-manager/auth) — five outbound schemes, six inbound verifiers
 - [Deliveries, retries & replay](/webhook-manager/deliveries) — and the circuit breaker
 - [Inbound endpoints](/webhook-manager/inbound)
 - [Rules](/webhook-manager/rules)

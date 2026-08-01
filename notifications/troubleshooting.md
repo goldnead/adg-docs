@@ -16,10 +16,20 @@ In order:
 
 1. **Is `mail` in the type's channels, or in the recipient's preferences?** A type defaulting to
    `['in_app', 'digest']` sends no mail.
-2. **Is a queue worker running?** The mail channel queues delivery.
+2. **Is the address suppressed?** The mail channel asks the suppression gate before every send and
+   returns quietly when the answer is yes. `Suppression::find($address)` tells you, and
+   `Suppression::historyFor($address)` tells you why. This is the most common cause and it leaves
+   no trace in the mail log, because no mail was ever handed to the transport.
 3. **`laravel.log`.** Notifying is fail-safe: a transport error is logged and swallowed so it cannot roll back
-   the comment that caused it. The log is the only place the reason exists.
+   the comment that caused it. The log is the only place the reason exists. Look for
+   "Notifications withheld an immediate mail" too — that is the gate having been unreachable, in
+   which case the channel withholds rather than guesses.
 4. **Is the type registered at all?** An unregistered type falls back to `in_app` only.
+
+::: tip A missing queue worker is not the cause
+The mail channel does not queue. `Mail::to()->send()` runs inline, so if `notify()` returned, the
+send was already attempted. A worker matters only for realtime broadcasts.
+:::
 
 ## Nothing appears in the digest
 
@@ -150,8 +160,12 @@ endpoint — the signal carries no notification data, deliberately, so a socket 
 than the API would have given them.
 
 ```js
-Echo.private(`users.${userId}`).listen('.notifications.refresh', () => fetchNotifications())
+Echo.private(`users.${userId}`).listen('.NotificationReceived', () => fetchNotifications())
 ```
+
+The event name is `NotificationReceived`, and the leading dot is required: without it Echo
+prefixes the application namespace and the listener never fires. If the bell updates on reload but
+never live, check that first.
 
 ## The list is missing older notifications
 

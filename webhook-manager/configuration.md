@@ -66,6 +66,7 @@ command exits; not something to leave on.
 
 ```php
 'retry' => [
+    'schedule' => true,
     'strategy' => 'exponential',        // none | linear | exponential
     'max_attempts' => 3,
     'base_delay_seconds' => 30,
@@ -75,7 +76,18 @@ command exits; not something to leave on.
 ],
 ```
 
-These are **defaults**; each webhook can override its own retry policy.
+All but `schedule` are **defaults**; each webhook can override its own retry policy.
+
+`schedule` puts `webhook-manager:dispatch-retries` on Laravel's scheduler, every
+minute. That command is what actually *runs* the retries the planner writes, so
+leaving it on is the normal setup; turn it off only if you drive the command yourself.
+
+::: danger Your site still needs a `schedule:run` cron
+`schedule => true` registers the command. It cannot start the cron entry that drives
+the scheduler. Without one, retries never run, and because the attempts are never
+exhausted, no failure alert fires and the circuit breaker never counts. See
+[Installation](/webhook-manager/installation#retries-need-the-scheduler).
+:::
 
 The status list is deliberate: 4xx codes other than 408, 425 and 429 mean *you* are
 wrong, and retrying an unchanged request against a 400 or a 422 is just noise. If
@@ -109,7 +121,9 @@ the obvious names, not your field called `kundennummer`.
 ],
 ```
 
-Applied by `webhook-manager:prune`, which is scheduled daily.
+Applied by `webhook-manager:prune`. Unlike the retry dispatcher, this command is
+**not** put on the scheduler for you — add it to your own `routes/console.php` with
+`Schedule::command('webhook-manager:prune')->daily()`.
 
 ## `inbound`
 
@@ -134,10 +148,17 @@ Empty it once none are left.
 `replay_protection_ttl_seconds` is how long a seen signature is remembered, so a
 captured request cannot be resent.
 
+`rate_limit_per_minute` is enforced as the first step of the inbound pipeline, before
+the method allowlist and before authentication. It counts per endpoint, answers 429
+with `Retry-After`, and puts `X-RateLimit-Limit` and `X-RateLimit-Remaining` on every
+response. A single endpoint overrides it with `{"per_minute": N}` in its rate-limit
+config; `0` disables throttling. The legacy prefix shares the counter, so it is not a
+way around the limit.
+
 ::: tip 60 requests a minute is a real limit
 An ESP delivering a burst of bounce notifications can exceed it. Raise it before
 wiring up a high-volume provider, and see
-[Inbound endpoints](/webhook-manager/inbound).
+[Inbound endpoints](/webhook-manager/inbound#the-rate-limit).
 :::
 
 ## `security`

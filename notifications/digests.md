@@ -111,11 +111,62 @@ A source answers "what should this person **also** see for this window?" — ope
 unanswered questions. Things that are not notifications because nothing happened, but which belong in a
 summary.
 
+The class must implement `Goldnead\Notifications\Contracts\DigestSource`:
+
+```php
+use Goldnead\IdentityContracts\Identity;
+use Goldnead\Notifications\Contracts\DigestSource;
+use Illuminate\Support\Carbon;
+
+class CommunityDigestSource implements DigestSource
+{
+    /** @return array<string, mixed> Empty when there is nothing to add. */
+    public function collect(Identity $recipient, Carbon $windowStart, Carbon $windowEnd): array
+    {
+        return ['unanswered' => …];
+    }
+}
+```
+
+::: warning A class that does not implement the contract is skipped without a word
+`SourceRegistry::collect()` resolves each registered source and moves past anything that is not a
+`DigestSource`. No exception, no log line. A digest missing your section looks exactly like a
+digest that had nothing to add, so check the `implements` clause first.
+:::
+
+Return an empty array when there is nothing for this recipient in this window — the registry drops
+empty contributions rather than printing an empty heading.
+
 **A failing source is reported and skipped**: one addon's broken query must not silence everybody's weekly
 mail. That is the right trade, and it means a source that has been broken for a month is invisible unless you
 read the log.
 
-A **LeadHub source ships bundled** and attaches only when that addon is installed, contributing open tasks.
+A **LeadHub source ships bundled** and attaches only when that addon is installed, contributing
+**overdue follow-ups**: rows in `leadhub_followups` whose contact is assigned to the recipient,
+that are not completed, and whose `due_at` falls before the end of the window. Switch it off with
+`notifications.sources.leadhub`.
+
+## Who the digest walks
+
+The command asks a `Goldnead\Notifications\Contracts\RecipientDirectory`:
+
+```php
+public function digestRecipients(string $frequency): iterable;   // of Identity
+```
+
+The bound default, `Digest\PendingItemRecipientDirectory`, derives the list from the pending
+notifications themselves. That is always correct and never complete: **somebody with no pending
+digest items is not walked at all**, so a source that would have contributed something for them
+is never asked.
+
+That matters exactly when your sources carry the digest. A weekly mail of nothing but overdue
+follow-ups will not reach a person who has no other notifications waiting. Bind your own directory
+when your people live somewhere the notifications do not know about:
+
+```php
+// AppServiceProvider::register()
+$this->app->bind(RecipientDirectory::class, EveryActiveUserDirectory::class);
+```
 
 ## Unregistered types are skipped in the digest
 

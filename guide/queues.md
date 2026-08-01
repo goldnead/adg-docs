@@ -53,8 +53,8 @@ resolve the identity and the brand while you still have them, and pass them in.
 
 ## What is scheduled
 
-Three addons register commands with Laravel's scheduler automatically, and one
-leaves the scheduling to you.
+Four addons register commands with Laravel's scheduler automatically. Everything
+else you schedule yourself.
 
 | Command | Frequency | Registered by | Purpose |
 | --- | --- | --- | --- |
@@ -64,9 +64,30 @@ leaves the scheduling to you.
 | `leadhub:segments:sweep` | daily | LeadHub | re-materialises segment membership for time-based rules |
 | `automations:run-due` | frequently | Automations | resumes runs whose delay has elapsed |
 | `automations:run-scheduled` | frequently | Automations | starts time-triggered automations |
-| `automations:prune` | daily | Automations | deletes runs past `runs.prune_after_days` (30) |
-| `webhook-manager:prune` | daily | Webhook Manager | purges old deliveries and logs |
-| `notifications:send-digests` | **you decide** | — | the notification digest |
+| `webhook-manager:dispatch-retries` | every minute | Webhook Manager | runs the outbound deliveries whose retry is due |
+
+And the ones you have to register yourself, which is the part most installs get
+wrong:
+
+| Command | Registered by | What happens if you never run it |
+| --- | --- | --- |
+| `notifications:send-digests` | nobody, by design | No digest is ever sent |
+| `automations:prune` | nobody | The runs table grows without limit |
+| `webhook-manager:prune` | nobody | The deliveries table grows without limit |
+
+::: danger Retries need a working `schedule:run`
+`webhook-manager:dispatch-retries` is the command that actually performs a
+retry. Webhook Manager plans the retry by writing `next_retry_at`, and until
+this command runs, nothing acts on it. On an install without a cron calling
+`schedule:run`, a failed delivery is planned forever and never retried, the
+terminal-failure event never fires, and neither alerts nor the circuit breaker
+see the failure. See
+[Webhook Manager → Installation](/webhook-manager/installation).
+:::
+
+The two `prune` commands were previously documented here as scheduled daily.
+They never were. If your `automation_runs` or `webhook_deliveries` tables are
+larger than you expected, that is why.
 
 Notifications deliberately does not schedule itself. A send window is an audience
 decision, not a package default, so register it in your own scheduler:
@@ -83,6 +104,9 @@ The failures are quiet, which is what makes this worth stating:
 
 - Scheduled campaigns simply never send. No error, no failed job.
 - Automation delays never resume. The run sits in a waiting state forever.
+- Failed outbound deliveries are never retried. The Control Panel still shows
+  "next retry in 30 seconds" for a delivery whose retry nothing will ever
+  perform, so the display is actively misleading rather than merely idle.
 - Segment membership goes stale for any rule involving time (`within_days`,
   `older_than_days`), while rules driven by mutations stay perfectly fresh —
   producing a segment that is half-correct, which is worse than obviously broken.

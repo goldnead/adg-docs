@@ -137,7 +137,8 @@ Wrap the work in `BrandContext::runFor()` in the worker, or the notification can
 ## LeadHub, if you run it
 
 LeadHub uses this addon for **task assignment** when both are installed — in-app, mail or digest, per the
-assignee's own preferences — and contributes open tasks to the digest.
+assignee's own preferences — and contributes **overdue follow-ups** to the digest: uncompleted rows
+in `leadhub_followups` whose contact is assigned to the recipient and whose due date has passed.
 
 Its other three notifications (new lead, lead assigned, daily follow-up digest) remain its own Laravel
 notifications, for compatibility. If you want those to go through this addon instead, write the listener

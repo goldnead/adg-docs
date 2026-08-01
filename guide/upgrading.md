@@ -78,6 +78,10 @@ likely to matter to an existing install:
 
 | Addon | Release | What to do |
 | --- | --- | --- |
+| Marketing | **1.9.0** | Marketing's own preference page and the route `/!/marketing/preferences/{token}` are removed; Preference Center owns that page now. **Links already sitting in sent mail return 404, and there is no redirect.** Upgrade both packages together and read [Migrating from Marketing](/preference-center/migrating-from-marketing). Despite the breadth of the change this is a minor release, so `composer update` will take it without asking. |
+| Identity Contracts | **1.1.0** | `Identity::equals()` is now fail-closed: it claims equality only where equality is proven. `Identity::anonymous()->equals(Identity::anonymous())` was `true` and is now `false`. If any of your code deduplicates on `equals()`, check it before upgrading. |
+| Webhook Manager | **1.10.0** | Outbound retries now actually run, through `webhook-manager:dispatch-retries` on the scheduler. **This requires a working `schedule:run` cron.** Without one, nothing changes and failed deliveries keep being dropped, as they have been since 1.0. |
+| LeadHub | **1.12.0** | Security. Before this release the settings screen passed the whole of `config('leadhub')` to the browser as an Inertia prop, including `crm.destinations.*`, which holds `token`, `api_key` and `secret`. Anyone who could open that screen, or read the page source it produced, could read those credentials. The prop is now an explicit allow-list. **Rotate your CRM destination credentials** after upgrading. |
 | Notifications | before 1.0.4 | Duplicate preference rows are possible for contact recipients. Run `notifications:uniqueness-integrity`; migrate stops and names them if any exist. |
 | Marketing | from 1.2.1 or earlier through 1.6.1–1.6.3 | Run `marketing:consent-integrity`. See the 1.6.4 changelog entry. |
 | LeadHub | 1.10.1 | Per-brand unique indexes. Run `leadhub:brand-integrity`. |

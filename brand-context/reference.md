@@ -11,10 +11,36 @@ use Goldnead\BrandContext\Facades\BrandContext;
 | Method | Returns | Notes |
 | --- | --- | --- |
 | `multiBrandEnabled()` | `bool` | Reflects `multi_brand` **and** `license_check` |
-| `current()` | `Brand|null` | `null` is a legitimate state, not an error |
-| `setCurrent($brand)` | `void` | Accepts a `Brand`, a handle, or `null` |
+| `default()` | `Brand` | The always-present default brand. Throws if the migrations never ran. |
+| `defaultId()` | `int` | |
+| `current()` | `Brand` | **Never `null`.** Falls back to `default()`. |
+| `currentId()` | `int` | |
+| `hasCurrent()` | `bool` | Whether a brand was actually resolved. This is the test you want. |
+| `setCurrent($brand)` | `static` | Accepts a `Brand`, an id, a handle, or `null` to clear |
+| `forget()` | `static` | Clears the current brand |
 | `runFor($brand, $callback)` | mixed | Sets, runs, restores. Nests safely. |
 | `withoutBrandScope($callback)` | mixed | Deliberately cross-brand |
+| `scopeIsDisabled()` | `bool` | Whether the global scope is currently suspended |
+| `failMode()` | `string` | The configured `closed` or `open` |
+
+::: warning `current()` is not nullable
+Its return type is `Brand`, and it falls back to the default brand when nothing has been
+resolved. So `current()` never tells you whether a brand was set — it always answers.
+
+Use `hasCurrent()` for that. In single-brand mode it is always `true` (the default brand is
+the current one by definition); in multi-brand mode it is `true` only once something has
+actually resolved a brand.
+
+```php
+if (! BrandContext::hasCurrent()) {
+    // no session, no token, no runFor() — this is a worker or a console command
+}
+```
+
+The fallback in `current()` deliberately does not memoise: reading it does not flip
+`hasCurrent()` to `true`, so the fail-closed read scope stays fail-closed for code that
+called `current()` first.
+:::
 
 ## `BrandMembers` facade
 
@@ -28,10 +54,21 @@ use Goldnead\BrandContext\Facades\BrandMembers;
 | `includes($user, $brand = null)` | `bool` | yes |
 | `brandsOf($user)` | brands | yes |
 | `filter($users, $brand = null)` | filtered users | yes |
-| `attach($user, $brand = null)` | `void`, idempotent | — |
-| `detach($user, $brand = null)` | `void`, idempotent | — |
+| `attach($user, $brand = null)` | `bool`, idempotent | — |
+| `detach($user, $brand = null)` | `bool`, idempotent | — |
+| `isUnassigned($user)` | `bool` | — |
 | `assignedUserIdsOf($brand = null)` | raw ids | **no** |
 | `assignedBrandIdsOf($user)` | raw ids | **no** |
+| `userId($user)` | `string` | — |
+
+`isUnassigned()` is the direct question behind the every-brand rule: a user with no membership
+row at all is a member of every brand. It reads `brand_user` and applies no rule of its own, so
+it is the honest way to ask "has anybody been assigned yet" without inferring it from an
+`assigned…` call coming back empty.
+
+`userId()` normalises whatever you hand it — a Statamic user, an Eloquent user, or an id — to the
+string key `brand_user` stores. Use it rather than casting: under the file users repository the
+id is a UUID, and `(int)` turns that into `0`.
 
 The two `assigned…` methods are for rendering and auditing assignments, never for
 deciding who may be offered, notified or assigned. See

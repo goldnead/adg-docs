@@ -34,8 +34,9 @@ Working as designed. Four groups are excluded at send time even when the segment
 
 ## The segment appears to be ignored
 
-Segment targeting requires LeadHub **`^1.1`**. On older versions Marketing degrades gracefully to a
-**whole-list send**, with no error — so "ignored" and "too old" look identical from the CP.
+Segment targeting requires LeadHub **`^1.4`**. Where an older one is somehow in place, Marketing
+degrades gracefully to a **whole-list send**, with no error — so "ignored" and "too old" look
+identical from the CP.
 
 Check the member count in the CP before sending. A count equal to the whole list is the tell.
 
@@ -77,8 +78,11 @@ with an empty secret accepts everything.
 
 ## The one-click unsubscribe returns 419
 
-CSRF. It arrives as a POST from a mail client with no session and no token, so that route has to skip
-CSRF.
+CSRF. It arrives as a POST from a mail provider with no session and no token, so that route excludes
+the forgery middleware — under all three names it is known by (`PreventRequestForgery`,
+`ValidateCsrfToken`, `App\Http\Middleware\VerifyCsrfToken`), because Laravel renamed it and
+applications sometimes subclass it. If you have wrapped or replaced that middleware under a fourth
+name, exclude it yourself.
 
 ::: warning Your test suite cannot see this
 Laravel's CSRF middleware skips itself automatically in unit tests. Test with `curl` against a running
@@ -87,14 +91,38 @@ server.
 
 ## Confirmation and unsubscribe links 404
 
-Three causes, in order:
+Four causes, in order:
 
-1. **`routes.prefix` changed after mail was sent.** Links in delivered mail point at the old prefix.
+1. **The link is a `/!/marketing/preferences/{token}` link.** That route was removed in 1.9.0 and
+   nothing redirects it, so every one of them in already-delivered mail 404s. See below.
+2. **`routes.prefix` changed after mail was sent.** Links in delivered mail point at the old prefix.
    Keep a redirect, or do not change it after sending.
-2. **The token belongs to a record in another brand.** Tokens carry the brand precisely because these
+3. **The token belongs to a record in another brand.** Tokens carry the brand precisely because these
    links have no session; if you rebuilt subscriptions, old tokens are gone.
-3. **A genuinely expired or already-used token.** The controller decides what that page says — the
+4. **A genuinely expired or already-used token.** The controller decides what that page says — the
    middleware sets no brand and aborts nothing.
+
+## Preference links in already-sent newsletters 404 <Badge type="tip" text="1.9.0" />
+
+Expected, and not repairable from inside the addon.
+
+Marketing served a multi-list preference page at `/!/marketing/preferences/{token}` up to 1.8.1.
+1.9.0 removes the page, the controller and the route, because
+[`goldnead/statamic-preference-center`](/preference-center/) serves the same screen across marketing,
+notifications and suppression, and two addons rendering one page is a fork rather than redundancy.
+
+**No redirect ships with the addon.** Installing the preference centre does not create one either:
+it registers its own token route, not marketing's old one. Newsletters you have already sent carry
+the old URL, and it now returns 404.
+
+The token in the old URL is the same subscription token the new route takes, so a redirect in your
+own application is a small piece of work — but it is yours to write, and it has to exist before you
+upgrade if you have delivered mail carrying those links.
+[Preference Center → Migrating from Marketing](/preference-center/migrating-from-marketing) walks
+through the full cutover, including the caches that have to be cleared for the new route to resolve.
+
+Campaigns sent **after** the upgrade are unaffected: `{{ unsubscribe_url }}` is resolved at render
+time and already points wherever the preference page currently lives.
 
 ## Subscribing silently does nothing
 

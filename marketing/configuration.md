@@ -118,13 +118,17 @@ rate may be your audience's mail client rather than your subject line. See
 ],
 ```
 
-Where the public subscribe, confirm, unsubscribe and tracking endpoints live. The `!` prefix is
-Statamic's convention for addon routes.
+Where the public subscribe, confirm, unsubscribe and tracking endpoints live — six routes, and
+since 1.9.0 no preference route among them. The `!` prefix is Statamic's convention for addon
+routes.
 
 ::: warning Changing the prefix breaks links already sent
 Confirmation and unsubscribe links in mail already delivered point at the old prefix. Change this
 before you send anything, or keep a redirect.
 :::
+
+This prefix does not reach the [Preference Center](/preference-center/). That addon serves its own
+route, and changing this value has no effect on it.
 
 ## LeadHub
 

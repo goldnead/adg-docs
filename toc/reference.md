@@ -21,8 +21,10 @@ Everything the addon exposes, on one page.
 | `exclude` | string | `null` | Comma-separated substrings, or a delimited regex. Matches case-insensitively. |
 | `when` | bool | `true` | Falsy (`false`, `'false'`, `0`, `'0'`) returns an empty list |
 
-`exclude` and `when` require **1.9**, `to` requires **2.0**. Every default is
-configurable in `config/statamic-toc.php` from 2.0 on.
+`exclude` and `when` require **1.9**, `to` requires **2.0**. From 2.0 on, five of these
+have a site-wide default in `config/statamic-toc.php`: `field`, `from`, `depth`, `to`
+and `flat` (the config key for `is_flat`). `exclude`, `when` and `content` are tag
+parameters only. See [Configuration](/toc/configuration).
 
 ## `toc:count` tag
 
@@ -36,16 +38,23 @@ every heading in the document, ask for it: `{{ toc:count depth="6" }}`.
 
 ### Item variables
 
-| Variable | Type |
-| --- | --- |
-| `toc_title` | string |
-| `toc_id` | string |
-| `id` | int |
-| `is_root` | bool |
-| `parent` | int / null |
-| `has_children` | bool |
-| `children` | array |
-| `total_children` | int |
+| Variable | Type | |
+| --- | --- | --- |
+| `toc_title` | string | The heading text |
+| `toc_id` | string | The anchor |
+| `id` | int | Internal id, links children to parents |
+| `level` | int | The heading's own level: `2` for an `h2` |
+| `is_root` | bool | Set on items at the shallowest level in the list |
+| `is_deepest_children` | bool | Set on items at the deepest level in the list |
+| `parent` | int / null | |
+| `has_children` | bool | |
+| `children` | array | |
+| `total_children` | int | |
+
+`level` is the absolute HTML level, not a position in the tree, so a list starting at
+`from="h2"` has `level` `2` on its root items. `is_root` and `is_deepest_children` are
+relative to what the list actually contains: they are computed from the shallowest and
+deepest level present after `from`, `to`, `depth` and `exclude` have been applied.
 
 ### Scope variables
 
@@ -62,6 +71,23 @@ Returns the value rendered with an `id` on every heading. Accepts a Bard field
 (default or `save_html`), a Markdown field, or an HTML string. Nothing is written
 back to storage.
 
+### Parameters
+
+Any parameters are joined with a space and written into every opening heading tag as
+extra attributes. The literal `[id]` is replaced with that heading's anchor.
+
+```antlers
+{{ article | toc:x-on:click="go('[id]')" }}
+```
+
+```html
+<h2 id="resonanz" x-on:click="go('resonanz')">Resonanz</h2>
+```
+
+The attributes are added alongside the `id`, never instead of it. A heading that
+already carries an `id` is left untouched entirely, so it gets neither a second id nor
+the extra attributes.
+
 ## Console commands
 
 None.
@@ -74,9 +100,43 @@ None.
 
 None. The addon has no Control Panel surface.
 
+## PHP API
+
+```php
+use Goldnead\StatamicToc\Facades\ParserFacade;
+```
+
+The facade is a static entry point to `Goldnead\StatamicToc\Parser`, the class the tag
+and the modifier drive. It reads anchors from the same per-request registry they do, so
+a list built in PHP and a body rendered in a template agree on every id.
+
+| Method | Returns | |
+| --- | --- | --- |
+| `make($content)` | `Parser` | A parser for a Bard array, a Markdown string or HTML |
+| `setContent($content)` | `Parser` | The same, on an existing parser |
+| `options(Options $options)` | `Parser` | Replace the whole option set at once |
+| `from($level)` | `Parser` | The level the list starts at |
+| `to($level)` | `Parser` | The deepest level, absolute |
+| `depth($depth)` | `Parser` | How many levels the list spans |
+| `exclude($exclude)` | `Parser` | Comma-separated text, or a delimited regex |
+| `flatten()` / `flattenIf($bool)` | `Parser` | One flat level instead of a tree |
+| `build()` | `array` | The heading tree, in the shape the tag hands to templates |
+| `injectIds($value, $params = null)` | `string` | What the modifier does, with the same `[id]` handling |
+| `isHTML()` / `isBard()` / `isMarkdown()` | `bool` | Which extractor the content matched |
+
+```php
+$items = ParserFacade::make($entry->value('article'))->from('h2')->to('h3')->build();
+```
+
+`Options` is immutable: every builder method hands back a new instance rather than
+mutating one, so a half-applied option set cannot leak between calls.
+
 ## Configuration
 
-None. There is no config file and nothing to publish.
+`config/statamic-toc.php`, published with `--tag=statamic-toc-config`. Five keys —
+`field`, `from`, `depth`, `to`, `flat` — all optional, all overridable per tag. The
+views are published separately with `--tag=statamic-toc-views`. See
+[Configuration](/toc/configuration).
 
 ## Requirements
 

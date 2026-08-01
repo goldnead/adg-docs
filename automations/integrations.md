@@ -8,7 +8,8 @@ working without them, and nothing needs to be enabled on the other side.
 | Integration | Detected class | Adds |
 | --- | --- | --- |
 | Webhook Manager | `Goldnead\WebhookManager\Facades\WebhookManager` | the *Send Webhook (via Webhook Manager)* action, with its destinations, plus the *Webhook Received* trigger |
-| LeadHub | `Goldnead\Leadhub\Facades\LeadHub` | 5 LeadHub triggers and 7 LeadHub actions |
+| LeadHub | `Goldnead\Leadhub\Facades\LeadHub` | 6 LeadHub triggers and 11 LeadHub actions |
+| Marketing | `Goldnead\Marketing\Services\SubscriptionService` | 3 Marketing triggers and 3 Marketing actions |
 
 Class names are configurable under `integrations` in `config/automations.php`, so you can
 swap implementations or use a fork. Leave the defaults otherwise.
@@ -46,7 +47,12 @@ facade, which is why the adapter resolves an interface rather than calling a sta
 
 ## LeadHub
 
-Five triggers and seven actions, listed in the [node catalogue](/automations/nodes).
+Six triggers and eleven actions, listed in the [node catalogue](/automations/nodes).
+
+Five of the triggers are trigger classes; the sixth, *Contact score changed*, is
+registered through the public `registerEventTrigger()` API against the event named in
+`integrations.leadhub.score_changed_event`. Point that key elsewhere and the trigger
+follows, without a code change here.
 
 ```php
 'integrations' => [
@@ -86,7 +92,8 @@ config form.
 
 ## Marketing
 
-Marketing detects **this** addon rather than the other way round, and contributes:
+Detected the same way as the other two: this addon checks whether Marketing is present
+and, if it is, registers
 
 - Triggers: `marketing.subscribed`, `marketing.unsubscribed`,
   `marketing.campaign_sent`
@@ -96,6 +103,18 @@ Marketing detects **this** addon rather than the other way round, and contribute
 So they appear in the node library when Marketing is installed, with no configuration in
 either addon. See [Marketing → Extending](/marketing/extending).
 
+The published `config/automations.php` has no `integrations.marketing` block, because the
+detector carries its own fallbacks — `Goldnead\Marketing\Services\SubscriptionService`
+and `Goldnead\Marketing\ServiceProvider`. Add the key yourself if you run a fork:
+
+```php
+'integrations' => [
+    'marketing' => [
+        'detect' => ['Acme\MarketingFork\Services\SubscriptionService'],
+    ],
+],
+```
+
 ::: warning `marketing.send_campaign` is a real send
 An automation action that sends a campaign to a list is not a transactional email. Filter
 it hard, and remember that consent comes from the list — an automation cannot grant it.
@@ -104,7 +123,7 @@ See [Privacy & retention](/guide/privacy#consent).
 
 ## Notifications and Activity
 
-Neither is wired into the flow builder in v1. They integrate with LeadHub and Marketing
+Neither is wired into the flow builder. They integrate with LeadHub and Marketing
 directly, so an automation that changes a lead ends up in the Activity ledger and can
 trigger a notification without going through a node.
 

@@ -19,6 +19,7 @@ the inputs, so it fits any design without fighting it.
 | --- | --- |
 | `list` | The list handle. Required. |
 | `class` | Passed through to the `<form>` |
+| `redirect` | Rendered as the hidden `_redirect` field, so you can set the destination on the tag instead of writing the input yourself |
 
 ## Fields
 
@@ -69,20 +70,30 @@ different copy for the two — "check your inbox" is wrong when there is nothing
 
 ## Handling the response
 
+The tag renders a form and nothing else. It injects **no variables of its own** into the pair, so
+there is no `success` and no `errors` inside it. What there is:
+
+| After | What happens |
+| --- | --- |
+| A successful subscribe, `_redirect` set | A redirect to that URL |
+| A successful subscribe, no `_redirect` | A redirect back, with `marketing.subscribed` flashed to the session, holding `pending` or `subscribed` |
+| A successful subscribe, JSON request | `{ "ok": true, "data": { "status": "…" } }` |
+| A validation failure | Laravel's ordinary redirect back with the error bag and the old input |
+
+So the two readable outcomes come from Statamic's own tags rather than from this one:
+
 ```antlers
-{{ marketing:subscribe list="newsletter" }}
-    {{ if success }}
-        <p>Almost done. Please confirm the link in the email we just sent.</p>
-    {{ /if }}
+{{ if {session:value key="marketing.subscribed"} }}
+    <p>Almost done. Please confirm the link in the email we just sent.</p>
+{{ /if }}
 
-    {{ if errors }}
-        <p>{{ errors | join(' ') }}</p>
-    {{ /if }}
-
-    <input type="email" name="email" value="{{ old:email }}" required>
-    <button>Subscribe</button>
-{{ /marketing:subscribe }}
+{{ get_errors:all }}
+    <p>{{ messages }}{{ message }} {{ /messages }}</p>
+{{ /get_errors:all }}
 ```
+
+The simplest path is usually neither: point `redirect` at a thank-you page and let that page carry
+the copy.
 
 ::: tip Say the same thing for a new and an existing address
 An "already subscribed" message tells anybody with your form whether a given address is on your
@@ -99,10 +110,13 @@ list. Return the same neutral confirmation either way.
 | --- | --- |
 | `POST {prefix}/subscribe` | Subscribe |
 | `GET {prefix}/confirm/{token}` | Confirm a double-opt-in subscription |
-| `GET {prefix}/unsubscribe/{token}` | Unsubscribe page |
-| `POST {prefix}/unsubscribe/{token}` | RFC 8058 one-click unsubscribe |
-| `GET {prefix}/open/{token}` | The open pixel |
-| `GET {prefix}/click/{token}` | The signed click redirect |
+| `GET {prefix}/unsubscribe/{token}` | Unsubscribe, then show a page saying so |
+| `POST {prefix}/unsubscribe/{token}` | RFC 8058 one-click unsubscribe. `204`, no page. |
+| `GET {prefix}/o/{uuid}.gif` | The open pixel. The UUID is the message's. |
+| `GET {prefix}/c/{uuid}` | The click redirect. **Signed** — an unsigned request is rejected. |
+
+There is no preference route here. Marketing served one until 1.9.0; it now belongs to the
+[Preference Center](/preference-center/) addon, and no redirect stands in for the removed URL.
 
 ::: warning Changing the prefix breaks links already sent
 Confirmation and unsubscribe links in delivered mail point at the old prefix. Change it before you
@@ -127,8 +141,12 @@ See [Brand Context → Public routes](/brand-context/public-routes).
 
 The subscribe tag includes a CSRF token, so the normal path is ordinary Laravel.
 
-The **RFC 8058 one-click unsubscribe** POST is different: it comes from a mail client with no
-session and no token, so it has to skip CSRF.
+The **RFC 8058 one-click unsubscribe** POST is different: it comes from a mail provider with no
+session and no token, so it has to skip CSRF. The route excludes three middleware names —
+`PreventRequestForgery`, `ValidateCsrfToken` and `App\Http\Middleware\VerifyCsrfToken` — because
+Laravel has renamed that middleware and applications sometimes subclass it. Excluding a class that
+is not in the stack costs nothing; missing the one that is turns every one-click unsubscribe into a
+419.
 
 ::: danger A test suite cannot see a CSRF problem
 Laravel's CSRF middleware skips itself automatically in unit tests, so a fully green suite says
@@ -150,7 +168,9 @@ classes. Two accessibility habits worth keeping:
     <input id="nl-email" type="email" name="email" required autocomplete="email">
 
     <div role="status" aria-live="polite">
-        {{ if success }}Please confirm the link in the email we just sent.{{ /if }}
+        {{ if {session:value key="marketing.subscribed"} }}
+            Please confirm the link in the email we just sent.
+        {{ /if }}
     </div>
 
     <button>Subscribe</button>

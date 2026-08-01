@@ -7,10 +7,10 @@ hero:
   name: Statamic Addons
   text: One suite, one set of docs
   tagline: >
-    Ten addons for Statamic 6: a CRM, email marketing, a visual automation
-    builder, a webhook layer, an activity ledger, notifications and content
-    tooling. Built to be installed one at a time and to compose when you install
-    the next one.
+    Twelve packages for Statamic 6: a CRM, email marketing, a visual automation
+    builder, a webhook layer, an activity ledger, notifications, a subscriber
+    preference centre and content tooling. Built to be installed one at a time
+    and to compose when you install the next one.
   actions:
     - theme: brand
       text: Start here
@@ -60,9 +60,9 @@ features:
 
 ## Install what you need
 
-Each addon installs on its own. Composer pulls in the foundation packages when
-an addon needs them, and both foundation packages are inert until you configure
-them.
+Each addon installs on its own. Every package is on Packagist, so a bare
+`composer require` resolves it and pulls in the foundation packages it needs.
+Those foundation packages are inert until you configure them.
 
 ```bash
 # The CRM, on its own

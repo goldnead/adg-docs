@@ -70,11 +70,15 @@ and policies of this addon, fixed in 1.0.1.
 
 ## Notifications are not sent
 
-1. `features.notifications` must be `true`.
-2. `LEADHUB_NOTIFY_EMAILS` must be set.
-3. The mailer must work — and **sending is fail-safe**, so a broken mailer produces a log line
+1. `notifications.enabled` must be `true` — there is no `features.notifications`, and a
+   `features` entry by that name is simply ignored.
+2. The individual flag must be on too: `notifications.new_lead`,
+   `notifications.on_assignment`, or `notifications.digest.enabled`.
+3. `LEADHUB_NOTIFY_EMAILS` must be set, or the lead must have an owner with an email
+   address. An unassigned lead with no `notifications.recipients` notifies nobody.
+4. The mailer must work — and **sending is fail-safe**, so a broken mailer produces a log line
    and silence, not an error you would notice.
-4. The digest needs the scheduler:
+5. The digest needs the scheduler:
 
 ```bash
 php artisan schedule:work

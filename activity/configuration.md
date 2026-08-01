@@ -59,7 +59,7 @@ does.
 
 What is captured from the request automatically.
 
-`user_agent_category` stores a **coarse category** — `mobile`, `desktop`, `tablet`, `bot` — and never the
+`user_agent_category` stores a **coarse category** — `mobile`, `desktop`, `tablet`, `bot` or `unknown` — and never the
 raw user-agent string. There is no setting to store the raw string, deliberately.
 
 There is also no IP capture, at any setting. If you need a country, derive it upstream and pass it in

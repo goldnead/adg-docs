@@ -1,8 +1,9 @@
 # Introduction
 
-This site documents ten addons for **Statamic 6**. They are separate Composer
-packages, released and versioned independently, and each one is useful on its
-own. What makes them a suite is that they agree on four things: how a brand is
+This site documents twelve packages for **Statamic 6**. They are separate
+Composer packages, released and versioned independently, and each one is useful
+on its own. Ten of them are Statamic addons; Identity Contracts and Suppression
+are plain Laravel libraries that the addons build on. What makes them a suite is that they agree on four things: how a brand is
 scoped, who an actor is, where configuration lives, and which addon owns which
 concern.
 
@@ -15,11 +16,11 @@ for the point at which you install the second one.
 | --- | --- | --- |
 | Foundation | [Brand Context](/brand-context/), [Identity Contracts](/identity-contracts/), [Suppression](/suppression/) | Install-once packages the others build on. Inert on their own. |
 | Integration | [Webhook Manager](/webhook-manager/), [Automations](/automations/) | Getting data in and out of the site, and reacting to events. |
-| CRM & marketing | [LeadHub](/leadhub/), [Marketing](/marketing/), [Email Templates](/email-templates/) | Contacts, consent, campaigns. |
+| CRM & marketing | [LeadHub](/leadhub/), [Marketing](/marketing/), [Preference Center](/preference-center/), [Email Templates](/email-templates/) | Contacts, consent, campaigns. |
 | Platform | [Activity](/activity/), [Notifications](/notifications/) | Shared services any domain addon can record into. |
 | Content | [Table of Contents](/toc/) | Front-end helpers for editorial work. |
 
-A one-page tour of all ten, with the dependency graph, is in
+A one-page tour of all twelve, with the dependency graph, is in
 [The suite](/guide/suite). If you know the problem but not the addon, read
 [Choosing an addon](/guide/choosing).
 

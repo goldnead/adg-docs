@@ -24,7 +24,8 @@ Statamic event (EntrySaved, SubmissionCreated, …)
                       └─ Delivery record created, job queued
                           └─ HTTP request
                               ├─ success evaluator says ok → Delivery = success
-                              └─ retryable → retry planner schedules attempt n+1
+                              └─ retryable → retry planner writes next_retry_at
+                                  └─ webhook-manager:dispatch-retries runs it (scheduler)
                                   └─ attempts exhausted → Delivery = failed
                                       ├─ alert (throttled per hook)
                                       └─ circuit breaker counts toward threshold
@@ -36,8 +37,13 @@ Every stage in that chain is a **registry** you can add to. See
 Two properties of the pipeline are worth stating explicitly:
 
 **Queue-first.** The HTTP request happens in a job, not in the request that
-triggered it. That is what keeps a slow destination from becoming your page load,
-and it is why the retry schedule can exist at all.
+triggered it. That is what keeps a slow destination from becoming your page load.
+
+**Retries are planned in one place and executed in another.** The delivery engine
+records *when* the next attempt is due; the scheduled command
+`webhook-manager:dispatch-retries` is what actually makes it. A site without a
+`schedule:run` cron therefore plans retries it never runs. See
+[Deliveries](/webhook-manager/deliveries#retries).
 
 **One delivery record per attempt.** A hook that succeeds on the third try leaves
 three rows, not one with a counter. That is deliberate: the first two failures are

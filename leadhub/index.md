@@ -49,7 +49,9 @@ driver; enable them under `features` in `config/leadhub.php`.
 | `pipelines` | Multi-pipeline deal tracking with stages, won/lost outcomes, a Kanban board |
 | `merge` | `LeadHub::merge()` re-parents a duplicate's timeline, notes, tasks and opportunities |
 | `scoring` | An `engagement_score` per contact, with a per-brand point table |
-| `segments` | Dynamic, rule-based groups, materialised and kept fresh |
+
+**Segments** — dynamic, rule-based groups, materialised and kept fresh — are not in this
+list and have no feature flag. They are on by default, on both storage drivers.
 
 Plus **consent**: `do_not_contact` is honoured by every CRM connector, and
 `LeadHub::optOut()` actively removes the contact from supported destinations.

@@ -98,11 +98,15 @@ clients report opens nobody made. Treat click rate as the real number.
 
 Three routes, all of which end in the same state:
 
-- The **tokenised link** in the email footer.
+- The **tokenised link** in the email footer, `{{ unsubscribe_url }}`.
 - **RFC 8058 one-click**, via `List-Unsubscribe` and `List-Unsubscribe-Post` headers, which is
   what a mail client's own unsubscribe button uses.
 - **Suppression** from a hard bounce or a complaint, which is not the person's decision but has the
   same effect.
+
+The tokenised link ends the subscription **on arrival**. `GET {prefix}/unsubscribe/{token}`
+unsubscribes and then renders a page saying so; there is no confirmation step to get wrong and no
+second click to miss.
 
 ```php
 'unsubscribe' => ['global_opt_out' => false],
@@ -111,39 +115,43 @@ Three routes, all of which end in the same state:
 Turn `global_opt_out` on if unsubscribing from one list should mean "do not contact me at all",
 which sets LeadHub's `do_not_contact` and stops every CRM push too.
 
-### The preference centre <Badge type="tip" text="1.7.0" />
+### Where the preference page lives <Badge type="tip" text="1.9.0" />
 
-An unsubscribe token identifies **one subscription**, one address on one list, so the link has
-always been per list. What was missing was everything after the click: the confirmation page
-said "you have been removed from X" and stopped, never mentioning the four other lists the same
-brand runs.
+An unsubscribe token identifies **one subscription**, one address on one list. So this addon's own
+page can only honestly speak about that one list: it ends the subscription, says so, and stops.
 
-Since 1.7.0 the unsubscribe page is the entry rather than the end. The unsubscribe still happens
-on arrival, unchanged, and the page then shows every list of that brand with its current state
-and lets each one be switched:
+Everything beyond that — every list of the brand, the notification types and the suppression state
+on one screen — belongs to the [Preference Center](/preference-center/) addon. Until 1.9.0 Marketing
+shipped a second copy of that page and kept linking to its own, so installing the preference centre
+changed nothing a reader could see. Marketing's copy, and its route, are gone.
 
-```
-GET  /!/marketing/preferences/{token}
-POST /!/marketing/preferences/{token}
-```
+Which of the two a link points at is decided in one place, `Support\PreferenceLink`:
 
-The `POST` takes `action=save` with a `lists[]` selection, or `action=unsubscribe_all`.
+| Link | Goes to |
+| --- | --- |
+| `{{ unsubscribe_url }}` — the footer link a person clicks | the preference centre where it is installed, this addon's unsubscribe page otherwise |
+| `{{ one_click_unsubscribe_url }}` — the RFC 8058 header | **always** this addon's own endpoint |
 
-There is no login, and that is a decision rather than an omission. Almost no subscriber has an
-account on the site that mails them, and a registration form standing between a person and their
-unsubscribe is a dark pattern with a password field on it. The token is the credential. It is
-also the only thing the request carries: there is no session to read a brand from, so the brand
-is derived from the token via `SetBrandFromRouteValue` on `Subscription.token`, exactly as the
-unsubscribe route does.
+That split is the whole point. A provider POSTing `List-Unsubscribe` expects an unsubscribe, not a
+form. And stopping mail is a legal obligation, so it may not depend on somebody having chosen to
+install an optional package: the one-click path works on a bare install.
 
-::: warning "Unsubscribe from everything" means every list of this brand
-Not the CRM-wide opt-out. Somebody done with one brand's mailings has said nothing about another
-brand's, and nothing at all about transactional mail, which does not rest on consent in the first
-place. Where `unsubscribe.global_opt_out` is on, it still applies through the ordinary
-unsubscribe path, not through this button.
+Detection is `class_exists()` on the centre's facade **and** a lookup in the route registry. The
+centre registers its token route only where Marketing is present, so class-present and route-absent
+is a real state rather than a hypothetical one.
+
+::: danger `/!/marketing/preferences/{token}` is gone, and nothing redirects it
+The route was removed in 1.9.0. Links in newsletters you have **already sent** point at it and now
+return 404.
+
+No redirect ships with the addon. The old URL and the new one carry the same token, but only your
+application can decide where to forward it, so if you have delivered mail carrying those links, add
+that redirect yourself before you upgrade. This is a breaking change inside a minor release; it is
+called out here because the version number does not call it out for you.
 :::
 
-The page renders from `preferences.blade.php`. Publish the views to restyle it:
+The public pages that remain — the confirmation page and the unsubscribe page — render from this
+addon's views. Publish them to restyle:
 
 ```bash
 php artisan vendor:publish --tag=marketing-views

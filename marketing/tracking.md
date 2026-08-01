@@ -13,7 +13,7 @@ Both are per recipient, and both feed the campaign report.
 
 ## Opens
 
-A 1×1 pixel at `{prefix}/open/{token}`. The token identifies the message, so an open is attributed to
+A 1×1 pixel at `{prefix}/o/{uuid}.gif`. The UUID identifies the message, so an open is attributed to
 a person rather than only counted.
 
 ::: warning Open tracking is structurally unreliable
@@ -32,8 +32,9 @@ finding.
 
 ## Clicks
 
-Links are rewritten to signed redirects at `{prefix}/click/{token}`. The signature is what stops the
-redirect being used as an open one, and the token attributes the click.
+Links are rewritten to signed redirects at `{prefix}/c/{uuid}`. The signature is what stops the
+redirect being used as an open one, and the UUID attributes the click. The unsubscribe and confirm
+links are left alone by the rewriter, along with anchors, `mailto:` and `tel:`.
 
 A click is a real signal: somebody's mail client does not click links.
 
@@ -100,9 +101,11 @@ frequently to a large list this table grows. Worth watching.
 
 ## Activity
 
-With [Activity](/activity/) installed, the bundled Marketing producer records
-`marketing.email_sent`, `email_opened`, `email_clicked`, `email_bounced` and `email_complained` into
-the ledger as well.
+With [Activity](/activity/) installed, its Marketing producer records `marketing.email_sent`,
+`email_opened`, `email_clicked`, `email_bounced` and `email_complained` into the ledger as well.
+
+The producer ships with the Activity addon, not with this one. Marketing contains no Activity code
+at all: it fires its own events, and Activity listens where it is installed.
 
 That is not a duplication to resolve. The message events are Marketing's own per-campaign reporting;
 the ledger is the site's cross-domain record, in one shape every consumer can read, and it is what a

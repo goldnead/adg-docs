@@ -122,7 +122,8 @@ LeadHub predates this addon and keeps three Laravel notifications — new lead, 
 digest — for compatibility.
 
 When both addons are installed, LeadHub uses **this** addon for **task assignment** (in-app, mail or digest, per
-the assignee's preferences) and contributes open tasks to the digest. It does not duplicate the other three.
+the assignee's preferences) and contributes **overdue follow-ups** to the digest. It does not duplicate the
+other three.
 
 Without this addon the task-notification path is a **no-op**, not a fallback to mail.
 

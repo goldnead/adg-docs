@@ -49,8 +49,54 @@ Not `Goldnead\Automations`. This has cost real time.
 | A logic node | `AutomationLogicNode` | `registerLogicNode()` |
 | A select's options | — | `registerOptionSource()` |
 | An event as a trigger | — | `registerEventTrigger()` or `event_triggers` config |
+| A starting flow | — | `template()`, see [Templates](/automations/templates#registering-your-own-template) |
 
-All three node contracts extend the shared `AutomationNode`.
+All three node contracts extend the shared `AutomationNode`, which is where `handle()`,
+`label()`, `description()`, `group()` and `schema()` live.
+
+::: tip A logic node does not strictly need the contract
+`registerLogicNode()` accepts any `AutomationNode` that exposes an `execute()` or an
+`evaluate()` method, even without implementing `AutomationLogicNode`. That is how the
+built-in *Set Variable* and *Call Automation* nodes are registered as logic while
+carrying an action's `execute()`. Implement the contract in your own code anyway — the
+relaxed rule exists for back-compatibility, not as an invitation.
+:::
+
+## The full surface
+
+Everything on the facade, so nothing has to be found by reading the source:
+
+| Method | Purpose |
+| --- | --- |
+| `registerAction($handleOrClass, ?$class = null)` | Register an action |
+| `registerTrigger($handleOrClass, ?$class = null)` | Register a trigger |
+| `registerLogicNode($handleOrClass, ?$class = null)` | Register a logic node |
+| `registerOptionSource($handle, callable\|string $resolver)` | Populate a select |
+| `registerEventTrigger(string $eventClass, array $definition)` | An event as a trigger |
+| `template(array $template)` | Add a template to the CP catalogue |
+| `registerBuiltIn(string $handle)` | Exempt a handle from the Pro gate |
+| `isBuiltIn(string $handle): bool` | Ask whether one is exempt |
+| `trigger($handle, $class)` · `action($handle, $class)` · `node($handle, $class)` | The two-argument primitives the `register*` methods delegate to, without the class validation |
+| `describe(string $class, ?string $expectedKind = null): array` | Validate **one** class |
+| `triggers()` · `actions()` · `nodes()` | The registries |
+| `optionSources(): OptionSourceRegistry` | The option-source registry |
+| `eventTriggers(): array` | Registered event-trigger definitions, keyed by handle |
+| `bootEventTriggersFromConfig()` | Registers the `event_triggers` config map; called at boot |
+| `license(): LicenseManager` | Licence state |
+
+The registries are readable, which is what makes "is my node actually registered" a
+question with an answer:
+
+```php
+array_keys(Automations::nodes()->all());     // every registered handle
+Automations::optionSources()->has('shop.products');
+Automations::eventTriggers();                 // handle => definition
+```
+
+Handles on the option-source registry are plain strings, and the built-in Statamic
+sources are registered twice — under the bare name (`collections`) and under a
+`statamic.`-prefixed spelling (`statamic.collections`) — so both spellings work in a
+schema field.
 
 ## More than one output <Badge type="tip" text="1.7.0" />
 
@@ -149,18 +195,40 @@ If you need to defer — a bridge waiting for a sibling addon — queue a retry 
 idempotency guard rather than nesting the callback.
 :::
 
-## Registration errors are loud
+## A malformed registration throws. A failed licence gate does not.
 
-A malformed registration **throws immediately**, and never silently no-ops.
+Two different failure modes, and telling them apart saves the whole investigation.
 
-When a node does not appear, ask the registry rather than guessing at the front end:
+**Malformed throws.** `registerAction()`, `registerTrigger()` and `registerLogicNode()`
+run `describe()` on the class first, and it raises an `InvalidArgumentException` when the
+class does not exist, does not implement `AutomationNode`, returns an empty `handle()`,
+or does not satisfy the contract for the kind you registered it as. You get a stack trace
+at boot, which is the point.
+
+**A failed licence gate does not throw.** Custom node registration is a Pro feature
+(`features.custom_actions_requires_pro`, on by default). Without a Pro licence the
+registration is **skipped silently** so a lapsed licence never crashes somebody's boot.
+Nothing is logged and nothing is thrown; the node is simply absent from the library.
+
+So: node missing and nothing threw → check the licence first, then check whether the
+registration code ran at all.
+
+`registerOptionSource()` and `registerEventTrigger()` are **not** gated. They register
+regardless of licence state.
+
+When a node does not appear, ask the registries rather than guessing at the front end:
 
 ```php
-Automations::describe();
+array_keys(Automations::nodes()->all());          // every registered handle
+Automations::nodes()->has('shop_order_shipped');  // one specific handle
+Automations::describe(SendToInternalApiAction::class);  // is this class even valid?
 ```
 
-That is the first debugging step for "my custom action is missing", and it usually ends
-the investigation.
+::: warning `describe()` takes a class
+`describe(string $class, ?string $expectedKind = null)` validates **one** class and
+returns `['handle' => …, 'kind' => …, 'class' => …]`, or throws explaining what is wrong
+with it. It does not list the registry, and calling it with no argument is a `TypeError`.
+:::
 
 ## Handles replace, they do not add
 
@@ -194,19 +262,28 @@ Automations::registerEventTrigger(\App\Events\OrderShipped::class, [
 nothing to show, so whoever builds the flow has to know the shape by heart.
 
 The same thing declaratively, which is often the better answer for a project rather than
-an addon:
+an addon. **The array key is the event class**, and the definition holds the handle:
 
 ```php
 // config/automations.php
 'event_triggers' => [
-    'order_shipped' => [
-        'event' => \App\Events\OrderShipped::class,
+    \App\Events\OrderShipped::class => [
+        'handle' => 'order_shipped',
         'label' => 'Order Shipped',
         'group' => 'Shop',
-        'payload' => 'order',
+        'payload' => 'order',                  // {{ order.id }} etc.
+        'output_schema' => ['order' => ['id' => 'string', 'total' => 'number']],
     ],
 ],
 ```
+
+A definition without a non-empty `handle` throws an `InvalidArgumentException` at boot.
+
+The config path is the same registration, so anything it can express behaves identically.
+What it cannot express is a closure — config is not serialisable that way — so `payload`
+here is a dot-path string (or `'*'` to dump the event's public properties) and `matches`
+is an invokable class-string. For the closure form, call `registerEventTrigger()` from a
+service provider's `boot()`.
 
 This is also how you reach LeadHub events that the curated trigger set does not expose —
 `LeadHubSourceIngested`, `LeadHubOpportunityWon`, `LeadHubContactsMerged` and the rest.
@@ -222,8 +299,15 @@ Register the event class and you have a node.
 ],
 ```
 
-Registration requires a Pro licence by default. `registerOptionSource()` and
-`registerEventTrigger()` sit behind the same gate as the node types they serve.
+Registering a **node** — action, trigger or logic node — requires a Pro licence by
+default, and without one the registration is skipped silently rather than throwing.
+
+`registerOptionSource()`, `registerEventTrigger()` and `template()` are **not** gated.
+They register whatever the licence state is. So an option source for a node you cannot
+register is not an error, just an option source nothing asks for yet.
+
+Built-in nodes are exempt: the addon marks its own handles with `registerBuiltIn()` before
+registering them, which is why a Free install still has every shipped node.
 
 ## Keeping credentials out of exports
 

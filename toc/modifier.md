@@ -75,6 +75,31 @@ The modifier works on the same things the tag does:
 {{ some_html_variable | toc }}
 ```
 
+## Adding your own attributes
+
+Anything you pass the modifier is written into every opening heading tag as extra
+attributes, alongside the `id`. Parameters are joined with a space, and the literal
+`[id]` is replaced with that heading's anchor:
+
+```antlers
+{{ article | toc:x-on:click="go('[id]')" }}
+```
+
+```html
+<h2 id="resonanz" x-on:click="go('resonanz')">Resonanz</h2>
+```
+
+That placeholder is the point of the feature: it is the only way to get the anchor into
+an attribute that is not `id`, which is what scroll-spy, copy-link buttons and Alpine
+handlers usually need.
+
+Two things to know:
+
+- **The `id` is always written first**, and your attributes are added to it, never
+  instead of it.
+- **A heading that already carries an `id` is skipped entirely**, so it receives neither
+  a second id nor your extra attributes.
+
 ## Where to put it
 
 On the field, in the template that renders the article body. Not in the layout,

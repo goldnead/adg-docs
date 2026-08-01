@@ -28,30 +28,52 @@ overkill, and custom code for every small workflow is expensive to maintain.
 ## What you get
 
 - **Visual node-based flow builder** in the Control Panel
-- **Triggers** for forms, entries, assets, users, leads and webhooks
-- **Filter** and **Branch** nodes for logic, **Delay** for waiting
+- **Eighteen built-in triggers** for forms, entries, terms, users, assets, globals,
+  navigations and a schedule, plus lead and webhook triggers from the siblings
+- **Eleven logic nodes**: Filter, Branch, Switch, Stop, Delay, Wait Until, Loop,
+  Parallel, Throttle, Set Variable and Call Automation
 - **Actions** for email, webhooks, LeadHub updates and Statamic changes
 - **A token picker** for event data: `{{ form.email }}`, `{{ lead.full_name }}`
 - **Test runs** with real sample data and no real side effects
 - **Node-by-node execution logs**, with redacted payloads and optional encryption at
   rest
-- **Optional Webhook Manager and LeadHub integrations**, auto-detected, never required
-- **Templates** that copy into user-owned automations
+- **Version history and an audit log** for every automation, with one-click revert
+- **Optional Webhook Manager, LeadHub and Marketing integrations**, auto-detected, never
+  required
+- **Eleven templates** that copy into user-owned automations, and an API to register
+  your own
 - **JSON export and import** for version control and cross-environment moves
-- **A public developer API** for custom triggers, actions and conditions
+- **A public developer API** for custom triggers, actions, logic nodes, option sources
+  and event triggers
 
 ## Quick start
 
 1. CP → **Automations → New automation**.
-2. Drag a **Trigger** onto the canvas from the node library, e.g. *Form Submitted*.
-3. Add **Filter** or **Branch** nodes if you need conditions.
-4. Add **Action** nodes, e.g. *Send Email*.
-5. Connect nodes by dragging between handles.
-6. **Validate**, then **Test** with sample data.
-7. Toggle **Enabled**.
+2. Click the **+** on the empty canvas, then pick a trigger from the node library on the
+   left, e.g. *Form Submitted*.
+3. Configure it in the panel on the right.
+4. Click the **+** below the trigger and pick the next node, a **Filter** or **Branch**
+   if you need conditions, then an **Action** such as *Send Email*. Each node lands where
+   you clicked and is wired up for you.
+5. **Validate**, then **Test** with sample data.
+6. Toggle **Enabled**.
 
-Or skip steps 2 to 5 and start from a [template](/automations/templates): the eight
-most common patterns ship as one-click installs.
+Or skip steps 2 to 4 and start from a [template](/automations/templates): eleven common
+patterns ship as one-click installs.
+
+## The Control Panel screens
+
+The **Automations** entry in the Tools section of the CP nav opens on seven screens:
+
+| Screen | What it is for |
+| --- | --- |
+| **Dashboard** | How many automations exist, how many are enabled, the success rate, a fourteen-day run trend and the most recent failures |
+| **Automations** | The list, and the builder behind it |
+| **Runs** | Run history with node-by-node logs and partial retry |
+| **Audit log** | Who changed, enabled, disabled or deleted which automation, and when |
+| **Automation templates** | The eleven starting flows, one click to install |
+| **Import** | Upload an exported JSON definition |
+| **Settings** | Licence status, which siblings were detected, and the resolved queue, run, test-mode, feature and redaction configuration |
 
 ## Editions
 
@@ -71,8 +93,9 @@ the triggers, the branches and the actions you use daily are all in it.
 - **A reliable single webhook.** That is [Webhook Manager](/webhook-manager/), which
   owns retries, signing and delivery records. An automation can delegate its HTTP
   calls to it and inherit all of that.
-- **Loops or parallel execution.** Explicitly out of scope for v1, along with code
-  nodes.
+- **Arbitrary code in a flow.** There is no code node, deliberately: it would turn a
+  visual flow into a place where logic hides from review. Register a custom action
+  instead.
 
 ::: warning Do not wire the same event twice
 Both this addon and Webhook Manager can react to the same Statamic event. Pick one
@@ -89,7 +112,7 @@ configurations look individually correct. See [Boundaries](/guide/boundaries).
 - [Building an automation](/automations/building)
 - [Node catalogue](/automations/nodes) — every built-in trigger, logic node and action
 - [Runs & debugging](/automations/runs) — test mode, logs, partial retry
-- [Templates](/automations/templates) — the eight that ship
+- [Templates](/automations/templates) — the eleven that ship, and registering your own
 - [Export, import & file sync](/automations/export-import)
 - [Integrations](/automations/integrations) — LeadHub and Webhook Manager
 - [Extending](/automations/extending) — custom nodes with no front-end build

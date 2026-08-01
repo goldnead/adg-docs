@@ -39,9 +39,69 @@ different source of truth: see
 'max_call_depth' => env('STATAMIC_AUTOMATIONS_MAX_CALL_DEPTH', 3),
 ```
 
-How deep automations may trigger each other before the engine refuses. An automation
-whose action mutates a record that triggers the same automation is a loop, and this is
-the backstop. Raising it does not fix a loop; it lengthens it.
+How deep automations may nest before the engine refuses. Two things count against it: the
+**Call Automation** node, which runs a second automation as a sub-flow, and an automation
+whose action mutates a record that re-triggers the same automation.
+
+This is the backstop for both. Raising it does not fix a loop; it lengthens it.
+
+## Failure alerts
+
+```php
+'alerts' => [
+    'enabled' => true,
+    'channels' => ['log'],
+    'mail_to' => env('STATAMIC_AUTOMATIONS_ALERT_MAIL_TO', null),
+    'throttle_minutes' => 15,
+],
+```
+
+What happens when a run fails. `channels` takes `log`, `mail`, or both.
+
+The default is `log` only, so out of the box a failure goes to your Laravel log and
+nobody is emailed. Add `'mail'` **and** set `mail_to` — with one but not the other,
+nothing is sent.
+
+`throttle_minutes` is per automation. A flow failing on every one of a hundred runs
+produces one alert per window rather than a hundred, which is what keeps the mailbox
+usable and the alert meaningful.
+
+## Versioning
+
+```php
+'versioning' => [
+    'enabled' => true,
+    'keep' => 25,
+],
+```
+
+Every save snapshots the automation's graph so a change can be rolled back. Snapshots are
+stored as **Statamic Revisions** — flat-file YAML in the revisions store, under a key that
+namespaces automation history away from entry and term revisions.
+
+`keep` caps the retained revisions per automation. Setting `enabled` to `false` stops
+snapshotting, which also means there is nothing left to revert to. See
+[Version history](/automations/building#version-history).
+
+## Switching individual nodes off
+
+```php
+'builtin_nodes' => [
+    'entry_saving' => false,
+    'ai_generate' => false,
+],
+```
+
+One switch per built-in trigger, logic node and action, keyed by its handle. **A handle
+absent from the map is on**, so the published file lists a subset and everything else
+still registers.
+
+Use it to keep a node out of the library entirely rather than relying on people not
+picking it: `delete_entry` on a site where nothing should ever delete content,
+`ai_generate` where there is no key. The handles are in the
+[node catalogue](/automations/nodes).
+
+This is narrower than `features.*`, which switches off whole capabilities.
 
 ## Runs
 
@@ -211,6 +271,34 @@ Class names checked by the integration detector; the first class that exists win
 Leave the defaults unless you run a forked sibling package. See
 [Integrations](/automations/integrations).
 
+Marketing is detected too, but has no block in the published file: the detector falls back
+to `Goldnead\Marketing\Services\SubscriptionService` and `Goldnead\Marketing\ServiceProvider`.
+Add `'marketing' => ['detect' => [...]]` only if you run a fork.
+
+## Custom event triggers
+
+```php
+'event_triggers' => [
+    \App\Events\OrderShipped::class => [
+        'handle' => 'order_shipped',
+        'label' => 'Order Shipped',
+        'group' => 'Shop',
+        'payload' => 'order',
+        'output_schema' => ['order' => ['id' => 'string', 'total' => 'number']],
+    ],
+],
+```
+
+Turns any application event into a trigger with no trigger class of your own. **The array
+key is the event's fully qualified class name**; `handle` lives inside the definition and
+is required.
+
+Closures are not config-serialisable, so this path takes the declarative forms only:
+`payload` as a dot-path string (or `'*'` to dump the event's public properties) and
+`matches` as an invokable class-string. For the closure form, call
+`Automations::registerEventTrigger()` from a service provider's `boot()`. See
+[Extending](/automations/extending#turning-an-application-event-into-a-trigger).
+
 ::: tip A namespace to remember
 LeadHub's PSR-4 namespace is `Goldnead\Leadhub` — lowercase "hub" — even though the
 brand is "LeadHub". And Automations' own namespace is
@@ -225,6 +313,7 @@ STATAMIC_AUTOMATIONS_QUEUE_CONNECTION=
 STATAMIC_AUTOMATIONS_STORAGE=database
 STATAMIC_AUTOMATIONS_DEFINITIONS_PATH=
 STATAMIC_AUTOMATIONS_MAX_CALL_DEPTH=3
+STATAMIC_AUTOMATIONS_ALERT_MAIL_TO=
 STATAMIC_AUTOMATIONS_ENCRYPT_CONTEXT=false
 STATAMIC_AUTOMATIONS_FILE_PATH=
 STATAMIC_AUTOMATIONS_AI_MODEL=claude-sonnet-4-5

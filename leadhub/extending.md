@@ -13,12 +13,35 @@ use Goldnead\Leadhub\Facades\LeadHub;
 
 | Method | Purpose |
 | --- | --- |
-| `ingest(array $payload)` | Turn any source into a contact plus a timeline entry |
-| `merge($duplicate, $survivor)` | Re-parent a duplicate's history onto a survivor |
-| `optOut($contact)` | Set `do_not_contact` **and** remove from supported destinations |
+| `find($id)` · `findByEmail($email)` | Look a contact up; `null` when there is none |
+| `create($attributes)` · `update($id, $attributes)` | Write a contact |
+| `changeStatus($id, $status)` | Move a contact through the status list |
+| `addTag($id, $tag)` · `removeTag($id, $tag)` | Tag a contact |
+| `addNote($id, $body, $userId = null)` | Append a note, timelined |
+| `createFollowUp($id, $data)` · `completeFollowUp($id, $followUpId)` | Follow-ups |
+| `ingest($event)` | Turn any source into a contact plus a timeline entry |
+| `registerSourceProjector($projector)` · `projectAndIngest($model)` | Ingest one of your own models |
+| `merge($loserId, $winnerId)` | Re-parent a duplicate's history onto a survivor; returns the survivor |
+| `optOut($id)` | Set `do_not_contact` **and** remove from supported destinations |
+| `adjustScore($contact, $delta, $reason = null)` · `setScore($contact, $score, $reason = null)` | Engagement score; returns the new score or `null` |
 | `segments()` | `[{ id, name, handle, is_active, members_count }, …]` |
 | `segmentMemberIds($handle)` | Contact **UUIDs**, resolved live from the rules |
 | `contactInSegment($contactOrId, $handle)` | `bool`, cheap reactive check |
+| `createPipeline($name, $stages = [], $slug = null)` | Build a pipeline with its stages |
+| `upsertOpportunity($contactId, $pipeline, $attributes = [])` · `moveStage($opportunityId, $stage, $note = null)` | Deal tracking |
+| `createTask($attributes, $contactId = null)` · `completeTask($taskId, $completedBy = null)` | Tasks |
+| `createCompany($attributes)` · `linkCompany($contactId, $company, $label = null, $primary = false)` | B2B records |
+| `resolveEmailTemplate($slug, $fallback = null)` | Resolve a managed template, or `null` |
+
+Contact-returning methods return the normalised array shape, not the Eloquent model. Full
+signatures in [Reference](/leadhub/reference#facade).
+
+::: warning The CRM-core methods do not check the feature flags
+`createTask`, `createPipeline`, `createCompany` and their neighbours write straight to the
+relational tables. `features.tasks`, `features.pipelines` and `features.companies` gate the
+Control Panel screens, not the facade. Check the flag yourself if your integration should
+respect the site's configuration.
+:::
 
 ::: tip The namespace is `Goldnead\Leadhub`
 Lowercase "hub", even though the brand is LeadHub. And check the facade **root** for capability
@@ -35,15 +58,17 @@ silently on every real install.
 
 ## Custom CRM destinations
 
-Register from a service provider:
+Register from a service provider. `extend()` takes a driver name and a **class name**, not a
+factory closure:
 
 ```php
 use Goldnead\Leadhub\Crm\DestinationManager;
 
-app(DestinationManager::class)->extend('salesforce', function (string $key, array $config) {
-    return new \App\Leadhub\SalesforceDestination($key, $config);
-});
+app(DestinationManager::class)->extend('salesforce', \App\Leadhub\SalesforceDestination::class);
 ```
+
+The manager constructs it as `new $class($key, $config)`, where `$key` is the destination's
+key under `crm.destinations` and `$config` is that entry.
 
 Implement `Goldnead\Leadhub\Contracts\CrmDestination`:
 
@@ -88,12 +113,13 @@ class OrderProjector implements SourceProjector
 ```
 
 The mapping then lives in one place rather than at every call site, which matters as soon as
-three parts of your application ingest orders. Requires `features.ingestion`.
+three parts of your application ingest orders. Ingestion writes to the relational tables, so
+it needs the eloquent driver.
 
 ## Listening to events
 
-Twenty-five-plus events, each carrying `$contact`, an optional `$actor` and optional
-`$metadata`. Full list in [Timelines & events](/leadhub/timelines#the-event-surface).
+Twenty-six events, each carrying `$contact`, an optional `$actor` and optional `$metadata`.
+Full list in [Timelines & events](/leadhub/timelines#the-event-surface).
 
 ```php
 use Goldnead\Leadhub\Events\LeadHubStatusChanged;
@@ -137,8 +163,8 @@ Register from `boot()`, never `register()`. And do **not** nest an `app->booted(
 Statamic already calls `bootAddon()` inside one, so a nested callback fires *immediately* and is
 still too early.
 
-LeadHub's own Webhook Manager bridge once booted before Webhook Manager existed and lost all
-fourteen trigger registrations, with nothing but log warnings to show for it. It now uses a
+LeadHub's own Webhook Manager bridge once booted before Webhook Manager existed and lost
+every trigger registration, with nothing but log warnings to show for it. It now uses a
 deferred boot with a retry and an idempotency guard. If you write a bridge, use the same shape.
 :::
 

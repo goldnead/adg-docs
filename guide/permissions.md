@@ -93,20 +93,38 @@ thousand people are different levels of trust.
 | Permission | Grants |
 | --- | --- |
 | `view activity` | the read-only ledger inspector at **Tools → Activity** |
-| `manage activity retention` | the prune and anonymise operations |
+
+Activity registered a second permission, `manage activity retention`, up to
+1.0.6. It was removed in 1.1.0 because nothing checked it: pruning and
+anonymising happen through Artisan commands, and Artisan does not consult
+gates. A checkbox that controls nothing is worse than no checkbox. Restrict
+those operations by restricting who can run Artisan.
 
 ### Notifications
 
 | Permission | Grants |
 | --- | --- |
 | `view notifications` | the read-only inspector at **Tools → Notifications** |
-| `manage notification digests` | digest operations |
+| `manage notification digests` | nothing, at present |
 
-### Email Templates and Table of Contents
+::: warning `manage notification digests` is not enforced
+It is registered, so it appears in the role editor, but no code checks it. The
+only authorisation in Notifications is `view notifications` on the inspector;
+the digest commands run through Artisan, which does not consult gates. Granting
+or withholding it changes nothing today. This is the same problem Activity
+solved by removing its equivalent permission.
+:::
 
-Neither registers permissions. Email Templates uses a native Statamic
-collection, so the ordinary collection permissions apply; Table of Contents has
-no Control Panel surface at all.
+### The packages that register no permissions
+
+Email Templates, Table of Contents, Identity Contracts, Suppression and
+Preference Center register none.
+
+Email Templates uses a native Statamic collection, so the ordinary collection
+permissions apply. Table of Contents has no Control Panel surface at all.
+Identity Contracts and Suppression are libraries with no Control Panel surface.
+Preference Center serves public pages only: its authorisation is the magic-link
+token, not a role.
 
 ## Writing a permission check against these addons
 

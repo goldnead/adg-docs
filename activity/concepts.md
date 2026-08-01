@@ -113,7 +113,7 @@ a different purpose, and the overlap is intended. See
 
 ## Privacy is structural
 
-- **No raw user agent, ever.** Only `mobile`, `desktop`, `tablet`, `bot`.
+- **No raw user agent, ever.** Only `mobile`, `desktop`, `tablet`, `bot` or `unknown`.
 - **No IP addresses**, at any setting.
 - **A sanitizer on every write**, redacting secret-shaped keys at any depth and marking oversized payloads
   visibly rather than truncating silently.

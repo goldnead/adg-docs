@@ -2,7 +2,7 @@
 
 <AddonHeader />
 
-<Requirements laravel="11.x, 12.x or 13.x" database="MySQL, PostgreSQL or SQLite — eloquent driver only" queue="Required for CRM pushes and queued exports" />
+<Requirements laravel="12.x or 13.x" database="MySQL, PostgreSQL or SQLite — eloquent driver only" queue="Required for CRM pushes and queued exports" />
 
 ```bash
 composer require goldnead/statamic-leadhub
@@ -26,6 +26,23 @@ php artisan vendor:publish --tag=leadhub-config
 ```
 
 After installation, a **LeadHub** entry appears in the Control Panel sidebar.
+
+## What comes with it
+
+LeadHub has one addon dependency, and it is a hard `require`, not a suggestion:
+
+| Package | Constraint | |
+| --- | --- | --- |
+| [`goldnead/statamic-brand-context`](/brand-context/) | `^1.6` | Installed automatically. It owns the brand a contact belongs to, and every LeadHub table is scoped by it. |
+
+The floor is `^1.6` for a reason: `^1.0` allowed a v1.0.0 that predates `RunsForEachBrand`,
+and that combination fails at boot for the whole suite. It was raised in **1.12.0**.
+
+Composer also pulls `inertiajs/inertia-laravel` (`^1.0|^2.0`), which the Control Panel
+screens are built on, and `symfony/yaml` (`^6.0|^7.0`), used by the flat-file driver.
+
+Nothing here needs a `repositories` entry in your project's `composer.json`. Every package
+in the suite resolves from Packagist.
 
 ## Quick start
 
@@ -108,11 +125,13 @@ All of them need the eloquent driver.
     'pipelines' => true,
     'merge' => true,
     'scoring' => true,
-    'segments' => true,
 ],
 ```
 
 Turn on what you will use. Each adds CP screens and, for most of them, tables.
+
+**Segments are not in this list.** There is no `features.segments`; they are available on
+every install and on both drivers, gated only by permissions.
 
 ## Multiple Control Panel users
 

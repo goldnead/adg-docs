@@ -18,8 +18,18 @@ Confirm the diagnosis in `tinker`:
 
 ```php
 BrandContext::multiBrandEnabled();   // true?
-BrandContext::current();             // null → that is your answer
+BrandContext::hasCurrent();          // false → that is your answer
 ```
+
+::: warning Do not use `current()` for this
+`current()` returns a `Brand`, never `null`: with nothing resolved it hands back the
+default brand. So it always looks like a brand is set, including in exactly the
+situation that is emptying your lists. `hasCurrent()` is the question you mean.
+
+The scope reads `hasCurrent()`, not `current()`, which is why the two can disagree —
+`current()` answering "default" while the scope returns no rows is the expected
+combination here, not a contradiction.
+:::
 
 ## An assignee dropdown is suddenly empty
 

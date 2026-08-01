@@ -7,18 +7,21 @@ double opt-in, campaigns, batch sending, and open and click tracking.
 
 Think Mailcoach, but native to Statamic and built on top of [LeadHub](/leadhub/) contacts.
 
-## The one hard dependency
+## What it depends on
 
-**A subscriber is a LeadHub contact.** There is no separate subscriber table, so
-`goldnead/statamic-leadhub` is required rather than suggested — the only hard inter-addon
-dependency in the suite.
+**A subscriber is a LeadHub contact.** There is no separate subscriber table, which is the reason
+`goldnead/statamic-leadhub` is required rather than suggested. Two more siblings are in `require`
+beside it, so a bare `composer require` installs three addons whether or not you asked.
 
 | Addon | Role |
 | --- | --- |
-| [LeadHub](/leadhub/) | CRM: contacts, tags, timeline. **Required.** |
+| [LeadHub](/leadhub/) `^1.4` | CRM: contacts, tags, timeline. **Required.** |
+| [Suppression](/suppression/) `^1.0` | The gate every send path asks before it mails. **Required.** |
+| [Brand Context](/brand-context/) `^1.4` | Brand resolution on the public routes. **Required**, multi-brand mode optional. |
+| [Preference Center](/preference-center/) | Optional: the multi-list preference page the footer link points at |
 | [Webhook Manager](/webhook-manager/) | Optional: ESP feedback webhooks in, marketing events out |
 | [Automations](/automations/) | Optional: marketing triggers and actions in the visual builder |
-| [Email Templates](/email-templates/) | Optional: CP-authored template bodies |
+| [Email Templates](/email-templates/) | Optional: CP-authored template bodies, detected at runtime |
 
 ## What it does
 
@@ -34,7 +37,8 @@ dependency in the suite.
   rates, bounces and unsubscribes.
 - **Unsubscribes** via a tokenised link plus RFC 8058 one-click
   (`List-Unsubscribe` / `List-Unsubscribe-Post`), with optional global opt-out to LeadHub's
-  `do_not_contact`.
+  `do_not_contact`. The footer link goes to the [Preference Center](/preference-center/) where that
+  addon is installed; the one-click endpoint is always this addon's own.
 - **LeadHub-native** — subscribing upserts the contact, records timeline events, and tags
   contacts with `list:{handle}`. Hard bounces and complaints opt the contact out.
 - **Flat-file first** — lists, campaigns and templates live as YAML under
@@ -96,3 +100,5 @@ php artisan migrate
 - [Unsubscribes & suppression](/marketing/suppression)
 - [Sending to a segment](/marketing/segments)
 - [Extending](/marketing/extending)
+- [Reference](/marketing/reference)
+- [Troubleshooting](/marketing/troubleshooting)

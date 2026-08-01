@@ -129,9 +129,17 @@ runtime data.
 **Subject** — the thing a fact or a notification is about, as a polymorphic model
 reference. Distinct from the *actor*, who did it.
 
-**Suppression** — a Marketing address that must not be sent to again, typically from
-a hard bounce or a complaint. Distinct from an unsubscribe, which is the person's
-own decision.
+**Suppression** — an address that must not be sent to again by any addon in the
+suite, typically after a hard bounce or a complaint. It is recorded once and
+asked once, through the [Suppression](/suppression/) gate, so a bounce seen by
+Marketing also stops a Notifications mail. Distinct from an unsubscribe, which
+is the person's own decision about one list.
+
+**Preference centre** — the public page served by
+[Preference Center](/preference-center/) where a person changes what they
+receive: mailing lists, notification types, cadence and block state, on one
+screen and without an account. From Marketing 1.9.0 this addon owns that page
+outright; Marketing keeps only the one-click unsubscribe.
 
 **Task** — in LeadHub, one of many to-dos on a contact, with a priority, an assignee
 and a due date. Requires the eloquent driver.

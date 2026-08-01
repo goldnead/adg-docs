@@ -12,6 +12,46 @@ Release notes for `goldnead/statamic-activity`, as published with the package.
 Cross-version upgrade notes for the whole suite are in
 [Upgrading](/guide/upgrading).
 
+## 1.1.0 — 2026-08-01
+
+### Changed — the Control Panel is built out of Statamic's own components now
+
+The domain half of this addon and its Control Panel were never the same quality. The recorder, the immutability guard on both the model and the query builder, the two-key idempotency with its race handler and the migration work were all left untouched here. The two Blade screens were rebuilt.
+
+They were hand-rolled markup on a false premise. `resources/views/cp/_styles.blade.php` opened by justifying its own existence: `mb-4`, `flex` and `gap-3`, it said, "simply do not exist at runtime". All three are in the shipped CP stylesheet of `statamic/cms` v6.26.0. The class the file actually depended on was `.card`, and in Statamic 6 that is `{border-radius:var(--radius-md)}` and nothing else — no background, no border, no padding. So every "panel" rendered as a transparent box on the CP background, and the stated reason not to use native components was wrong.
+
+- **The listing is `<ui-listing>` in server mode.** `ActivityController@index` now answers the same route twice: HTML for the page shell, JSON (`data` plus a `meta` carrying columns on every response) for the listing itself. Search, sorting, per-page, column customisation, saved views and pagination come from core and behave the way they do on the Entries screen.
+- **Five real filters**, registered as `Statamic\Query\Scopes\Filter` classes: event type, source, identity (contact uuid / user id / anonymous id), occurrence date range, and anonymisation state. Each one answers `visibleTo()` so it does not turn up on the Entries, Assets and Users listings of every site that installs this addon.
+- **The source filter exists.** It had been advertised since 1.0.0 and the controller implemented it, but no screen ever rendered an input for it. It was reachable only by hand-editing the query string.
+- **Date bounds are parsed, not passed through.** `from` and `to` went unvalidated into a raw comparison, so a malformed date returned an empty result set indistinguishable from "no matches". An unparseable bound is now dropped rather than allowed to narrow the query.
+- **The detail page has a way back**, and a title that names the fact instead of reading "Activity" on every page in the browser history.
+- **`_styles.blade.php` is gone**, and with it the inline `<style>` block that was injected into `@section('scripts')` on every render.
+- No build step was introduced.
+
+### Fixed — a stored property could be evaluated as a Vue expression
+
+Because the yielded Blade is compiled as a Vue template in the browser, a fact whose properties contained `{{ … }}` had that mustache evaluated as an expression on the detail page. Every element that prints ledger content now carries `v-pre`, and a test asserts it.
+
+### Fixed — `ACTIVITY_CP=false` removes the screens
+
+The flag hid the nav item and left both routes registered, so the inspector stayed reachable by URL. That is a hidden Control Panel, not a disabled one.
+
+### Removed — the `manage activity retention` permission
+
+It was registered and checked nowhere: retention and anonymisation are artisan-only paths and artisan does not consult Gates. Operators were shown a checkbox that controlled nothing. If a Control Panel retention action is ever added, the permission comes back with it. `view activity` is now the addon's only permission.
+
+### Added — an `ActivityRecorded` event
+
+A ledger whose stated purpose is to be read by other addons gave downstream consumers no hook; they had to poll the table. `Goldnead\Activity\Events\ActivityRecorded` fires once per fact actually written. A deduplicated write returns the row that already existed and fires nothing, because to a read model that is not a new event.
+
+### Changed — Laravel 11 is out of the declared range
+
+`require` said `^11.0|^12.0|^13.0`. `laravel/framework` v11.0.0 through v11.55.0 are covered by security advisories and Composer refuses the line, so nobody could install on it; `statamic/cms ^6.0` could not resolve alongside it either. The range is now `^12.0|^13.0`, and `orchestra/testbench` moved to `^10.0|^11.0` to match.
+
+### Added — the tooling this repo never had
+
+Pint and Larastan (level 5, with a generated baseline), a `.gitattributes` so tests and CI config stop shipping to every installing site, and CI with a Laravel × PHP × stability matrix plus a MySQL 8 leg that finally runs the `phpunit.mysql.xml` config the repo had carried unused since 1.0.6.
+
 ## 1.0.6 — 2026-07-28
 
 ### Added — the migrations are finally tested against a database with data in it

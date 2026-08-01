@@ -47,17 +47,28 @@ All opt-in, all Laravel notifications using the mail channel:
 | **Lead assigned** | A lead gets an owner |
 | **Daily follow-up digest** | Once a day, summarising due and overdue follow-ups |
 
-```php
-'features' => ['notifications' => true],
+There is no `features.notifications`. The switch is `notifications.enabled`, and each of the
+three has its own flag beside it:
 
+```php
 'notifications' => [
-    'emails' => env('LEADHUB_NOTIFY_EMAILS'),   // comma-separated team inbox(es)
+    'enabled' => env('LEADHUB_NOTIFICATIONS', true),
+
+    'new_lead' => true,
+    'on_assignment' => true,
+
+    'recipients' => env('LEADHUB_NOTIFY_EMAILS'),   // comma-separated team inbox(es)
+
     'digest' => [
         'enabled' => true,
-        'time' => '08:00',                       // server time, daily
+        'time' => env('LEADHUB_DIGEST_TIME', '08:00'),   // server time, daily
+        'fallback_recipients' => env('LEADHUB_DIGEST_EMAILS'),
     ],
 ],
 ```
+
+`recipients` is the fallback inbox for an **unassigned** lead. Once a lead has an owner, the
+owner is notified and `recipients` is not copied.
 
 ```dotenv
 LEADHUB_NOTIFY_EMAILS=team@example.com,sales@example.com

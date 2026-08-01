@@ -8,13 +8,16 @@ constructed, shared by every addon in this family that puts mail in a queue.
 It is not a deliverability dashboard and not an ESP abstraction. It owns two tables, one
 service and one gate, and it deliberately knows nothing about who sends or how.
 
+It is also a library rather than a Statamic addon: no Control Panel screen, no nav item, no
+permissions, nothing to enable. You install it and then you can ask it a question.
+
 ```php
-use Goldnead\Suppression\Contracts\Gate;
+use Goldnead\Suppression\Facades\SuppressionGate;
 use Goldnead\Suppression\Facades\Suppression;
 use Goldnead\Suppression\Reasons;
 
-app(Gate::class)->isSuppressed($email);          // ask before constructing a send
-app(Gate::class)->suppressedAmong($addresses);   // ask once for a whole batch
+SuppressionGate::isSuppressed($email);          // ask before constructing a send
+SuppressionGate::suppressedAmong($addresses);   // ask once for a whole batch
 
 Suppression::suppress($email, Reasons::HARD_BOUNCE, ['provider' => 'resend']);
 Suppression::recordSoftBounce($email);            // counts; suppresses only at the threshold
@@ -58,7 +61,7 @@ The two rules look inconsistent side by side and they are not.
 Suppressions are **released, never deleted**, so "blocked → released by X on D because R →
 blocked again" stays readable in full.
 
-## Where this addon stops
+## Where this package stops
 
 | Concern | Owner |
 | --- | --- |

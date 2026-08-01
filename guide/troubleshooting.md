@@ -72,8 +72,10 @@ Work through it in this order:
    Manager are installed, check both. See [Boundaries](/guide/boundaries).
 4. **Is a brand current?** In multi-brand mode, a console command or worker with
    no brand sees nothing, because the scope fails closed.
-5. **Is the trigger registered?** `Automations::describe()` will tell you what the
-   registry actually holds.
+5. **Is the trigger registered?** `Automations::describe(YourTrigger::class)`
+   resolves the handle and kind the registry holds for that class, and throws if
+   it holds nothing. On a Free install, remember that a Pro-gated registration
+   is skipped silently rather than reported.
 
 ## An integration between two addons is silently missing
 
@@ -125,8 +127,9 @@ fresh, which produces a half-correct segment. See
 ## `composer install` fails on a deploy with a path repository
 
 A `composer.json` referencing `../statamic-*` cannot resolve on any machine
-without those sibling directories, including every Docker build. Switch to VCS or
-Packagist before deploying.
+without those sibling directories, including every Docker build. Remove the
+`repositories` block and let the package resolve from Packagist, where all
+twelve are published. A path repository is a development convenience only.
 
 For private VCS repositories, `preferred-install: source` avoids needing a token
 for the dist zipball, and `COMPOSER_AUTH` must be set **as an environment

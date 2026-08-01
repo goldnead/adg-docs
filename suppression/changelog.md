@@ -12,6 +12,25 @@ Release notes for `goldnead/statamic-suppression`, as published with the package
 Cross-version upgrade notes for the whole suite are in
 [Upgrading](/guide/upgrading).
 
+## 1.1.0 — 2026-08-01
+
+### Major changes
+
+- **Laravel 11 is no longer declared.** `require.laravel/framework` narrows from `^11.0|^12.0|^13.0` to `^12.0|^13.0`. Formally a narrowing; in practice a no-op, because every 11.x release carries an unpatched security advisory and Composer refuses the line, and because `statamic/cms` — pulled in transitively by `statamic-brand-context` — requires `^12.40` anyway. The old constraint promised a combination nobody could install. `orchestra/testbench` narrows to `^10.0|^11.0` to match.
+
+### What's fixed
+
+- `suppression:suppress` no longer fatals when `suppress()` answers `null`. The null is documented and reachable — a redelivered provider event whose suppression row is not visible in the scope the reason resolves to — and the command dereferenced it without checking.
+- The transactional-rollback test broke the audit write with `Schema::drop()`. Under `RefreshDatabase` on MySQL that implicitly commits the surrounding test transaction, so the guarantee the test exists to prove could not hold and the failure surfaced as a bare `PDOException`. It now fails the insert from inside, and passes on both engines. This is the first finding produced by actually running `phpunit.mysql.xml`.
+
+### What's new
+
+- **CI covers the range `composer.json` promises**: PHP 8.2–8.4 × Laravel 12/13 × `prefer-lowest|prefer-stable`, plus a MySQL leg that runs `phpunit.mysql.xml` against InnoDB — the file has existed since 1.0.0 and no workflow had ever run it.
+- **Pint** (`pint.json`, Laravel preset) and **PHPStan + Larastan at level 5** (`phpstan.neon`), both checked in CI. The baseline is empty and should stay that way.
+- `@property` blocks on both models, documenting the schema as the public surface it is.
+- `.gitattributes`, so tests and CI config stop shipping into every consumer's `vendor/`.
+- `SECURITY.md`, and README sections for requirements, the publish tags, personal data, the support policy, and why there is no Control Panel screen.
+
 ## 1.0.0 — 2026-07-30
 
 ### Added — one answer to "may we send to this address at all?"

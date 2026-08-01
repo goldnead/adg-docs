@@ -2,22 +2,42 @@
 
 <AddonHeader />
 
-<Requirements statamic="Not required (a plain Laravel provider)" database="MySQL, PostgreSQL or SQLite" />
+<Requirements statamic="6.0+ (transitively, via Brand Context)" laravel="12.x / 13.x" />
 
 ```bash
 composer require goldnead/statamic-suppression
 php artisan migrate
 ```
 
-Requires [Brand Context](/brand-context/). Statamic itself is optional: the provider is an
-ordinary Laravel one, so the gate works in a queue worker or a console command with no Control
-Panel in sight.
+## A library, not an addon
+
+This package is a Composer library that answers one question. It registers no Control Panel
+screen, no nav item, no permission and no Antlers tag, and its provider is an ordinary
+`Illuminate\Support\ServiceProvider` rather than Statamic's `AddonServiceProvider`. There is
+nothing to enable after installing it and nothing to look at. What you get is a facade, a
+contract and two tables.
+
+That is also why it boots in places Statamic does not: a queue worker, a console command,
+another package's test bed.
+
+## What it requires
+
+It requires [Brand Context](/brand-context/) `^1.4`, PHP `^8.2` and `laravel/framework`
+`^12.0|^13.0`.
+
+`statamic/cms` is not in this package's own `require`, but **Statamic is required in practice**:
+Brand Context requires `statamic/cms ^6.0`, so installing Suppression pulls Statamic in
+transitively. Treat Statamic 6 as a hard requirement. What the plain Laravel provider buys you is
+not a Statamic-free install, it is a gate that keeps working in contexts where Statamic has not
+booted.
 
 Publish the config only if you want to change a scope or a threshold:
 
 ```bash
 php artisan vendor:publish --tag=suppression-config
 ```
+
+See [Configuration](/suppression/configuration) for what is in there.
 
 Most people never type any of this. The package arrives as a dependency of Marketing.
 

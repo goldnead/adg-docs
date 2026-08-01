@@ -23,7 +23,7 @@ If you find yourself wanting the segment to *be* the audience, you want a list.
 
 | | |
 | --- | --- |
-| LeadHub | **`^1.1`** or later |
+| LeadHub | **`^1.4`**, which is what this addon requires anyway |
 | Storage | either driver; segments work on both |
 | Scheduler | required for time-based segment rules to stay fresh |
 

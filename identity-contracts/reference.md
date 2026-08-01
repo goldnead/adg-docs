@@ -25,10 +25,14 @@ use Goldnead\IdentityContracts\Identity;
 
 | Constructor | Signature |
 | --- | --- |
-| `Identity::user()` | `($id, ?string $email = null, ?string $name = null, ?string $contactUuid = null)` |
-| `Identity::contact()` | `(?string $uuid, ?string $email = null)` |
-| `Identity::system()` | `(?string $id = null)` — defaults to `config('identity-contracts.system_id')` |
-| `Identity::anonymous()` | `(?string $anonymousId = null)` |
+| `Identity::user()` | `(int\|string $id, ?string $email = null, ?string $name = null, ?string $contactUuid = null, array $meta = [])` |
+| `Identity::contact()` | `(string $uuid, ?string $email = null, ?string $name = null, array $meta = [])` |
+| `Identity::system()` | `(?string $id = null, array $meta = [])` — `$id` defaults to `config('identity-contracts.system_id')` |
+| `Identity::anonymous()` | `(?string $anonymousId = null, array $meta = [])` |
+
+The constructor itself takes every field by name:
+`new Identity(string $type, ?string $id = null, ?string $userId = null, ?string $contactUuid = null, ?string $email = null, ?string $name = null, ?string $anonymousId = null, array $meta = [])`.
+An empty `$type` throws `InvalidArgumentException`; nothing else does.
 
 ### Methods
 
@@ -37,12 +41,31 @@ use Goldnead\IdentityContracts\Identity;
 | `withContactUuid($uuid)` | a copy |
 | `withEmail($email)` | a copy |
 | `withAnonymousId($id)` | a copy |
-| `withMeta(array $meta)` | a copy |
+| `withMeta(array $meta)` | a copy, **merging** into the existing meta |
 | `pseudonymised()` | a copy without `email`, `name`, `meta` |
 | `toArray()` | snake_case array, matching column names |
+| `jsonSerialize()` | the same array; the object is `JsonSerializable` |
 | `Identity::fromArray($array)` | an `Identity` |
 
 `toArray()` / `fromArray()` round-trip losslessly.
+
+### Predicates
+
+| Method | Returns | True when |
+| --- | --- | --- |
+| `isUser()` | bool | `type` is `user` |
+| `isContact()` | bool | `type` is `contact` |
+| `isSystem()` | bool | `type` is `system` |
+| `isAnonymous()` | bool | `type` is `anonymous` |
+| `isIdentified()` | bool | `userId` or `contactUuid` is set |
+| `equals(?Identity $other)` | bool | Equality is provable. See below. |
+
+`equals()` is **fail-closed** since 1.1.0. A matching `id` on both sides settles it;
+otherwise at least one of `userId`, `contactUuid`, `anonymousId`, `email` must be set
+on both sides and equal, with no other mutually-set field disagreeing. When nothing
+identifies either side the answer is `false`, so
+`Identity::anonymous()->equals(Identity::anonymous())` is `false`. Full rationale and
+upgrade note: [Comparing two identities](/identity-contracts/identity-object#comparing-two-identities).
 
 ## `IdentityContext` facade
 
@@ -53,9 +76,23 @@ use Goldnead\IdentityContracts\Facades\IdentityContext;
 | Method | Returns | Notes |
 | --- | --- | --- |
 | `current()` | `Identity` | **Never `null`** |
-| `resolve($subject)` | `Identity` | **Never throws** |
+| `resolve($subject)` | `Identity` | **Never throws**. `null` resolves to `current()`. |
 | `actingAs($actor, $callback)` | mixed | Pins an actor; nests and restores |
-| `resolveUsing($callable)` | void | Registers a custom resolver; last wins |
+| `resolveUsing($resolver)` | `IdentityManager` | Registers a custom resolver; last registered wins |
+| `setCurrent($subject)` | `IdentityManager` | Pins an actor without a closure. `null` unpins. |
+| `forget()` | `IdentityManager` | Drops the pinned actor **and every registered resolver** |
+| `system(?string $id = null)` | `Identity` | Shorthand for `Identity::system()` |
+| `locateContact(string $email)` | `?Identity` | Asks the bound `ContactLocator`; `null` when it misses |
+| `withContact(Identity $identity)` | `Identity` | Fills in `contactUuid` from the identity's email |
+| `anonymousId()` | `?string` | Asks the bound `AnonymousIdResolver` |
+
+`setCurrent()` and `forget()` are the unscoped counterparts of `actingAs()`. Prefer
+`actingAs()` wherever the actor has a defined lifetime, because it restores the
+previous one even when the callback throws. `forget()` also clears the resolver
+stack, which makes it a test helper rather than a runtime call.
+
+`withContact()` returns the identity unchanged when it already has a `contactUuid`
+or has no `email` to look up with.
 
 ### Resolution order
 
@@ -94,7 +131,9 @@ namespace Goldnead\IdentityContracts\Contracts;
 | `anonymous.persist` | `true` | `false` → one-way hash of the session id, writes nothing |
 | `anonymous.session_key` | `identity_anonymous_id` | Session key for the UUID |
 
-Environment variables: `IDENTITY_RESOLVE_FROM_AUTH`, `IDENTITY_SYSTEM_ID`.
+Environment variables: `IDENTITY_RESOLVE_FROM_AUTH`, `IDENTITY_SYSTEM_ID`,
+`IDENTITY_ANONYMOUS_ENABLED`, `IDENTITY_ANONYMOUS_PERSIST`. Only
+`anonymous.session_key` is a config-file decision with no environment variable.
 
 ## Console commands
 
@@ -106,7 +145,8 @@ None.
 
 ## Permissions
 
-None. No Control Panel surface.
+None. This is a library, not an addon: it owns no data and exposes no screen, so
+there is nothing to permission.
 
 ## Database
 
@@ -122,7 +162,8 @@ None. The package owns no tables and persists nothing.
 | An email address as an identifier | never; a contact without a UUID keeps `id` as `null` |
 | Cookies | none of its own; the anonymous resolver reuses the existing session |
 | `pseudonymised()` | drops `email`, `name`, `meta`; keeps join keys |
+| `equals()` | only ever `true` from evidence; unproven equality reads as `false` |
 
 ## Requirements
 
-<Requirements statamic="Not required (plain Laravel works)" database="Not required" />
+<Requirements statamic="Not required (plain Laravel works)" laravel="12.x / 13.x" database="Not required" />

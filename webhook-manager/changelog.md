@@ -12,6 +12,45 @@ Release notes for `goldnead/statamic-webhook-manager`, as published with the pac
 Cross-version upgrade notes for the whole suite are in
 [Upgrading](/guide/upgrading).
 
+## 1.10.0 — 2026-08-01
+
+### Fixed — automatic retries were planned and never executed
+
+The most serious of the three. `RetryPlanner` computed the next attempt, `DeliveryEngine` wrote it to `next_retry_at`, the delivery detail screen rendered "next retry in 30 seconds", and `DeliveryRepository::readyForRetry()` — the query written specifically to find those rows — **had no caller anywhere in the package**. `ProcessOutboundDeliveryJob` sets `$tries = 1` and states in its own docblock that "a scheduled job dispatcher (or the replay command) picks it up". No such dispatcher existed, and `webhook-manager:replay-failed` is a manual bulk tool that nothing schedules either.
+
+So a transient 503 produced a delivery that displayed as waiting for an attempt that would never come. The payload was lost and nothing said so, on an addon whose one-line description reads "deliveries, retries".
+
+- New `webhook-manager:dispatch-retries`, registered on the scheduler by the addon itself (every minute), so a stock Laravel install with the usual `schedule:run` cron needs no setup. `webhook-manager.retry.schedule = false` takes it off again.
+- Each due delivery is **claimed** — `next_retry_at` is cleared in a conditional update — before the attempt is handed off, so two overlapping scheduler runs cannot turn one planned attempt into two. If the attempt fails again the engine writes a fresh `next_retry_at` and the row returns on its own terms.
+- Queued hooks go back through `ProcessOutboundDeliveryJob`; sync hooks go straight through `DeliveryEngine`. Per brand, like the other scheduled commands.
+- `ScheduledRetriesActuallyRunTest` covers the whole path, including that a delivery out of attempts stops being scheduled and that the command is on the scheduler at all.
+
+**If you are upgrading:** confirm your site runs `php artisan schedule:run` from cron. Without it, retries still do not happen.
+
+### Fixed — the Overview hid its own "Add a Rule" button from everyone
+
+`OverviewController` asked `can('manage rules')`. The registered ability is `manage webhook rules`. An ability nobody registered answers `false` for every user, super users included, so the CTA never rendered — on the very first screen a new install shows. No exception, no log line, no failing test; the same shape of defect as `test outbound webhooks` before 1.6.
+
+Correcting the one string is not the fix. `PermissionStringsAreRegisteredTest` now compares every ability literal in `src/` against the registry in both directions: an ability that is checked but not registered fails, and an ability that is registered but never checked fails too. `CpTestCase::superUser()` reads its ability list out of the registry instead of repeating it, because the hand-typed copy was the same kind of drift waiting to happen.
+
+### Fixed — the inbound rate limit did nothing
+
+`inbound.rate_limit_per_minute` was declared in config, rendered into the Settings screen as a live "Rate limit (per minute)" security field, and sold in the marketplace copy — and no code anywhere read it. A control an operator believes is protecting a public endpoint, and is not, is worse than no control.
+
+It is now the first step of `InboundRequestProcessor`, ahead of the method allowlist and ahead of authentication:
+
+- keyed per endpoint id, so a flood on one endpoint does not throttle the others, and the legacy `!/webhooks/inbound` prefix shares the bucket instead of being a way around the limit;
+- `429` plus `Retry-After` on rejection, `X-RateLimit-Limit` and `X-RateLimit-Remaining` on every response;
+- a per-endpoint override through the `rate_limit_config` column, which until now was validated, cast, stored and never read;
+- `0` disables it;
+- rejections are logged as `inbound_rate_limited`, so a limit is distinguishable from an outage.
+
+### Fixed — the IP allowlist auth scheme rejected everything
+
+`ip_allowlist` was accepted by `SaveInboundEndpointRequest`, coloured on the inbound index and given an example config on the edit screen, but `IpAllowlistVerifier` was never passed to `AuthSchemeRegistry::registerDefaults()`. `get()` answered `null` and `InboundAuthVerifier` failed the request closed, so an operator who chose it got an endpoint that 401'd every delivery for no visible reason.
+
+The verifier is registered, and it now reads both `ips` (what the CP's own example always showed) and `allow` (what the class always read) — whichever was copied, one of the two used to be ignored. `IpAllowlistAuthSchemeIsSelectableTest` asserts structurally that every `auth_type` the form accepts is a registered scheme.
+
 ## 1.9.0 — 2026-07-30
 
 ### Fixed — the flat driver leaked webhook credentials between brands
@@ -91,6 +130,8 @@ The stack is `webhook-manager.inbound.middleware` and it is the complete list, n
 No endpoint on any environment we can see uses `basic`; the one configured inbound endpoint uses `static_header`, which was never affected. The exposure mattered more the moment the route stopped sitting behind `web`, since the verifier is now the only thing in front of it.
 
 ### Known — configured but not enforced
+
+> Both of these were fixed in 1.10.0. The entry stays as it was written.
 
 Two columns on `webhook_inbounds` are accepted by the CP, validated, cast and stored, and then never consulted at request time:
 

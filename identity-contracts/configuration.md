@@ -13,8 +13,8 @@ return [
     'resolve_from_auth' => env('IDENTITY_RESOLVE_FROM_AUTH', true),
     'system_id' => env('IDENTITY_SYSTEM_ID', 'system'),
     'anonymous' => [
-        'enabled' => true,
-        'persist' => true,
+        'enabled' => env('IDENTITY_ANONYMOUS_ENABLED', true),
+        'persist' => env('IDENTITY_ANONYMOUS_PERSIST', true),
         'session_key' => 'identity_anonymous_id',
     ],
 ];
@@ -60,19 +60,19 @@ recorded by the web app, without either of them having to say so explicitly.
 
 ```php
 'anonymous' => [
-    'enabled' => true,
-    'persist' => true,
+    'enabled' => env('IDENTITY_ANONYMOUS_ENABLED', true),
+    'persist' => env('IDENTITY_ANONYMOUS_PERSIST', true),
     'session_key' => 'identity_anonymous_id',
 ],
 ```
 
 Governs the pseudonymous visitor id used for pre-identification activity.
 
-| Key | Effect |
-| --- | --- |
-| `enabled` | `false` makes the resolver return `null` forever. No anonymous ids exist. |
-| `persist` | `false` returns a one-way hash of the session id and **writes nothing** |
-| `session_key` | Where the UUID is stored in the existing session |
+| Key | Environment variable | Effect |
+| --- | --- | --- |
+| `enabled` | `IDENTITY_ANONYMOUS_ENABLED` | `false` makes the resolver return `null` forever. No anonymous ids exist. |
+| `persist` | `IDENTITY_ANONYMOUS_PERSIST` | `false` returns a one-way hash of the session id and **writes nothing** |
+| `session_key` | — | Where the UUID is stored in the existing session |
 
 The bundled `SessionAnonymousIdResolver` stores a UUID in the session your
 application already has, and deliberately **sets no cookie of its own**, so it
@@ -111,6 +111,9 @@ nothing: consumers simply record facts without an `anonymous_id`.
 ```dotenv
 IDENTITY_RESOLVE_FROM_AUTH=true
 IDENTITY_SYSTEM_ID=system
+IDENTITY_ANONYMOUS_ENABLED=true
+IDENTITY_ANONYMOUS_PERSIST=true
 ```
 
-`anonymous.*` has no environment variables; it is a config-file decision.
+`anonymous.session_key` is the only setting without an environment variable; it is a
+config-file decision.

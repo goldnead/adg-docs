@@ -59,13 +59,26 @@ See [Identity](/guide/identity#a-user-id-is-a-string).
 ## The client side
 
 ```js
-Echo.private(`users.${userId}`).listen('.notifications.refresh', () => {
+Echo.private(`users.${userId}`).listen('.NotificationReceived', () => {
     fetchNotifications()   // your normal authorised endpoint
 })
 ```
 
-`fetchNotifications()` is whatever you already call to populate the bell. The signal's only job is to tell you
-when.
+::: warning The leading dot is not a typo
+`NotificationReceived::broadcastAs()` returns the bare string `NotificationReceived`. Echo
+prefixes an event name with the application namespace unless the name starts with a dot, so
+`listen('NotificationReceived', …)` subscribes to `App.Events.NotificationReceived` and never
+fires. Use `.NotificationReceived`.
+:::
+
+The payload is `{ reason: 'refresh', type: '<the notification type>' }`. `type` is there so a
+client can decide whether this particular signal is worth a re-fetch; `reason` is constant and
+exists only to make the shape self-describing.
+
+`fetchNotifications()` is whatever you already call to populate the bell — there is no endpoint in
+this package for it. The facade methods you need are `Notifications::forRecipient($user)`,
+`Notifications::unreadCount($user)` and `Notifications::markRead($item)`; wire them to a route in
+your own application. The signal's only job is to tell you when.
 
 ```php
 'list_limit' => 30,

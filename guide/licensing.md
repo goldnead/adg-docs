@@ -16,6 +16,7 @@ on the addon.
 | [Email Templates](/email-templates/) | MIT |
 | [Activity](/activity/) | MIT |
 | [Notifications](/notifications/) | MIT |
+| [Preference Center](/preference-center/) | MIT |
 | [Automations](/automations/) | Commercial, via the Statamic Marketplace |
 | [Table of Contents](/toc/) | Commercial, via the Statamic Marketplace |
 
@@ -46,18 +47,22 @@ the licensing utility in the CP shows which one is active. A Free install is not
 crippled: the builder, the triggers, the branches and the actions you use daily
 are all in it.
 
-Automations also exposes a licence configuration for self-hosted arrangements:
+Automations also exposes a licence configuration for self-hosted arrangements.
+The mode is a value under `license.mode`, not a key of its own:
 
 ```php
 // config/automations.php
 'license' => [
-    // 'config' — a key you set yourself
-    // 'remote' — checked against a licence server
+    'key'      => env('STATAMIC_AUTOMATIONS_LICENSE_KEY', ''),
+    'mode'     => env('STATAMIC_AUTOMATIONS_LICENSE_MODE', 'config'), // config | remote
+    'endpoint' => env('STATAMIC_AUTOMATIONS_LICENSE_ENDPOINT', ''),
 ],
 ```
 
 `config` mode is the right answer for an install that must not make outbound
-calls.
+calls: the key is compared against `license.allowed_keys` locally and no
+request leaves the server. `remote` mode checks `license.endpoint` instead and
+caches the answer for `license.cache_ttl_minutes`.
 
 ## Statamic Pro
 
@@ -99,5 +104,11 @@ members:
 
 ## Buying
 
-The commercial addons are on the [Statamic Marketplace](https://statamic.com/addons).
-The MIT ones are on Packagist and require nothing but `composer require`.
+**All twelve packages are on Packagist**, commercial ones included, and every
+one of them installs with a bare `composer require`. Being on Packagist is not
+the same as being free: Automations and Table of Contents resolve as normal
+Composer packages but are licensed, not sold, and their licence is bought and
+managed through the [Statamic Marketplace](https://statamic.com/addons).
+
+For the MIT packages there is nothing further to do. `composer require` is the
+whole transaction.

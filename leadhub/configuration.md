@@ -68,25 +68,36 @@ Exports above the threshold are queued, which requires a worker and the eloquent
 
     // CRM-core modules — eloquent driver only
     'ingestion' => true,
-    'merge' => true,
     'scoring' => false,
+    'merge' => true,
     'companies' => false,
     'tasks' => false,
     'pipelines' => false,
-    'segments' => false,
+
+    // Email link-click tracking, consent-first
+    'click_tracking' => false,
 ],
 ```
+
+That is the whole block. **There is no `features.segments`.** Segments are ungated: the key
+does not exist in the config file and nothing in the addon reads it. The Segments screen and
+the segment rules are available on any install, subject only to the
+`view leadhub segments` / `manage leadhub segments` permissions.
 
 `webhook_manager` auto-wires LeadHub's lifecycle events into
 [Webhook Manager](/webhook-manager/) when that addon is installed, and has no effect
 otherwise. Set it to `false` to opt out.
 
-`notifications` gates the email notification feature; see
-[Assignment & notifications](/leadhub/assignment).
+`click_tracking` is the master switch for email link-click scoring. See
+[Click tracking](#click-tracking) below.
+
+Notifications are **not** in this block. They are switched with `notifications.enabled`;
+see [Assignment & notifications](/leadhub/assignment).
 
 ::: warning The CRM-core modules need the eloquent driver
-`ingestion`, `companies`, `tasks`, `pipelines`, `merge`, `scoring` and `segments` are
-relational. On the flat driver they are unavailable, not degraded.
+`ingestion`, `companies`, `tasks`, `pipelines`, `merge` and `scoring` are relational. On the
+flat driver they are unavailable, not degraded. Segments work on both drivers — see the
+[driver capability matrix](/leadhub/reference#driver-capability-matrix).
 :::
 
 ## Scoring
@@ -160,16 +171,54 @@ fields populated from the query string and `document.referrer`.
 
 ```php
 'notifications' => [
-    'emails' => env('LEADHUB_NOTIFY_EMAILS'),   // comma-separated
+    'enabled' => env('LEADHUB_NOTIFICATIONS', true),
+
+    'new_lead' => true,           // a brand-new lead arrived
+    'on_assignment' => true,      // a lead was assigned to an owner
+    'on_task_assignment' => true, // a task was handed to someone else
+
+    // Comma-separated in .env, an array in config.
+    'recipients' => env('LEADHUB_NOTIFY_EMAILS'),
+
     'digest' => [
         'enabled' => true,
-        'time' => '08:00',                       // server time, daily
+        'time' => env('LEADHUB_DIGEST_TIME', '08:00'),   // server time, daily
+        'fallback_recipients' => env('LEADHUB_DIGEST_EMAILS'),
     ],
-    'on_task_assignment' => true,
 ],
 ```
 
+`enabled` is the master switch. There is no `features.notifications`.
+
+`recipients` and `digest.fallback_recipients` are read as **arrays**. The shipped config
+builds them by splitting `LEADHUB_NOTIFY_EMAILS` and `LEADHUB_DIGEST_EMAILS` on commas and
+trimming, so `team@example.com, sales@example.com` in `.env` works. If you edit the config
+file directly, write a list.
+
+`recipients` receives the new-lead notification for **unassigned** leads. An assigned lead
+notifies its owner instead, and `recipients` is not copied.
+
+`digest.fallback_recipients` receives the digest rows for contacts nobody owns. Leave it
+empty and it falls back to `recipients`, so most installs only ever set one of the two.
+
+`on_task_assignment` runs through [Notifications](/notifications/) rather than the mail
+notifier, and is inert when that addon is not installed. Assigning a task to yourself never
+notifies.
+
 See [Assignment & notifications](/leadhub/assignment).
+
+## Segments
+
+The sweep time is read from `leadhub.segments.sweep_time` and defaults to `03:00`. The key
+is **not** in the published config file, so add it if you want to move the sweep:
+
+```php
+'segments' => [
+    'sweep_time' => '04:30',
+],
+```
+
+Segments themselves are not gated by a feature flag. See [Segments](/leadhub/segments).
 
 ## CRM destinations
 

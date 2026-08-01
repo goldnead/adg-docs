@@ -13,9 +13,9 @@ Build them under **LeadHub → Segments**, with a live "matching contacts" previ
   alt="The segments list showing three active segments with their handles and member counts"
   caption="Member counts are materialised. A count of 0 for rules that clearly match is the symptom described below." />
 
-```php
-'features' => ['segments' => true],   // eloquent or flat; see below
-```
+There is no feature flag to turn on. Segments ship enabled on every install, on both the
+eloquent and the flat driver, and are gated only by the `view leadhub segments` and
+`manage leadhub segments` permissions.
 
 ## Rule vocabulary
 

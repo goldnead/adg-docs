@@ -61,6 +61,64 @@ The typical use is enrichment: a visitor identified mid-session starts as an
 anonymous identity, and the same behavioural record can be linked to a contact
 afterwards without rewriting history.
 
+## Asking what an identity is
+
+Five predicates, all returning `bool`:
+
+| Method | True when |
+| --- | --- |
+| `isUser()` | `type` is `user` |
+| `isContact()` | `type` is `contact` |
+| `isSystem()` | `type` is `system` |
+| `isAnonymous()` | `type` is `anonymous` |
+| `isIdentified()` | `userId` or `contactUuid` is set |
+
+The first four are type checks. `isIdentified()` is the useful one: it asks whether
+the identity points at a durable record rather than at a pseudonym or an address,
+which is the distinction that decides whether you may use it as a join key.
+
+## Comparing two identities
+
+```php
+$a->equals($b);
+```
+
+Equality is **fail-closed**: it is asserted only from evidence, never from the
+absence of contradiction.
+
+1. Different `type`, or `$other` is `null` → `false`.
+2. Both sides have an `id` → the answer is whether the two ids match. Nothing else
+   is consulted.
+3. Otherwise the identifying fields decide — `userId`, `contactUuid`, `anonymousId`,
+   `email`. At least one must be set on **both** sides and equal, and no other field
+   set on both sides may disagree.
+4. If nothing is set on both sides, the answer is `false`.
+
+::: warning This changed in 1.1.0. Check any code that deduplicates on `equals()`
+Before 1.1.0 the method compared `type` and `id` only. Because `id` is `null` for
+every identity without a durable record, two *different* people compared as equal on
+a stock install: `IdentityContext::resolve('alice@example.com')` and
+`resolve('bob@example.com')` both produced a contact-shaped identity with
+`id => null`, and `equals()` said `true`.
+
+The visible consequence of the fix:
+
+```php
+Identity::anonymous()->equals(Identity::anonymous());   // false since 1.1.0
+```
+
+Two anonymous visitors without an `anonymousId` are not the same person, and the
+method no longer claims they are. **If you deduplicate, group or authorise on
+`equals()`, review that code before upgrading.** Anywhere you relied on the old
+"everything unidentified is one actor" behaviour, you now get separate actors.
+:::
+
+The asymmetry is the reason for the direction. The consumers of this package are an
+activity ledger, a notification system and a preference centre. A wrong "same
+person" merges real people's data, delivers a notification to the wrong recipient
+and shows someone else's preferences. A wrong "different person" only misses a
+deduplication.
+
 ## `pseudonymised()`
 
 Drops `email`, `name` and `meta`; keeps the join keys.

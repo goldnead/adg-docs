@@ -6,7 +6,8 @@
 
 | Command | Purpose |
 | --- | --- |
-| `webhook-manager:prune` | Purge old deliveries and logs. Scheduled daily. |
+| `webhook-manager:dispatch-retries [--limit=200] [--brand=]` | Run the deliveries whose retry is due |
+| `webhook-manager:prune` | Purge old deliveries and logs |
 | `webhook-manager:replay-failed` | Bulk replay failures from the last N hours |
 | `webhook-manager:health [--brand=]` | Counts and recent failures |
 | `webhook-manager:seed-examples` | Install sample fixtures |
@@ -14,6 +15,11 @@
 | `webhook-manager:migrate-flat-brands [--brand=] [--dry-run]` | Move a pre-1.9 flat layout into a brand directory |
 
 All available as `php please …` or `php artisan …`.
+
+**Only `dispatch-retries` is scheduled by the addon** — every minute, with
+`withoutOverlapping()`, unless `retry.schedule` is `false`. It still needs your site
+to run `schedule:run` from cron. Everything else on this list, `prune` included, is
+yours to schedule.
 
 ## Built-in triggers
 
@@ -61,14 +67,32 @@ An unavailable namespace resolves to empty rather than throwing.
 
 ## Inbound verifiers
 
-No auth, bearer token, static header, basic auth, HMAC signature, IP allowlist.
+`none`, `bearer`, `static_header`, `basic`, `hmac`, `ip_allowlist`.
 
-## Actions
+The `ip_allowlist` config key is `ips` (`allow` is read as a legacy alias). It fails
+closed: an empty list rejects everything.
 
-Available to rules and inbound endpoints:
+## Rule actions
+
+Available to **rules**:
 
 Create entry · Update entry · Create form submission · Send email · Send outbound
 webhook · Send Slack webhook · Set field value · Write log note · Dispatch event.
+
+## Inbound action handlers
+
+Available to **inbound endpoints**. A separate set from the rule actions above:
+
+| Handle | Does |
+| --- | --- |
+| `create_entry` | Creates an entry from the mapped payload |
+| `update_entry` | Updates an entry by id |
+| `upsert_entry` | Updates a matching entry, creates one if there is none |
+| `create_form_submission` | Writes a Statamic form submission |
+| `dispatch_event` | Dispatches a Laravel event |
+| `audit_log` | Records the request and stops there |
+| `upsert_lead` | Creates or updates a LeadHub contact; inert without LeadHub |
+| `noop` | Accepts and does nothing |
 
 ## Integration presets
 
@@ -89,6 +113,7 @@ use Goldnead\WebhookManager\Facades\WebhookManager;
 | `registerVariableResolver($resolver)` | `TemplateVariableResolverInterface` |
 | `registerSuccessEvaluator($evaluator)` | `SuccessEvaluatorInterface` |
 | `registerPreset($preset)` | `PresetInterface` |
+| `registerInboundActionHandler($handler)` | `InboundActionHandlerInterface` |
 | `registerEventTrigger($eventClass, array $config)` | — |
 
 Contracts live under `Goldnead\WebhookManager\Contracts`. Register from `boot()`.
@@ -112,7 +137,7 @@ Namespace `Goldnead\WebhookManager\Events`.
 | `test outbound webhooks` | the send-test button |
 | `view webhook deliveries` | the delivery list and detail |
 | `view sensitive payloads` | unmasked request and response bodies |
-| `replay webhook deliveries` | single and batch replay |
+| `replay webhook deliveries` | the replay button |
 | `manage inbound endpoints` | inbound CRUD |
 | `manage webhook rules` | the rule builder |
 | `manage webhook templates` | template CRUD |
@@ -129,6 +154,7 @@ Namespace `Goldnead\WebhookManager\Events`.
 | `storage.flat.path` | `content/webhooks` |
 | `queue.connection` / `queue.name` | app default / `default` |
 | `queue.sync_in_console` | `false` |
+| `retry.schedule` | `true` |
 | `retry.strategy` | `exponential` |
 | `retry.max_attempts` | `3` |
 | `retry.base_delay_seconds` | `30` |
@@ -181,9 +207,24 @@ WEBHOOK_MANAGER_CIRCUIT_BREAKER=true
 WEBHOOK_MANAGER_CIRCUIT_THRESHOLD=10
 ```
 
+## Publish tags
+
+| Tag | Publishes |
+| --- | --- |
+| `webhook-manager-config` | `config/webhook-manager.php` |
+| `webhook-manager-lang` | the translation files |
+
 ## Requirements
 
-<Requirements queue="Required in practice. Anything but sync." />
+<Requirements
+  laravel="12.x / 13.x"
+  queue="Required in practice. Anything but sync." />
+
+A `schedule:run` cron entry is required as well: without it, retries do not run.
+
+`goldnead/statamic-brand-context` and `inertiajs/inertia-laravel` are hard
+dependencies and install with the package. `goldnead/statamic-leadhub` and
+`goldnead/statamic-automations` are suggested, not required.
 
 Node 18+ only if you rebuild the CP bundle from a clone.
 
@@ -192,6 +233,8 @@ Node 18+ only if you rebuild the CP bundle from a clone.
 | | |
 | --- | --- |
 | Delivery | queue-first; one record per attempt |
+| Retries | executed by a scheduled command, claimed before dispatch: never twice, and lost rather than duplicated if the process dies mid-claim. Needs the host's `schedule:run` cron |
+| Inbound rate limit | per endpoint, first step of the pipeline; shared across the canonical and legacy prefixes |
 | Failure isolation | a delivery failure never breaks the event that triggered it |
 | Config storage | eloquent or flat; a CP choice outranks config and env |
 | Telemetry storage | always the database |

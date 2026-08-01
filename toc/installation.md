@@ -8,9 +8,13 @@
 composer require goldnead/statamic-toc
 ```
 
+The addon declares no Laravel constraint of its own: whatever version your Statamic
+runs on is fine. It does require `league/commonmark ^2.0`, which is what reads a
+Markdown field, so a host application pinned to CommonMark 1 has to move first.
+
 That is the whole installation. There is no migration to run and nothing to build.
-The tag and the modifier are available immediately, and the [config file](#configuration)
-is optional.
+The tag and the modifier are available immediately, and the
+[config file](/toc/configuration) is optional.
 
 ::: warning Statamic 3 and 4 are no longer supported
 2.0 requires PHP 8.2 and Statamic 5 or 6, and the v1 line is not maintained any further.
@@ -24,27 +28,16 @@ If you are on Statamic 3 or 4, the upgrade path is Statamic itself.
 
 ## Configuration <Badge type="tip" text="2.0" />
 
-Optional. Without it the defaults below apply, which are the ones the addon has
-always used.
+Optional, and only if you want different defaults:
 
 ```bash
 php artisan vendor:publish --tag=statamic-toc-config
 ```
 
-```php
-// config/statamic-toc.php
-return [
-    'field' => 'article',   // the field the tag reads with no field= or content=
-    'from' => 'h1',         // the level the list starts at
-    'depth' => 3,           // how many levels it spans, counted from `from`
-    'to' => null,           // the level it stops at, absolute; wins over depth
-    'flat' => false,        // a flat array instead of a nested tree
-];
-```
-
-A tag parameter always wins over the config. Setting `field` here is the usual
-reason to publish it at all: if your Bard field is called `content` rather than
-`article`, this is where you say so once instead of in every template.
+Five keys — `field`, `from`, `depth`, `to`, `flat` — each overridable per tag. Setting
+`field` is the usual reason to publish at all: if your Bard field is called `content`
+rather than `article`, this is where you say so once instead of in every template. See
+[Configuration](/toc/configuration).
 
 ## Verifying it works
 

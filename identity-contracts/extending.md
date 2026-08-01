@@ -62,24 +62,47 @@ processes the same subject, and the resolution silently differs between the two.
 
 ## `ContactLocator`
 
-Bridges an email address to a CRM contact UUID.
+Bridges an email address to a CRM contact.
 
-The default binding is a **no-op**, so any package may ask for a contact UUID
-without requiring a CRM to exist. Applications running LeadHub bind an
-implementation reading `leadhub_contacts`; **that is the only place the join by email
-lives** in the whole suite.
+The default binding is a **no-op**, so any package may ask for a contact without
+requiring a CRM to exist. Applications running LeadHub bind an implementation
+reading `leadhub_contacts`; **that is the only place the join by email lives** in the
+whole suite.
+
+The contract has **two** methods, both returning an `Identity` or `null`. Implement
+both: a class that implements only one does not satisfy the interface and fails to
+load.
 
 ```php
 use Goldnead\IdentityContracts\Contracts\ContactLocator;
+use Goldnead\IdentityContracts\Identity;
 
 class LeadHubContactLocator implements ContactLocator
 {
-    public function uuidForEmail(string $email): ?string
+    public function locateByEmail(string $email): ?Identity
     {
-        return LeadHub::contactByEmail($email)?->uuid;
+        $contact = LeadHub::contactByEmail($email);
+
+        return $contact === null
+            ? null
+            : Identity::contact($contact->uuid, $contact->email, $contact->name);
+    }
+
+    public function locateByUuid(string $uuid): ?Identity
+    {
+        $contact = LeadHub::contact($uuid);
+
+        return $contact === null
+            ? null
+            : Identity::contact($contact->uuid, $contact->email, $contact->name);
     }
 }
 ```
+
+`locateByEmail()` is the one on the hot path: it is what `IdentityContext::resolve()`
+calls for an email string and what `withContact()` uses to enrich a logged-in user.
+`locateByUuid()` is the reverse lookup, for consumers that hold a contact UUID and
+want the rest of the record.
 
 ```php
 // AppServiceProvider::register()

@@ -2,7 +2,7 @@
 
 <AddonHeader />
 
-<Requirements />
+<Requirements php="8.2+" statamic="6.0+" laravel="12.x / 13.x" />
 
 ```bash
 composer require goldnead/statamic-brand-context
@@ -11,7 +11,34 @@ php artisan vendor:publish --tag=brand-context-config
 ```
 
 Most people never type that: the package arrives as a dependency of Webhook
-Manager, Automations, LeadHub, Marketing, Activity or Notifications.
+Manager, Automations, LeadHub, Marketing, Activity, Notifications, Suppression or
+Preference Center.
+
+::: warning Laravel 12.40 is the floor
+`laravel/framework: ^12.40|^13.0`. Laravel 11 is not supported, and because eight
+addons require this package, that floor applies to most of the suite.
+:::
+
+The package also requires `inertiajs/inertia-laravel ^2.0`. Statamic 6 ships Inertia
+in the Control Panel, so this is normally already satisfied; it is a hard require
+because the **Brand Members** screen is an Inertia page rather than a Blade view.
+
+## What else can be published
+
+| Tag | |
+| --- | --- |
+| `brand-context-config` | `config/brand-context.php` |
+| `brand-context-migrations` | The `brands` and `brand_user` migrations, if you need to edit them |
+| `brand-context-cp` | The built Control Panel assets, to `public/vendor/statamic-brand-context/build` |
+| `brand-context-translations` | The language files, to `lang/vendor/brand-context` |
+
+Only the config tag is part of a normal installation. Publishing the migrations
+forks them from the package, so a later upgrade will not bring you schema changes;
+publish them only if you have a reason to change what they create.
+
+`brand-context-cp` copies the package's already-built Control Panel assets into
+`public/`. Statamic normally handles that for you; the tag is there for deployments
+that publish vendor assets explicitly rather than letting the framework do it.
 
 ## What the migration creates
 

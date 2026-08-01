@@ -2,7 +2,7 @@
 
 <AddonHeader />
 
-<Requirements statamic="6.0+ (Laravel-only is fine)" database="Not required" />
+<Requirements statamic="Not required (plain Laravel works)" laravel="12.x / 13.x" database="Not required" />
 
 ```bash
 composer require goldnead/statamic-identity-contracts
@@ -18,10 +18,18 @@ php artisan vendor:publish --tag=identity-contracts-config
 Most people never type any of this: the package arrives as a dependency of Activity
 and Notifications.
 
+## A library, not an addon
+
+This is a Composer library (`"type": "library"`), not a Statamic addon. It declares
+no `extra.statamic`, appears in no addon listing and has nothing to enable. You add
+it to a project the way you add any other dependency, and from then on it is simply
+a class and a facade you can resolve.
+
 ## What arriving looks like
 
-Nothing. The package creates no tables, registers no routes, adds no Control Panel
-screen and schedules no work. What it adds is a container binding you can resolve:
+Nothing. The package creates no tables, registers no routes, adds no user interface
+of any kind and schedules no work. What it adds is a container binding you can
+resolve:
 
 ```php
 IdentityContext::current();
@@ -32,10 +40,12 @@ and `Identity::system('system')` in the console.
 
 ## Requirements note
 
-This is the one package in the suite that does not actually require Statamic. Its
-Composer requirements are PHP and `laravel/framework`, which means it works in a
-plain Laravel application. That is intentional: the whole point is to be depended on
-by things that must not depend on anything.
+This is the one package in the suite that does not require Statamic at all. Its
+Composer requirements are PHP `^8.2` and `laravel/framework` `^12.0|^13.0`, and
+`statamic/cms` appears only under `suggest` ("Required only when the host
+application is a Statamic site"). It therefore works in a plain Laravel application.
+That is intentional: the whole point is to be depended on by things that must not
+depend on anything.
 
 It does understand Statamic users when they are present, through the
 `Authenticatable` branch of the resolver.

@@ -2,8 +2,12 @@
 defineProps({
   php: { type: String, default: '8.2+' },
   statamic: { type: String, default: '6.0+' },
-  laravel: { type: String, default: '11.x / 12.x / 13.x' },
-  database: { type: String, default: 'MySQL, PostgreSQL or SQLite' },
+  // Laravel 11 is supported by no package in the suite: every one of them
+  // requires ^12.0|^13.0 or narrower. Brand Context, a dependency of eight of
+  // the twelve, requires ^12.40|^13.0.
+  laravel: { type: String, default: '12.x / 13.x' },
+  // PostgreSQL is deliberately absent: it is untested, so it is not promised.
+  database: { type: String, default: 'MySQL or SQLite' },
   queue: { type: String, default: null },
 })
 </script>

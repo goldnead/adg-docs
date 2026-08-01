@@ -12,8 +12,8 @@ No run means the trigger never matched. In order:
 3. **Is a brand current?** In multi-brand mode a console command or worker with no brand
    sees no automations.
 4. **Is Webhook Manager doing it instead?** If both are installed, check both.
-5. **Is the trigger registered at all?** `Automations::describe()` tells you what the
-   registries hold.
+5. **Is the trigger registered at all?**
+   `array_keys(Automations::nodes()->all())` lists every registered handle.
 
 ## The run is stuck at `waiting`
 
@@ -108,16 +108,23 @@ and Export all 404'd. Upgrade.
 2. **Wrapped in `app->booted()`.** Statamic already calls `bootAddon()` inside one, so
    nesting fires immediately and is still too early.
 3. **Handle collision.** A matching handle **replaces** rather than adds.
-4. **No Pro licence.** `features.custom_actions_requires_pro` is `true` by default.
+4. **No Pro licence.** `features.custom_actions_requires_pro` is `true` by default, and a
+   failed gate **skips the registration silently**. Nothing throws and nothing is logged.
+   This is the one to check first when the code looks right.
 
-Ask the registry:
+Ask the registries:
 
 ```php
-Automations::describe();
+array_keys(Automations::nodes()->all());          // every registered handle
+Automations::nodes()->has('shop_order_shipped');  // yours specifically
+Automations::describe(ShopOrderShippedAction::class);  // is the class itself valid?
 ```
 
-A malformed registration throws immediately rather than silently no-opping, so if
-`describe()` shows nothing and nothing threw, the registration code did not run.
+`describe()` takes a class and validates that one class; it throws with a message naming
+what is wrong. It is not a registry dump, and calling it with no argument is a `TypeError`.
+
+So: `describe()` passes, the handle is not in `nodes()->all()`, and nothing threw → it is
+the licence gate, or the registration code never ran.
 
 ## An imported automation does not work
 
@@ -144,11 +151,18 @@ There is no recovery from a lost key. Turn this setting on once, early, and trea
 
 ## The runs table is enormous
 
-Pruning is scheduled, so this means no scheduler:
+**`automations:prune` is not scheduled by the addon.** Only `automations:run-due` and
+`automations:run-scheduled` are. If nobody added a schedule entry, nothing has ever
+pruned:
+
+```php
+// routes/console.php
+Schedule::command('automations:prune')->daily();
+```
 
 ```bash
-php artisan schedule:work
-php artisan automations:prune
+php artisan automations:prune --dry-run   # how many rows would go
+php artisan automations:prune             # clear the backlog now
 ```
 
 Also check `runs.prune_after_days` is not `null`, which disables pruning entirely, and
@@ -156,10 +170,10 @@ consider `store_node_io => false` only as a last resort — it costs you the deb
 
 ## A CP screen is blank
 
-Assets were never published.
+Assets were never published. The config tag publishes configuration, not assets — the
+assets come from Statamic's own install hook:
 
 ```bash
-php artisan vendor:publish --tag=statamic-automations-config
 php artisan statamic:install
 ```
 

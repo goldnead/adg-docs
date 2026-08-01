@@ -111,14 +111,21 @@ serves one brand's user.
 
 ## What you cannot query
 
-**Anonymised rows have no personal fields.** `activity:anonymize` strips `email`, `name` and `meta` while
-keeping the join keys, so the fact stays countable and the person is no longer identifiable. A query for a
-name will not find them; a query by `contact_uuid` still will.
+**Anonymised rows have lost their join keys.** `activity:anonymize` nulls `contact_uuid`, `user_id`,
+`anonymous_id`, `session_id`, `actor_id`, `properties` and `context`, and sets `anonymized` to `true`. What
+remains is `event_type`, `occurred_at`, `source`, `subject_type`, `subject_id` and the ids.
+
+So the fact stays countable and the person is no longer reachable: a query by `contact_uuid` after the run
+returns **nothing**. Aggregate on `event_type` and `occurred_at` instead, and filter with
+`where('anonymized', false)` when a report must only cover rows that are still attributable.
+
+There is nothing to strip called `email`, `name` or `meta` — the table has no such columns. Personal detail
+lives in `properties` and `context`, and both are emptied.
 
 **Pruned rows are gone.** `activity:prune` deletes.
 
 **Raw user agents and IPs were never stored.** Only a coarse device category — `mobile`, `desktop`,
-`tablet`, `bot` — and no IP at any setting. If a report needs a country, it has to have been derived
+`tablet`, `bot` or `unknown` — and no IP at any setting. If a report needs a country, it has to have been derived
 upstream and passed in `properties`.
 
 ## Reading a row

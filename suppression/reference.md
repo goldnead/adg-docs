@@ -22,6 +22,10 @@ suppressedAmong(iterable $emails, ?int $brandId = null): array   // keyed by nor
 
 Throws `SuppressionCheckFailed` rather than returning `false` when it cannot answer.
 
+Reachable three ways, all the same singleton: `app(Gate::class)`, `app('suppression.gate')`, and
+the `Goldnead\Suppression\Facades\SuppressionGate` facade (aliased as `SuppressionGate`).
+Rebinding `Gate::class` redirects all three — see [Extension points](/suppression/extending).
+
 ## The service
 
 ```php
@@ -75,6 +79,20 @@ two values a scope may take.
 | `soft_bounce.window_days` | `30` — `SUPPRESSION_SOFT_BOUNCE_WINDOW_DAYS` |
 | `release.min_reason_length` | `20` — `SUPPRESSION_MIN_REASON_LENGTH` |
 
+Every key explained: [Configuration](/suppression/configuration).
+
+## Facades
+
+| Facade | Wraps | Alias |
+| --- | --- | --- |
+| `Goldnead\Suppression\Facades\Suppression` | `SuppressionService` (the write side) | `Suppression` |
+| `Goldnead\Suppression\Facades\SuppressionGate` | `Contracts\Gate` (the read side) | `SuppressionGate` |
+
+## Permissions
+
+None. This is a library, not an addon: no Control Panel screen, no nav item and no Antlers tags,
+so there is nothing to permission.
+
 ## Publish tags
 
 ```bash
@@ -91,6 +109,9 @@ php artisan vendor:publish --tag=suppression-migrations
 
 ## Requirements
 
-<Requirements statamic="Not required (a plain Laravel provider)" database="MySQL, PostgreSQL or SQLite" />
+<Requirements statamic="6.0+ (transitively, via Brand Context)" laravel="12.x / 13.x" />
 
-Requires [Brand Context](/brand-context/).
+Requires [Brand Context](/brand-context/) `^1.4`, which requires `statamic/cms ^6.0`. This
+package does not name `statamic/cms` in its own `require` and its provider is a plain Laravel
+one, but Statamic arrives transitively either way, so treat Statamic 6 as a hard requirement.
+See [Installation](/suppression/installation).

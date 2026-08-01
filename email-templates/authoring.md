@@ -6,7 +6,7 @@ Templates are entries in the `et_templates` collection. **Content → Email Temp
 
 <Figure
   src="email-templates-entry"
-  alt="A template entry open in the publish form, with title, subject, description and a Bard body"
+  alt="A template entry open in the publish form, with title, subject, preview text, layout, description and a Bard body"
   caption="An ordinary publish form. The body is Bard, which is what lets Statamic's native Live Preview work on it." />
 
 ## The fields
@@ -16,6 +16,8 @@ Templates are entries in the `et_templates` collection. **Content → Email Temp
 | **Title** | For humans, in the CP listing |
 | **Slug** | The **stable, cross-addon reference**. Consumers resolve by this. |
 | **Subject** | Merge variables allowed |
+| **Preview text** | Optional. The preheader: the line the inbox shows next to the subject. Merge variables allowed. |
+| **Layout** | Optional. Which configured shell wraps this template. Empty means the default. |
 | **Body** | Bard |
 | **Plain text** | Optional. A text alternative. |
 | **Description** | Optional. What this template is for, for the next editor. |
@@ -28,6 +30,51 @@ template you edited.
 
 So pick the slug once, name it for the **purpose** rather than the wording, and treat it as fixed:
 `double-opt-in`, not `bitte-bestaetigen-neu`.
+
+## Preview text
+
+The **Preview text** field is the email's *preheader*: the short line most inbox clients show
+after the subject in the message list. Leave it empty and the client fills that space with
+whatever your body happens to start with, which is usually a logo alt text or the word
+"View".
+
+It is delivered as the standard hidden snippet — a visually hidden `<div>` prepended to the
+body — so it never appears in the message itself, only in the inbox listing. You write plain
+text; the addon builds the snippet.
+
+Merge variables work here exactly as they do in the subject, and through the same
+`MergeVariables::apply()` call rather than a second implementation: on a real send the
+snippet is prepended to the body and resolved by the caller's one pass over it; in Live
+Preview the text is resolved before the snippet is built. Either way `{{ contact.first_name }}`
+in the preview text ends up substituted.
+
+```
+Subject:      Willkommen, {{ contact.first_name }}
+Preview text: Ihre ersten drei Schritte, in zwei Minuten gelesen
+```
+
+Write it as a continuation of the subject rather than a repeat of it. Clients truncate it,
+and they do not agree on where, so put the useful part first.
+
+## Choosing a layout
+
+The **Layout** select offers whatever handles are configured under
+[`layouts`](/email-templates/configuration#layouts-and-default-layout). Leave it empty and
+the template falls back to `default_layout`, then to `branded_layout`. An unknown or
+removed handle falls through the same chain rather than throwing.
+
+With no layouts configured — the default — the select has no options and shows only its
+placeholder.
+
+::: warning Configure your layouts before the blueprint is written
+The option list is read from config at the moment the blueprint is first created, and the
+blueprint is then a file on disk. Layouts added to config afterwards do not appear in an
+existing blueprint's select. Delete `resources/blueprints/collections/et_templates/email_template.yaml`
+and let the addon rewrite it, or add the options to that file by hand.
+:::
+
+Unlike the other fields, **Layout is not localisable**: a template's shell is the same in
+every site.
 
 ## Writing the body
 

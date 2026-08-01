@@ -24,9 +24,31 @@ and a campaign without it will still send. Putting it in the shared template is 
 newsletter being the one that shipped without it.
 :::
 
+`GET {prefix}/unsubscribe/{token}` ends the subscription **on arrival** and then renders a page
+saying so. There is no second click to miss.
+
 The token carries the brand, because the link is opened with no session and the fail-closed scope
 would otherwise hide the subscription. See
 [Brand Context → Public routes](/brand-context/public-routes).
+
+### Where the link points <Badge type="tip" text="1.9.0" />
+
+`{{ unsubscribe_url }}` is resolved through `Support\PreferenceLink`, which sends a reader to the
+[Preference Center](/preference-center/) where that addon is installed and to this addon's own
+unsubscribe page where it is not. `{{ one_click_unsubscribe_url }}`, the URL behind the RFC 8058
+header, is always this addon's endpoint.
+
+::: danger `/!/marketing/preferences/{token}` was removed in 1.9.0
+Marketing used to serve a multi-list preference page of its own. It is gone, along with its route,
+and **no redirect replaces it**. Links in newsletters you have already sent point at that URL and
+now return 404.
+
+The old URL and the new one carry the same token, but only your application can decide where to
+forward it, so the redirect is yours to add. This is a breaking change inside a minor release: the
+version number will not warn you, this page has to.
+
+See [Concepts → Where the preference page lives](/marketing/concepts#where-the-preference-page-lives).
+:::
 
 ## RFC 8058 one-click
 
@@ -89,8 +111,13 @@ audience includes it.
 From [Suppression](/suppression/), a foundation package shared with every other addon that queues
 mail, rather than from this addon's own state. Every path here that puts a mail on the wire asks it:
 `StartCampaignJob` once per batch, `SendMessageJob` per message, `CampaignSender`, and the double
-opt-in mail. From **1.8.1** the [preference centre](/marketing/concepts#the-preference-centre) asks
-it too, which matters because that page is the one surface that writes consent *back*.
+opt-in mail.
+
+The consent-writing side asks it too. `SubscriptionPreferences` — the service that turns a
+preference selection into subscription rows — has checked the gate since **1.8.1**, and it still
+does. Only the page in front of it moved to the [Preference Center](/preference-center/) addon in
+1.9.0; the addon reads this service rather than reimplementing it, so the check is in the same
+place it was.
 
 Before 1.8.0 only `StartCampaignJob` checked anything, and what it checked was LeadHub's
 `do_not_contact` rather than the suppression table. An address blocked *during* a long campaign was

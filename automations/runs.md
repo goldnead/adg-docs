@@ -136,26 +136,79 @@ Both this addon and Webhook Manager are wired to the same event. See
 ],
 ```
 
-`automations:prune` is scheduled daily. `null` on `prune_after_days` disables pruning
-entirely, which is a decision rather than a default.
+`null` on `prune_after_days` disables pruning entirely, which is a decision rather than a
+default.
 
 Set `keep_failed_runs_days` higher than `prune_after_days`. Successful runs from six
 weeks ago are noise; the failure from six weeks ago is evidence.
 
 ```bash
-php artisan automations:prune
+php artisan automations:prune [--days=] [--keep-failed-days=] [--dry-run] [--brand=]
 ```
+
+::: warning `automations:prune` is not scheduled for you
+The addon registers two commands with Laravel's scheduler, and pruning is not one of
+them. Add it to your own schedule, or the runs table grows without bound:
+
+```php
+// routes/console.php
+Schedule::command('automations:prune')->daily();
+```
+
+Run it with `--dry-run` first: it prints how many rows would go without deleting
+anything.
+:::
 
 ## The scheduled commands
 
-| Command | Purpose |
-| --- | --- |
-| `automations:run-due [--brand=]` | Resume runs whose delay has elapsed |
-| `automations:run-scheduled [--brand=]` | Start time-triggered automations |
-| `automations:prune` | Delete runs past the retention window |
+| Command | Runs | Purpose |
+| --- | --- | --- |
+| `automations:run-due [--brand=]` | every minute, automatically | Resume runs whose delay or wait window has elapsed |
+| `automations:run-scheduled [--brand=]` | every minute, automatically | Start time-triggered automations |
+| `automations:prune […]` | only when you schedule it | Delete runs past the retention window |
 
-All three take `--brand=` in multi-brand mode, because a console command has no session
-and therefore no current brand.
+The first two are registered by the addon itself, both `withoutOverlapping`. All three
+take `--brand=` in multi-brand mode, because a console command has no session and
+therefore no current brand.
+
+## Failure alerts
+
+A failed run can notify someone rather than waiting to be found.
+
+```php
+'alerts' => [
+    'enabled' => true,
+    'channels' => ['log'],
+    'mail_to' => env('STATAMIC_AUTOMATIONS_ALERT_MAIL_TO', null),
+    'throttle_minutes' => 15,
+],
+```
+
+`channels` takes `log`, `mail`, or both. The default is `log` only, so out of the box a
+failure is written to your Laravel log and nothing is emailed. Add `mail` and set
+`mail_to` to get the message.
+
+`throttle_minutes` is per automation: a flow failing on every one of a hundred runs
+produces one alert per window, not a hundred.
+
+## The audit log
+
+The run log answers "what did this automation do". The **audit log** answers "who changed
+it".
+
+CP → **Automations → Audit log**. Every entry carries the action, the automation, the
+user and the timestamp, and the list filters by automation and by action:
+
+| Action | Recorded when |
+| --- | --- |
+| `created` | An automation is created |
+| `updated` | An automation is saved |
+| `enabled` · `disabled` | Somebody flips it live or takes it out of service |
+| `deleted` | An automation is deleted |
+| `reverted` | A [version](/automations/building#version-history) is restored |
+
+This is the screen for "the follow-ups stopped going out last Tuesday": `disabled` with a
+name and a time answers it in one look, where the run list only shows an absence.
 
 ## Reading a run when the trigger was custom
 

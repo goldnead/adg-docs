@@ -14,19 +14,28 @@
 
 | Tag | Purpose |
 | --- | --- |
-| `{{ marketing:subscribe list="…" class="…" }}…{{ /marketing:subscribe }}` | Renders the form, action, CSRF token and honeypot |
+| `{{ marketing:subscribe list="…" class="…" redirect="…" }}…{{ /marketing:subscribe }}` | Renders the form, action, CSRF token, list handle, optional `_redirect` and honeypot |
 | `{{ marketing:subscribe_url }}` | The POST endpoint, for a form you build yourself |
 
-Inside the subscribe tag: `success`, `errors`, `old:email`.
+The subscribe tag injects **no variables** into the pair. A successful subscribe without a redirect
+flashes `marketing.subscribed` to the session, holding the resulting status; a validation failure is
+Laravel's ordinary redirect back with the error bag and old input. See
+[Front-end forms](/marketing/forms#handling-the-response).
 
 ## Campaign variables
 
 | Variable | Resolves to |
 | --- | --- |
-| `{{ first_name }}` | Contact's first name |
-| `{{ name }}` | Full name |
+| `{{ first_name }}` / `{{ last_name }}` | Contact's names, empty string when unset |
+| `{{ name }}` | Full name, falling back to the address |
 | `{{ email }}` | Recipient address |
-| `{{ unsubscribe_url }}` | Recipient's tokenised unsubscribe link. **Required.** |
+| `{{ subject }}` / `{{ preheader }}` | The campaign's own |
+| `{{ unsubscribe_url }}` | Where a **person** manages what they receive. **Required in the template.** |
+| `{{ one_click_unsubscribe_url }}` | This addon's own endpoint, used for the RFC 8058 header |
+
+`unsubscribe_url` resolves through `Support\PreferenceLink`: the
+[Preference Center](/preference-center/) where that addon is installed, this addon's unsubscribe
+page otherwise. `one_click_unsubscribe_url` is always this addon's own.
 
 Campaign bodies are Antlers, so ordinary conditionals work.
 
@@ -38,12 +47,38 @@ Prefix from `routes.prefix`, default `!/marketing`.
 | --- | --- |
 | `POST {prefix}/subscribe` | Subscribe. Fields: `email`, `list`, `first_name`, `last_name`, `_redirect` |
 | `GET {prefix}/confirm/{token}` | Confirm a double-opt-in subscription |
-| `GET {prefix}/unsubscribe/{token}` | Unsubscribe page |
-| `POST {prefix}/unsubscribe/{token}` | RFC 8058 one-click. Skips CSRF. |
-| `GET {prefix}/open/{token}` | Open pixel |
-| `GET {prefix}/click/{token}` | Signed click redirect |
+| `GET {prefix}/unsubscribe/{token}` | Unsubscribe on arrival, then show a page saying so |
+| `POST {prefix}/unsubscribe/{token}` | RFC 8058 one-click. Skips CSRF, answers `204`. |
+| `GET {prefix}/o/{uuid}.gif` | Open pixel |
+| `GET {prefix}/c/{uuid}` | Click redirect, **signed** |
 
 JSON response shape: `{ "ok": true, "data": { "status": "pending|subscribed" } }`.
+
+`GET`/`POST {prefix}/preferences/{token}` was removed in 1.9.0 with no redirect. See
+[Unsubscribes & suppression](/marketing/suppression#where-the-link-points).
+
+## Control Panel routes
+
+Under Statamic's CP prefix, all behind the permissions below.
+
+| Route | Purpose |
+| --- | --- |
+| `marketing` | Dashboard |
+| `marketing/lists` · `/create` · `/{handle}` · `/{handle}/edit` | List index, create, show, edit |
+| `marketing/lists/{handle}/subscribers` | Add a subscriber by hand (`POST`) |
+| `marketing/lists/{handle}/subscribers/{subscription}/unsubscribe` | Unsubscribe one by hand (`POST`) |
+| `marketing/campaigns` · `/create` · `/{handle}` · `/{handle}/edit` | Campaign index, create, show, edit |
+| `marketing/campaigns/{handle}/send` · `/schedule` · `/unschedule` · `/test` | Send now, schedule, unschedule, test send (`POST`) |
+| `marketing/campaigns/{handle}/preview` | Rendered preview |
+| `marketing/templates` · `/create` · `/{handle}/edit` | Template CRUD |
+
+## Publish tags
+
+| Tag | Publishes |
+| --- | --- |
+| `marketing-config` | `config/marketing.php` |
+| `marketing-views` | the public confirmation and unsubscribe pages, and the double-opt-in mail |
+| `marketing-translations` | the addon's language files |
 
 ## Subscription states
 
@@ -78,12 +113,21 @@ Base classes: `SubscriptionEvent`, `CampaignEvent`, `MessageEventBase`.
 
 ## Webhook Manager integration
 
-**Out:** marketing events as outbound triggers.
+**Out:** six outbound trigger handles.
+
+```
+marketing.subscriber.subscribed | subscriber.pending | subscriber.unsubscribed
+marketing.campaign.sent
+marketing.message.bounced | message.complained
+```
+
 **In:** inbound action `marketing.process_esp_event`, mapping Mailgun and Postmark bounce and complaint
 payloads onto subscriptions. Requires `MARKETING_ESP_WEBHOOK_SECRET`; the endpoint stays disabled until
 it is set.
 
-## Activity producer
+## Activity event types
+
+Recorded by the producer that **ships with the [Activity](/activity/) addon**, not with this one.
 
 ```
 marketing.subscription_pending | subscription_confirmed | unsubscribed
@@ -150,9 +194,11 @@ MARKETING_ESP_WEBHOOK_SECRET=
 
 ## Requirements
 
-<Requirements laravel="11.x, 12.x or 13.x" queue="Required. Campaign sending is queued." />
+<Requirements laravel="12.x or 13.x" queue="Required. Campaign sending is queued." />
 
-Hard dependency: `goldnead/statamic-leadhub`. Segment targeting needs LeadHub `^1.1`.
+Hard dependencies: `goldnead/statamic-leadhub ^1.4`, `goldnead/statamic-suppression ^1.0`,
+`goldnead/statamic-brand-context ^1.4`, plus `inertiajs/inertia-laravel` and `symfony/yaml`.
+Segment targeting needs LeadHub `^1.4`.
 
 ## Guarantees
 
@@ -165,7 +211,7 @@ Hard dependency: `goldnead/statamic-leadhub`. Segment targeting needs LeadHub `^
 | List handles | unique across **all** brands, so the public endpoint can derive the brand |
 | Consent state | per brand |
 | Sending | queued, chunked, throttled; one `Message` per recipient; auto-finalising |
-| Unsubscribe | tokenised link plus RFC 8058 one-click headers on every campaign |
+| Unsubscribe | tokenised link plus RFC 8058 one-click headers on every campaign, the one-click endpoint working with no optional package installed |
 
 ## Not extensible
 

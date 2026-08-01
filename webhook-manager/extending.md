@@ -16,6 +16,8 @@ public function boot(): void
     WebhookManager::registerAuthScheme(new MyCustomAuthScheme());
     WebhookManager::registerVariableResolver(new MyCustomResolver());
     WebhookManager::registerSuccessEvaluator(new MyCustomEvaluator());
+    WebhookManager::registerPreset(new MyCustomPreset());
+    WebhookManager::registerInboundActionHandler(new MyInboundHandler());
 }
 ```
 
@@ -25,14 +27,23 @@ public function boot(): void
 | --- | --- | --- |
 | `registerTrigger()` | `TriggerInterface` | a trigger in the CP picker |
 | `registerCondition()` | `ConditionInterface` | a condition type for hooks and rules |
-| `registerAction()` | `ActionInterface` | an action for rules and inbound endpoints |
+| `registerAction()` | `ActionInterface` | an action for rules |
 | `registerAuthScheme()` | `AuthVerifierInterface` | an inbound verifier |
 | `registerVariableResolver()` | `TemplateVariableResolverInterface` | a token namespace |
 | `registerSuccessEvaluator()` | `SuccessEvaluatorInterface` | what counts as a successful response |
 | `registerPreset()` | `PresetInterface` | an integration preset |
-| `registerEventTrigger()` | — | any event class as a trigger, no listener needed |
+| `registerInboundActionHandler()` | `InboundActionHandlerInterface` | an action for inbound endpoints |
 
 All contracts live under `Goldnead\WebhookManager\Contracts`.
+
+Rule actions and inbound action handlers are two separate registries with two separate
+contracts. An `ActionInterface` registered with `registerAction()` does not appear in
+an inbound endpoint's action picker, which is the mistake worth naming: they read like
+the same thing and are not.
+
+`registerEventTrigger()` sits alongside these but is not a registry of its own. It
+writes into the trigger registry and attaches a listener in one call; see
+[Custom event triggers](#custom-event-triggers).
 
 ## Register from `boot()`, never `register()`
 
@@ -157,10 +168,21 @@ again; the evaluator decides what happened.
 
 ## A custom inbound action
 
-Implement `InboundActionHandlerInterface` and register it. Or reach for the built-in
-**Dispatch event** action instead: it turns the inbound webhook into a domain event in
-your application, and everything after that is ordinary Laravel that you can test
-without HTTP.
+Implement `InboundActionHandlerInterface` and register it with its own method — not
+`registerAction()`, which fills the rule registry:
+
+```php
+WebhookManager::registerInboundActionHandler(new ProcessPaymentEventHandler());
+```
+
+The handler's `handle()` becomes the value stored on the endpoint and the entry in the
+CP's action picker, and its `label()` is what an operator reads there. It receives the
+endpoint, the mapped payload and the raw payload, and returns whether it succeeded,
+which is what the response builder turns into the endpoint's answer.
+
+Or reach for the built-in `dispatch_event` action instead: it turns the inbound webhook
+into a domain event in your application, and everything after that is ordinary Laravel
+that you can test without HTTP.
 
 For most projects that is the better answer.
 

@@ -2,39 +2,50 @@
 
 <AddonHeader />
 
-Eight curated templates ship with the addon. Each is **copied** into a user-owned
+Eleven curated templates ship with the addon. Each is **copied** into a user-owned
 automation when installed, so updates to the addon never silently change a flow you are
 running.
 
 That copy-on-install behaviour is the important part: a template is a starting point,
 not a live dependency. Edit the result freely.
 
-## The eight
+## The eleven
 
-| Template | What it does |
-| --- | --- |
-| **New Lead Notification** | Email the admin when a LeadHub lead is created |
-| **Form Submission to Webhook** | Forward submissions to an external URL |
-| **Qualified Lead to CRM** | Push qualified leads, add a note, schedule a follow-up |
-| **Workshop Inquiry Flow** | Capture, tag, notify, schedule a follow-up |
-| **Lead Magnet Delivery** | Send the file, create a tagged lead, log the delivery |
-| **Follow-up Reminder** | Daily reminders for due follow-ups |
-| **Entry Published Notification** | Webhook on collection publish, Slack-friendly |
-| **Webhook Failure Alert** | Admin email when a destination keeps failing |
+| Template | What it does | Needs |
+| --- | --- | --- |
+| **New Lead Notification** | Email the admin when a LeadHub lead is created | LeadHub |
+| **Form Submission to Webhook** | Forward submissions to an external URL | — |
+| **Qualified Lead to CRM** | Push qualified leads, add a note, schedule a follow-up | LeadHub |
+| **Workshop Inquiry Flow** | Capture, tag, notify, schedule a follow-up | LeadHub |
+| **Lead Magnet Delivery** | Send the file, create a tagged lead, log the delivery | LeadHub |
+| **Follow-up Reminder** | Email a reminder when a follow-up becomes due | LeadHub |
+| **Entry Published Notification** | Webhook on collection publish, Slack-friendly | — |
+| **Webhook Failure Alert** | Admin email when a destination keeps failing | Webhook Manager |
+| **Scheduled Daily Digest** | Run every morning on the *Schedule* trigger and email a digest | — |
+| **Inbound Webhook → Entry** | Receive a webhook, de-duplicate it, create an entry | Webhook Manager |
+| **AI Triage of Inquiries** | Summarise an inbound form inquiry with AI and email the summary | — |
 
-Five of the eight involve LeadHub. Those appear, and work, only when LeadHub is
-installed; installing them without it produces an automation whose LeadHub nodes are
+Six of the eleven involve LeadHub or Webhook Manager. Those appear, and work, only when
+that addon is installed; installing one without it produces an automation whose nodes are
 flagged as unavailable rather than one that fails at run time.
+
+*AI Triage of Inquiries* uses the AI action, which is a Pro feature and needs an
+`ANTHROPIC_API_KEY`.
 
 ## Installing one
 
-**Automations → Templates**, then install. You get a new automation, **disabled**, with
-the nodes laid out and configured as far as the template can configure them.
+**Automations → Automation templates**, then install. You get a new automation,
+**disabled**, with the nodes laid out and configured as far as the template can configure
+them.
+
+The nav entry is called *Automation templates* rather than *Templates* on purpose:
+Statamic's own word for Antlers views is "Templates", and every addon's translation
+strings merge into one Control Panel dictionary.
 
 <Figure
   src="automations-templates"
   alt="The template library listing the curated starting flows that ship with the addon"
-  caption="Installing a template copies it into a user-owned automation, so an addon update never changes a flow you are running." />
+  caption="The Automation templates screen. Installing one copies it into a user-owned automation, so an addon update never changes a flow you are running." />
 
 Then do the two things the template cannot do for you:
 
@@ -45,7 +56,11 @@ Then do the two things the template cannot do for you:
 ## Which ones to start with
 
 **Form Submission to Webhook** if you are evaluating the addon. It is the shortest
-complete flow and it exercises the trigger, a filter and an action.
+complete flow: one trigger, one action, and the token resolution between them.
+
+**Lead Magnet Delivery** if you want to see a filter and a fan-out in one flow. It
+filters on the submitted email, then delivers, creates the lead, tags it and logs the
+delivery.
 
 **New Lead Notification** if you run LeadHub. It is the flow most people build first
 anyway, and it demonstrates the LeadHub trigger and the token picker.
@@ -70,11 +85,49 @@ a generic install may be narrower or broader than you want.
 because they cannot assume Webhook Manager is installed. If it is, switch to *Send
 Webhook (via Webhook Manager)* and inherit retries, signing and the delivery log.
 
+## Registering your own template
+
+The template library is extensible. `Automations::template()` takes the same array shape
+as the built-ins — `handle`, `name`, `description`, `requires`, `nodes`, `edges` — and
+adds it to the catalogue:
+
+```php
+use Goldnead\StatamicAutomations\Facades\Automations;
+
+public function boot(): void
+{
+    Automations::template([
+        'handle' => 'agency_intake',
+        'name' => 'Agency Intake',
+        'description' => 'Capture an intake form, tag the lead and notify the account manager.',
+        'requires' => ['leadhub'],
+        'nodes' => [
+            ['node_key' => 'trigger', 'type' => 'form_submitted', 'position_x' => 0, 'position_y' => 0, 'config' => ['form_handle' => 'intake']],
+            ['node_key' => 'lead', 'type' => 'leadhub.create_or_update_lead', 'position_x' => 280, 'position_y' => 0, 'config' => [
+                'email' => '{{ form.email }}',
+            ]],
+        ],
+        'edges' => [
+            ['from_node_key' => 'trigger', 'to_node_key' => 'lead'],
+        ],
+    ]);
+}
+```
+
+`handle` and `nodes` are required; anything else throws an `InvalidArgumentException`. A
+handle that collides with a built-in **replaces** it, which is how you swap a shipped
+template for your own version rather than ending up with two.
+
+Templates are not licence-gated. They only materialise nodes the user could also place by
+hand, so registering one needs no Pro licence even where registering a custom node would.
+
+`requires` names the sibling addons a template depends on (`leadhub`, `webhook_manager`),
+and drives the "unavailable" marking rather than hiding the template.
+
 ## Building your own starter kit
 
-Templates are not extensible in v1 — you cannot register your own into the template
-library. What you can do instead, and what works well for an agency running several
-similar sites:
+Registering templates is the right answer when you ship an addon. For an agency running
+several similar sites, exporting is usually simpler:
 
 ```bash
 # export from the site you built it on

@@ -7,7 +7,8 @@ HTML string. One tag builds the nested heading tree, one modifier adds the
 matching anchor ids to the rendered content, and the two agree on how a heading
 becomes a slug.
 
-No configuration, no migrations, no Control Panel screen, no vendor publishing.
+No migrations, no Control Panel screen. The [config file](/toc/configuration) is
+optional and only changes the defaults a tag falls back to.
 
 ```antlers
 <ol>
@@ -71,6 +72,7 @@ that the tag and the modifier are being given the same content.
 ## Next
 
 - [Installation](/toc/installation) — one Composer command
+- [Configuration](/toc/configuration) — the five site-wide defaults
 - [The `toc` tag](/toc/tag) — parameters and variables
 - [The `toc` modifier](/toc/modifier) — anchor ids
 - [Blueprint setup](/toc/blueprints) — what a Bard field needs, which is very little

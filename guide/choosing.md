@@ -22,6 +22,7 @@ works, just badly. This page starts from the problem.
 | Isolate two client brands in one install | [Brand Context](/brand-context/) | two installs, if the content is genuinely shared |
 | Record who did something without coupling to your User model | [Identity Contracts](/identity-contracts/) | |
 | Stop sending to a mailbox that bounced, from every addon at once | [Suppression](/suppression/) | a per-addon block list, which only one of them keeps |
+| Let a subscriber change what they receive, without an account | [Preference Center](/preference-center/) | Marketing's unsubscribe page, which only ends one list |
 | Put a table of contents on an article | [Table of Contents](/toc/) | |
 
 ## Transport or orchestration

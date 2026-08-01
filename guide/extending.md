@@ -22,7 +22,7 @@ class AppServiceProvider extends ServiceProvider
         WebhookManager::registerTrigger(new MyCustomTrigger());
         Automations::registerAction(SendToInternalApiAction::class);
         Activity::registerProducer(OrderPaid::class, $mapper, 'commerce.purchase_completed');
-        Notifications::registerType('shop.order_shipped', $definition);
+        Notifications::registerType('shop.order_shipped', fn ($type) => $type->label('Order shipped'));
     }
 }
 ```
@@ -59,12 +59,29 @@ one by accident, so pick a distinctive handle for anything genuinely new:
 Activity states it explicitly for producers: registering the same event class
 again replaces the mapper, and never adds a second listener.
 
-## Registration errors are loud
+## Registration can fail quietly
 
-A malformed registration throws immediately rather than silently no-opping.
-Automations exposes `Automations::describe()` for exactly this reason: if a node
-does not appear in the library, ask the registry what it thinks it has, rather
-than guessing at the front end.
+This is the opposite of what you would hope for, and worth knowing before you
+debug a missing node.
+
+Automations gates `registerTrigger()`, `registerAction()` and
+`registerLogicNode()` on the Pro licence. **A failed gate skips the
+registration and does not throw**, so that a package boot never crashes when a
+customer's licence has lapsed. The cost of that choice is that a custom node on
+a Free install simply never appears, with nothing in the log to say so.
+`registerOptionSource()` and `registerEventTrigger()` are not gated at all.
+
+To find out what the registry actually holds, use `Automations::describe()`.
+It takes the class you registered and tells you the handle and kind it resolved
+to:
+
+```php
+Automations::describe(SendToInternalApiAction::class);
+// ['handle' => 'send_to_internal_api', 'kind' => 'action', 'class' => …]
+```
+
+The class argument is required, and an unknown class throws. `describe()` does
+not list the registry; there is no no-argument form.
 
 ## Extension points by addon
 
@@ -75,11 +92,16 @@ than guessing at the front end.
 | [LeadHub](/leadhub/extending) | CRM destinations, source projectors | `CrmDestination`, `SourceProjector` |
 | [Marketing](/marketing/extending) | — mostly consumed through events | |
 | [Activity](/activity/producers) | producers, a sanitizer | `ActivitySanitizer` |
-| [Notifications](/notifications/types) | types, channels, digest sources | `NotificationChannel`, digest source |
+| [Notifications](/notifications/types) | types, channels, digest sources, the recipient directory | `Channel`, `DigestSource`, `RecipientDirectory` |
 | [Email Templates](/email-templates/importing) | import sources | `EmailTemplateSource` |
+| [Preference Center](/preference-center/extending) | nothing to register; a discovery interface other packages call | `PreferenceCenter` facade |
 | [Identity Contracts](/identity-contracts/extending) | identity resolvers, contact locator, anonymous id resolver | `ProvidesIdentity`, `IdentityResolver`, `ContactLocator`, `AnonymousIdResolver` |
-| [Brand Context](/brand-context/scoping) | the `HasBrand` trait on your own models | — |
+| [Brand Context](/brand-context/scoping) | the `HasBrand` trait on your own models, plus two swappable bindings | `UserSource`, `BrandTokenResolver` |
 | [Suppression](/suppression/gate) | the gate contract, if you replace the database one | `Gate` |
+
+Notifications' registries fail closed and quietly: `SourceRegistry` skips
+anything that does not implement `DigestSource`, without an error. If a digest
+source you registered never contributes, check the contract first.
 
 ## Turning an application event into a trigger
 
