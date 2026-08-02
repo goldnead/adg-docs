@@ -22,5 +22,6 @@ const addon = computed(() => {
     <span class="gn-chip gn-chip--accent">{{ addon.statamic ?? STATAMIC_DEFAULT }}</span>
     <span class="gn-chip">{{ addon.php ?? PHP_DEFAULT }}</span>
     <span class="gn-chip">{{ addon.license }} licence</span>
+    <span v-if="addon.unreleased" class="gn-chip gn-chip--unreleased">Unreleased</span>
   </div>
 </template>

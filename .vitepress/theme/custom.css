@@ -190,6 +190,14 @@
   color: var(--vp-c-brand-1);
 }
 
+/* Not tagged and not on Packagist. Stated in the header so nobody reaches for
+   `composer require` on the strength of a page that reads finished. */
+.gn-chip--unreleased {
+  border-color: transparent;
+  background: var(--vp-c-warning-soft);
+  color: var(--vp-c-warning-1);
+}
+
 /* ---------- Requirements block ---------- */
 
 .gn-req {

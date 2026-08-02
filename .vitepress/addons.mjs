@@ -187,6 +187,25 @@ export const addons = [
     ],
   },
   {
+    slug: 'lead-magnets',
+    name: 'Lead Magnets',
+    package: 'goldnead/statamic-lead-magnets',
+    layer: 'crm',
+    license: 'MIT',
+    unreleased: true,
+    tagline:
+      'Confirm-first resource delivery: ask for a file, confirm the address, download through a signed and audited link.',
+    icon: '↧',
+    pages: [
+      { text: 'Concepts', link: 'concepts' },
+      { text: 'The request flow', link: 'request-flow' },
+      { text: 'Grant state', link: 'grant-state' },
+      { text: 'Delivery & downloads', link: 'delivery' },
+      { text: 'Bridges', link: 'bridges' },
+      { text: 'Extending', link: 'extending' },
+    ],
+  },
+  {
     slug: 'email-templates',
     name: 'Email Templates',
     package: 'goldnead/statamic-email-templates',
@@ -238,6 +257,42 @@ export const addons = [
       { text: 'Channels & digests', link: 'digests' },
       { text: 'Realtime', link: 'realtime' },
       { text: 'Laravel interop', link: 'laravel-interop' },
+    ],
+  },
+  {
+    slug: 'entitlements',
+    name: 'Entitlements',
+    package: 'goldnead/statamic-entitlements',
+    layer: 'platform',
+    license: 'MIT',
+    unreleased: true,
+    tagline:
+      'Who may access what: one state machine, idempotency enforced by the database, and a revocation you can audit.',
+    icon: '⊙',
+    pages: [
+      { text: 'Concepts', link: 'concepts' },
+      { text: 'Granting & revoking', link: 'granting' },
+      { text: 'The state machine', link: 'states' },
+      { text: 'Extending', link: 'extending' },
+    ],
+  },
+  {
+    slug: 'events',
+    name: 'Events',
+    package: 'goldnead/statamic-events',
+    layer: 'content',
+    license: 'MIT',
+    unreleased: true,
+    tagline:
+      'Events with any number of dates, per-event timezones, venues, ICS downloads and a subscribable feed.',
+    icon: '◷',
+    pages: [
+      { text: 'Concepts', link: 'concepts' },
+      { text: 'Visibility', link: 'visibility' },
+      { text: 'Timezones', link: 'timezones' },
+      { text: 'Calendar feeds & ICS', link: 'calendar-feeds' },
+      { text: 'Antlers tags', link: 'tags' },
+      { text: 'Extending', link: 'extending' },
     ],
   },
   {
