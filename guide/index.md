@@ -1,8 +1,8 @@
 # Introduction
 
-This site documents twelve packages for **Statamic 6**. They are separate
+This site documents fifteen packages for **Statamic 6**. They are separate
 Composer packages, released and versioned independently, and each one is useful
-on its own. Ten of them are Statamic addons; Identity Contracts and Suppression
+on its own. Thirteen of them are Statamic addons; Identity Contracts and Suppression
 are plain Laravel libraries that the addons build on. What makes them a suite is that they agree on four things: how a brand is
 scoped, who an actor is, where configuration lives, and which addon owns which
 concern.
@@ -10,17 +10,24 @@ concern.
 If you only ever install one of them, you can ignore all four. This guide exists
 for the point at which you install the second one.
 
+::: warning Three of the fifteen are not released
+[Entitlements](/entitlements/), [Lead Magnets](/lead-magnets/) and
+[Events](/events/) are built and documented, but they carry no git tag and are
+not on Packagist. `composer require` does not resolve them today. Their
+installation pages describe a path or VCS repository instead.
+:::
+
 ## What is here
 
 | Layer | Addons | What it is for |
 | --- | --- | --- |
 | Foundation | [Brand Context](/brand-context/), [Identity Contracts](/identity-contracts/), [Suppression](/suppression/) | Install-once packages the others build on. Inert on their own. |
 | Integration | [Webhook Manager](/webhook-manager/), [Automations](/automations/) | Getting data in and out of the site, and reacting to events. |
-| CRM & marketing | [LeadHub](/leadhub/), [Marketing](/marketing/), [Preference Center](/preference-center/), [Email Templates](/email-templates/) | Contacts, consent, campaigns. |
-| Platform | [Activity](/activity/), [Notifications](/notifications/) | Shared services any domain addon can record into. |
-| Content | [Table of Contents](/toc/) | Front-end helpers for editorial work. |
+| CRM & marketing | [LeadHub](/leadhub/), [Marketing](/marketing/), [Preference Center](/preference-center/), [Lead Magnets](/lead-magnets/), [Email Templates](/email-templates/) | Contacts, consent, campaigns. |
+| Platform | [Activity](/activity/), [Notifications](/notifications/), [Entitlements](/entitlements/) | Shared services any domain addon can record into or ask. |
+| Content | [Events](/events/), [Table of Contents](/toc/) | Dated content and front-end helpers for editorial work. |
 
-A one-page tour of all twelve, with the dependency graph, is in
+A one-page tour of all fifteen, with the dependency graph, is in
 [The suite](/guide/suite). If you know the problem but not the addon, read
 [Choosing an addon](/guide/choosing).
 

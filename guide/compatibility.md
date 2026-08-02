@@ -11,8 +11,8 @@
 | Database | MySQL 8+, SQLite |
 
 **Laravel 11 is not supported by any package in the suite.** Every one of them
-requires `^12.0|^13.0` or narrower, and Brand Context — a dependency of eight
-of the twelve — requires `^12.40|^13.0`, which sets the real floor for most
+requires `^12.0|^13.0` or narrower, and Brand Context — a dependency of eleven
+of the fifteen — requires `^12.40|^13.0`, which sets the real floor for most
 installs. Table of Contents is the exception that declares no Laravel
 constraint at all and takes whatever its Statamic version takes.
 
@@ -60,7 +60,8 @@ for you:
 | `statamic-notifications` | `statamic-identity-contracts` | A recipient is an Identity. |
 | `statamic-activity` | `statamic-identity-contracts` | An actor is an Identity. |
 | `statamic-preference-center` | `statamic-identity-contracts` | The page resolves a person from a token. |
-| eight of the twelve | `statamic-brand-context` | See [Multi-brand](#multi-brand) below. |
+| `statamic-entitlements` | `statamic-identity-contracts` | The actor on a grant or a revocation is an Identity. |
+| eleven of the fifteen | `statamic-brand-context` | See [Multi-brand](#multi-brand) below. |
 
 Everything beyond that is a `suggest` plus a runtime `class_exists` check. The
 version constraints that matter when both are installed:
