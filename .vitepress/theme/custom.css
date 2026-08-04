@@ -140,6 +140,16 @@
   border-radius: 8px;
 }
 
+/* The pre-artwork state: a registered addon whose icon has not been drawn yet. */
+.gn-card__icon--glyph {
+  display: grid;
+  place-items: center;
+  background: var(--vp-c-brand-soft);
+  color: var(--vp-c-brand-1);
+  font-size: 1rem;
+  line-height: 1;
+}
+
 .gn-card__name {
   font-weight: 600;
   font-size: 1.0625rem;
@@ -228,6 +238,14 @@
   border-color: transparent;
   background: var(--vp-c-brand-soft);
   color: var(--vp-c-brand-1);
+}
+
+/* Not tagged and not on Packagist. Stated in the header so nobody reaches for
+   `composer require` on the strength of a page that reads finished. */
+.gn-chip--unreleased {
+  border-color: transparent;
+  background: var(--vp-c-warning-soft);
+  color: var(--vp-c-warning-1);
 }
 
 /* ---------- Requirements block ---------- */

@@ -20,6 +20,13 @@ const layers = addonsByLayer()
 const accent = (slug) => ({
   '--gn-card-accent': ART[slug]?.from ?? 'var(--vp-c-brand-1)',
 })
+
+/**
+ * A new addon is registered and documented before anyone draws its icon. Until
+ * `sync-art.mjs` has one to copy, the card falls back to the registry's glyph
+ * rather than to a broken image.
+ */
+const hasArt = (slug) => Boolean(ART[slug])
 </script>
 
 <template>
@@ -40,6 +47,7 @@ const accent = (slug) => ({
         >
           <div class="gn-card__top">
             <img
+              v-if="hasArt(addon.slug)"
               class="gn-card__icon"
               :src="withBase(iconPath(addon.slug))"
               width="32"
@@ -47,6 +55,9 @@ const accent = (slug) => ({
               loading="lazy"
               alt=""
             />
+            <span v-else class="gn-card__icon gn-card__icon--glyph" aria-hidden="true">{{
+              addon.icon
+            }}</span>
             <span class="gn-card__name">{{ addon.name }}</span>
           </div>
           <p class="gn-card__tagline">{{ addon.tagline }}</p>

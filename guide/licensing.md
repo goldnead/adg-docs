@@ -104,8 +104,10 @@ members:
 
 ## Buying
 
-**All twelve packages are on Packagist**, commercial ones included, and every
-one of them installs with a bare `composer require`. Being on Packagist is not
+**Twelve of the fifteen packages are on Packagist**, commercial ones included,
+and every one of those installs with a bare `composer require`. Entitlements,
+Lead Magnets and Events are untagged and unpublished; they are MIT like the rest,
+and there is nothing to buy. Being on Packagist is not
 the same as being free: Automations and Table of Contents resolve as normal
 Composer packages but are licensed, not sold, and their licence is bought and
 managed through the [Statamic Marketplace](https://statamic.com/addons).

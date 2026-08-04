@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 import { useData, withBase } from 'vitepress'
 import { addonBySlug, STATAMIC_DEFAULT, PHP_DEFAULT } from '../addons.mjs'
-import { coverPath, iconPath } from '../art.generated.mjs'
+import { ART, coverPath, iconPath } from '../art.generated.mjs'
 
 const props = defineProps({
   /** Addon slug. Defaults to the first path segment of the current page. */
@@ -17,12 +17,20 @@ const addon = computed(() => {
 })
 
 /**
+ * An addon can be registered and documented before anyone has drawn its icon —
+ * that is exactly what happens the day a new package joins the suite. Gate the
+ * art on the generated table rather than on the registry, so a page without art
+ * renders one chip short instead of two broken images.
+ */
+const hasArt = computed(() => Boolean(addon.value && ART[addon.value.slug]))
+
+/**
  * The cover is the addon's front door, so it belongs on the front door only.
  * Repeating a 1200x630 banner above every one of the twelve pages inside an
  * addon would push the first line of documentation off the screen twelve times.
  *
- * `<slug>/index.md` is the overview page. The component is included by all 143
- * pages, so this test is what keeps the markdown untouched.
+ * `<slug>/index.md` is the overview page. The component is included by every
+ * page, so this test is what keeps the markdown untouched.
  */
 const isOverview = computed(
   () => page.value.relativePath === `${addon.value?.slug}/index.md`,
@@ -31,7 +39,7 @@ const isOverview = computed(
 
 <template>
   <template v-if="addon">
-    <figure v-if="isOverview" class="gn-cover">
+    <figure v-if="hasArt && isOverview" class="gn-cover">
       <img
         :src="withBase(coverPath(addon.slug))"
         :alt="`${addon.name}: ${addon.tagline}`"
@@ -42,7 +50,7 @@ const isOverview = computed(
 
     <div class="gn-addon-header">
       <img
-        v-if="!isOverview"
+        v-if="hasArt && !isOverview"
         class="gn-addon-header__icon"
         :src="withBase(iconPath(addon.slug))"
         width="20"
@@ -53,6 +61,7 @@ const isOverview = computed(
       <span class="gn-chip gn-chip--accent">{{ addon.statamic ?? STATAMIC_DEFAULT }}</span>
       <span class="gn-chip">{{ addon.php ?? PHP_DEFAULT }}</span>
       <span class="gn-chip">{{ addon.license }} licence</span>
+      <span v-if="addon.unreleased" class="gn-chip gn-chip--unreleased">Unreleased</span>
     </div>
   </template>
 </template>

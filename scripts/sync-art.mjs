@@ -181,11 +181,38 @@ const stopsFrom = (svg) => {
 
 const palette = {}
 const problems = []
+const absent = []
 let copied = 0
 
 for (const addon of addons) {
   const repo = resolve(REPOS, `statamic-${addon.slug}`)
   const outDir = resolve(DOCS, 'public', 'art', addon.slug)
+
+  // Two different situations that must not be conflated. A repo that is not
+  // checked out on this machine says nothing about whether the addon has art —
+  // it says this is the wrong machine to answer the question, so leave whatever
+  // is already in public/art/ alone and carry on. An addon whose repo IS here
+  // and has no art is a real gap, and that one stops the run.
+  if (!(await exists(repo))) {
+    absent.push(addon.slug)
+    if (await exists(resolve(outDir, 'icon.svg'))) {
+      const svg = await readFile(resolve(outDir, 'icon.svg'), 'utf8')
+      const stops = stopsFrom(svg)
+      if (stops) {
+        const light = findReadable(stops[0], LIGHT_BG, -1)
+        const dark = findReadable(stops[0], DARK_BG, +1)
+        if (light && dark) {
+          palette[addon.slug] = {
+            from: stops[0],
+            to: stops[1],
+            light: light.hex,
+            dark: dark.hex,
+          }
+        }
+      }
+    }
+    continue
+  }
 
   let iconSource = null
   for (const name of ICON_FILENAMES) {
@@ -242,6 +269,14 @@ for (const addon of addons) {
     `  ${addon.slug.padEnd(19)} ${from} → ${to}   ` +
       `light ${light.hex} (${light.contrast.toFixed(1)}:1)   ` +
       `dark ${dark.hex} (${dark.contrast.toFixed(1)}:1)`,
+  )
+}
+
+if (absent.length) {
+  console.log(
+    `\n${absent.length} repo(s) not checked out here, left as they were:\n` +
+      `  ${absent.join(', ')}\n` +
+      'Clone them next to this one and run again to pick their art up.',
   )
 }
 

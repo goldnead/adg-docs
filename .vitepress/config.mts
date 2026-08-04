@@ -1,5 +1,6 @@
 import { defineConfig } from 'vitepress'
 import { addons, addonNav, addonSidebar } from './addons.mjs'
+import { ART } from './art.generated.mjs'
 
 const BASE_URL = 'https://docs.adriangoldner.dev'
 
@@ -43,9 +44,13 @@ export default defineConfig({
    */
   transformHead({ pageData, title, description }) {
     const addon = addonForPath(pageData.relativePath)
-    const image = addon
-      ? `${BASE_URL}/art/${addon.slug}/cover.png`
-      : `${BASE_URL}/art/suite-cover.png`
+    // An addon documented before its cover exists falls back to the suite
+    // image. Naming a file that 404s would be worse than being generic: a
+    // shared link would render with no image at all.
+    const image =
+      addon && ART[addon.slug]
+        ? `${BASE_URL}/art/${addon.slug}/cover.png`
+        : `${BASE_URL}/art/suite-cover.png`
 
     // `description` has already fallen back to the site description by the time
     // it gets here, which on an addon page is the least useful of the three
@@ -60,7 +65,7 @@ export default defineConfig({
       ['meta', { property: 'og:image:width', content: '1200' }],
       ['meta', { property: 'og:image:height', content: '630' }],
       ['meta', { name: 'twitter:image', content: image }],
-      ['meta', { name: 'twitter:image:alt', content: addon ? `${addon.name}: ${addon.tagline}` : 'goldnead Statamic addons' }],
+      ['meta', { name: 'twitter:image:alt', content: addon && ART[addon.slug] ? `${addon.name}: ${addon.tagline}` : 'goldnead Statamic addons' }],
     ]
   },
 

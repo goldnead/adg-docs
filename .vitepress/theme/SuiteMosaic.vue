@@ -9,15 +9,19 @@
  * Registry order, which means layer order — foundation first. That reads as an
  * arrangement rather than a pile.
  */
+import { computed } from 'vue'
 import { withBase } from 'vitepress'
 import { addons } from '../addons.mjs'
-import { iconPath } from '../art.generated.mjs'
+import { ART, iconPath } from '../art.generated.mjs'
+
+/** Only addons whose icon has actually been drawn. A gap is better than a hole. */
+const drawn = computed(() => addons.filter((a) => ART[a.slug]))
 </script>
 
 <template>
   <div class="gn-mosaic" aria-hidden="true">
     <img
-      v-for="(addon, i) in addons"
+      v-for="(addon, i) in drawn"
       :key="addon.slug"
       class="gn-mosaic__tile"
       :src="withBase(iconPath(addon.slug))"
