@@ -1,6 +1,7 @@
 <script setup>
 import { withBase } from 'vitepress'
 import { addonsByLayer } from '../addons.mjs'
+import { ART, iconPath } from '../art.generated.mjs'
 
 const LAYER_NOTES = {
   foundation: 'Install-once packages the others build on. Inert on their own.',
@@ -11,6 +12,14 @@ const LAYER_NOTES = {
 }
 
 const layers = addonsByLayer()
+
+/**
+ * The card borrows the addon's own colour for its hover state. The raw gradient
+ * stop is fine here: it is a 1px rule and a glow, never text.
+ */
+const accent = (slug) => ({
+  '--gn-card-accent': ART[slug]?.from ?? 'var(--vp-c-brand-1)',
+})
 </script>
 
 <template>
@@ -26,10 +35,18 @@ const layers = addonsByLayer()
           v-for="addon in layer.addons"
           :key="addon.slug"
           class="gn-card"
+          :style="accent(addon.slug)"
           :href="withBase(`/${addon.slug}/`)"
         >
           <div class="gn-card__top">
-            <span class="gn-card__icon" aria-hidden="true">{{ addon.icon }}</span>
+            <img
+              class="gn-card__icon"
+              :src="withBase(iconPath(addon.slug))"
+              width="32"
+              height="32"
+              loading="lazy"
+              alt=""
+            />
             <span class="gn-card__name">{{ addon.name }}</span>
           </div>
           <p class="gn-card__tagline">{{ addon.tagline }}</p>

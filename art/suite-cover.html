@@ -1,0 +1,65 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<!--
+  The share image for every page that is not an addon page: the home page, the
+  guide, the reference pages.
+
+  Same grammar as the twelve addon covers in the addon repos — dark radial
+  ground, uppercase eyebrow, two-line title with the second line in the accent,
+  one sentence of substance — but in the suite's gold rather than any one
+  addon's colour, and with all twelve icons instead of one glyph.
+
+  Icons are read from public/art/, so this file renders whatever
+  scripts/sync-art.mjs last pulled out of the addon repos. Render with:
+
+      node scripts/render-art.mjs suite
+-->
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 1200px; height: 630px; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, sans-serif;
+    background: radial-gradient(1200px 700px at 78% 22%, #3B2E0A 0%, #241C06 55%, #0D0A02 100%);
+    color: #fff; overflow: hidden; position: relative;
+  }
+  .wrap { display: flex; flex-direction: column; justify-content: center; height: 100%; padding: 0 92px; }
+  .eyebrow {
+    display: inline-flex; align-items: center; gap: 10px; align-self: flex-start;
+    font-size: 22px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase;
+    color: #FFF0B8; margin-bottom: 26px;
+  }
+  .eyebrow .dot { width: 12px; height: 12px; border-radius: 50%; background: #E8B931; box-shadow: 0 0 18px #E8B931; }
+  h1 { font-size: 78px; line-height: 1.02; font-weight: 800; letter-spacing: -.02em; }
+  h1 .accent { background: linear-gradient(90deg,#FFE580,#E8B931); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  p.sub { margin-top: 28px; max-width: 900px; font-size: 30px; line-height: 1.35; color: #CBD5E1; font-weight: 400; }
+  .icons { margin-top: 56px; display: flex; gap: 14px; }
+  .icons img { width: 68px; height: 68px; border-radius: 16px; filter: drop-shadow(0 14px 28px rgba(0,0,0,.45)); }
+  .corner { position: absolute; right: -120px; bottom: -160px; width: 520px; height: 520px; border-radius: 50%;
+    background: radial-gradient(circle at 30% 30%, rgba(232,185,49,.24), transparent 60%); }
+</style>
+</head>
+<body>
+  <div class="corner"></div>
+  <div class="wrap">
+    <span class="eyebrow"><span class="dot"></span>goldnead</span>
+    <h1>Statamic Addons<br><span class="accent">One suite, one set of docs</span></h1>
+    <p class="sub">A CRM, email marketing, a visual automation builder, webhooks, an activity ledger and content tooling for Statamic 6.</p>
+    <div class="icons">
+      <img src="../public/art/brand-context/icon.svg" alt="">
+      <img src="../public/art/identity-contracts/icon.svg" alt="">
+      <img src="../public/art/suppression/icon.svg" alt="">
+      <img src="../public/art/webhook-manager/icon.svg" alt="">
+      <img src="../public/art/automations/icon.svg" alt="">
+      <img src="../public/art/leadhub/icon.svg" alt="">
+      <img src="../public/art/marketing/icon.svg" alt="">
+      <img src="../public/art/preference-center/icon.svg" alt="">
+      <img src="../public/art/email-templates/icon.svg" alt="">
+      <img src="../public/art/activity/icon.svg" alt="">
+      <img src="../public/art/notifications/icon.svg" alt="">
+      <img src="../public/art/toc/icon.svg" alt="">
+    </div>
+  </div>
+</body>
+</html>

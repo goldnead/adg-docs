@@ -1,0 +1,27 @@
+<svg width="256" height="256" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Webhook Manager">
+  <defs>
+    <linearGradient id="wm-bg" x1="0" y1="0" x2="256" y2="256" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#6D5BD0"/>
+      <stop offset="1" stop-color="#4634B1"/>
+    </linearGradient>
+  </defs>
+
+  <!-- App-tile background -->
+  <rect width="256" height="256" rx="56" fill="url(#wm-bg)"/>
+
+  <!-- Two anti-parallel arrows around a central node: an outbound hook (top,
+       pointing out) and an inbound hook (bottom, pointing back in) — the
+       addon's two-way webhook exchange. -->
+  <g stroke="#FFFFFF" stroke-width="16" stroke-linecap="round" stroke-linejoin="round" fill="none">
+    <!-- outbound → -->
+    <path d="M80 100 H164"/>
+    <path d="M148 82 L176 100 L148 118"/>
+    <!-- inbound ← -->
+    <path d="M176 156 H92"/>
+    <path d="M108 138 L80 156 L108 174"/>
+  </g>
+
+  <!-- Central node -->
+  <circle cx="128" cy="128" r="21" fill="#FFFFFF"/>
+  <circle cx="128" cy="128" r="9" fill="#4634B1"/>
+</svg>

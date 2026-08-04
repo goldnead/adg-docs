@@ -11,6 +11,12 @@ hero:
     builder, a webhook layer, an activity ledger, notifications, a subscriber
     preference centre and content tooling. Built to be installed one at a time
     and to compose when you install the next one.
+  # The hero's image block only renders when `image` is set, and the theme's
+  # `home-hero-image` slot replaces what goes inside it with <SuiteMosaic />.
+  # This value is the fallback for a build that has not run `sync-art.mjs`.
+  image:
+    src: /logo.svg
+    alt: goldnead Statamic addons
   actions:
     - theme: brand
       text: Start here

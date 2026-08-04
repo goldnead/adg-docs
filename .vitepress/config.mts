@@ -3,6 +3,14 @@ import { addons, addonNav, addonSidebar } from './addons.mjs'
 
 const BASE_URL = 'https://docs.adriangoldner.dev'
 
+/** The addon a source path belongs to, or undefined for the guide and the hub. */
+const addonForPath = (relativePath: string) =>
+  addons.find((a) => a.slug === relativePath.split('/')[0])
+
+/** Source path to public URL, matching `cleanUrls: true`. */
+const canonicalPath = (relativePath: string) =>
+  '/' + relativePath.replace(/(^|\/)index\.md$/, '$1').replace(/\.md$/, '')
+
 export default defineConfig({
   title: 'Statamic Addons',
   titleTemplate: ':title | goldnead Statamic Addons',
@@ -23,10 +31,53 @@ export default defineConfig({
     ['meta', { name: 'theme-color', content: '#e8b931' }],
     ['meta', { property: 'og:type', content: 'website' }],
     ['meta', { property: 'og:site_name', content: 'goldnead Statamic Addons' }],
-    ['meta', { name: 'twitter:card', content: 'summary' }],
+    // Every page now has a 1200x630 share image, so the small card is a waste.
+    ['meta', { name: 'twitter:card', content: 'summary_large_image' }],
   ],
 
   sitemap: { hostname: BASE_URL },
+
+  /**
+   * The share image is the addon's own cover, straight out of its repo. Pages
+   * that belong to no single addon get the suite cover.
+   */
+  transformHead({ pageData, title, description }) {
+    const addon = addonForPath(pageData.relativePath)
+    const image = addon
+      ? `${BASE_URL}/art/${addon.slug}/cover.png`
+      : `${BASE_URL}/art/suite-cover.png`
+
+    // `description` has already fallen back to the site description by the time
+    // it gets here, which on an addon page is the least useful of the three
+    // things available. The addon's own tagline is what a shared link should say.
+    const summary = pageData.description || addon?.tagline || description
+
+    return [
+      ['meta', { property: 'og:title', content: title }],
+      ['meta', { property: 'og:description', content: summary }],
+      ['meta', { property: 'og:url', content: BASE_URL + canonicalPath(pageData.relativePath) }],
+      ['meta', { property: 'og:image', content: image }],
+      ['meta', { property: 'og:image:width', content: '1200' }],
+      ['meta', { property: 'og:image:height', content: '630' }],
+      ['meta', { name: 'twitter:image', content: image }],
+      ['meta', { name: 'twitter:image:alt', content: addon ? `${addon.name}: ${addon.tagline}` : 'goldnead Statamic addons' }],
+    ]
+  },
+
+  /**
+   * Stamp the addon onto <html> at build time.
+   *
+   * `theme/Layout.vue` keeps this in step during client-side navigation, but it
+   * cannot help the first paint: by the time Vue hydrates, the page has already
+   * been drawn once. Doing it here means a reader never sees a page flip from
+   * gold to the addon's colour, and a reader with JavaScript off still gets it.
+   */
+  transformHtml(code, _id, { page }) {
+    const addon = addonForPath(page)
+    if (!addon) return
+
+    return code.replace(/<html(\s[^>]*)?>/, `<html$1 data-addon="${addon.slug}">`)
+  },
 
   markdown: {
     lineNumbers: false,
