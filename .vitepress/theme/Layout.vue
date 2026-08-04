@@ -12,7 +12,7 @@ import { watch } from 'vue'
 import { useData } from 'vitepress'
 import DefaultTheme from 'vitepress/theme'
 
-import { addonBySlug } from '../addons.mjs'
+import { entryBySlug } from '../addons.mjs'
 
 const { page } = useData()
 
@@ -24,7 +24,7 @@ watch(
     const slug = path.split('/')[0]
     const el = document.documentElement
 
-    if (addonBySlug(slug)) {
+    if (entryBySlug(slug)) {
       el.dataset.addon = slug
     } else {
       delete el.dataset.addon

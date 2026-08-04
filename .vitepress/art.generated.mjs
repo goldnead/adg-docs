@@ -55,6 +55,12 @@ export const ART = {
     "light": "#c128d7",
     "dark": "#d946ef"
   },
+  "lead-magnets": {
+    "from": "#D97706",
+    "to": "#7C2D12",
+    "light": "#bb5b00",
+    "dark": "#d97706"
+  },
   "email-templates": {
     "from": "#F43F5E",
     "to": "#EC4899",
@@ -73,11 +79,29 @@ export const ART = {
     "light": "#dd3035",
     "dark": "#ef4444"
   },
+  "entitlements": {
+    "from": "#60A5FA",
+    "to": "#1E40AF",
+    "light": "#3176c7",
+    "dark": "#60a5fa"
+  },
+  "events": {
+    "from": "#34D399",
+    "to": "#047857",
+    "light": "#008652",
+    "dark": "#34d399"
+  },
   "toc": {
     "from": "#06B6D4",
     "to": "#2563EB",
     "light": "#00819e",
     "dark": "#06b6d4"
+  },
+  "block-editor": {
+    "from": "#57534E",
+    "to": "#1C1917",
+    "light": "#57534e",
+    "dark": "#88847e"
   }
 }
 

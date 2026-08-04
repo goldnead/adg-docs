@@ -1,7 +1,7 @@
 <script setup>
 import { computed } from 'vue'
 import { useData, withBase } from 'vitepress'
-import { addonBySlug, STATAMIC_DEFAULT, PHP_DEFAULT } from '../addons.mjs'
+import { entryBySlug, STATAMIC_DEFAULT, PHP_DEFAULT } from '../addons.mjs'
 import { ART, coverPath, iconPath } from '../art.generated.mjs'
 
 const props = defineProps({
@@ -13,8 +13,16 @@ const { page } = useData()
 
 const addon = computed(() => {
   const slug = props.slug ?? page.value.relativePath.split('/')[0]
-  return addonBySlug(slug)
+  return entryBySlug(slug)
 })
+
+/**
+ * A tool is not a Statamic addon, and the three chips that identify one would
+ * all be lies on its page: there is no Composer package to require, no Statamic
+ * version to satisfy and no PHP to run. It gets its stack and its source
+ * instead.
+ */
+const isTool = computed(() => addon.value?.kind === 'tool')
 
 /**
  * An addon can be registered and documented before anyone has drawn its icon —
@@ -57,9 +65,17 @@ const isOverview = computed(
         height="20"
         alt=""
       />
-      <span class="gn-chip gn-chip--pkg">{{ addon.package }}</span>
-      <span class="gn-chip gn-chip--accent">{{ addon.statamic ?? STATAMIC_DEFAULT }}</span>
-      <span class="gn-chip">{{ addon.php ?? PHP_DEFAULT }}</span>
+      <template v-if="isTool">
+        <a class="gn-chip gn-chip--pkg" :href="addon.source">{{
+          addon.source.replace('https://github.com/', '')
+        }}</a>
+        <span class="gn-chip gn-chip--accent">{{ addon.stack }}</span>
+      </template>
+      <template v-else>
+        <span class="gn-chip gn-chip--pkg">{{ addon.package }}</span>
+        <span class="gn-chip gn-chip--accent">{{ addon.statamic ?? STATAMIC_DEFAULT }}</span>
+        <span class="gn-chip">{{ addon.php ?? PHP_DEFAULT }}</span>
+      </template>
       <span class="gn-chip">{{ addon.license }} licence</span>
       <span v-if="addon.unreleased" class="gn-chip gn-chip--unreleased">Unreleased</span>
     </div>

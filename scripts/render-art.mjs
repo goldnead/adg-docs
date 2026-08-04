@@ -31,7 +31,7 @@ import { pathToFileURL } from 'node:url'
 
 import { chromium } from 'playwright'
 
-import { addons } from '../.vitepress/addons.mjs'
+import { documented, entryBySlug, repoDir } from '../.vitepress/addons.mjs'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
 const DOCS = resolve(HERE, '..')
@@ -43,7 +43,7 @@ const requested = process.argv.slice(2).filter((a) => !a.startsWith('-'))
 const all = process.argv.includes('--all')
 
 const slugs = all
-  ? addons.map((a) => a.slug)
+  ? documented.map((a) => a.slug)
   : requested.length
     ? requested
     : []
@@ -102,7 +102,8 @@ for (const slug of slugs) {
     continue
   }
 
-  const art = resolve(REPOS, `statamic-${slug}`, 'art')
+  const entry = entryBySlug(slug)
+  const art = resolve(REPOS, entry ? repoDir(entry) : `statamic-${slug}`, 'art')
 
   // Cover: 1200x630 from the HTML template.
   const coverHtml = resolve(art, 'cover.html')

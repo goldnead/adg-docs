@@ -1,12 +1,25 @@
 import { defineConfig } from 'vitepress'
-import { addons, addonNav, addonSidebar } from './addons.mjs'
+import {
+  addonNav,
+  addonSidebar,
+  addons,
+  documented,
+  toolNav,
+  toolSidebar,
+  tools,
+} from './addons.mjs'
 import { ART } from './art.generated.mjs'
 
 const BASE_URL = 'https://docs.adriangoldner.dev'
 
-/** The addon a source path belongs to, or undefined for the guide and the hub. */
+/**
+ * The documented entry a source path belongs to, or undefined for the guide and
+ * the hub. Tools are in here too: they get the same share image, the same
+ * accent colour and the same first-paint treatment as an addon, because none of
+ * that machinery cares what kind of package it is looking at.
+ */
 const addonForPath = (relativePath: string) =>
-  addons.find((a) => a.slug === relativePath.split('/')[0])
+  documented.find((a) => a.slug === relativePath.split('/')[0])
 
 /** Source path to public URL, matching `cleanUrls: true`. */
 const canonicalPath = (relativePath: string) =>
@@ -116,6 +129,7 @@ export default defineConfig({
     nav: [
       { text: 'Guide', link: '/guide/', activeMatch: '/guide/' },
       { text: 'Addons', items: addonNav() },
+      { text: 'Tools', items: toolNav() },
       {
         text: 'Reference',
         items: [
@@ -165,6 +179,7 @@ export default defineConfig({
         },
       ],
       ...Object.fromEntries(addons.map((a) => [`/${a.slug}/`, addonSidebar(a)])),
+      ...Object.fromEntries(tools.map((t) => [`/${t.slug}/`, toolSidebar(t)])),
     },
 
     outline: { level: [2, 3], label: 'On this page' },

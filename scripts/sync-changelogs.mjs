@@ -13,16 +13,13 @@ import { readFile, writeFile, access } from 'node:fs/promises'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { addons } from '../.vitepress/addons.mjs'
+import { documented, repoDir } from '../.vitepress/addons.mjs'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
 const DOCS = resolve(HERE, '..')
 
 const reposArg = process.argv.find((a) => a.startsWith('--repos='))
 const REPOS = resolve(DOCS, reposArg ? reposArg.slice('--repos='.length) : '..')
-
-/** Repo directory name for an addon package. */
-const repoDir = (addon) => `statamic-${addon.slug}`
 
 const exists = async (p) => {
   try {
@@ -72,7 +69,11 @@ editLink: false
 
 <AddonHeader slug="${addon.slug}" />
 
-Release notes for \`${addon.package}\`, as published with the package.${
+${
+  addon.package
+    ? `Release notes for \`${addon.package}\`, as published with the package.`
+    : `Release notes for [${addon.name}](${addon.source}), as published with the repository.`
+}${
   found
     ? ''
     : `
@@ -82,17 +83,21 @@ This page is generated from the addon repository's \`CHANGELOG.md\` by
 \`scripts/sync-changelogs.mjs\`, and that file was not found when the site was
 last built. Run the script from a checkout that has the addon repos as siblings.
 :::`
-}
+}${
+  addon.package
+    ? `
 
 Cross-version upgrade notes for the whole suite are in
-[Upgrading](/guide/upgrading).
+[Upgrading](/guide/upgrading).`
+    : ''
+}
 
 `
 
 let synced = 0
 let missing = []
 
-for (const addon of addons) {
+for (const addon of documented) {
   const source = resolve(REPOS, repoDir(addon), 'CHANGELOG.md')
   const target = resolve(DOCS, addon.slug, 'changelog.md')
 

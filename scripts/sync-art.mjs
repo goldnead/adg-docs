@@ -26,7 +26,7 @@ import { copyFile, mkdir, readFile, writeFile, access } from 'node:fs/promises'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { addons } from '../.vitepress/addons.mjs'
+import { documented, repoDir } from '../.vitepress/addons.mjs'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
 const DOCS = resolve(HERE, '..')
@@ -184,8 +184,8 @@ const problems = []
 const absent = []
 let copied = 0
 
-for (const addon of addons) {
-  const repo = resolve(REPOS, `statamic-${addon.slug}`)
+for (const addon of documented) {
+  const repo = resolve(REPOS, repoDir(addon))
   const outDir = resolve(DOCS, 'public', 'art', addon.slug)
 
   // Two different situations that must not be conflated. A repo that is not

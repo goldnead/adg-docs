@@ -314,6 +314,48 @@ export const addons = [
   },
 ]
 
+/**
+ * Repos documented here that are not Statamic addons.
+ *
+ * They share exactly two things with the suite: the art pipeline and the page
+ * chrome. They deliberately do not share the addon page skeleton — a tool has
+ * no Composer package, no Statamic version, and nothing to configure — so
+ * `toolSidebar()` lists `pages` as given instead of wrapping them in
+ * Installation/Configuration/Reference.
+ *
+ * `repo` is the field that keeps the sync scripts honest. Everything in
+ * `addons` lives in a sibling directory called `statamic-<slug>`; a tool does
+ * not, and `repoDir()` is the only place that difference is decided.
+ */
+export const tools = [
+  {
+    slug: 'block-editor',
+    name: 'Block Editor',
+    repo: 'block-editor',
+    kind: 'tool',
+    license: 'MIT',
+    source: 'https://github.com/goldnead/block-editor',
+    stack: 'React 19',
+    tagline:
+      'A Notion-style block editor that reads and writes plain Markdown, and embeds into any page as two files.',
+    pages: [
+      { text: 'Overview', link: '' },
+      { text: 'Embedding', link: 'embedding' },
+      { text: 'Mount API', link: 'api' },
+      { text: 'Blocks & Markdown', link: 'markdown' },
+      { text: 'Changelog', link: 'changelog' },
+    ],
+  },
+]
+
+/** Everything with art and a changelog: addons and tools alike. */
+export const documented = [...addons, ...tools]
+
+/** The sibling directory a documented entry's repo is checked out into. */
+export const repoDir = (entry) => entry.repo ?? `statamic-${entry.slug}`
+
+export const entryBySlug = (slug) => documented.find((e) => e.slug === slug)
+
 export const addonBySlug = (slug) => addons.find((a) => a.slug === slug)
 
 export const addonsByLayer = () =>
@@ -362,6 +404,27 @@ export function addonSidebar(addon) {
         { text: 'Changelog', link: `${base}changelog` },
         { text: 'All addons', link: '/guide/suite' },
       ].filter(Boolean),
+    },
+  ]
+}
+
+/** Nav dropdown for the tools. Flat: there are too few to group. */
+export function toolNav() {
+  return tools.map((t) => ({ text: t.name, link: `/${t.slug}/` }))
+}
+
+/**
+ * Sidebar for one tool. `pages` is the whole thing here, because a tool has no
+ * skeleton to enforce — the point of the addon skeleton is that a reader who
+ * learned one addon knows where to look in the next, and there is no next.
+ */
+export function toolSidebar(tool) {
+  const base = `/${tool.slug}/`
+
+  return [
+    {
+      text: tool.name,
+      items: tool.pages.map((p) => ({ text: p.text, link: `${base}${p.link}` })),
     },
   ]
 }
