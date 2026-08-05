@@ -41,6 +41,8 @@ const REPOS = resolve(DOCS, reposArg ? reposArg.slice('--repos='.length) : '..')
 
 const requested = process.argv.slice(2).filter((a) => !a.startsWith('-'))
 const all = process.argv.includes('--all')
+/** Also render the Marketplace product image. See MARKETPLACE_CSS. */
+const MARKETPLACE = process.argv.includes('--marketplace')
 
 const slugs = all
   ? documented.map((a) => a.slug)
@@ -64,6 +66,28 @@ const exists = async (p) => {
     return false
   }
 }
+
+/**
+ * The Marketplace wants product images at roughly 1280x800; the covers are
+ * 1200x630, the Open Graph shape. 1.6:1 against 1.905:1 is not a rescale, so
+ * this is a second render of the same template rather than a resized file.
+ *
+ * It is an override sheet rather than a second template because all twelve
+ * covers share one class structure, and a duplicated layout would drift the
+ * first time one of them is edited. Only the canvas, the gutters and the glyph
+ * change — the extra 170px of height is absorbed by the existing centring, and
+ * font sizes are deliberately left alone because they differ per addon
+ * (Identity Contracts runs its heading at 64px to fit the longest name in the
+ * suite, and a blanket override would break exactly that).
+ *
+ * Statamic crops and squishes these a little, so nothing important should sit
+ * near the outermost edges — hence wider gutters, not narrower.
+ */
+const MARKETPLACE_CSS = `
+  html, body { width: 1280px !important; height: 800px !important; }
+  .wrap { padding: 0 96px !important; }
+  .glyph { width: 400px !important; height: 400px !important; }
+`
 
 /**
  * The icon PNG is rendered from the SVG rather than from a second template, so
@@ -117,6 +141,21 @@ for (const slug of slugs) {
     await page.close()
     rendered++
     console.log(`  cover   ${slug}  →  art/cover.png  (1200×630)`)
+
+    if (MARKETPLACE) {
+      const mp = await browser.newPage({
+        viewport: { width: 1280, height: 800 },
+        deviceScaleFactor: 1,
+      })
+      await mp.goto(pathToFileURL(coverHtml).href, { waitUntil: 'networkidle' })
+      await mp.addStyleTag({ content: MARKETPLACE_CSS })
+      // The first image in a product's list becomes its card in every listing,
+      // so the filename carries the order.
+      await mp.screenshot({ path: resolve(art, 'marketplace', '01-cover.png') })
+      await mp.close()
+      rendered++
+      console.log(`  product ${slug}  →  art/marketplace/01-cover.png  (1280×800)`)
+    }
   } else {
     skipped.push(`${slug}: no art/cover.html`)
   }
