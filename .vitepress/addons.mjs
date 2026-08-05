@@ -336,10 +336,17 @@ export const tools = [
     license: 'MIT',
     source: 'https://github.com/goldnead/block-editor',
     stack: 'React 19',
+    /**
+     * The tool ships a runnable demo. `scripts/sync-playground.mjs` copies its
+     * build output to `public/playground/<slug>/`, next to the page that mounts
+     * it, and `<Playground>` embeds that page in an iframe.
+     */
+    playground: true,
     tagline:
       'A Notion-style block editor that reads and writes plain Markdown, and embeds into any page as two files.',
     pages: [
       { text: 'Overview', link: '' },
+      { text: 'Playground', link: 'playground' },
       { text: 'Embedding', link: 'embedding' },
       { text: 'Mount API', link: 'api' },
       { text: 'Blocks & Markdown', link: 'markdown' },

@@ -10,6 +10,10 @@ description: A Notion-style block editor that reads and writes plain Markdown, a
 A block editor with slash commands, drag handles, tables, callouts and wiki
 links, whose document model is plain Markdown and nothing else.
 
+**There is a running one on the [Playground](/block-editor/playground) page**,
+with the Markdown it produces beside it. That is the shortest way to understand
+what follows.
+
 This is not a Statamic addon. It is a standalone React application that also
 builds to two static files, and it is documented here because it is the editing
 surface the addon suite's own tooling uses. Nothing on this page requires
@@ -46,6 +50,7 @@ The editor's own interface strings are German.
 
 ## Where to go next
 
+- [Playground](/block-editor/playground) — a running editor, and the Markdown it writes.
 - [Embedding](/block-editor/embedding) — the two files, and the page that loads them.
 - [Mount API](/block-editor/api) — every option and every handle method.
 - [Blocks & Markdown](/block-editor/markdown) — what each block serialises to.

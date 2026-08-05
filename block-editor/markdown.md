@@ -35,6 +35,17 @@ column, and a column that was already wider in the source document keeps that
 width. Dragging a column in the editor resizes it on screen only — that width is
 a pixel value on the block and never reaches the text.
 
+### One line is one block
+
+`parseMarkdown` walks the document line by line, so a paragraph that was
+hard-wrapped in the source arrives as one block per line rather than as one
+paragraph. Feed it Markdown wrapped at 80 columns and you get a stack of short
+paragraphs with spacing between them.
+
+This matters when a host seeds the editor from a file a human wrote in a text
+editor. The editor's own output never has the problem, because it writes each
+paragraph as a single long line.
+
 ## The blocks that are HTML
 
 Markdown has no syntax for the remaining four, so they serialise to HTML that

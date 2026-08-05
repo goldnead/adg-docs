@@ -1,0 +1,291 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Block Editor playground</title>
+<meta name="robots" content="noindex">
+
+<!--
+  This page is the playground the documentation embeds in an iframe, and it is
+  deliberately nothing more than what the Embedding page tells a host to write:
+  a link to editor.css, a module import of editor.js, and one mount() call.
+
+  It is a static page in the docs site's public/ directory rather than a Vue
+  component in the theme for two reasons. The editor is styled for a light
+  surface and carries no dark mode, and VitePress's own .vp-doc rules style
+  every heading, table, list and button inside the content area — mounted
+  directly, the editor would be restyled by the page around it. The iframe is
+  the only boundary that stops both directions at once.
+
+  editor.js and editor.css are copies of the block-editor repo's build output,
+  refreshed by scripts/sync-playground.mjs. Do not edit them here.
+-->
+
+<link rel="stylesheet" href="./editor.css">
+<style>
+  * { box-sizing: border-box; }
+
+  :root {
+    --paper: #faf9f5;
+    --ink: #232220;
+    --muted: #6b6862;
+    --line: #e5e2d9;
+    --line-soft: #edeae2;
+  }
+
+  html, body {
+    margin: 0;
+    height: 100%;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+      "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  body { display: flex; flex-direction: column; }
+
+  .bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--line);
+    background: #fff;
+    flex: none;
+  }
+
+  .bar__label {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-right: 2px;
+  }
+
+  .samples { display: flex; gap: 6px; flex-wrap: wrap; }
+
+  button {
+    font: inherit;
+    font-size: 13px;
+    padding: 5px 12px;
+    border-radius: 999px;
+    border: 1px solid var(--line);
+    background: #fff;
+    color: var(--ink);
+    cursor: pointer;
+    transition: background-color 0.12s ease, border-color 0.12s ease;
+  }
+
+  button:hover { background: #f5f3ee; border-color: #d8d4c8; }
+
+  button[aria-pressed="true"] {
+    background: var(--ink);
+    border-color: var(--ink);
+    color: #fff;
+  }
+
+  .bar__spacer { flex: 1 1 auto; }
+
+  .split {
+    flex: 1 1 auto;
+    display: grid;
+    grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+    min-height: 0;
+  }
+
+  .pane { min-width: 0; min-height: 0; display: flex; flex-direction: column; }
+  .pane--source { border-left: 1px solid var(--line); background: #fff; }
+
+  .pane__head {
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 14px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
+    border-bottom: 1px solid var(--line-soft);
+  }
+
+  .pane__body { flex: 1 1 auto; overflow: auto; }
+  .pane--editor .pane__body { padding: 18px 20px 60px; }
+
+  pre {
+    margin: 0;
+    padding: 16px 18px 60px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 12.5px;
+    line-height: 1.65;
+    color: #3f3c37;
+    white-space: pre-wrap;
+    word-break: break-word;
+    tab-size: 2;
+  }
+
+  .count { font-weight: 500; letter-spacing: 0; text-transform: none; color: #9a968d; }
+
+  /* One column below the width where two panes stop being readable. The source
+     pane keeps a fixed share so it never collapses to a sliver. */
+  @media (max-width: 700px) {
+    .split { grid-template-columns: minmax(0, 1fr); grid-template-rows: 1fr 40%; }
+    .pane--source { border-left: none; border-top: 1px solid var(--line); }
+  }
+</style>
+</head>
+<body>
+
+<div class="bar">
+  <span class="bar__label">Sample</span>
+  <div class="samples" id="samples"></div>
+  <span class="bar__spacer"></span>
+  <button id="reset" type="button">Reset</button>
+</div>
+
+<div class="split">
+  <div class="pane pane--editor">
+    <div class="pane__head">Editor</div>
+    <div class="pane__body"><div id="editor"></div></div>
+  </div>
+  <div class="pane pane--source">
+    <div class="pane__head">
+      Markdown <span class="count" id="count"></span>
+    </div>
+    <div class="pane__body"><pre id="source"></pre></div>
+  </div>
+</div>
+
+<script type="module">
+  import './editor.js'
+
+  const SAMPLES = [
+    {
+      name: 'Prose',
+      markdown: `# What a block editor stores
+
+Type \`/\` on an empty line to insert a block. The Markdown on the right is not an export — it is the document, rewritten on every keystroke.
+
+## Try this
+
+Turn this paragraph into a heading with the block menu, then watch the \`##\` appear on the right. Change it back and the line is plain again.
+
+> Nothing here is a proprietary document model.`,
+    },
+    {
+      name: 'Task',
+      markdown: `## Context
+
+A link chip is written by the host's \`resolveLinks\` callback and stored as \`[[kind:id]]\`. This playground supplies a small mock directory — type \`/\` and pick **Verweis** to search it.
+
+See [[file:docs/embedding.md]] and [[task:task-editor-einbetten]].
+
+## Steps
+- [x] Build the assets
+- [ ] Link the stylesheet
+- [ ] Wire up the mount call
+
+Notes go to \`mail@example.com\`. More under [the guide](https://example.com).`,
+    },
+    {
+      name: 'Table',
+      markdown: `## Formats
+
+| Format   | Files | Output      |
+| -------- | ----- | ----------- |
+| Compact  | 1     | ES module   |
+| Full     | 2     | Module + CSS |
+
+Drag a column edge: the width changes on screen and the Markdown stays a clean pipe table.
+
+> The stylesheet is built without Tailwind's preflight.
+
+1. Build the assets
+2. Copy the files
+3. Mount the editor`,
+    },
+    {
+      name: 'HTML blocks',
+      markdown: `## The four that are not Markdown
+
+Markdown has no syntax for these, so they serialise to HTML a renderer passes through. Open the block menu and insert a toggle, a callout or tabs, then read the right-hand pane.
+
+<details>
+<summary>A toggle serialises to details and summary</summary>
+Its body lives inside the element.
+</details>
+
+<aside>
+💡
+
+A callout keeps its emoji on its own line.
+
+</aside>`,
+    },
+  ]
+
+  const MOCK_DIRECTORY = [
+    { kind: 'task', id: 'task-editor-einbetten', label: 'Editor in die Host-Seite einbetten' },
+    { kind: 'task', id: 'task-assets-bauen', label: 'Assets bauen und kopieren' },
+    { kind: 'project', id: 'block-editor', label: 'Block Editor' },
+    { kind: 'project', id: 'docs-site', label: 'Dokumentations-Seite' },
+    { kind: 'file', id: 'docs/embedding.md', label: 'embedding.md' },
+    { kind: 'file', id: 'docs/api.md', label: 'api.md' },
+  ]
+
+  const sourceEl = document.getElementById('source')
+  const countEl = document.getElementById('count')
+  const samplesEl = document.getElementById('samples')
+
+  let active = 0
+
+  const render = (markdown) => {
+    sourceEl.textContent = markdown
+    const lines = markdown ? markdown.split('\n').length : 0
+    countEl.textContent = `${lines} line${lines === 1 ? '' : 's'}`
+  }
+
+  // This is the entire integration: one call, one handle.
+  const handle = window.CCEditor.mount(document.getElementById('editor'), {
+    value: SAMPLES[0].markdown,
+    placeholder: 'Type / for the block menu',
+    onChange: render,
+    resolveLinks: async (query) => {
+      const q = query.toLowerCase()
+      return MOCK_DIRECTORY.filter(
+        (item) => item.id.toLowerCase().includes(q) || item.label.toLowerCase().includes(q),
+      )
+    },
+  })
+
+  render(SAMPLES[0].markdown)
+
+  const load = (index) => {
+    active = index
+    handle.setMarkdown(SAMPLES[index].markdown)
+    render(SAMPLES[index].markdown)
+    for (const button of samplesEl.children) {
+      button.setAttribute('aria-pressed', String(Number(button.dataset.index) === index))
+    }
+  }
+
+  SAMPLES.forEach((sample, index) => {
+    const button = document.createElement('button')
+    button.type = 'button'
+    button.textContent = sample.name
+    button.dataset.index = String(index)
+    button.setAttribute('aria-pressed', String(index === 0))
+    button.addEventListener('click', () => load(index))
+    samplesEl.append(button)
+  })
+
+  document.getElementById('reset').addEventListener('click', () => load(active))
+</script>
+
+</body>
+</html>

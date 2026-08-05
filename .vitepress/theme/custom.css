@@ -320,3 +320,77 @@
 .vp-doc th {
   vertical-align: top;
 }
+
+/* ---------- Playground ---------- */
+
+/* The embedded editor is a light-only surface. Rather than pretend otherwise in
+   dark mode, the frame is drawn as a distinct object on the page — the same
+   border and shadow language as .gn-figure, so a reader registers it as
+   something shown rather than as a section of the page that failed to theme. */
+.gn-playground {
+  margin: 1.75rem 0;
+}
+
+.gn-playground__frame {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 12px;
+  background: #faf9f5;
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.04),
+    0 8px 24px rgba(0, 0, 0, 0.06);
+}
+
+.dark .gn-playground__frame {
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.3),
+    0 8px 24px rgba(0, 0, 0, 0.35);
+}
+
+.gn-playground__frame iframe {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+.gn-playground__idle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  font-size: 0.875rem;
+  color: #6b6862;
+}
+
+.gn-playground__note {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  justify-content: space-between;
+  margin-top: 0.625rem !important;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: var(--vp-c-text-3);
+}
+
+/* The editor needs room to be worth trying at all: below this width the two
+   panes are already stacked inside the frame, and a shorter frame would show
+   almost nothing of either. */
+@media (max-width: 640px) {
+  .gn-playground__frame {
+    height: 560px !important;
+  }
+}
+
+/* The playground page widens its content container so the frame can hold two
+   panes, but prose does not get to be 1024px wide — that is an unreadable line
+   length. Everything except the playground keeps the normal measure. */
+.gn-playground-page .VPDoc .content-container {
+  max-width: 1024px;
+}
+
+.gn-playground-page .vp-doc > div > *:not(.gn-playground) {
+  max-width: 688px;
+}
