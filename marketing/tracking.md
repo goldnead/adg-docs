@@ -115,6 +115,18 @@ that back them — plus, since 2.9.0, the people behind each of those numbers on
 
 Because messages are per recipient, "who clicked" is answerable, not only "how many".
 
+**Since 2.10.0 the split above is also drawn.** The overview carries a curve of opens and clicks over
+the time since the send, with preloads in their own colour — the most visible consequence of
+everything on this page. It is where an Apple-heavy audience stops being a large "machine only"
+figure and becomes a shape: one bar at the wall of delivery, and the reading spread over the days
+after it.
+
+Two properties of that chart follow directly from this page, and both are on
+[Campaigns → The activity curve](/marketing/campaigns#the-activity-curve): its axis is measured
+against the tallest *human* bar, because the preload hour is otherwise tall enough to flatten
+everything else into a hairline; and a campaign sent before 15 August 2026 predates the `machine`
+column, so its split cannot be read at all.
+
 ## Turning tracking off
 
 ```php

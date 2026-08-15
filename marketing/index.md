@@ -43,6 +43,8 @@ beside it, so a bare `composer require` installs three addons whether or not you
   contacts with `list:{handle}`. Hard bounces and complaints opt the contact out.
 - **Flat-file first** — lists, campaigns and templates live as YAML under
   `content/marketing/`; runtime data is always Eloquent.
+- **A dashboard** — audience totals, the most recent campaigns, and two charts: engagement across
+  the last twelve sent campaigns, and list growth week by week. See [The dashboard](#the-dashboard).
 
 ## The consent rule
 
@@ -78,6 +80,50 @@ php artisan migrate
 
 3. Subscribe yourself, confirm the email.
 4. **Marketing → Campaigns → Create**, write it, **test send**, then send.
+
+## The dashboard
+
+CP → **Marketing** opens on it: how many people are subscribed and how many are still pending, one
+row per list, the five most recent campaigns — and, since 2.10.0, two charts.
+
+### Engagement across recent campaigns
+
+Open and click rate of the last twelve campaigns that actually went out, oldest on the left, because
+a trend is read left to right. Drafts and scheduled campaigns are left out: an open rate on a
+campaign that was never sent is a nought pretending to be a result.
+
+The rates are the ones the campaign's own report prints — the same calculation, not a second one
+that happens to agree today. What [Tracking](/marketing/tracking#how-to-read-your-numbers-now) says
+about the open rate applies here unchanged: it is the number that counts every pixel fetch, machine
+or person, and it is the only one that stays comparable with campaigns sent before 2.8.0.
+
+The bars are scaled to the largest rate in the row rather than to a fixed hundred, since a
+three-percent click rate against a full-height axis is a line nobody can compare. The top of the
+axis is therefore named above the chart. Two sentences appear when they apply: that a trend needs at
+least two sent campaigns, and that the newest bar is early — a campaign less than 48 hours old is
+still collecting its opens, and read as a trend it says "engagement is falling" about nothing.
+
+### List growth
+
+Sign-ups against sign-offs per week, over twelve weeks. Weeks start on Monday whatever the CP
+language is set to, so the same install does not regroup its own history when somebody switches
+language. A week nobody joined is an empty track rather than a missing column — dropped, the bars
+close ranks and a quiet month looks like a busy one.
+
+::: warning It is the list as the database stands today, not a ledger of events
+A sign-off is recorded on the subscription, and it is **cleared** when the same address subscribes
+again. Somebody who left in week two and came back in week five is therefore gone from week two, and
+appears only with the new sign-up. The page carries that sentence under the chart.
+
+Unsubscribe events are never rewritten, but they are the worse source for this question: one is only
+recorded where the unsubscribe carried a message, so every sign-off made in the
+[Preference Center](/preference-center/) would be missing. Complete beats immutable here.
+:::
+
+Sign-ups are counted from the moment the form was submitted, which is **before** a double opt-in is
+confirmed. That is the honest answer to "did people join this week". Counting confirmations instead
+would look stricter and be worse: rows that arrived by import have no confirmation on record, and
+their weeks would silently read nought.
 
 ## What it is not for
 

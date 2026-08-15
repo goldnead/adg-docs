@@ -154,6 +154,52 @@ timestamp. Ordering by the counter dropped exactly those people out of the tab w
 that timestamp.
 :::
 
+### The activity curve <Badge type="tip" text="2.10.0" />
+
+On the overview, between the figures and the timeline: opens and clicks over the time since the
+send, with the preloads in a colour of their own beside the opens people made. It answers **when**
+a campaign was read, which the rates on their own cannot.
+
+The grid follows the campaign. While the activity fits inside about three days it is hourly, past
+that daily, ninety bars at the outside. Which of the two is used comes from the ninety-fifth
+percentile of the events rather than from the last of them: opening a mail again three weeks later
+is ordinary, and one straggler must not push three days of reading onto a daily grid. Anything that
+lands past the right-hand end is counted in a line under the chart instead of being dropped. The
+axis begins at the send, not at the first event, so "two hours before anybody looked" stays
+visible — and an hour in which nothing happened is an empty track, not a missing column.
+
+Four things decide whether you read it correctly.
+
+::: warning The axis is measured against the tallest human bar, not the tallest bar
+Apple's proxy fetches the pixel for roughly half a campaign inside a single hour, while actual
+reading spreads over ten hours and more. On one shared axis the tallest human hour lands at a tenth
+of the height and a typical one at a fiftieth — three to five pixels, with hour four and hour seven
+one pixel apart.
+
+So opens by people and clicks set the ceiling. The preload bar runs into it and stops there, and
+**that is the statement**: it does not fit on this scale. The number it really has is written out in
+the scale line beside the chart. See [Machine opens](/marketing/tracking#machine-opens) for what is
+being told apart, and how reliably.
+:::
+
+::: tip The bars count events; the tiles above them count messages
+"Opens in total" is the number of messages with at least one open. The bars count the opens
+themselves. Somebody who opened the mail five times is a one in the tile and a five in the chart —
+both correct, two different questions. A note under the chart says so.
+:::
+
+::: warning A campaign sent before 15 August 2026 cannot be read for its split
+That is the day the addon began recording whether an open was a machine's. The migration files
+every older open as a person's on purpose, so that no figure moved on the day the update ran — right
+for the tiles, wrong for a chart whose whole subject is the difference between the two colours.
+
+The chart says so itself, but only where **not a single preload has been recorded** for that
+campaign. One sent shortly before the migration keeps collecting opens afterwards, and those carry
+the mark; a warning printed above an orange bar would be worse than none.
+:::
+
+A campaign nobody has opened yet gets a sentence saying so rather than an axis with nothing on it.
+
 ### The timeline
 
 On the overview: **scheduled → sending started → sent → first open → last activity**.
