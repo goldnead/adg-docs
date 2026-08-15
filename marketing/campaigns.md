@@ -128,6 +128,105 @@ clients never report an open, prefetching clients report opens nobody made — s
 be your audience's mail client rather than your subject line. See
 [Tracking](/marketing/tracking).
 
+### The five tabs
+
+Since 2.9.0 the report is five tabs, and each one names the people behind its number rather than
+only the number:
+
+| Tab | Answers |
+| --- | --- |
+| **Overview** | The figures, the A/B variants where there are any, and the timeline below |
+| **Delivery** | Who it was sent to and what became of it, filterable by status |
+| **Opens** | Who, when first, when last, how many — and how much of that was machine |
+| **Clicks** | Who, when, which link — plus a breakdown per link, with clicks and distinct people |
+| **Unsubscribes** | Who, and when |
+
+Every person tab paginates at 50 and eager-loads, so the number of queries a page costs does not
+depend on how many recipients the campaign had.
+
+**A failed send now carries its reason.** The column had been in the database since the beginning
+and was never shown; it is on the delivery tab, and only on campaigns where something actually
+failed — a column of dashes on every report of every install that never fails is noise.
+
+::: tip The opens tab lists by first open, not by the counter
+Somebody who blocks images and clicks has `opens = 0` and a `first_opened_at` — a click sets that
+timestamp. Ordering by the counter dropped exactly those people out of the tab whose first column is
+that timestamp.
+:::
+
+### The timeline
+
+On the overview: **scheduled → sending started → sent → first open → last activity**.
+
+A station that did not happen is left out rather than shown empty. A campaign that was never
+scheduled has no scheduling to report, and a row reading "Scheduled: —" is an invitation to wonder
+what went wrong.
+
+"Sending started" is the only derived station — nothing records when a fan-out began — so it is
+dropped rather than printed when it would land after "sent". That happens with messages written
+retrospectively, and a timeline reading "sent on the 12th, started on the 15th" is worse than a
+timeline with one station fewer.
+
+### CSV export
+
+Every tab exports the same selection it is showing, streamed rather than built in memory, behind
+`manage marketing campaigns`.
+
+The file always carries every column of its tab, including the ones the screen hides — a file is
+read by a program, and a column that appears and disappears is worse there than an empty one. A
+leading `=`, `+`, `-` or `@` in a cell is neutralised: the name fields come from a public sign-up
+form, so a stranger chooses their contents, and a spreadsheet executes a cell beginning with `=` on
+open, for the person who has the right to the export.
+
+### The link to the contact
+
+Every row links to the [LeadHub contact](/leadhub/contacts) where there is one, and **never creates
+one**. A report is a read.
+
+Resolution is over the normalised address rather than `contact_uuid`: the uuid only exists once a
+subscription has been confirmed and synced, and an unconfirmed sign-up is precisely what somebody
+opens this screen to look at. A Control Panel user with Marketing's permissions but none of the
+CRM's gets no links at all, rather than rows that 403 on click.
+
+## The web archive
+
+A campaign can also exist as a public web version on a stable, readable URL — no token, so it can be
+linked, shared and indexed. It is not the personalised page a token link in a mail leads to.
+
+::: warning It ships switched off, and while it is off its routes do not exist
+```dotenv
+MARKETING_ARCHIVE=false     # the shipped default
+```
+
+The three routes — the index, `feed.xml`, and one page per campaign — are registered inside an
+`if` on this flag, so with the archive off they are not merely empty, they are absent.
+
+If you are looking for the **Publish a public web version** switch on a campaign and cannot find it,
+this is why: the panel is only drawn once the archive is on. Turn it on, then release the campaign.
+:::
+
+The default is `false` because the archive claims a readable path — `newsletter` unless you change
+`archive.prefix` — and a site that already has a page there would lose it to a `composer update`. A
+package may not take a public URL from its host without being asked.
+
+Visibility is then **per campaign and off by default**: nothing appears on the open web until an
+editor releases it from the campaign's own page. A campaign can carry a price, a segment's context or
+an individual address, and none of that should go public because a package was updated.
+
+```php
+'archive' => [
+    'enabled' => env('MARKETING_ARCHIVE', false),
+    'prefix' => env('MARKETING_ARCHIVE_PREFIX', 'newsletter'),
+    'title' => env('MARKETING_ARCHIVE_TITLE'),
+    'neutral_name' => null,
+    'feed_limit' => 20,
+],
+```
+
+`neutral_name` is what stands in for `{{ first_name }}` and `{{ name }}` in the web version. There is
+no recipient there, so a greeting has to be addressed to somebody. Left `null` it uses the
+translation `marketing::public.archive_neutral_name`.
+
 ## Storage
 
 Campaigns live wherever your driver says: YAML under `content/marketing/campaigns/` on the default

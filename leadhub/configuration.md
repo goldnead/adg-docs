@@ -6,6 +6,91 @@
 php artisan vendor:publish --tag=leadhub-config
 ```
 
+Since **2.3.0** the config file is no longer the only place these values come from: 28 of
+them are editable in the Control Panel and stored in the database, where they take
+precedence. The rest of this page describes the file, which is still the default for every
+key nobody has touched. Read [Settings in the Control Panel](#settings-in-the-control-panel)
+first if a value in the file does not match what the addon is doing.
+
+## Settings in the Control Panel
+
+**2.3.0.** Under **LeadHub → Settings**, with the `manage leadhub settings` permission, 28
+fields are editable: submission handling, payload redaction, all feature flags, the export
+target and queue threshold, the scoring fallbacks, the click-tracking dedupe window and the
+notification switches.
+
+Before 2.3.0 that screen printed `config/leadhub.php` and told you to go and edit a file on
+the server.
+
+### Only the difference is stored
+
+One row per changed key in the `leadhub_settings` table, applied over the config at boot.
+
+Three consequences worth having in mind:
+
+- **Setting a value back to what the file says deletes its row again.** The file is the
+  default, not a snapshot taken the day somebody first opened the screen, so a later release
+  can still move that default and have it apply.
+- **An install that never opens the screen is indistinguishable from one on an earlier
+  release.** Nothing is written until something is changed.
+- **The table is not brand-scoped.** These are properties of the installation.
+
+The form, the validation and the boot-time override all read one definition
+(`src/Support/Settings.php`). The values are applied in the addon's `bootAddon()`, not in a
+Control Panel middleware, so a queue worker that comes up later — an export, the digest —
+sees the same values.
+
+### What is editable
+
+| Group | Keys |
+| --- | --- |
+| Behaviour | `default_status`, `overwrite_existing_fields_from_submissions`, `store_full_submission_payload` |
+| Payload redaction | `timeline_payload_redaction` |
+| Feature flags | all thirteen: `manual_contacts`, `csv_export`, `attribution`, `ingestion`, `merge`, `companies`, `tasks`, `pipelines`, `scoring`, `webhooks`, `crm_destinations`, `webhook_manager`, `click_tracking` |
+| Exports | `exports.queue_threshold`, `exports.disk`, `exports.directory` |
+| Lead scoring | `scoring.default`, `scoring.timeline` |
+| Click tracking | `click_tracking.dedupe_window`, `click_tracking.ignored_query_parameters` |
+| Notifications | `notifications.new_lead`, `on_assignment`, `on_task_assignment`, `digest.enabled` |
+
+`default_status` is a select over the statuses the file defines, and `exports.disk` a select
+over the disks in `config/filesystems.php`, so neither can be set to something that does not
+exist.
+
+### What is not, and why
+
+| Not offered | Because |
+| --- | --- |
+| `crm.destinations.*` | Credentials. A database row would take a token out of the secret store and into every backup — and the screen refuses to serialise them to the browser at all. |
+| Everything env-resolved: `storage.driver`, `storage.flat.*`, `notifications.enabled`, `notifications.recipients`, `notifications.digest.time`, `notifications.digest.fallback_recipients` | The deployment owns them. A database row that silently outranks an env var is a setting that changes back on the next deploy. Switching `storage.driver` also means **moving** the data, which is what `leadhub:storage:migrate` is for. |
+| `statuses` | A map of handle to label is not a field. Removing a status strands every contact holding it. |
+| `attribution.fields` | The same shape for the same reason, and the left-hand side is a database column: a typo there stops capturing UTM data without saying so. |
+| `scoring.events` | Since 1.8.0 this block is only the **fallback** for a brand with no rows in the scoring table, so editing it here would look effective and do nothing. Two of its keys also carry literal dots (`purchase.completed`), which dotted-path addressing cannot express. |
+| `email_normalization.*` | Not a preference but a data-consistency rule. Change it later and existing rows stay normalised by the old one, so deduplication quietly stops matching. |
+
+The env-resolved values **are shown**, read-only, so you can check what is active without
+opening `.env` on the server: storage driver, flat path, the notifications master switch,
+the new-lead recipients, the digest time and its fallback recipients. The statuses are
+printed the same way.
+
+### On the flat driver the screen is read-only
+
+`leadhub_settings` is a database table, and a flat-driver install is not asked to run
+migrations. Rather than answering a save with a SQL error, the screen disables every control,
+hides the save button and says why: the table does not exist, and `php artisan migrate` will
+create it. On a non-eloquent driver that command creates **only this one table** and nothing
+else.
+
+Until then the values shown are what `config/leadhub.php` says.
+
+### `config:cache` is safe
+
+The overrides are deliberately **not** applied while `config:cache` builds its file. Baking
+them in would let an override outlive the row it came from — a deleted setting would keep
+working until the next `config:clear` — and the next boot would read the baked value as the
+shipped default, so a value reset to the file's would count as a difference and be stored
+instead of deleted. The cached file carries the file's values; each process lays its
+overrides over them at its own boot.
+
 ## Statuses
 
 ```php

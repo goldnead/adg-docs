@@ -70,7 +70,13 @@ Under Statamic's CP prefix, all behind the permissions below.
 | `marketing/campaigns` · `/create` · `/{handle}` · `/{handle}/edit` | Campaign index, create, show, edit |
 | `marketing/campaigns/{handle}/send` · `/schedule` · `/unschedule` · `/test` | Send now, schedule, unschedule, test send (`POST`) |
 | `marketing/campaigns/{handle}/preview` | Rendered preview |
+| `marketing/campaigns/{handle}/export` | The current report tab as CSV, streamed (`manage marketing campaigns`) |
+| `marketing/campaigns/{handle}/archive` | Release or withdraw the public web version (`PATCH`) |
 | `marketing/templates` · `/create` · `/{handle}/edit` | Template CRUD |
+
+The report itself is one route, `marketing/campaigns/{handle}`, with the tab in the query string:
+`overview`, `delivery`, `opens`, `clicks`, `unsubscribes`. The delivery tab additionally takes a
+status. Everything paginates at 50.
 
 ## Publish tags
 
@@ -98,10 +104,14 @@ namespace Goldnead\Marketing\Events;
 ```
 
 `SubscriptionPending` · `MarketingSubscribed` · `MarketingUnsubscribed` · `CampaignSending` ·
-`CampaignSent` · `MessageSent` · `MessageOpened` · `MessageClicked` · `MessageBounced` ·
-`MessageComplained`
+`CampaignSent` · `MessageSent` · `MessageOpened` · `MessageOpenedByHuman` · `MessageClicked` ·
+`MessageBounced` · `MessageComplained`
 
 Base classes: `SubscriptionEvent`, `CampaignEvent`, `MessageEventBase`.
+
+`MessageOpened` fires on the **first** open only and carries `metadata['machine']`.
+`MessageOpenedByHuman` (2.8.0) fires on the first open that was not a machine's, which behind a
+scanning mailbox is a different moment entirely. See [Tracking](/marketing/tracking#machine-opens).
 
 ## Automations integration
 
@@ -163,6 +173,13 @@ marketing.email_sent | email_opened | email_clicked | email_bounced | email_comp
 | `subscriptions.honeypot` | `website` |
 | `unsubscribe.global_opt_out` | `false` |
 | `tracking.opens` / `tracking.clicks` | `true` / `true` |
+| `timeline.enabled` | `true` |
+| `timeline.types` | `[]` (empty = all six kinds) |
+| `archive.enabled` | `false` |
+| `archive.prefix` | `newsletter` |
+| `archive.title` | unset |
+| `archive.neutral_name` | `null` (uses `marketing::public.archive_neutral_name`) |
+| `archive.feed_limit` | `20` |
 | `routes.prefix` | `!/marketing` |
 | `leadhub.tag_subscribers` | `true` |
 | `leadhub.tag_prefix` | `list:` |
@@ -183,7 +200,26 @@ MARKETING_FROM_NAME=
 MARKETING_FROM_EMAIL=
 MARKETING_ROUTE_PREFIX=!/marketing
 MARKETING_ESP_WEBHOOK_SECRET=
+MARKETING_ARCHIVE=false
+MARKETING_ARCHIVE_PREFIX=newsletter
+MARKETING_ARCHIVE_TITLE=
 ```
+
+`MARKETING_ARCHIVE` is `false` in the shipped default, and with it off the archive's three public
+routes are not registered.
+
+## LeadHub timeline entry types
+
+Written on the recipient's contact while `timeline.enabled` is on, and narrowable through
+`timeline.types`. Constants on `Integrations\Leadhub\TimelineRecorder`.
+
+```
+marketing.mail_sent | mail_opened | mail_prefetched
+marketing.mail_clicked | mail_bounced | mail_complained
+```
+
+`mail_prefetched` is an open the addon believes was a machine's. Nothing is written for an address
+with no existing contact, and no failure on this path can fail a send.
 
 ## Storage split
 
@@ -191,6 +227,9 @@ MARKETING_ESP_WEBHOOK_SECRET=
 | --- | --- |
 | Lists, campaigns, templates | `flat` (default) or `eloquent` |
 | Subscriptions, messages, message events | **always Eloquent** |
+
+`marketing_message_events` carries a boolean `machine` column (2.8.0) holding the open verdict. The
+user agent it was derived from is not stored.
 
 ## Requirements
 

@@ -19,21 +19,39 @@ All notable changes to `statamic-toc` will be documented in this file.
 Housekeeping release. No template API changed; every tag parameter and template variable
 behaves exactly as in 2.0.0.
 
-- **The test suite is autoloaded again.** All 13 classes under `tests/Unit` declared
-  `namespace Tests\Unit` while `autoload-dev` maps `Goldnead\StatamicToc\Tests\`, so Composer
-  skipped every one of them and only PHPUnit's own file discovery still found the suite.
-- **`ParserFacade` documented a different class.** Its docblock advertised methods and an
-  `@see` belonging to something else entirely. The accessor was always right; the IDE help
-  was pointing at the wrong thing.
-- Four static-analysis findings in `Parser.php` fixed rather than baselined. `setContent(): object`
-  is deliberately left as it is, so the v2 signature does not move.
-- `require-dev` is installable again, formatting moves to Pint, Larastan runs at level 5 with an
-  empty baseline, and CI gains a `--prefer-lowest` leg.
-- `.gitattributes` keeps `tests/`, `.github/` and `docs/` out of the Composer tarball, and
-  `extra.statamic` gains `slug`, `url`, `developer` and `developer-url` so the Control Panel
-  addon card links back to the developer.
+### Fixed — Composer never autoloaded the test suite
 
-The licence is unchanged and remains commercial.
+All 13 classes under `tests/Unit` declared `namespace Tests\Unit`, while `autoload-dev` maps
+`Goldnead\StatamicToc\Tests\`. Composer therefore skipped every one of them when dumping the
+autoloader, and only PHPUnit's own file discovery still found the suite. Namespaces corrected.
+
+### Fixed — the parser facade documented a different class
+
+`src/Facades/ParserFacade.php` carried a docblock advertising `values()`, `strings()` and
+`numbers()` and an `@see Comparator` — methods and a class belonging to something else
+entirely. The accessor was right; the IDE help was pointing at the wrong thing.
+
+### Fixed — four real static-analysis findings in `Parser.php`
+
+The constructor returned `$this`, and three docblocks described types the code does not use.
+Fixed rather than written into a baseline. `setContent(): object` is deliberately left as is,
+so the v2 signature does not move.
+
+### Changed
+
+- `require-dev` is installable again. The `orchestra/testbench` range excluded what CI actually
+  installed, and `phpunit` and `php-cs-fixer` were referenced by Composer scripts without being
+  required. Formatting moves to Pint, which is required; `composer lint` has been broken since
+  1.9 and CI never noticed because it only ran `composer test`.
+- Larastan at level 5 with an empty baseline, and a CI leg for `--prefer-lowest`.
+- The published docs site no longer has `<title>Document</title>`.
+- `.gitattributes` keeps `tests/`, `.github/` and `docs/` out of the Composer tarball.
+- `extra.statamic` gains `slug`, `url`, `developer` and `developer-url`, so the addon card in
+  the Control Panel links back to the developer instead of showing a blank.
+
+The licence is unchanged and remains commercial: one production installation per licence, as
+`LICENSE` has always said. A note in the July 2026 studio baseline claiming it contradicted
+`composer.json` was a misreading and has been withdrawn.
 
 ## 2026-07-30 v2.0.0
 
@@ -43,6 +61,8 @@ every behaviour that differs, and `&#123;&#123; toc:count }}` is the one likely 
 
 
 - Requires PHP 8.2 and Statamic 5 or 6. Statamic 3 and 4 stay on the v1 line.
+  *(Corrected 2026-07-31: that line is not maintained further. It ends at `v1.10`,
+  which stays installable and receives no more fixes.)*
 - `league/commonmark` is a declared dependency instead of something the addon
   hoped Statamic would bring along.
 - Heading extraction moved out of `Parser` into `Extractors/{Bard,Html,Markdown}`

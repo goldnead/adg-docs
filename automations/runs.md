@@ -24,6 +24,85 @@ node, what each node was handed and what it produced.
 is what lets you answer "did this fire and choose not to act, or did it never fire at
 all" — which is the question you actually have when a customer says nothing happened.
 
+## The activity view
+
+The run list answers "did this fire". Since 2.6.0 the builder has a third view next to **Flow** and
+**Mails** that answers the more useful question: *where* in the automation people are, and where they
+stop.
+
+Open an automation and switch to **Activity**. Everything on it is behind `view automation runs`,
+including the export.
+
+### Numbers on the canvas
+
+Each node card carries three figures for the chosen timeframe: how many reached it, how many got
+through it, and how many broke on it.
+
+**A node with no runs shows nothing at all — not a zero.** A fresh automation whose every card reads
+`0 / 0 / 0` looks broken rather than new, so absent means "nothing to say yet" and the card says
+nothing.
+
+### The timeframe
+
+Four spans: 7, 30 or 90 days, or everything. The default is 30 days.
+
+There is no date picker, deliberately — the question this screen answers is "is this flow working
+*now*", and four options that are always valid and always comparable between two automations beat two
+text inputs and a format nobody agrees on. Each span is a lower bound only; every one of them ends at
+now. An unrecognised value in the URL falls back to "everything" rather than erroring, because URLs
+get hand-edited and pasted between installs.
+
+### The funnel
+
+Enrolled, in progress, ran to the end, exited, failed — the same rows narrowed by the same timeframe,
+so you can see **where** people stop rather than only how many did.
+
+::: warning What the numbers count is runs, not rows
+A **run** is one enrolment: one subject, one pass through the automation. The figures count distinct
+runs (`COUNT(DISTINCT automation_run_id)`), which is what makes them a count of people.
+
+`COUNT(*)` over `automation_node_runs` was not that. A loop writes one row per body node per pass and
+a wait-until node is written again when the run resumes, so a loop over ten items reported its body
+node ten times over — and because the bars are drawn against the busiest node, every other step then
+shrank to a fraction of it. The view drew a collapse exactly where none had happened.
+
+Counted per node rather than per node **and** outcome, for the same reason: a run that failed a step
+and succeeded on a retry reached it once, not twice.
+:::
+
+Test runs are excluded throughout. An editor pressing **Test** is not somebody going through the
+flow.
+
+### The log
+
+Every node run, filterable by step, by outcome and by timeframe, paginated on the server rather than
+in the browser, and exportable as CSV — the same selection the table is showing, in the same sort
+order.
+
+A step whose node has since been deleted is marked as such, on screen and in the file.
+
+::: tip The export is a file a spreadsheet opens
+A leading `=`, `+`, `-` or `@` is neutralised: `subject` comes from the trigger context, which a
+stranger fills through a form or a webhook, and a spreadsheet executes such a cell on open — for the
+person holding `view automation runs`.
+
+Backslashes survive (PHP's default CSV escape is not RFC 4180 and mangles every value containing
+one, which means every error message with a class name in it), and the file carries a BOM so that
+non-ASCII subjects arrive as words rather than as mojibake.
+:::
+
+### In the workflow
+
+Who is inside the automation right now, since when, and at which step. Runs with no person attached —
+a scheduled sweep, a webhook that named nobody — are counted underneath rather than silently
+dropped.
+
+::: warning This list is not narrowed by the timeframe, on purpose
+"Who is in there now" is not a question about a period. Somebody enrolled 40 days ago and parked in a
+60-day wait would fall out of the default 30-day window, and out of the count next to it, with
+nothing on the screen to suggest anybody was missing.
+:::
+
 ## The node log
 
 Each node writes its input and output:

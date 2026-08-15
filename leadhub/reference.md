@@ -172,8 +172,17 @@ Register destinations via `app(DestinationManager::class)->extend(…)` from a p
 | `manage leadhub scoring` |
 | `manage leadhub tasks` · `manage leadhub opportunities` · `manage leadhub companies` |
 
+Sixteen, and that is the complete list: the addon registers no others.
+
 Assignability = `view leadhub` **and** brand membership. Superusers are not exempt from the
 membership half.
+
+Two of them overlap on one endpoint. Moving a deal to another stage
+(`POST /pipelines/opportunities/{opportunity}/move`, the board's drag & drop and the deal
+screen's stage form) accepts **either** `manage leadhub opportunities` **or**
+`edit leadhub contacts`. Before 2.4.0 it accepted only the second; both are honoured so that
+no install loses drag & drop on upgrade day. See
+[Who may move a deal](/leadhub/pipelines#who-may-move-a-deal).
 
 ## Segment rule vocabulary
 
@@ -195,8 +204,18 @@ An empty rule set matches **nobody**. `SegmentService::MAX_DEPTH = 1`.
 
 `leadhub_contacts` · `leadhub_events` · `leadhub_notes` · `leadhub_tags` ·
 `leadhub_contact_tag` · `leadhub_followups` · `leadhub_form_mappings` ·
-`leadhub_segment_contact` · plus tables for tasks, companies, opportunities, pipelines,
-scoring rules and the sync log when those modules are on.
+`leadhub_segments` · `leadhub_segment_contact` · plus `leadhub_tasks`,
+`leadhub_companies`, `leadhub_contact_company`, `leadhub_opportunities`,
+`leadhub_pipelines`, `leadhub_stages`, `leadhub_stage_transitions`,
+`leadhub_scoring_rules` and `leadhub_sync_logs` when those modules are on.
+
+`leadhub_settings` is the exception to the driver rule: it holds the Control Panel's
+[settings overrides](/leadhub/configuration#settings-in-the-control-panel), one row per
+changed key, and it is the **only** table a flat-driver install is offered — `php artisan
+migrate` there creates it and nothing else. It is not brand-scoped.
+
+`leadhub_stage_transitions` is one row per stage change, with the note that says why, and it
+is what the [deal screen](/leadhub/pipelines#the-deal-screen) reads.
 
 **Unique per brand:** contact `email_normalized`, tag slug, pipeline slug, event `dedupe_key`,
 form mapping `form_handle`, segment handle.

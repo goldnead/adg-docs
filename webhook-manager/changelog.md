@@ -12,8 +12,381 @@ Release notes for `goldnead/statamic-webhook-manager`, as published with the pac
 Cross-version upgrade notes for the whole suite are in
 [Upgrading](/guide/upgrading).
 
-## 1.10.0 — 2026-08-01
+## 2.2.0 — 2026-08-15
 
+### Added — the settings screen writes
+
+Settings printed `config/webhook-manager.php` and told the operator to go and
+edit a file on the server. It is a form now: modules, retry policy, HTTP
+defaults, inbound limits, signature headers, logging and retention are editable
+from the Control Panel with the `manage webhook settings` permission.
+
+Only the **difference** to the config file is stored — one row per changed key
+in the new `webhook_settings` table, applied over the config at boot. A value
+set back to what the file says deletes its row again, so the shipped defaults
+keep moving with the package instead of being frozen the day somebody first
+opened the screen, and an install that never opens it is indistinguishable from
+one running an earlier release.
+
+The screen, the validation and the boot-time override all read one definition
+(`Support\Settings`). That is the point of the rewrite: the read-only version
+kept its own list of labels **and its own copy of every default**, so it was a
+second description of the config file that could disagree with it — and did, on
+`debug.expose_full_response_in_dev`, where the screen's fallback was `false`
+against a file that ships `true`.
+
+Deliberately not editable, each for a reason the screen states: everything from
+`env()` (queue, alerts, circuit breaker — the deployment owns those, and the
+chat webhook is a credential), `inbound.route_prefix` and its middleware (read
+while routes are registered, frozen by `route:cache`), `retry.schedule` (read
+before the addon boots), and `storage.driver` (switched through the storage
+panel, which moves the stored configuration with it). The env-provided values
+are still shown, read-only, so nobody has to guess what is active.
+
+The table is not brand-scoped, unlike everything else in this addon. A timeout
+or a feature toggle that differed per brand would mean one queue worker applying
+different rules depending on whose delivery it picked up.
+
+### Fixed — die Alarm-URL stand im Klartext auf dem Schirm
+
+Der Diagnose-Block am Fuß der Seite druckt den aufgelösten Config-Baum, damit
+ein Betreiber sehen kann, was seine Installation tatsächlich geladen hat. Darin
+stand `WEBHOOK_MANAGER_ALERT_SLACK_URL` ungeschwärzt — und diese URL **ist** das
+Passwort: wer sie hat, schreibt in den Kanal. Sie landete damit in
+Bildschirmfotos, in geteilten Bildschirmen und in jedem Frontend-Fehlerbericht.
+
+Geschwärzt wird jetzt serverseitig, nach Schlüsselnamen statt nach Pfad, damit
+ein Schlüssel namens `secret`, der nächstes Jahr dazukommt, ohne Zutun mitgeht.
+Die Schwärzung vererbt sich nach unten: `webhook_urls => [a, b]` ist genauso
+gedeckt wie ein einzelner Wert. Es bleiben die ersten und letzten vier Zeichen
+stehen, genug um zwei Zugangsdaten zu unterscheiden und zu wenig um eine zu
+benutzen. Der Test prüft die **ganze** Antwort, nicht die eine Prop — ein
+Geheimnis, das anderswo wieder auftaucht, ist dasselbe Leck.
+
+### Fixed — zwei Felder zeigten ihren Übersetzungsschlüssel statt ihres Namens
+
+`Settings::field()` flacht `retry.retry_on_status` zum Sprachschlüssel
+`retry_retry_on_status` ab, die Sprachdateien hatten ihn ohne das Präfix. Das
+ergibt keinen Rückfall und kein leeres Label: Laravel liefert den Schlüssel
+selbst zurück, also stand `webhook-manager::settings.fields.retry_retry_on_status.label`
+auf dem Schirm, in beiden Sprachen, und die Fehlermeldung dieser Felder las sich
+genauso. 285 grüne Tests haben nie ein Label angesehen; jetzt tut es einer, für
+jede Gruppe, jedes Feld und jede Auswahloption in beiden Sprachen.
+
+### Fixed — `config:cache` fror die Overrides ein
+
+`config:cache` bootet die Anwendung vollständig und schreibt danach den
+aufgelösten Config-Baum auf die Platte. Die Overrides landeten mit darin, und
+ein eingebackener Override überlebt die Zeile, aus der er stammt: eine gelöschte
+Einstellung hatte danach bis zum nächsten `config:clear` keinerlei Wirkung.
+Schlimmer noch, der nächste Boot las die eingebackene Datei als „ausgelieferten
+Default" — ein auf den Dateiwert zurückgesetzter Wert galt dann als Abweichung
+und wurde als Zeile gespeichert, statt gelöscht zu werden. Genau die Regel, die
+diese Klasse verspricht, kippte damit dauerhaft.
+
+Während des Cache-Baus wird jetzt nichts angewendet. Die gecachte Datei trägt
+die Dateiwerte, und jeder Prozess legt seine Overrides beim eigenen Boot
+darüber.
+
+### Fixed — kleinere Schärfungen aus der Kritiker-Runde
+
+- Das Schreiben läuft in einer Transaktion. Ein Fehler auf halbem Weg hinterließ
+  einen Satz, den die Antwort danach als Wahrheit zurückmeldete.
+- Der Zweig für einen Nur-Lese-Modus ist weg. Der Controller bricht vorher mit
+  403 ab, also gab es diesen Zustand nie — eine Prop, die einen unerreichbaren
+  Zustand beschreibt, ist ein Ast, den niemand je betritt.
+- `CpValidationVisibilityTest` kennt jetzt auch das größte Formular des Addons.
+  Der Wächter liest sonst literale `'key' =>`-Paare aus einem FormRequest, und
+  dieser baut seine Regeln aus `Settings::fields()` — er saß im toten Winkel des
+  Tests, der genau für diesen Fehler geschrieben wurde.
+- `InboundEndpoint` hat seine Spalten dokumentiert. Damit fallen 22 Einträge aus
+  der phpstan-Baseline, die nur dort standen, weil ein `$guarded = []`-Model für
+  die Analyse keine Eigenschaften hat.
+
+## 2.1.2 — 2026-08-13
+
+A second critic round over 2.1.0/2.1.1. Nothing here is a new feature; all of it
+is a claim from those two releases that did not hold as written.
+
+### Fixed — the log gate could be stepped around by varying the URL
+
+2.1.0 stopped an unauthenticated request from writing a database row per
+attempt — by keying the gate on the brand segment, which is the caller's own
+input. Vary the segment and every request is a fresh key again: one log row
+each, plus one unbounded cache entry each, which on the `database` cache store
+is the same INSERT problem moved one table over. Five made-up brand names bought
+five rows; measured.
+
+The key is a constant now, one per line type. What varies belongs in the message
+and the context, where a person reads it, not in the key that decides whether to
+write at all. The cost is stated rather than hidden: several senders pointing at
+different wrong brands inside the same hour produce one line, not one each — and
+the first line is the one that tells an operator something is misaddressed.
+
+### Fixed — a cache that keeps nothing silenced the warnings entirely
+
+The same conditional-write trap as 2.1.1, in the other direction. On the `null`
+driver the gate's write always reports failure, which read naively means "already
+said this" — so `inbound_brand_not_found` and
+`inbound_signature_without_timestamp` were never written at all. A sender
+pointing at a brand that does not exist is a real operator problem, and it was
+being hidden behind a cache setting.
+
+Both call sites and the replay guard now go through one place, `Support\CacheClaim`,
+which is where the three ways `Cache::add()` can answer `false` — key present,
+store keeps nothing, TTL zero or less — are told apart once instead of in each
+caller.
+
+### Fixed — an unroutable brand handle produced a URL pointing at the wrong tenant
+
+2.1.0 dropped a brand segment the router could not match, on the reasoning that a
+visibly incomplete URL is better than a wrong one. It is not incomplete:
+`{prefix}/{handle}` routes perfectly well, to the **default** brand. The operator
+was handed a working link pointing at another tenant, with nothing to notice.
+
+The segment stays in the URL now, so it fails loudly at the first delivery rather
+than quietly succeeding against the wrong brand, and
+`WebhookManagerServiceProvider::inboundPathIsRoutable()` answers the question
+before then. Nothing validates a brand handle on the way in — `Brand` is
+unguarded and its column carries only a unique index — so this case is real.
+
+### Fixed — the test guarding the replay default did not guard it
+
+`test_an_endpoint_created_through_the_control_panel_has_replay_protection_on`
+posted a body that left `replay_protection_enabled` out, so the action's own
+default answered and the test stayed green with the CP template back on `false`.
+That is the exact substitution the previous round was about, repeated one level
+up. It reads the create form's own Inertia payload now and submits that; put the
+template back on `false` and both tests go red.
+
+### Changed — one pattern for a route segment, in one place
+
+`routes/inbound.php` and `SaveInboundEndpointRequest` carried `[a-z0-9_-]+` as
+literals while `inboundPath()` decided from a constant whether the URL it prints
+can be matched. Two copies of the rule that says what a URL may contain is how
+this release's original bug happened. They all read
+`WebhookManagerServiceProvider::INBOUND_SEGMENT_PATTERN` now.
+
+### Deprecated — `ReplayProtectionService::seen()` / `remember()`
+
+They are the read-then-write pair whose race `check()` was changed to avoid.
+Nothing in this package calls them; they remain only because they are public.
+
+## 2.1.1 — 2026-08-13
+
+### Fixed — on the `null` cache driver, 2.1.0 answered every delivery with 409
+
+2.1.0 made the replay claim a single conditional `Cache::add()`, which is right
+for the race it fixes and wrong about one thing: a `false` from `add()` means
+either "the key is already there" or "this store keeps nothing at all", and on
+the `null` driver only the second is ever true. Every delivery to an endpoint
+with replay protection on was therefore rejected as a duplicate of nothing — a
+cache setting turning a working endpoint off, which is worse than the missing
+guard, and more likely now that new endpoints have the guard on by default.
+
+One read on the rejection path tells the two apart. Stores that actually
+remember are unaffected, and the claim is still one conditional write.
+
+**Affected:** 2.1.0 only, and only with `CACHE_STORE=null`.
+
+## 2.1.0 — 2026-08-13
+
+### Fixed — a multi-brand install answered every inbound delivery with 404
+
+The endpoint was there, enabled, with the right handle and the right secret.
+Nothing could see it.
+
+`InboundEndpoint` is brand-scoped, and the brand scope fails closed: with no
+current brand a query returns no rows. Every other route in this family gets its
+brand from something the caller carries — a Control Panel session, a bearer
+token, a link token. A webhook sender carries none of those. It is Scaleway or
+Stripe or n8n, and it holds a URL. So the lookup in `InboundWebhookController`
+ran with no brand, the scope excluded every row before the query was made, and
+the controller answered `404 Endpoint not found or disabled` — the same answer a
+misspelt handle gets, which is why it read like an operator mistake rather than
+a total outage of the feature.
+
+The brand now comes out of the URL, which is the only thing the sender holds:
+
+```
+https://your-site.test/webhooks/inbound/{brand}/{handle}
+```
+
+`ResolveInboundBrand` sets it for the **whole** request, not just around the
+lookup. The action at the end of the pipeline writes rows, and those are stamped
+with the current brand at write time; resolving the endpoint under one brand and
+writing its results under another would have been the same bug in a more
+expensive form. The previous value is restored on the way out, so a long-lived
+process cannot hand one delivery's brand to whatever runs next.
+
+**The short URL keeps working** and resolves to the **default** brand — where
+the brand-scoping migration put every endpoint that predates brands, so an
+install that switches `multi_brand` on keeps the senders that worked before it
+switched. It deliberately does not search the other brands for a matching
+handle: `handle` is unique per brand, not globally, so that search would have to
+guess the moment two brands pick the same name, and a webhook config is a
+destination plus the credential that authenticates it. A brand segment naming a
+brand that does not exist gets the same 404 as an unknown handle, so the URL
+cannot be used to enumerate an installation's brands.
+
+`ResolveInboundBrand` is prepended to the inbound stack by
+`inboundMiddleware()` and is not part of the configurable list. An install that
+published `config/webhook-manager.php` before this release has the old array
+frozen in its own file and would otherwise have upgraded into the same outage
+without a single line of warning.
+
+**Are you affected?** Only with `brand-context.multi_brand` on. Single-brand
+installs — every install before brands, and the overwhelming majority since —
+were never affected: the scope is a no-op there and the short URL behaves
+exactly as it always did. One cosmetic change does reach them: the Control
+Panel now prints the brand-qualified URL everywhere, so an endpoint that used
+to be shown as `/webhooks/inbound/orders` is shown as
+`/webhooks/inbound/default/orders`. Both work. There is no reason to go and
+reconfigure a sender.
+
+**Why no test caught it.** Every inbound test ran single-brand, where the scope
+does nothing, and every brand-isolation test asserted at the model layer without
+making a request. The outage sat in the gap between them.
+`InboundEndpointIsReachableUnderMultiBrandTest` is that gap, closed.
+
+### Removed — `SubstituteBindings` is no longer in the inbound stack
+
+It was there "so that a future bound route parameter resolves". There is no
+bound parameter on any inbound route: `{brand}` and `{handle}` are generic
+names, deliberately unbound, and `RouteParameterCollisionTest` keeps them that
+way. So it resolved nothing, and it was not free — a `Route::bind('brand')`
+registered by the host app or any sibling addon applies to every route with
+that parameter name, this one included, and a binding that aborts when it finds
+nothing (which is what a model binding does) ended the delivery. Measured, not
+reasoned: with it in the stack, a hostile binding turned a correctly signed
+delivery into a 404. `InboundEndpointDefaultsAndRouteOrderTest` registers that
+binding and sends a real delivery through it.
+
+**If you published `config/webhook-manager.php`** before this release, your own
+copy still lists `SubstituteBindings` under `inbound.middleware` and keeps that
+exposure. Removing the line is the whole fix.
+
+### Fixed — the Control Panel printed a URL that was not the one being routed
+
+Two independent reasons, both of which handed the operator a URL that 404s. The
+listing and the edit page built the URL from `path`, a free-text field, while
+the router has always matched on `handle` — equal until someone edits `path`.
+And neither knew about the brand segment.
+
+The URL on the listing — the one with the copy button, the one that gets pasted
+into a sender's webhook field — is now built in PHP by
+`WebhookManagerServiceProvider::inboundPath()` and printed as it arrives. The
+edit page still composes the same shape in the browser, because it previews the
+URL live while the handle is being typed and there is no saved endpoint to ask
+about yet.
+
+`inboundPath()` also refuses to print a brand segment the router could not
+match. Nothing validates a brand handle on the way in — the model is unguarded
+and the column carries only a unique index — so a brand called `Chor.de` is
+possible, and printing it would have recreated this exact bug one level up.
+
+### Fixed — an unauthenticated request could write a log row per attempt
+
+`ResolveInboundBrand` writes its two log lines *before* the endpoint is looked
+up, and therefore before the rate limiter, which lives in the pipeline and needs
+an endpoint to know its budget. `SystemLogger` writes a database row. Ungated,
+`POST /webhooks/inbound/anything/atall` was one INSERT per request, from any
+address, with no signature, no endpoint and no brand. Both lines are now written
+at most once per key per hour — a log line exists to be read by a person, and a
+cache miss on a hostile key costs a cache write instead of a table row. The same
+gate keeps `inbound_brand_defaulted` from writing a row for every legitimate
+delivery on the backwards-compatible short URL.
+
+### Fixed — the replay guard could be beaten by the case it exists for
+
+`ReplayProtectionService::check()` was `seen()` followed by `remember()`, with a
+window between the two. The delivery that lands in that window is precisely the
+one this class is for: a sender that did not get its answer in time and sends
+the same delivery again immediately. Both requests read "not seen", both
+proceeded, and the configured action ran twice — under concurrency the guard did
+nothing at all, and no sequential test could ever show it. The claim is one
+conditional `Cache::add()` now, so exclusivity is the store's (`SET NX` on
+Redis, `add` on Memcached, a unique key in the database store).
+
+A `false` from `add()` means one of two things, and they are not the same: the
+key is already there, or the store keeps nothing at all. On the `null` driver
+only the second is ever true, so answering `409` to every `false` would have
+turned a cache setting into a permanently dead endpoint — a worse failure than
+the missing guard. One read on the rejection path tells them apart.
+
+### Changed — new inbound endpoints have replay protection on
+
+`replay_protection_enabled` defaults to `true` for endpoints created from 2.1.0
+onwards. Every serious sender retries a delivery it could not confirm, and a
+timeout looks exactly like a failure from the outside; without the duplicate
+guard the configured action simply runs twice. Existing endpoints keep whatever
+they were saved with, and the switch is still in the Control Panel for the cases
+where the action is genuinely idempotent.
+
+### Added — an HMAC endpoint that does not require a timestamp now says so
+
+`inbound_signature_without_timestamp`, at most once an hour per endpoint, in the
+CP log. Not once per delivery: the condition is a property of the endpoint's
+configuration and does not change between deliveries, and a line per delivery
+would bury the log an operator uses to find actual trouble.
+
+Without `require_timestamp` an HMAC signature covers a body and nothing else,
+and a signature that says nothing about when it was made never expires: anyone
+who has ever seen one valid delivery can send it again next year and it
+verifies. The replay cache closes its own window — ten minutes by default — and
+not one second more; it is a duplicate guard, not an expiry.
+
+It is not switched on for you. A sender that does not send the timestamp header
+would start failing on upgrade, and this package does not get to make that
+decision for a running integration. So it is said out loud instead, where the
+operator reads the rest of that endpoint's traffic.
+
+## 2.0.0 — 2026-08-09
+
+### Changed — the licence is now proprietary
+
+This is a paid Marketplace addon. `composer.json` declares `proprietary` and the
+licence file carries the commercial addon licence instead of MIT. Entitlement is
+enforced by the Statamic Marketplace, not by code in this package.
+
+Tags up to and including `v1.10.2` remain MIT. The change takes effect with the next
+release.
+
+## 1.10.2 — 2026-08-05
+
+### Fixed — the breakpoint-less single-column grid utility is no longer used
+
+Every addon in this family ships its own Tailwind build, and `@statamic/cms/tailwind.css`
+routes all of them into the same `addon-utilities` layer. Media queries add no specificity, so
+the bare single-column grid rule from whichever addon stylesheet loads **last** won against an
+earlier addon's `sm:`/`lg:` variant and pinned that addon's grid to one column at every width.
+
+Invisible when this addon is checked alone. It only appeared once two addons of the family were
+installed together, which is the normal case on a real site.
+
+A grid falls back to one column on its own, so the class bought nothing. The overflow guard its
+`minmax(0,1fr)` track provided is preserved explicitly, because the implicit column is `auto`.
+
+## 1.10.1 — 2026-08-01
+### Fixed — rolling brand scoping back could strip `handle` of any uniqueness at all
+
+1.7.3 recorded ten MySQL failures as known, pre-existing and deferred: `down()` of the brand-scoping migration restores the global `unique('handle')`, and an install where two brands share a handle cannot satisfy it, so `migrate:rollback` died with `1062 Duplicate entry` from inside an `alter table`. The note said the fix was a decision about what un-brand-scoping should do to multi-brand data. This is that decision.
+
+It refuses. No engine rolls DDL back, so the old behaviour left the table it died on with its brand-scoped unique already dropped and the global one not yet built — a `handle` column carrying no uniqueness whatsoever, on an install whose operator had just watched a command fail and would reasonably assume nothing had happened. And the alternative, deduplicating on the way past, is worse: an outbound webhook row is a target URL plus the credential that signs it, two brands that both call theirs `crm-lead` point at two different systems, and nothing in the row says which one an install should keep. Keeping the lower id would silently repoint one tenant's traffic at another tenant's endpoint.
+
+So `down()` now collects the colliding handles across all four root tables **before its first statement** and, if there are any, throws with the table and the handles named and the schema untouched. Resolving it is one rename per collision, then the same command again. A rollback with no collision behaves exactly as before.
+
+**Are you affected?** Only if you run `php artisan migrate:rollback` or `migrate:reset` far enough back to reach `2026_07_24_100003_add_brand_id_to_webhook_manager_tables`, on an install running more than one brand. Nothing about a forward `php artisan migrate` changes, and no site that has never rolled back is in a bad state. If you did roll back and it failed on `1062 Duplicate entry` (MySQL) or `UNIQUE constraint failed` (SQLite): check `show index from webhook_outbounds` — a table with neither `webhook_outbounds_handle_unique` nor `webhook_outbounds_brand_id_handle_unique` was left half-converted by the old code and needs the index put back by hand.
+
+### Fixed — the test bed could not see the rollback path
+
+`tests/Migrations/RollbackWithExistingDataTest` is the mirror of the forward-path bed added in 1.7.3: it installs the head schema, fills every table, and rolls back — refusing while two brands share a handle, going through and restoring the global unique when they do not, and taking every table with it on a full reset. It runs on both engines.
+
+The reason this went uncovered for four releases is worth naming. The default suite is in-memory SQLite, whose database is gone before testbench's teardown rollback ever reads a row, so `down()` was executed against nothing on every run since it was written. Only the MySQL leg added in 1.10.0 keeps a real database between setUp and teardown — and it found this on its first run, which is the whole argument for having it.
+
+`phpunit -c phpunit.mysql.xml` is now green: 241 tests, 1071 assertions, same as SQLite.
+
+## 1.10.0 — 2026-08-01
 ### Fixed — automatic retries were planned and never executed
 
 The most serious of the three. `RetryPlanner` computed the next attempt, `DeliveryEngine` wrote it to `next_retry_at`, the delivery detail screen rendered "next retry in 30 seconds", and `DeliveryRepository::readyForRetry()` — the query written specifically to find those rows — **had no caller anywhere in the package**. `ProcessOutboundDeliveryJob` sets `$tries = 1` and states in its own docblock that "a scheduled job dispatcher (or the replay command) picks it up". No such dispatcher existed, and `webhook-manager:replay-failed` is a manual bulk tool that nothing schedules either.
@@ -131,7 +504,7 @@ No endpoint on any environment we can see uses `basic`; the one configured inbou
 
 ### Known — configured but not enforced
 
-> Both of these were fixed in 1.10.0. The entry stays as it was written.
+> Both entries below were fixed after this release; see the Unreleased section at the top of this file. They are left here because the 1.9.0 tag still behaves as described.
 
 Two columns on `webhook_inbounds` are accepted by the CP, validated, cast and stored, and then never consulted at request time:
 

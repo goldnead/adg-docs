@@ -12,8 +12,44 @@ Release notes for `goldnead/statamic-activity`, as published with the package.
 Cross-version upgrade notes for the whole suite are in
 [Upgrading](/guide/upgrading).
 
-## 1.1.0 — 2026-08-01
+## 1.2.1 — 2026-08-05
 
+### Fixed — the breakpoint-less single-column grid utility is no longer used
+
+Every addon in this family ships its own Tailwind build, and `@statamic/cms/tailwind.css`
+routes all of them into the same `addon-utilities` layer. Media queries add no specificity, so
+the bare single-column grid rule from whichever addon stylesheet loads **last** won against an
+earlier addon's `sm:`/`lg:` variant and pinned that addon's grid to one column at every width.
+
+Invisible when this addon is checked alone. It only appeared once two addons of the family were
+installed together, which is the normal case on a real site.
+
+A grid falls back to one column on its own, so the class bought nothing. The overflow guard its
+`minmax(0,1fr)` track provided is preserved explicitly, because the implicit column is `auto`.
+
+1.2.0 already removed the class from the markup and explained in the comment beside it why.
+Tailwind scans comment text as candidates, so that explanation kept emitting the very rule it
+warned about: the fix shipped, and the bundle was unchanged. The comment no longer names the
+class, and `addon-lint` enforces that as `ui.bare-single-column-grid`, comments included.
+
+## 1.2.0 — 2026-08-04
+### Changed — the Control Panel is an Inertia + Vue app now
+
+1.1.0 rebuilt the two screens out of Statamic's own components but kept them as Blade, rendered through core's NonInertiaPage compatibility path. That path is legacy, not a target: no breadcrumbs, no Inertia navigation, no shared props. Both screens are now Inertia pages backed by single-file Vue components, built by Vite like the other addons in this family.
+
+Nothing about what the screens do has changed. Same routes, same route names, same columns, same filters, same JSON contract, same deep links, same permission. This is a port, not a redesign.
+
+- **`ActivityController` returns `Inertia::render()`** for `activity::Index` and `activity::Show`. `index()` still answers the same route twice — the page for a browser, the listing contract for `<Listing>`.
+- **The detail payload is assembled field by field.** Handing the model to Inertia would put whatever the table happens to carry into a prop the browser can read, including columns a later migration adds. A test pins the exact field list.
+- **The two documentation URLs are props**, not strings baked into the bundle.
+- **`resources/views` is gone**, and with it `loadViewsFrom`. The addon ships no Blade views at all.
+- **`resources/dist/build` is committed** and guarded by `npm run build:check` plus a CI job. Composer installs never run npm, so the compiled bundle has to ship in git and has to match the source.
+
+### Fixed — a stored property can no longer be evaluated as a Vue expression
+
+1.1.0 handled this by putting `v-pre` on every element that printed ledger content, because the yielded Blade was compiled as a Vue template in the operator's browser. A compiled component interpolates instead of compiling, so the whole class of failure is gone rather than guarded against. The tests that asserted `v-pre` now assert that a stored mustache arrives as literal text.
+
+## 1.1.0 — 2026-08-01
 ### Changed — the Control Panel is built out of Statamic's own components now
 
 The domain half of this addon and its Control Panel were never the same quality. The recorder, the immutability guard on both the model and the query builder, the two-key idempotency with its race handler and the migration work were all left untouched here. The two Blade screens were rebuilt.
@@ -22,15 +58,16 @@ They were hand-rolled markup on a false premise. `resources/views/cp/_styles.bla
 
 - **The listing is `<ui-listing>` in server mode.** `ActivityController@index` now answers the same route twice: HTML for the page shell, JSON (`data` plus a `meta` carrying columns on every response) for the listing itself. Search, sorting, per-page, column customisation, saved views and pagination come from core and behave the way they do on the Entries screen.
 - **Five real filters**, registered as `Statamic\Query\Scopes\Filter` classes: event type, source, identity (contact uuid / user id / anonymous id), occurrence date range, and anonymisation state. Each one answers `visibleTo()` so it does not turn up on the Entries, Assets and Users listings of every site that installs this addon.
-- **The source filter exists.** It had been advertised since 1.0.0 and the controller implemented it, but no screen ever rendered an input for it. It was reachable only by hand-editing the query string.
+- **The source filter exists.** The README has advertised it since 1.0.0; the controller implemented it; no screen ever rendered an input for it. It was reachable only by hand-editing the query string.
 - **Date bounds are parsed, not passed through.** `from` and `to` went unvalidated into a raw comparison, so a malformed date returned an empty result set indistinguishable from "no matches". An unparseable bound is now dropped rather than allowed to narrow the query.
-- **The detail page has a way back**, and a title that names the fact instead of reading "Activity" on every page in the browser history.
+- **The detail page has a way back.** `<ui-header>` with a back button, `<ui-panel>` + `<ui-card>` sections, and a title that names the fact instead of reading "Activity" on every page in the browser history.
 - **`_styles.blade.php` is gone**, and with it the inline `<style>` block that was injected into `@section('scripts')` on every render.
-- No build step was introduced.
+- **The nav icon is `pulse`**, a name from Statamic's own set, rather than a raw inline SVG that never matched the sizing of the items around it.
+- No build step was introduced. The screens stay Blade and render through core's NonInertiaPage path, where the yielded content is compiled as a Vue template and the globally registered `<ui-*>` components resolve.
 
 ### Fixed — a stored property could be evaluated as a Vue expression
 
-Because the yielded Blade is compiled as a Vue template in the browser, a fact whose properties contained `{{ … }}` had that mustache evaluated as an expression on the detail page. Every element that prints ledger content now carries `v-pre`, and a test asserts it.
+Because the yielded Blade is compiled as a Vue template in the browser, a fact whose properties contained `&#123;&#123; … }}` had that mustache evaluated as an expression on the detail page. Every element that prints ledger content now carries `v-pre`, and a test asserts it.
 
 ### Fixed — `ACTIVITY_CP=false` removes the screens
 
@@ -38,7 +75,7 @@ The flag hid the nav item and left both routes registered, so the inspector stay
 
 ### Removed — the `manage activity retention` permission
 
-It was registered and checked nowhere: retention and anonymisation are artisan-only paths and artisan does not consult Gates. Operators were shown a checkbox that controlled nothing. If a Control Panel retention action is ever added, the permission comes back with it. `view activity` is now the addon's only permission.
+It was registered and checked nowhere: retention and anonymisation are artisan-only paths and artisan does not consult Gates. Operators were shown a checkbox that controlled nothing. If a Control Panel retention action is ever added, the permission comes back with it.
 
 ### Added — an `ActivityRecorded` event
 
@@ -50,7 +87,16 @@ A ledger whose stated purpose is to be read by other addons gave downstream cons
 
 ### Added — the tooling this repo never had
 
-Pint and Larastan (level 5, with a generated baseline), a `.gitattributes` so tests and CI config stop shipping to every installing site, and CI with a Laravel × PHP × stability matrix plus a MySQL 8 leg that finally runs the `phpunit.mysql.xml` config the repo had carried unused since 1.0.6.
+- `pint.json` and `laravel/pint` in `require-dev`. Two preset rules are off: `fully_qualified_strict_types` imports the optional sibling event classes that `registerProducers()` only passes to `class_exists()`, and `php_unit_method_casing` renames plain helper methods on the test bed and breaks their callers.
+- `larastan/larastan` with `phpstan.neon` at level 5 and a generated baseline — a ratchet for new code, not a mandate to rewrite the package.
+- `.gitattributes`, so tests and CI config stop shipping to every installing site.
+- CI: a Laravel × PHP × stability matrix (every cell resolved with `composer update --dry-run` before the workflow was committed), a MySQL 8 leg that finally runs the `phpunit.mysql.xml` config the repo has carried unused since 1.0.6, and a Pint + PHPStan job.
+- `extra.statamic` gained `slug`, `url`, `developer` and `developer-url`, so the addon card in the Control Panel has a developer link and the manifest slug is not `null`.
+
+### Notes
+
+- Suite: **133 passed (391 assertions)**, baseline 102. The test bed now clears the file user repository between tests — it writes into the testbench app inside `vendor/`, where two saved users survived the test and made the third CP request in a run die on "Statamic Pro is required for multiple users".
+- The dead `col_brand` translation key was removed rather than turned into a column. The brand scope restricts the listing to the current brand, so a brand column would print the same value on every row.
 
 ## 1.0.6 — 2026-07-28
 

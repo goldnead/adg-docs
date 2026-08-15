@@ -6,6 +6,48 @@
 php artisan vendor:publish --tag=statamic-automations-config
 ```
 
+## Editing settings in the Control Panel
+
+Since 2.3.0 part of this file is editable from **Automations → Settings**, behind
+`manage automation settings`. What the screen offers:
+
+| Group | Keys |
+| --- | --- |
+| Queue | `queue`, `queue_connection` |
+| Runs | `runs.prune_after_days`, `runs.keep_failed_runs_days`, `runs.store_full_context`, `runs.encrypt_context` |
+| Test mode | all five `test_mode.*` switches |
+| Payload redaction | `security.redact_keys` |
+
+**Only the difference from the file is stored** — one row in `automation_settings` per key somebody
+actually changed. Everything else keeps following `config/automations.php`, so upgrading the package
+still moves the defaults, and a site that never opens this screen behaves exactly like one running a
+release from before the screen existed.
+
+Setting a value back to the default **deletes its row** rather than pinning it. That is the
+difference that matters: a table mirroring every key would have frozen the defaults of the day the
+site was installed.
+
+The stored overrides are pushed onto the live config first thing in boot, in the ServiceProvider, so
+a **queue worker sees them too**. A setting that held only for web requests would be a setting that
+appears to work and silently does not where the work actually happens.
+
+Nothing is applied while `config:cache` builds its file. A baked override would outlive the row it
+came from, so deleting a setting would have no effect until somebody ran `config:clear`, and the
+next boot would read the baked value as the shipped default — a value reset to that default would
+then be stored rather than deleted. **Caching your config is safe**; every process applies the
+overrides on its own boot.
+
+::: tip What is deliberately not editable
+`storage.driver` decides where automation definitions live and cannot be switched under a running
+install without moving them first. Anything read from `env()` — `ai.api_key` and the rest — belongs
+to the deployment: a key in the database is a key in the backup instead of in the secret store. And
+`integrations` is not a setting at all, it is a detection.
+
+The table is also **not brand-scoped**, unlike every other one in this addon. These are properties of
+the installation; a queue name per brand would mean a worker draining one brand's jobs and not the
+other's, with nothing anywhere saying so.
+:::
+
 ## Queue
 
 ```php
@@ -157,6 +199,23 @@ tokens, produces a full node-by-node log, and performs no side effects.
 Flip an individual switch when you specifically want to verify that half of an
 integration works. Flipping `persist_statamic_changes` on a production site means a
 test run creates entries.
+
+## Timeline
+
+```php
+'timeline' => [
+    'enabled' => true,
+],
+```
+
+A `send_email` step writes an entry onto the recipient's LeadHub timeline, so the contact screen can
+answer "what has this person had from us" including the mails that never went out as a campaign.
+
+**Nothing is written for an address with no contact.** An automation may legitimately mail somebody
+who is not in the CRM, and filing them here would be the automation quietly creating records.
+
+Switch it off and nothing else changes. See
+[Integrations → LeadHub timeline](/automations/integrations#the-leadhub-timeline).
 
 ## AI
 

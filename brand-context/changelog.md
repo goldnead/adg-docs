@@ -12,68 +12,224 @@ Release notes for `goldnead/statamic-brand-context`, as published with the packa
 Cross-version upgrade notes for the whole suite are in
 [Upgrading](/guide/upgrading).
 
-## 1.7.0 — 2026-08-01
+## 1.9.2 — 2026-08-13
+### Fixed
 
+- **The `Looping` callback said one thing and did another.** 1.9.1 moved the multi-brand check
+  into the callbacks and wrote that down; this one had kept it. Nothing observable followed from
+  it — `forget()` in single-brand mode changes nothing `current()` answers — but a comment that
+  claims more than the code holds is worse than no comment. The cost of registering the payload
+  hook on every boot is now named in the same place.
+
+
+## 1.9.1 — 2026-08-13
+### Fixed
+
+- **The payload hook no longer captures the container it was born in.** `Queue::createPayloadUsing()`
+  collects into a static array, so a process that boots the application more than once — Octane, and
+  every test that builds a fresh one — ends up with several callbacks. The 1.9.0 callback closed over
+  the `BrandManager` it was constructed with, so an older one could answer for an application that no
+  longer exists and put its brand on a job the current one had deliberately left alone. The callback
+  now asks the current container at call time and closes over nothing, which makes the duplicates
+  harmless instead of dangerous.
+
+  A one-shot registration guard was tried first and is the wrong answer, written down here so it is
+  not tried again: Laravel empties that array between tests, so the guard left every test after the
+  first with no hook at all. The last test in `tests/Queue/BrandOnQueueTest.php` is the one that
+  catches it, because it runs against the fifth application of the process.
+
+
+## 1.9.0 — 2026-08-13
 ### Added
 
-- **Larastan at level 5**, with a committed baseline holding the eight pre-existing findings. New
-  code has to pass without adding to it.
+- **The brand travels with the job** — `Queue\BrandOnQueue`, wired by the service
+  provider under multi-brand. The brand current at dispatch is written into the queue payload
+  and set again while the job runs.
+
+  This is a defect fix wearing a feature's clothes. A queue worker has no request behind it, so
+  no brand was ever current, and fail-closed made that "no rows" rather than "all rows": a
+  queued job ran to completion having seen nothing at all. Successfully. Measured on a live
+  install on 13.08.2026 — `statamic-marketing`'s campaign fan-out could not see the campaign it
+  had been handed the handle of, so the campaign sat in `sending` for ever, with no exception, no
+  `failed_jobs` row and no log line. Every queued job in every sibling addon had the same hole.
+
+  What the rule says:
+
+  - A job pushed with **no** current brand carries no key and runs exactly as before. `currentId()`
+    is deliberately not used to build the payload — it answers with the default brand when nothing
+    is set, and a job widening from "no brand" to "the default brand" is the one outcome worse than
+    doing nothing.
+  - The previous brand is **restored**, not forgotten. On `sync` a job runs inside the request that
+    dispatched it, and a `forget()` at the end would take the brand away from the rest of that
+    request. Hence a stack, and hence `JobProcessed` + `JobExceptionOccurred` as the two mutually
+    exclusive ends of a job — listening to `JobFailed` as well would pop it twice.
+  - A brand deleted between push and run leaves the job with no brand and one warning.
+  - Single-brand installs are untouched: the hook is not registered at all.
+
+  `BrandContext::runFor()` inside a job still wins, and is still right wherever the job knows
+  better than its dispatcher — a command looping over every brand, for instance.
+
+
+## 1.8.0 — 2026-08-12
+### Added
+
+- **Sender identity per brand** — `Contracts\SenderIdentityResolver`, `Sending\SenderIdentity`,
+  `Sending\BrandSenderIdentity`, `Sending\BrandMailer` and `Sending\SaidRecently`. They answer
+  "who does brand N send as, and over which transport", read out of `brands.settings.mail`
+  (`from_address`, `from_name`, `mailer`, `locale`), and put the answer on the message rather than
+  into the config.
+
+  **They are not new code.** Until today they were four byte-identical copies in four namespaces —
+  `statamic-marketing`, `-notifications`, `-preference-center` and `-automations` each grew their own
+  on 12.08.2026, and by the evening they had already drifted: the marketing copy still accepted "a
+  brand transport with no from-address", the pair a relay verifying sending domains per account
+  refuses or silently rewrites. Which address a brand sends under is a property of the brand, so it
+  belongs here, and the strictest of the four readings is the one that moved.
+
+  What the rule says, in full:
+
+  - A brand with no `settings.mail` **changes nothing** — the configured transport, whatever From
+    the mailable settles on, the app locale. That is every single-brand install, and it is covered
+    by a test in every one of the four addons as well as here.
+  - A brand that fills in `from_name` or `mailer` but no `from_address` **sends nothing**, loudly.
+    (Those three keys are what counts as declaring a sender; a `locale` or a host's own key under
+    `settings.mail` does not.) So does a brand naming a `mailer` that `config/mail.php` does not
+    define — caught at resolution rather than
+    at the send, because a digest stamps `digested_at` before the mail leaves.
+  - Nothing is ever written to `mail.from.*`. Laravel burns that value into the cached mailer
+    instance on first resolution (`alwaysFrom`), so an override escapes its own `finally` and leaves
+    the first brand's address standing for the rest of the process.
+  - Refusal is a return value, never an exception: a fan-out has to carry on with the brands that
+    are fine.
+
+  `SenderIdentityResolver` is bound to `BrandSenderIdentity`. An addon that sends mail extends the
+  interface in its own namespace and binds its own default, so a host can answer the question
+  differently for marketing post than for transactional post; rebinding the contract here changes it
+  for everything that has not been rebound individually.
+
+  A package with a configured default transport of its own overrides
+  `BrandMailer::transport()` — the one hook, and it exists because
+  `marketing.sending.mailer` predates all of this and may not quietly stop working.
+
+## 1.7.0 — 2026-08-01
+### Added
+
+- **PHPStan (Larastan) at level 5**, with `phpstan-baseline.neon` committed. The baseline holds the
+  eight findings that already existed; new code has to pass without adding to it. `composer analyse`,
+  and a CI step next to Pint.
 - **A Vitest suite for the two Vue components** — the only part of the package no PHP test can
-  reach, and one of them, `BrandSwitcher`, renders on every Control Panel page. The test that earns
-  its keep covers the teleport fallback: the switcher is placed by querying core's own header
-  markup, and if that markup changes the fallback is all that stands between a multi-brand user and
-  no way to change brand.
-- **`SECURITY.md`** with a private reporting address.
+  reach, and one of them (`BrandSwitcher`) renders on every single Control Panel page. Thirteen
+  tests, run in CI. The one that earns its keep covers the teleport fallback: the switcher is placed
+  by querying core's own header markup, and if that markup ever changes the fallback is the only
+  thing standing between a multi-brand user and no way to change brand.
+- **`SECURITY.md`** with a private reporting address, and a support-policy sentence in the README.
 
 ### Fixed
 
 - **The brand switcher read its config through four different code paths**, three of which do not
   exist in Statamic 6. They could not all be right, and the wrong ones turned "the data never
-  arrived" into a switcher that was quietly absent. It now reads `config.get('brandContext')` from
-  `@statamic/cms/api` and logs an actionable error when that comes back empty.
-- **Two switcher strings were English literals inside `__()`.** `Switch brand` and `Brand` now
-  resolve through `brand-context::messages`, so a German Control Panel gets German.
-
-## 1.6.0 — 2026-07-31
-
-The release that makes this package installable by someone who is not its author.
-
-### Fixed — the declared Laravel range was never installable
-
-`laravel/framework` was declared `^11.0|^12.0|^13.0`. Statamic 6 requires `^12.40|^13.0`, so the
-Laravel 11 half of that promise could never resolve on a Statamic 6 site. **The constraint is now
-`^12.40|^13.0`,** and because eight addons hard-require this package, that floor applies to most of
-the suite. The first CI run this package ever had is what surfaced it: every Laravel 11 cell failed
-at dependency resolution while every Laravel 12 cell passed.
-
-The same class of problem turned up twice more: Pest was pinned below what Laravel 13 needs, and
-`pixelfear/composer-dist-plugin` was missing from `config.allow-plugins`, which aborted any
-`prefer-lowest` install.
-
-### Fixed — `inertiajs/inertia-laravel` was never declared
-
-The Brand Members controller imports `Inertia\Inertia` and the package only ever got it transitively
-through `statamic/cms`. It is now a real `require` at `^2.0`.
-
-### Fixed — the Vite hot file pointed somewhere Vite never writes
-
-The provider looked for the dev-server hot file in `public/`, while Vite writes it next to the
-bundle. `npm run dev` therefore did nothing and every Control Panel change needed a full rebuild.
+  arrived" into a switcher that is quietly absent. It now reads `config.get('brandContext')` from
+  `@statamic/cms/api` — the one supported path — and logs an actionable error when it comes back
+  empty.
+- **The switcher's two remaining strings were English literals inside `__()`.** `Switch brand` and
+  `Brand` now resolve through `brand-context::messages`, so a German Control Panel gets German.
 
 ### Changed
 
-- **Removing a user from a brand is confirmed.** Assigning stays a single click. Losing brand access
-  is not recoverable from that screen: the user drops out of every brand-scoped listing, and if it
-  was their only membership they fall back to counting as a member of *every* brand — a different
-  state than they were in before.
-- **The Brand Members screen is translatable.** Every string on it was an English literal passed to
-  `__()`. They are now `brand-context::messages.*` keys with `en` and `de`, and the screen has a
-  proper empty state.
-- **The middleware fallback is no longer silent.** Appending `SetBrandFromSession` instead of
-  inserting it reintroduces the exact bug the method exists to prevent, so it now throws in `local`
-  rather than degrading quietly.
-- `LICENSE.md`, CI across the PHP and Laravel range plus a real MySQL leg, Pint, and a
-  `.gitattributes` that keeps the test suite and Vite sources out of the installed package.
+- `extra.statamic.developer-url` points at `https://gldnr.studio`, matching the rest of the addon
+  family.
+- `.gitattributes` also export-ignores `phpstan.neon`, `phpstan-baseline.neon`, `addon-lint.json`
+  and `vitest.config.js`.
+- CI checks out with `persist-credentials: false` and installs Node dependencies with `npm ci`
+  rather than `npm install`.
+
+## 1.6.0 — 2026-07-31
+
+The release that makes this package installable by someone who is not its author. Six sibling addons
+hard-require it, and Composer ignores a dependency's own `repositories` block, so until this package
+resolves from Packagist with a licence behind its licence field, none of them can be installed at all.
+Everything below follows from that, plus the first pass of the Statamic Addon Studio standards.
+
+### Added — the things a published package needs
+
+- **`LICENSE.md`.** `composer.json` has declared MIT since the first tag with no licence text behind it.
+- **CI.** The package every sibling depends on had none. `.github/workflows/tests.yml` runs the suite
+  across PHP 8.2–8.4 × Laravel 11–12 plus a `prefer-lowest` cell, runs the identical suite against a
+  real MySQL 8 service, checks formatting, and rebuilds `resources/dist` to fail on a stale bundle.
+  That last job matters here: the built CP bundle is committed because consumers install with
+  Composer and have no Node toolchain, so nothing else would have caught a source change that never
+  reached the bundle.
+- **`pint.json`** and `composer lint` / `lint:test`. Formatting is now checked, never auto-committed
+  onto a branch.
+- **`.gitattributes`.** The 66-test suite, the MySQL config, the Vite sources and the CI definitions
+  no longer travel to every site that installs the package.
+- **README Install and Requirements sections**, the publish-tag table, and the note that
+  `npm install` needs `composer install` first because `@statamic/cms` resolves from `vendor/`.
+
+### Fixed — the declared Laravel range was never installable
+
+`laravel/framework` was declared as `^11.0|^12.0|^13.0`. Statamic 6 requires `^12.40.0 || ^13.0`, so
+the Laravel 11 half of that promise could never resolve on a Statamic 6 site, and by now every
+Laravel 11 release carries a security advisory that Composer blocks by default anyway. The constraint
+is now `^12.40|^13.0`, and `orchestra/testbench` drops `^8.0|^9.0` for the same reason: those target
+Laravel 10 and 11.
+
+The first CI run this package ever had is what surfaced it — every Laravel 11 cell failed at
+dependency resolution while every Laravel 12 cell passed. That is precisely the class of untrue
+support claim a single-combination test run cannot see.
+
+The second run found the rest of the same class:
+
+- `pestphp/pest` and `pestphp/pest-plugin-laravel` were pinned to `^2.0|^3.0`, neither of which
+  supports Laravel 13. They now allow `^3.0|^4.0|^5.0`; the suite runs unchanged on Pest 5.
+- `pixelfear/composer-dist-plugin` arrives with the lowest `statamic/cms` versions and was not in
+  `config.allow-plugins`, so a `prefer-lowest` install aborted. It is allowed now.
+- Laravel 13 requires PHP ^8.3, so the PHP 8.2 × Laravel 13 cell is excluded from the matrix rather
+  than left to fail.
+
+### Fixed — `inertiajs/inertia-laravel` was never declared
+
+`Http/Controllers/Cp/BrandUserController` imports `Inertia\Inertia` and the package only ever got it
+transitively through `statamic/cms`. It is now a real `require` at `^2.0`, matching what Statamic 6
+itself requires.
+
+### Fixed — the Vite hot file pointed somewhere Vite never writes
+
+The provider told Statamic to look for the dev-server hot file at
+`public_path('vendor/statamic-brand-context/hot')` while Vite writes it next to the bundle it builds.
+The two never met, so `npm run dev` silently did nothing and every CP change needed a full rebuild.
+Both sides now agree on `resources/dist/hot`, and that path is git-ignored — a committed hot file
+points an installed site's Control Panel at a dev server that does not exist.
+
+### Changed — removing a user from a brand is confirmed
+
+Assigning stays a single click; removing now asks first, the same asymmetry core applies to every
+destructive action. Losing brand access is not recoverable from this screen: the user drops out of
+every brand-scoped listing, and if it was their only membership they fall back to counting as a
+member of *every* brand, which is a different state than they were in before.
+
+### Changed — the Brand Members screen is actually translatable
+
+Every string on it was an English literal passed to `__()`, so a German Control Panel rendered the
+whole screen in English. They are now `brand-context::messages.*` keys with both `en` and `de`
+translations. The screen also has an empty state instead of an empty bordered card.
+
+### Changed — the middleware fallback is no longer silent
+
+`insertBeforeBindings()` falls back to appending when `SubstituteBindings` is not in the group. That
+fallback reintroduces exactly the bug the method exists to prevent — the brand resolves after
+route-model binding, so every bound CP route in every dependent addon 404s. It now throws in `local`
+and `testing` and reports in production, rather than looking like a bug in whichever addon notices
+first.
+
+### Notes
+
+- Suite: **66 passed (170 assertions)**, unchanged. This release adds no behaviour to test beyond the
+  CP screen, which has no test harness of its own yet — see below.
+- Known gaps, deliberately not addressed here: `BrandSwitcher.vue` still teleports into the CP header
+  by querying `header > div:last-of-type` and still probes three `Statamic.$config` shapes, of which
+  at most one is real; the Brand Members controller still loads every CP user with no pagination or
+  search; there are no Vue component tests and no listing screenshots.
 
 ## 1.5.1 — 2026-07-28
 

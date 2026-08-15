@@ -12,19 +12,1194 @@ Release notes for `goldnead/statamic-marketing`, as published with the package.
 Cross-version upgrade notes for the whole suite are in
 [Upgrading](/guide/upgrading).
 
+## 2.9.0 — 2026-08-15
+
+### Added — der Kampagnen-Bericht
+
+Die Kampagnenseite zeigte eine Handvoll Kacheln und eine flache Empfängerliste.
+Was mit einer Kampagne passiert ist und **bei wem**, stand nirgends: die einzige
+Leseabfrage auf `marketing_message_events` im ganzen Addon war die
+Abmelde-Zählung.
+
+Jetzt fünf Reiter, jeder mit den Personen dahinter:
+
+- **Übersicht** — Kennzahlen, A/B-Varianten und eine Zeitleiste von geplant bis
+  zur letzten Aktivität. Eine Station, die nicht stattgefunden hat, fehlt, statt
+  leer dazustehen.
+- **Zustellbarkeit** — filterbar nach Status. Bei einem Fehlversand steht jetzt
+  der Grund dabei; die Spalte lag seit je in der Datenbank und wurde nie
+  gezeigt.
+- **Öffnungen** — wer, wann zuerst, wie oft, und wie viel davon Maschine war.
+- **Klicks** — wer, wann, welcher Link, dazu die Aufschlüsselung nach Link.
+- **Abmeldungen** — wer und wann.
+
+Jede Zeile verlinkt auf den LeadHub-Kontakt, wenn es einen gibt, und legt
+niemals einen an. Je Reiter ein CSV-Export derselben Auswahl, gestreamt und an
+`manage marketing campaigns` gebunden.
+
+**Ein Klick zählt als Mensch**, und das musste er: unter Apples Mail Privacy
+Protection holt der Proxy das Zählpixel für jede zugestellte Nachricht, die
+einzige verzeichnete Öffnung ist also die der Maschine. Nur Öffnungen zu zählen
+meldete „von niemandem gelesen" für eine Kampagne, durch die jemand geklickt hat
+— während der Hinweis direkt darunter sagt, dass genau der Klick einen Menschen
+beweist. Aus demselben Grund listet der Öffnungen-Reiter jetzt nach
+`first_opened_at` statt nach dem Zähler: wer Bilder blockiert und klickt, hat
+`opens = 0` und fehlte in einem Reiter, dessen erste Spalte dieser Zeitstempel
+ist.
+
+Die alten Zahlen aus `CampaignStats` bleiben unverändert, damit jeder Vergleich
+mit einer früheren Kampagne gültig bleibt. Die neuen stehen daneben, mit eigenem
+Namen.
+
+### Fixed — die Kampagnenseite antwortete auf jeder Standardinstallation 500
+
+`marketing.archive.show` wird nur registriert, wenn das Archiv angeschaltet ist,
+und ausgeliefert ist es **aus**. Die Seite baute den Link trotzdem unbedingt:
+`RouteNotFoundException`, also 500 statt fehlendem Link — seit das Archiv
+existiert.
+
+Unsichtbar geblieben, weil der Testaufbau das Archiv für die **gesamte** Suite
+anschaltet. Kein Test hat je die ausgelieferte Konfiguration betreten. Dafür
+gibt es jetzt eine eigene Suite `ShippedDefaults`; ohne den Fix fallen dort
+sechs von sieben Tests um.
+
+### Fixed — Kleinigkeiten, die einen Leser in die Irre führen
+
+- Die Zeitleiste konnte sich selbst widersprechen. „Versand gestartet" ist die
+  einzige abgeleitete Station (nichts zeichnet den Sendebeginn auf), und bei
+  nachträglich geschriebenen Nachrichten stand „Versendet 12. August, Versand
+  gestartet 15. August". Die Station entfällt jetzt, statt eine unmögliche
+  Reihenfolge zu drucken.
+- Der CSV-Export neutralisiert eine führende Formel. Die Namensfelder kommen aus
+  dem öffentlichen Anmeldeformular, ein Fremder wählt ihren Inhalt also selbst,
+  und Excel führt eine Zelle mit `=` beim Öffnen aus — bei der Person, die das
+  Recht auf den Export hat.
+- Der Hinweis zu Maschinen-Öffnungen steht auf jedem Reiter, der eine
+  Öffnungszahl zeigt, und auf keinem leeren.
+- Leerer Reiter: eine Meldung statt zwei. Und eine Kampagne ohne Datum trägt
+  keinen einsamen Trennpunkt hinter dem Betreff mehr.
+
+## 2.8.0 — 2026-08-15
+
+### Added — jede Mail steht jetzt am Kontakt
+
+Die Kontaktseite beantwortet „wer ist das und was läuft mit dieser Person".
+Was diese Person von uns bekommen hat, stand bisher nicht darin: die Fakten
+lagen vollständig in `marketing_messages`, nach Nachricht sortiert, also genau
+dort, wo niemand nachsieht, der einen Menschen ansieht.
+
+Versendet, geöffnet, geklickt, Bounce, Beschwerde: jedes davon schreibt jetzt
+einen Eintrag auf die LeadHub-Zeitleiste des Empfängers, mit Betreff, Kampagne
+und Liste als lesbare Zeilen statt als Payload-Dump.
+
+Zwei Eigenschaften tragen das Ganze, und beide betreffen nicht den guten Fall:
+
+- **Ein Tracking-Pixel darf keinen CRM-Datensatz anlegen.** Zu einer Adresse
+  ohne Kontakt wird nichts geschrieben, auch nicht angelegt.
+- **Nichts auf diesem Weg darf aus einer zugestellten Mail einen Fehler
+  machen.** Der Weg hängt am Sendepfad und an zwei öffentlichen
+  Tracking-Endpunkten; er fängt alles und protokolliert gedrosselt.
+
+Abschaltbar über `marketing.timeline.enabled`, einschränkbar auf einzelne Arten
+über `marketing.timeline.types` — fünfzigtausend Empfänger und pro Öffnung eine
+Zeile am Kontakt ist ein legitimer Wunsch, das nicht zu wollen.
+
+### Added — Öffnungen, die eine Maschine gemacht hat, heißen jetzt so
+
+Apple Mail lädt das Zählpixel für jede zugestellte Nachricht vor, ob gelesen
+oder nicht; Sicherheits-Gateways wie Mimecast oder Proofpoint ebenso. Als
+Lektüre verbucht sagt das aus, jemand habe eine Mail angesehen, die niemand
+geöffnet hat.
+
+Exakt unterscheiden lässt sich das nicht — Apples Mail Privacy Protection ist
+gebaut, um ununterscheidbar zu sein. `Support\MachineOpen` ist deshalb eine
+Heuristik, und die Richtung ihres Zweifels ist die Entscheidung: ein
+unbekannter Client zählt als Mensch. Einen echten Leser als Maschine zu führen
+ist der Fehler, der das Ganze schlechter macht als gar nichts.
+
+Bewusst nicht als Maschine gezählt: Gmails Bildproxy. Der lädt beim
+tatsächlichen Öffnen, seine Anfrage *ist* eine Lektüre.
+
+- **Die Zähler bleiben, wie sie waren.** `opens` zählt weiter alles. Der
+  Bericht vergleicht diese Kampagne mit jeder früheren; „Öffnungen" hier still
+  neu zu definieren sähe aus wie ein Einbruch, den es nie gab.
+- **Gespeichert wird die Antwort, nicht das Material.** Kein User-Agent, keine
+  IP — die Spalte `machine` auf `marketing_message_events` und sonst nichts.
+- Neues Ereignis `MessageOpenedByHuman`: hinter einem Scanner-Postfach ist die
+  erste Öffnung praktisch immer die der Maschine, `MessageOpened` hat dann
+  gefeuert und feuert nicht wieder. Ohne das zweite Ereignis stünde am Kontakt
+  für immer „vorgeladen" und nie einmal, dass die Person gelesen hat.
+
+### Fixed
+
+- Die Vorschau im Vorlagen-Editor benutzt jetzt ein benanntes Token statt
+  `bg-white`, damit der Rahmen im dunklen CP nicht weiß aufblitzt.
+
+## 2.7.2 — 2026-08-14
+
+### Docs — `| default:` rettet eine Anrede ohne Vornamen nicht
+
+2.7.1 behauptete im Kommentar an der Willkommensserie, ein `default:` mit
+Anführungszeichen fange einen fehlenden Vornamen ab. Gemessen am laufenden
+Renderer: `&#123;&#123; leer | default:'du' }}` ergibt leer, mit und ohne
+Anführungszeichen, während `&#123;&#123; vorhanden | default:'x' }}` den Wert liefert —
+der Modifier läuft also, er behandelt einen leeren String nur nicht als
+fehlend.
+
+Was hält: `&#123;&#123; first_name or "du" }}` oder ein `&#123;&#123; if first_name }}`-Block. Der
+Hinweis steht jetzt auch im README, weil er jede Kampagne betrifft und nicht nur
+die Vorlage: auf dem Sendeweg ist `first_name` leer, und das neutrale Wort aus
+`archive.neutral_name` gilt ausschließlich für die Archivseite.
+
+## 2.7.1 — 2026-08-14
+
+### Fixed — die mitgelieferte Willkommensserie baute den Defekt, vor dem dieses Addon warnt
+
+Die Katalogvorlage `marketing_welcome_series` hängte zwei Werbemails an den
+domänenneutralen `send_email` aus `statamic-automations`: keine Einwilligung,
+keine Sperrliste, kein Opt-out, kein Frequenz-Deckel, kein Abmeldelink, keine
+Anbieterkennzeichnung. Zwei Verzeichnisse weiter, in `docs/sequences.md`, steht
+seit 1.12.0, dass genau das nicht geht.
+
+Eine Vorlage ist der Weg, den jemand als Erstes geht. Wer sie nahm, baute den
+Fehler mit gutem Gewissen, weil er die Vorlage des Herstellers benutzt hat —
+zweimal ist er so entstanden.
+
+Jetzt `marketing.send_email` im **Kampagnenmodus**, Kampagne leer: der Katalog
+kann keine Kampagne benennen, die es im Zielsystem noch nicht gibt, also wählt
+sie die Site. Die Automation kommt ohnehin ausgeschaltet an, und ein Knoten ohne
+Kampagne sagt es beim Drücken von „Test", statt still ungeprüft zu senden.
+Vorlagenmodus wäre der kürzere Weg und ist gemessen der schlechtere: dort
+bekommt der Renderer eine Kampagne mit leerem `content`, und der `text/plain`-
+Teil entsteht aus genau diesem Feld.
+
+Dazu Wiedereintritt `ignore` (es gibt nur ein Willkommen) und Beschriftungen an
+den beiden Mail-Knoten. Die englischen Platzhaltertexte sind mit den Knoten weg;
+eine Kampagne bringt ihren eigenen Text mit.
+
+Der Abmelde-Alarm und die „Kampagne verschickt"-Nachricht bleiben auf dem
+neutralen Knoten und an einer Admin-Adresse. Das ist, wofür er da ist — und seit
+`statamic-automations` 2.4.0 verweigert er den anderen Fall von sich aus.
+
+## 2.7.0 — 2026-08-14
+
+Aus Adrians Frage, warum es zweierlei „Templates" gibt und was die
+FamilyStack-Mails im Template-Feld einer Kampagne zu suchen haben.
+
+### Fixed — eine Kampagne konnte ihren eigenen Text stillschweigend wegwerfen
+
+Das Feld hieß „Template" und die Liste darunter enthielt zweierlei: die
+**Umschläge**, in denen eine Kampagne verschickt wird, und die **fertigen
+Mails** mit eigenem Betreff und Text aus dem email-templates-Addon.
+
+Wer das Zweite wählte, machte es zum *Layout* der Kampagne. Eine fertige Mail
+hat aber kein `&#123;&#123; content }}`-Loch — also wurde der Kampagnentext nicht
+eingesetzt, sondern fiel weg. Geschrieben, versendet, und in keinem Postfach
+angekommen. Kein Fehler, keine Meldung.
+
+Das sind zwei Fragen, also sind es jetzt zwei Bedienelemente: **„Was diese
+Kampagne verschickt"** (eigener Text / eine fertige Mail) und darunter je nach
+Antwort ein **Layout** oder eine **Email-Vorlage**. Gespeichert wird weiterhin
+dasselbe Feld — der Versandweg, die API und jede bestehende Kampagne sind
+unberührt.
+
+Dazu sagt der Editor jetzt, **bevor** etwas rausgeht, wenn das gewählte Layout
+den Text nirgends ausgibt.
+
+### Changed — „Templates" heißt im Marketing jetzt „Layouts"
+
+Ein Wort für zwei Dinge war die Hälfte der Verwirrung. Was unter Marketing liegt,
+ist der Umschlag: Kopf, Fuß, Farben, das Loch für den Text. Die fertige Mail mit
+eigenem Betreff heißt weiterhin Email-Vorlage und hat ihren eigenen Menüpunkt.
+
+### Added — der Kampagnentext wird geschrieben, nicht getippt
+
+Der Inhalt lag in einer Textarea voller `<p>`-Tags. Das ist kein Schreiben, und
+es ist nicht das, was dieses Control Panel sonst verlangt: eine Email-Vorlage
+wird in Bard bearbeitet, und eine Kampagne ist dieselbe Art Text von derselben
+Person. Jetzt derselbe Editor, mit denselben Knöpfen.
+
+**Die Spalte ändert sich nicht.** `save_html` ist an, das Feld gibt einen
+HTML-String heraus und nimmt einen entgegen; `campaigns.content` enthält
+weiterhin genau das, was es vorher enthielt. Eine Kampagne aus der API, aus
+einem Import oder aus der Zeit vor diesem Release öffnet sich im Editor und
+speichert wieder heraus — ohne Migration und ohne einen selbstgebauten
+Konverter. Ein Test hält den Rundlauf fest, samt der Antlers-Platzhalter: eine
+kaputte Anrede geht an den ganzen Verteiler.
+
+
+## 2.6.1 — 2026-08-14
+
+### Fixed — die Vorschau kannte eine andere Platzhalter-Liste als der Versand
+
+2.6.0 lieferte der Vorschau eine von Hand geschriebene Liste von Variablen. Sie
+war am Tag ihrer Entstehung in beide Richtungen falsch: sie bot `list_name` an,
+das kein Versand je geliefert hat, und ihr fehlten `preheader`, `campaign.*` und
+`list.*`, die jeder Versand liefert.
+
+Aufgefallen an Adrians FamilyStack-Layout: dessen versteckte Vorschauzeile
+benutzt `&#123;&#123; preheader }}` und blieb in der Vorschau leer, obwohl sie in
+Produktion gefüllt ist. Die andere Richtung ist die teurere — ein Platzhalter,
+der in der Vorschau gut aussieht und im Postfach als Lücke ankommt.
+
+Die Vorschau fragt jetzt `CampaignRenderer::archiveVariables()`, also die
+entpersonalisierte Variablenliste des Renderers selbst. Damit können die beiden
+nicht mehr auseinanderlaufen, und ein Test vergleicht sie Schlüssel für
+Schlüssel.
+
+### Added — die Liste der Platzhalter steht im Editor, und Tippfehler fallen auf
+
+Unter dem Code steht aufklappbar, welche Platzhalter es gibt. Dazu ein dritter
+Befund: **ein Platzhalter, den niemand füllt**, wird als Warnung genannt.
+Antlers löst eine unbekannte Variable zur leeren Zeichenkette auf — `&#123;&#123; list_name }}`
+bleibt still leer, in der Vorschau wie im Postfach, und das einzige Symptom ist
+eine Lücke, wo ein Wort stehen sollte.
+
+Bewusst zurückhaltend: alles, was kein schlichtes `&#123;&#123; name }}` oder
+`&#123;&#123; name.unter }}` ist, bleibt unangetastet. Antlers-Bedingungen, Tags und
+`noparse` wohnen in denselben Klammern, und eine Warnung, die auf korrektem
+Markup feuert, ist der Weg, auf dem Warnungen aufhören, gelesen zu werden.
+
+## 2.6.0 — 2026-08-14
+
+Beides aus Adrians Fragen beim Durchgang durch den Hub.
+
+### Added — die Verteiler einer Person stehen auf ihrer LeadHub-Kontaktseite
+
+Die beiden Addons waren unter der Oberfläche längst verheiratet: eine Anmeldung
+löst auf einen LeadHub-Kontakt auf, das Publikum einer Kampagne kommt aus
+LeadHub-Segmenten, und LeadHubs `do_not_contact` ist das, was eine Abmeldung
+setzt. Zu sehen war davon nichts. Die Kontaktseite zeigte Tags, Aufgaben und
+eine Chronik und sagte kein Wort über den Newsletter, den die Person seit einem
+Jahr bekommt.
+
+Beigesteuert von dieser Seite über LeadHubs neue Panel-Registry (leadhub 2.2.0),
+nicht von dort gelesen: marketing hängt von leadhub ab, leadhub von niemandem,
+und das für ein Panel umzudrehen hätte ein optionales Geschwister zur harten
+Abhängigkeit des CRM gemacht. Auf einem älteren leadhub fehlt das Panel und
+sonst nichts — geprüft wird mit `method_exists`, nicht mit einer
+Versionsangabe.
+
+Gesucht wird über die normalisierte Adresse und nicht über `contact_uuid`: die
+UUID steht erst da, wenn eine Anmeldung bestätigt und synchronisiert ist, und
+eine unbestätigte Anmeldung ist genau das, wofür man diese Seite aufmacht.
+
+### Added — der Vorlagen-Editor zeigt, was er baut
+
+Eine Vorlage ist der Umschlag, nicht der Brief: Kopf, Fuß, Farben und das Loch,
+in das der Inhalt kommt. Bearbeitet wurde sie als HTML-Wand in einem Textfeld,
+und der einzige Weg, das Ergebnis zu sehen, war speichern, eine Kampagne
+schreiben und sich selbst einen Test schicken — drei Schritte entfernt von dem,
+was man gerade ändert.
+
+Jetzt: Code links mit Syntaxhervorhebung (`CodeEditor`), gerenderte Vorschau
+rechts, umschaltbar zwischen Desktop- und Handybreite. Gerendert wird durch
+denselben Antlers-Parser wie der echte Versand (`Services\TemplatePreview`) —
+eine Vorschau durch eine zweite Engine wäre eine zweite Implementierung, die man
+im Gleichschritt halten muss, und die erste Abweichung stünde in irgendjemandes
+Posteingang.
+
+Dazu zwei Befunde, während getippt wird:
+
+- **Diese Vorlage gibt `&#123;&#123; content }}` nirgends aus.** Fehler. Eine Kampagne
+  damit kommt leer an: geschrieben, versendet, und jeder Empfänger bekommt den
+  Rahmen um nichts. Das ist nichts, was man aus der Antwort einer Abonnentin
+  erfahren sollte.
+- **Diese Vorlage hat keinen Abmeldelink.** Warnung, kein Fehler: dieselbe
+  Vorlage ist für transaktionale Mail legitim, wo es nichts abzumelden gibt.
+
+Erkannt wird `&#123;&#123; name }}` mit beliebigem Abstand, nicht das bloße Wort — sonst
+bekäme jemand für eine korrekte Vorlage gesagt, sie sei kaputt, und das ist der
+Weg, auf dem eine Warnung aufhört, gelesen zu werden.
+
+Die Vorschau liegt in einem `<iframe sandbox="">`, das nichts erlaubt. Eine
+Vorlage ist beliebiges HTML, das jemand eingefügt hat; ein `<script>` darin tut
+in einem Mailprogramm nichts und liefe hier im Control Panel mit der Sitzung der
+bearbeitenden Person. Dieselbe Regel wie bei der Kampagnen-Vorschau, und
+`tests/js/preview-sandbox.test.js` hält jetzt beide daran fest.
+
+
+## 2.5.1 — 2026-08-14
+### Security
+
+- **2.5.0 closed the membership oracle for repeated attempts and left it open for a single
+  one.** The already-subscribed path charged the recipient throttle and stopped there, so it
+  never reached the suppression gate, the brand's sender identity or the transport. The moment
+  the installation could not send, an ordinary address answered `unavailable` while a
+  subscribed one still answered `sent` — one request, deterministic, no timing needed, and in
+  exactly the failure state `unavailable` exists for. Found by a critic run against the built
+  code a few hours after 2.5.0, measured rather than argued.
+
+  `coverForSilentPath()` now reaches the same verdict the real send would reach, by every route
+  that does not require putting a message on the wire: it charges the throttle, asks the
+  suppression gate (discarding the answer, keeping only whether the gate replied at all), and
+  resolves the brand's sender identity. `ConfirmationThrottleTest` runs the comparison with each
+  of those broken, with the subscribed address probed FIRST — the order that helps an attacker
+  most — instead of only in the good case.
+
+- **New `Sending\TransportHealth`.** Whether a relay will take a message cannot be asked
+  without giving it one, and the silent path has none, so a failed send is remembered for sixty
+  seconds and the silent path reads it. It changes only what the cover path answers, never what
+  a real sign-up is told, and it expires on its own so that a relay refusing one recipient does
+  not declare the installation broken for long.
+
+### Known limits
+
+Both of these close with the same change — queueing the confirmation send, so that no response
+knows a delivery outcome at all — and both are stated rather than papered over.
+
+- **Timing still distinguishes a real send from a withheld one.** The mailable is built and
+  handed to SMTP inline, so a request that sent one pays a round trip and a request that did
+  not does not.
+
+- **A dead relay is mirrored with a one-minute memory, not perfectly.** Once the installation
+  has hit the failure once, both paths answer alike. The first request after a quiet window
+  still slips: probe a subscribed address before any real send has failed, then a control
+  address, and the pair separates them. The other three reasons for `unavailable` — no usable
+  counter, an unreachable suppression gate, a half-declared sender identity — are mirrored
+  unconditionally, because all three can be asked without sending anything.
+
+
+## 2.5.0 — 2026-08-14
+### Changed — BREAKING for anything that read the sign-up response
+
+- **A sign-up is told whether a confirmation mail is actually coming.** 2.4.0 made a withheld
+  mail byte-identical to a sent one and called that a feature, because a difference could be
+  used to ask whether an address is on a list. The reasoning was right about the danger and
+  wrong about the price: on 13.08.2026 a real sign-up on gldnr.studio got "check your inbox"
+  while the recipient throttle held the mail back. The person is still `pending`, never got
+  anything, and the only trace was one line in a log nobody watches. The likeliest next move
+  for somebody in that position is to sign up again — which trips the same throttle. The state
+  is self-reinforcing and invisible from the outside.
+
+  `SubscriptionService::subscribe()` now hands back a `Sending\ConfirmationResult` on the
+  returned model (`$subscription->confirmation`, a declared property, never an attribute and
+  never persisted), and both the public form endpoint and any host API report it:
+
+  | value | meaning |
+  | --- | --- |
+  | `sent` | a confirmation is on its way — and the cover for the two silent cases below |
+  | `throttled` | none right now, this MAILBOX was asked recently; `retry_after_minutes` says how long the window is |
+  | `unavailable` | none right now, this INSTALLATION could not send one |
+
+  The line between them is one question: would knowing it tell a stranger something about the
+  PERSON? "Already subscribed" and "suppressed" would, so both keep answering `sent`.
+  "Somebody asked for this mailbox in the last hour" would not — it is a statement about a
+  moment in time, and the person who most often triggers it is the visitor themselves.
+
+- **The recipient budget is charged before the suppression gate, and on the already-subscribed
+  path too.** Both of those paths send nothing and say nothing, and until now both cost
+  nothing either — so two submissions separated them from an ordinary address, which answers
+  `sent` and then `throttled`. Making the cover story cost the same is what keeps it a cover
+  story. It also closes a smaller hole on its own: a suppressed address could be pushed
+  through the endpoint without limit.
+
+
+- **`status` is gone from the sign-up response**, in the JSON envelope (`data.status`) and in
+  the session flash. It was `subscribed` against `pending` — the membership question, answered
+  for free at an endpoint anybody may post to, in a field nobody had asked for. The envelope
+  now carries `data.confirmation` and optionally `data.retry_after_minutes`. A host that
+  rendered `session('marketing.subscribed')` still gets a string; it now reads `sent`,
+  `throttled` or `unavailable`.
+
+### Known limit
+
+- **Timing still distinguishes a real send from a withheld one.** The mailable is built and
+  handed to SMTP inline, so a request that sent one pays a round trip and a request that did
+  not does not. That channel predates this release and is unchanged by it; closing it means
+  queueing the confirmation, which changes how every install delivers this mail. Stated here
+  rather than papered over.
+
+
+## 2.4.1 — 2026-08-13
+### Fixed
+
+- **A relay that refuses the recipient answered the sign-up form with a 500.** `BrandMailer` reports
+  a broken brand identity by returning `false`, and `sendConfirmationMail()` was written around that
+  — but the transport does not return, it THROWS. An address that passes `email:rfc,filter` and
+  every check this addon makes can still be rejected at RCPT time (`501 5.1.3 … not a valid
+  RFC-5322 address`), and Symfony's SMTP client raised that straight out through the public
+  endpoint, after the pending row had already been written.
+
+  Found by pointing the live endpoint at `x@example.invalid`, not in review. The send is wrapped
+  and reported now, which is what the comment above it already promised: somebody who typed their
+  address into a form gets an answer, and the delivery problem goes to whoever reads the logs.
+
+
+## 2.4.0 — 2026-08-13
+### Security
+
+- **The sign-up endpoint could be used to send mail at somebody else.** Nothing in the stack
+  limited confirmation mail per RECIPIENT. A host throttles per client IP and an API throttles per
+  brand or per token; none of them can see that every one of those requests names the same victim.
+  With a public form in front and a verified sending domain behind, the effective ceiling on one
+  mailbox was however fast the endpoint would answer — from an address whose reputation belongs to
+  the sender, not the attacker.
+
+  `SubscriptionService::sendConfirmationMail()` now charges every confirmation against the
+  recipient's own budget: one per list per hour, five per mailbox per day, both configurable under
+  `subscriptions.confirmation_throttle`. It is the only limit here keyed on the recipient, and it
+  sits at the send rather than at an endpoint, so every route into a confirmation mail passes it.
+
+  The identity it counts by is new (`Support\DeliveryIdentity`) and deliberately more aggressive
+  than `EmailNormalizer`: it folds case, subaddress tags (`opfer+1@`), dots on Gmail, the
+  `googlemail.com` alias and NFKC compatibility forms, because all of those reach one inbox and a
+  limit keyed on the address as typed is bypassed by a two-character edit. The consent identity is
+  unchanged — merging addresses there would merge people's decisions.
+
+  A withheld mail is silent: same status, same body, same redirect as a sent one, so the limit
+  cannot be turned into a way of asking whether an address is on a list. The pending subscription
+  is kept, so a real subscriber is delayed rather than lost. If the cache cannot count, nothing is
+  sent — a rate limiter on a store that persists nothing counts to zero forever and permits
+  everything.
+
+- **The double-opt-in token came back to life after an unsubscribe, and never rotated.** One
+  `token` column served confirm, unsubscribe and the preference centre alike. It was written once
+  and never changed, and `confirmByToken()` refused a row that was already subscribed while saying
+  nothing about one that had unsubscribed. A confirmation link from any time in the past — still in
+  a mailbox, a backup, or a link scanner's history — therefore put a person who had left back onto
+  the list, without any act of theirs and with no new consent record to point at. The same value is
+  printed in the footer of every campaign, so it is also the most widely copied string the system
+  owns.
+
+  The confirmation link now has a column of its own (`confirmation_token`, NOT NULL and unique),
+  rotated with every confirmation mail and spent on first use through a conditional UPDATE, so two
+  simultaneous clicks confirm once. It expires after `subscriptions.confirmation_ttl_hours` (7 days
+  by default, 0 to disable), and it is refused for any row that is not pending. `token` keeps its
+  old meaning and its old value, so unsubscribe and preference links in campaigns already sent are
+  untouched.
+
+- **Opening the confirmation link is no longer the same as agreeing to it.** Mail gateways, virus
+  scanners and messenger previews fetch every URL in an incoming message, and each of those fetches
+  used to grant the consent — producing subscriptions nobody had agreed to, stamped with a time and
+  an address that look exactly like a real confirmation. `GET /confirm/{token}` now renders a page
+  with a button and changes nothing; `POST` performs it. Set
+  `subscriptions.confirm_requires_post=false` to restore the one-click flow, and the problem with
+  it.
+
+### Also fixed, found reviewing the above
+
+- **The limit refuses to run on a cache store that cannot count.** A rate limiter is only a limit
+  where `increment()` is one atomic step. The file driver — Laravel's own default — reads, adds and
+  writes back in three, so parallel sign-ups all read the same number and all pass, and it reports
+  success whether or not the write landed. `subscriptions.confirmation_throttle.store` names the
+  store; anything outside the known-atomic set withholds every confirmation mail and says so in the
+  log, rather than being trusted on the assumption that production is on Redis.
+
+- **A cache that is unreachable throws rather than answering zero**, which made an outage a 500 on
+  the public endpoint. Caught, reported, mail withheld.
+
+- **Re-arming a dead link through the sign-up form.** `confirmByToken()` refuses a link whose row is
+  not pending — and `status` is writable by anyone who can type an address into a public form.
+  Posting the address of a row that had unsubscribed flipped it back to `pending` while the
+  withheld mail returned before the token would have been rotated, so the old link was live again.
+  Reviving a row that had ended now clears `confirmation_sent_at` and `confirmation_used_at` in the
+  same write. A row that was already pending keeps its link untouched, or submitting a stranger's
+  address would be a way to break their sign-up.
+
+- **`"opfer"@example.com` was a second bucket for the same inbox.** A quoted local part passes
+  validation, is unquoted by the receiving server, and hashed differently — a free doubling of both
+  tiers for two characters. Unquoted and unescaped in `DeliveryIdentity` now.
+
+- **Two simultaneous sign-ups for one address 500'd.** `subscribe()` selects and then inserts, and a
+  double-click lands in the gap: the loser hit the consent unique and got an unhandled exception on
+  an anonymous endpoint. The violation is caught and the winner's row returned.
+
+- **An address with an RFC comment 500'd at send.** `jemand(kommentar)@example.com` passes the
+  default `email` rule and makes `Symfony\Component\Mime\Address` throw as the message reaches the
+  transport, well past anything that could catch it. The public endpoint validates
+  `email:rfc,filter`.
+
+### Known and deliberate
+
+The withheld mail is indistinguishable in status and body, but not in timing: the confirmation is
+built and sent inline, so a request that sent one is measurably slower than one that did not.
+Closing that means queueing the send, which changes how every install delivers this mail, so it is
+named rather than quietly half-fixed.
+
+`per_mailbox` bounds one mailbox across all lists, which means an attacker can also spend somebody
+else's daily budget and delay their genuine sign-up. That is inherent to any per-recipient limit;
+the alternative is no bound at all.
+
+### Upgrading
+
+One migration adds three columns to `marketing_subscriptions` and backfills them. Pending and
+subscribed rows keep a working link — a confirmation mail sent minutes before the upgrade still
+resolves. Rows that had unsubscribed, bounced or complained get a value that has never been
+anywhere, which is the point: every confirmation link previously issued to an address that has
+since left stops working at that line.
+
+
+## 2.3.1 — 2026-08-13
+### Fixed
+
+- **Blade escaped the `text/plain` part.** `&#123;&#123; }}` runs `e()` whatever the output is for, so a
+  campaign whose body says "Musik & Chor" arrived as "Musik &amp; Chor" in the text alternative —
+  and `toText()` had decoded those entities on the line before, deliberately. There is no HTML to
+  escape into in a text part. `{!! !!}` now, with a test.
+
+
+## 2.3.0 — 2026-08-13
+### Fixed
+
+- **The text part of a campaign carried the wrong unsubscribe link, in the wrong language.**
+  `CampaignRenderer::toText()` appended the FOOTER link, which resolves to the preference centre
+  wherever that sibling is installed — a page of checkboxes on which one click unsubscribes nobody.
+  A reader of the `text/plain` alternative was therefore offered no way out that works by itself,
+  while the HTML part next to it had one. And because the line was built at render time, `__()`
+  answered in the application locale: a German campaign on a host with `APP_LOCALE=en` said
+  "Unsubscribe".
+
+  The line now lives in the mailable's text view (`marketing::mail.text`), which a Mailable renders
+  inside the recipient's locale, and it carries `one_click_unsubscribe_url` — the same address the
+  RFC 8058 `List-Unsubscribe` header uses. New translation key `marketing::public.unsubscribe_text`.
+  `RenderedMail->text` is now the content alone; a host that renders it itself keeps exactly what it
+  had, minus a line it did not choose.
+
+- **Click tracking rewrote every `href`, not only links.** The regex matched any `href` in the
+  document, so a `<link rel="stylesheet" href="https://fonts.googleapis.com/…">` in the head of a
+  real template went through the signed click redirect — measured on 13.08.2026 on a live newsletter
+  layout. Every mail client that loaded the web font counted a click on a campaign nobody had
+  clicked, so the click rate measured the readers' font settings; and the typography of the mail
+  depended on a signed redirect surviving whatever a provider appends to it. Anchors only now, with
+  their other attributes preserved.
+
+
+## 2.2.0 — 2026-08-12
+### Fixed
+
+- **A brand that named a mailer or a from-name but no from-address kept sending**, over the brand's
+  own transport with the host-wide From. That is exactly the pair a relay verifying sending domains per account
+  refuses — or delivers under whichever identity the account does own, which is another brand's.
+  2.1.0 chose to warn and send anyway, on the grounds that a loud rejection beats a quiet
+  mis-delivery; the three sibling addons chose to refuse, which beats both. **It now refuses**: no
+  mail, an error line naming the brand and the setting, and the subscription stays `pending` so a
+  second attempt can rescue it once the brand row is fixed. A mailer name that `config/mail.php`
+  does not define is refused the same way, at resolution rather than at the send.
+
+- **`BrandMailer` still worked through `Config::set('marketing.from.*')` with a `finally`.** It held
+  only as long as every mailable read `marketing.from.*` and nothing else ever put a From on the
+  message — a rule enforced by nothing. The identity is now applied as values on the message.
+  `ConfirmSubscriptionMail` and `CampaignMail` only fill a From that is not already there.
+
+### Changed
+
+- **A campaign's `from_email` no longer beats the brand's own address.** The two sibling packages
+  disagreed about this: the `send_email` node in `statamic-automations` let the brand win, this
+  package let the campaign win. One of them had to be wrong, and it was the one that could put a
+  brand's transport behind an address it does not own — the address and the transport are one pair,
+  and only the brand row knows which addresses the relay account behind that transport owns. A
+  per-campaign address can be checked by nobody until the provider sees it, at which point the
+  fan-out has already started.
+
+  **Where no brand declares an address — every single-brand install — nothing changes**, and the
+  campaign's `from_email` applies exactly as before. Where one does, the dropped value is written to
+  the log once per pair per window, and the Control Panel field now says so instead of promising
+  "Defaults to the site sender". `reply_to` is untouched and still per campaign, which is the field
+  that decides where an answer lands.
+
+- **The five sender-identity classes moved to `goldnead/statamic-brand-context` 1.8.0**, which is
+  now required at `^1.8`. They were four byte-identical copies with four namespaces, and they had
+  already begun to drift — see the fix above. `Goldnead\Marketing\Contracts\SenderIdentityResolver`
+  stays as the per-package extension point (it extends the brand-context contract), as does
+  `Sending\BrandMailer`, which keeps `marketing.sending.mailer` as the default transport below the
+  brand. `Sending\SenderIdentity` is gone from this namespace; use
+  `Goldnead\BrandContext\Sending\SenderIdentity`, and build it with `::of()` rather than `new`.
+
+- `BrandMailer::send()` takes a recipient name (`send($brandId, $to, $toName, $mailable)`) and
+  returns whether the mail went out, matching the sibling packages.
+
+## 2.1.0 — 2026-08-12
+
+### Fixed — every brand now sends as itself, not as whoever the config named
+
+Four send paths — the campaign fan-out (`SendMessageJob`), the single send
+(`SingleSend`, which is also how the automations node sends), the CP test send
+and the double opt-in confirmation — each read `config('marketing.sending.mailer')`
+directly. That value is global. In a multi-brand install every brand therefore
+sent over the same transport, and with the same `marketing.from.*` sender.
+
+This is not cosmetic. A relay that verifies sending domains per account
+(Scaleway TEM, Postmark, SES with a verified identity) refuses a From it does
+not own, or replaces it with one it does. Measured on 12.08.2026 in the hub this
+addon runs in: the double opt-in confirmation for **chorgesucht's** newsletter
+went out through the **FamilyStack** Scaleway project, and arrived under
+FamilyStack's sender. A reader who asked one organisation for its newsletter got
+a confirmation from another one.
+
+The transport and the From now come from one place, together, per brand:
+
+```php
+$brand->update(['settings' => ['mail' => [
+    'from_address' => 'noreply@chorgesucht.de',
+    'from_name'    => 'chorgesucht.de',        // defaults to the brand name
+    'mailer'       => 'scaleway_chorgesucht',  // a mailer from config/mail.php
+    'locale'       => 'de',                    // the language its mail is in
+]]]);
+```
+
+The credentials stay in `config/mail.php` and the environment. Putting SMTP
+usernames and passwords into `settings` would carry them into the database,
+every backup and every CP export.
+
+**`locale` is part of the identity** because the subject line is. A German
+brand on an English installation was sending "Please confirm your subscription
+to …", which is the same defect wearing different clothes: the mail did not
+sound like the sender it claimed to be. The locale travels on the mailable
+(`Mailable::locale()`), so the application's own locale is untouched.
+
+### Added — `SenderIdentityResolver`, the extension point
+
+```php
+$this->app->bind(
+    \Goldnead\Marketing\Contracts\SenderIdentityResolver::class,
+    MyOwnResolver::class,   // resolve(?int $brandId): SenderIdentity
+);
+```
+
+The bundled `BrandSenderIdentity` reads `brands.settings.mail`. A host that
+keeps sender identities elsewhere replaces it without the addon knowing
+anything about the host — which is the point: the hub that found this bug has
+its own `BrandMail`, and the addon must not depend on it.
+
+### Nothing changes for a single-brand install
+
+A brand with no `settings.mail` — which is every brand until somebody fills one
+in — resolves to `marketing.sending.mailer`, `marketing.from.*` and the
+application locale. Byte for byte the previous behaviour, including when the
+brands table is missing, the brand row is gone, or a queue worker has no brand
+in context: all three mean "use the configured identity" rather than "fail".
+
+`BrandMailer` scopes its config overrides and restores them in a `finally`. A
+queue worker sends for more than one brand in one process, and a throwing send
+must not leave the next brand's mail holding the previous brand's From.
+
+Deliberately **not** scoped: `mail.from.*`. Laravel's `MailManager` reads it the
+first time a mailer name is resolved and burns it into the cached instance
+(`alwaysFrom`), so an override there outlives the window it was set in — the
+first brand to send would leave its address standing for every later message
+through that transport that sets no From of its own. Only `marketing.from.*` is
+touched, which both mailables read first anyway. A test pins this.
+
+### Two things worth knowing before you configure a brand
+
+**A campaign's own `from_email` still wins** over the brand identity. Explicit
+configuration beats a default, and now that the transport is the brand's, a
+foreign address fails at the relay instead of being silently replaced — a
+visible error rather than a quiet one. Leave the field empty unless you mean it.
+
+**A brand that names a `mailer` but no `from_address`** gets its own transport
+with the host-wide From, and a warning in the log (once per brand per process).
+That pair is what has to agree; splitting it is the same incident with the
+halves swapped. The other direction — an address without a mailer — is the
+ordinary case for the brand the global credentials belong to and stays silent.
+
+`settings.locale` on the brand is used when `settings.mail.locale` is absent.
+
+### Upgrading
+
+`SingleSend` and `CampaignSender` each take one new constructor argument
+(`BrandMailer`). Both are resolved from the container everywhere in this
+package; only a host that builds them with `new` has to add the argument.
+`SendMessageJob::handle()` and `SubscriptionService` are unchanged in shape —
+they resolve it from the container so that existing callers keep working.
+
+## 2.0.1 — 2026-08-09
+
+### Fixed — the sibling constraint excluded the new majors
+
+`goldnead/statamic-leadhub` was pinned to `^1.4` to the 1.x line. LeadHub 2.0.0 and Marketing 2.0.0 carry no code change over 1.12.2
+and 1.13.0 — that major is the licence switch alone. A site running both this package and an
+updated sibling could not resolve its dependencies at all. The constraints now accept both
+lines.
+
+## 2.0.0 — 2026-08-09
+
+### Changed — the licence is now proprietary
+
+This is a paid Marketplace addon. `composer.json` declares `proprietary` and the
+licence file carries the commercial addon licence instead of MIT. Entitlement is
+enforced by the Statamic Marketplace, not by code in this package.
+
+Tags up to and including `v1.13.0` remain MIT. The change takes effect with the next
+release.
+
+## 1.13.0 — 2026-08-05
+
+### Added — the person is also addressable as `subscriber.*`
+
+Which merge variables a template could use depended on **which node sent it**.
+An automation resolves its own node config against the run, where the person
+lives under `subscriber.*`. A `marketing.send_email` body is parsed against the
+flat array from `CampaignRenderer::variables()`, which had no `subscriber` key.
+
+Antlers resolves an unknown variable to the empty string, so a template written
+for one context rendered its greeting empty in the other — with no error, no
+log line and no failed send. `Hallo &#123;&#123; subscriber.first_name }},` became
+`Hallo ,` and the mail went out that way. That is what made it expensive to
+find on adriangoldner.com, and it would have hit every future template written
+for the marketing node.
+
+`variables()` now offers `email`, `first_name`, `last_name`, `name` and
+`unsubscribe_url` a second time under `subscriber.*`. `subscriber` is
+marketing's own domain word, not an application placeholder.
+
+The two spellings cannot drift: the alias is derived from the flat array rather
+than rebuilt beside it, and applied last in both `variables()` and
+`archiveVariables()` — the latter overrides the person keys after the fact, so
+re-deriving is what keeps a recipient's name off the public archive page.
+
+## 1.12.0 — 2026-08-04
+
+### Added — `marketing.send_email` sends a template, not only a campaign
+
+The node demanded a campaign handle. It was built for sequences in which every
+mail is a campaign, and where a site writes its mails that way it was right.
+
+`adriangoldner.com` does not. Its marketing mails are managed email templates
+(`et_templates`), and its automations configure them the way the domain-neutral
+`send_email` node in `automations` takes them:
+
+```php
+'to'       => '{{ subscriber.email }}'
+'subject'  => '{{ subscriber.first_name }}, schön, dass du dabei bist'
+'template' => 'welcome-sequenz-1-willkommen'
+```
+
+Recipient plus template, not campaign. So the site's seven marketing mails could
+not use this node at all and went out through the neutral one instead — which
+asks nobody whether the recipient wants marketing mail, because it is also how a
+site sends a password reset. Seven live marketing mails with no consent check,
+no suppression check, no opt-out check and no frequency cap. The node was
+correct and unusable, and that is the defect this release fixes.
+
+**Template mode.** `template` + `to` + `subject` + `list`, alongside the
+existing `campaign` + optional `list`. Exactly one of `campaign` and `template`:
+both is two different answers to "what is this mail", neither is no answer at
+all, and both are reported as configuration errors — before the test-mode
+branch, so pressing **Test** finds a broken node rather than the first person to
+reach that step three days later.
+
+**The gates are unchanged, in both modes.** Consent (list subscription) →
+suppression (fail-closed) → LeadHub `do_not_contact` (fail-closed) → frequency
+cap. `SingleSend::sendTemplate()` is `send()` with the campaign replaced by the
+three things a template send actually has; everything between the gates and the
+delivery is shared code, so the two modes cannot drift apart.
+
+**`list` is required in template mode**, where it was optional in campaign mode.
+A campaign carries its own list; a template carries none. Without one there is
+nothing to prove the recipient ever agreed to be mailed, and the node refuses
+rather than sending unchecked — this is the one place the new mode is stricter
+than the old one, deliberately.
+
+**A `mail_class` field**, defaulting to `marketing`. Campaign mode still takes
+`Campaign::mailClass()` and ignores this field. Template mode has no campaign to
+ask, so the node states it, and the cap exceptions (`transactional`, `digest`,
+`reminder`) work exactly as they do on the broadcast path. Anything unrecognised
+reads as `marketing`: forgetting to classify a mail costs a delay, never an
+exemption nobody asked for.
+
+**A template that resolves to nothing fails.** The campaign path falls back to
+the built-in layout for an unknown template handle, which is right there — the
+content is the mail and the layout is the frame. Here the template *is* the mail,
+and the same fallback would deliver an empty one under a subject the reader
+recognises. `statamic-email-templates` stays optional: without it, template mode
+resolves against marketing's own template repository, and a slug that answers to
+neither fails with a message naming the missing package instead of a fatal error
+on its facade.
+
+### Changed — a `marketing_messages` row may belong to no campaign
+
+`campaign_handle` becomes nullable and `template_handle` is added beside it.
+Exactly one of the two is set on every row.
+
+A template send has no campaign — not a draft one, not a hidden one, not a
+synthetic handle that resolves to nothing — and `NULL` says that literally.
+It is also the useful encoding: `Message::forCampaign()` and every campaign
+report are a `where campaign_handle = ?`, which never matches `NULL` on any
+engine, so a template mail stays out of numbers it was never part of without a
+single one of those queries being touched. A placeholder handle would have been
+counted by all of them as a campaign that does not exist.
+
+`template_handle` keeps the row self-describing. "Which mail was this" is the
+first question a bounce, a complaint or a support request asks, and it has to be
+answerable from the row alone.
+
+The migration is additive and carries existing rows and indexes through SQLite's
+table rebuild; `tests/Migrations/CampaignlessMessagesTest.php` runs a populated
+1.6.3 install forward and checks both.
+
+### Note
+
+`campaign` is no longer marked `required` in the node's schema. That is not a
+loosening — a form that demands both fields cannot express a node that takes
+exactly one of them, so the rule moved into `execute()`, where it can say which
+of the two mistakes was made. Existing campaign-mode nodes are unaffected in
+every respect: same config, same gates, same classification, same message row.
+
+## 1.11.2 — 2026-08-04
+
+### Fixed — the archive took `/newsletter` from the host application
+
+The newsletter archive shipped **on** by default and registered its routes
+unconditionally. Both were wrong, and together they took a public URL from the
+site that installed this package.
+
+`adriangoldner.com` has its own `/newsletter` page. Upgrading this addon there
+stopped it rendering: two of the site's Inertia smoke tests began reporting
+"Not a valid Inertia response" for that exact path. The addon's archive index had
+won the route, during a `composer update`, without anyone being asked.
+
+Two changes:
+
+- **`marketing.archive.enabled` now defaults to `false`.** Set
+  `MARKETING_ARCHIVE=true` to switch it on. A package may not claim a readable
+  public path on installation.
+- **The routes are registered only when it is on.** Checking the flag inside the
+  controller was not enough — the route still existed and still matched first, so
+  a host page on that path was unreachable even with the archive switched off.
+
+Three tests pin it: no `marketing.archive.*` route exists while off, the
+configured prefix is left unclaimed, and a host route on `/newsletter` still
+answers.
+
+**A correction to the 1.10.0 entry.** It said both features "ship inert" and that
+a `composer update` "changes neither what is sent nor what is public". The first
+half was true of the frequency cap. The second was not true of the archive, and
+this release is what makes the sentence honest.
+
+Nothing else changed. Sites that want the archive set one environment variable.
+
+## 1.11.1 — 2026-08-04
+
+### Fixed — the addon could not be installed on a current Statamic 6 site
+
+`symfony/yaml` was constrained to `^6.0|^7.0`, and so was `goldnead/statamic-leadhub`,
+which this package requires. Statamic 6.26 on Laravel 13 ships `symfony/yaml` v8, so
+`composer require goldnead/statamic-marketing` on a site created today failed to resolve
+with "the package is fixed to v8.1.2 by a partial update".
+
+Widened to `^6.0|^7.0|^8.0`, and the leadhub requirement now resolves to v1.12.1, which
+carries the same widening. The addon uses exactly `Yaml::parse`, `Yaml::dump` and one
+`DUMP_*` constant, all unchanged across Symfony 6, 7 and 8. The suite runs green against
+v8.1.2: 311 passed, 2128 assertions, PHPStan and Pint clean.
+
+**How this was missed.** Installing the package into an empty directory succeeded, because
+Composer was free to pick `symfony/yaml` v7 there. A real Statamic site already has v8, and
+nothing can move it. An empty-directory install proves a package has *some* resolvable set,
+not that it fits the environment it is built for.
+
+## 1.11.0 — 2026-08-04
+
+<!--
+    Additive. Nothing existing sends differently: the new node is a node
+    somebody has to place, and the one-recipient send path is new code that no
+    existing caller reaches.
+-->
+
+### Added — `marketing.send_email`, the send node a sequence is built out of
+
+`goldnead/statamic-automations` can already do the timing a sequence needs —
+delays, wait-until windows, branches, brands. What it could not do was send a
+*marketing* mail, because everything that makes one different from an ordinary
+mail is this addon's domain: which list carries the consent, whether the
+address is suppressed, whether the person has opted out, and whether they have
+already had their three mails this week.
+
+So the node lives here and is contributed to the builder, rather than
+`automations` learning what a newsletter is. It sends one campaign to the
+contact the run is about, through `Sending\SingleSend`, which asks the four
+questions in the order the send path has always asked them:
+
+1. **Consent** — a subscribed subscription on the configured list, or nothing
+   is sent. Not even to an address the flow otherwise knows perfectly well.
+2. **Suppression** — the hard no, and the only gate that fails *closed*: a
+   check that cannot be answered blocks the send.
+3. **Opt-out** — LeadHub's `do_not_contact`, which is what the preference
+   centre and an editor's manual opt-out both write. Also fail-closed.
+4. **Frequency cap** — last, because it is the only one that says "later"
+   rather than "no", and there is no point deferring a mail to an address that
+   may never receive it at all.
+
+**This is not `ThrottleNode`.** That node throttles one flow. The cap counts a
+*person's* marketing mail across every flow, every campaign and every broadcast
+in the same brand — two sequences that each throttle themselves correctly still
+add up to six mails a week for somebody who is in both. Only a node on the
+marketing send path can see that.
+
+**And not `automations`' own `send_email`**, which stays domain-neutral: an
+address, a subject, a body, and no opinion about consent, because it is also
+how a site sends a password reset.
+
+What a gate answers turns into what the run does:
+
+- *Blocked* ends the run. Not "skip this mail and carry on to the next one":
+  every later step of a marketing sequence is more marketing mail.
+- *Capped* pauses the run and asks again later — the same deferral budget the
+  campaign path spends, so a reader is held back for the same length of time
+  whether the mail came from a broadcast or from a sequence.
+- *Out of deferrals* sends nothing, lets the flow continue, and writes a
+  warning naming the recipient and the campaign, so somebody asking in three
+  months why the third mail never arrived can be answered.
+
+The mail is an ordinary campaign — authored in the campaign editor, left in
+draft — and the send writes a real `marketing_messages` row, so opens, clicks,
+bounces, the unsubscribe link and the ESP feedback loop all work exactly as
+they do for a broadcast. The campaign is never marked sent, because it is the
+content of a step rather than a broadcast that happened.
+
+### Added — `Sending\SingleSend`
+
+The marketing send path for exactly one recipient: `StartCampaignJob` +
+`SendMessageJob` with the fan-out removed and all four gates kept. Usable on
+its own, and the reason the node above is thin enough to read.
+
+### Changed
+
+- `Integrations\Automations\AutomationsBridge` registers the node as
+  **built-in** and contributes the `marketing.campaigns` / `marketing.lists`
+  option sources. Built-in because the node is this addon's own surface in the
+  builder; gating it behind the orchestrator's Pro licence would make a
+  marketing feature depend on an automations edition.
+- `Models\Subscription` carries `@property` annotations for `email`,
+  `list_handle` and `contact_uuid`.
+- `.phpstan/automations-stubs.php` keeps the new node inside level-5 analysis
+  even though the optional sibling is absent, exactly as the webhook-manager
+  stubs next door do. The live check that the class still satisfies the real
+  interface is `tests/Integration/AutomationsIntegrationTest.php`, run by
+  `scripts/test-siblings.sh`.
+
+## 1.10.0 — 2026-08-03
+
+<!--
+    Both features are additive and both ship inert: the frequency cap is off,
+    and no campaign is in the archive until somebody puts it there. A
+    `composer update` therefore changes neither what is sent nor what is public.
+-->
+
+### Added — the newsletter web archive
+
+A campaign existed only as an e-mail. Anyone who wanted to read it in a browser,
+link it, or find it later could not, and every "can you send me the last issue"
+was answered by hand.
+
+Each campaign can now be released to a public web version on a readable,
+guessable URL — `/newsletter/{handle}`, a slug and not a token, because the
+token link is the personalised one and this is deliberately the other thing.
+With it come a chronological index per brand, an RSS feed, and the head tags a
+search engine and a share preview need: title, description, canonical, Open
+Graph.
+
+**Off by default, per campaign.** Applying the migration publishes nothing, and
+the flag is not on the edit form — it is on the report page, because `update()`
+refuses a campaign that has been sent and "should this be public" is a question
+that gets asked afterwards. A campaign can carry a price, a segment's context or
+an individual address; putting a year of that on the open web because a package
+moved is not a decision an addon may take.
+
+**Not released answers 404, not 403.** 403 is the accurate status and the wrong
+one to send: it confirms that a campaign with this handle exists, which turns a
+guessable URL into a way to enumerate unpublished issues by name. The archive
+says nothing about what it is not showing — a draft, another brand's campaign
+and a handle nobody ever used are the same answer.
+
+**Nothing on the page counts.** The web version goes through the existing
+`CampaignRenderer`, not a second implementation, and it goes through it with no
+message — which is what removes the open pixel and the click rewriting. That is
+a correctness property rather than a preference: an open in the archive is not
+an open of the e-mail, and a click counted with no recipient behind it would be
+added to the campaign's rate as if somebody who received the mail had clicked.
+Both numbers would go up and mean less.
+
+**Personalisation resolves neutrally.** `&#123;&#123; first_name }}` and `&#123;&#123; name }}` come
+out as a configurable word (`archive.neutral_name`, translated by default)
+rather than as raw braces — the embarrassing failure — or as an empty string,
+which turns `Hallo &#123;&#123; first_name }},` into `Hallo ,` on a page search engines
+index. `&#123;&#123; email }}` stays empty: there is no address this copy went to, and a
+made-up one in "this mail was sent to …" is worse than a gap.
+
+The page is served with `default-src 'none'` and no script source, so a
+`<script>` that reaches a template cannot run against the site's origin. It is
+deliberately *not* the CP preview's `sandbox`: an opaque origin is not something
+a page meant to be read and shared can be.
+
+### Added — frequency caps, and the classification they rest on
+
+An upper bound on how much marketing mail one contact receives in a rolling
+window — three in seven days, by default, once switched on.
+
+**The exceptions are the rule, so they are a contract.**
+`Goldnead\Marketing\Contracts\MailClass` names four kinds of outgoing mail —
+`marketing`, `transactional`, `digest`, `reminder` — and the cap acts on
+`marketing` alone. A community digest is the rhythm somebody subscribed to, not
+the extra mail the cap exists to limit, so counting it would mean the digest ate
+the budget and silenced everything else. A password reset is somebody waiting on
+a screen. An event reminder that arrives late is a missed event, not a quieter
+inbox. None of that can be decided by whichever addon happens to be sending, so
+the class travels with the mail and any package in the family can name one
+through `Goldnead\Marketing\Contracts\FrequencyCap`.
+
+Unknown or absent reads as `marketing`. Forgetting to classify costs a delay;
+it never buys an exemption nobody asked for.
+
+**The decision is taken at the send, not at the enqueue.** A campaign snapshots
+its audience and hands the queue one job per recipient, and those jobs sit
+behind a throttle, a retry or a stopped worker — sometimes for days. Whether
+somebody has had their three mails is a fact about the moment the mail leaves.
+Both directions are tested: a recipient who was under the limit when the job was
+created and over it by the time it ran is held, and one who was over it then and
+under it now is sent.
+
+**A capped message is moved, not dropped.** It goes back on the queue and is
+tried again; only when its deferral budget runs out is it discarded — with
+`status = capped` on the row and a warning in the log naming the campaign, the
+recipient and the limit. Silent discarding is the version where somebody asks in
+three months why they never got the March issue and nobody can answer. `capped`
+is a different word from `skipped` on purpose: skipped means the address may not
+be mailed, capped means it may and was not.
+
+While a message is deferred it stays `pending`, which is load-bearing: a
+campaign is marked sent once nothing is pending, and a deferred message under
+any other status would let it report itself finished while people were still
+waiting.
+
+**On the `sync` connection there is no later.** A dispatch runs inline and a
+delay is ignored, so pushing a message back would re-enter the same code
+immediately and spend a three-day deferral budget inside one request, ending in
+a discard that reads as if three attempts had been made. There, the message is
+discarded once and the log says exactly why.
+
+Counting is keyed on the normalized address rather than the subscription:
+somebody on four lists is one person with one inbox, and per-subscription
+counting would have handed them four times the cap while the config still said
+three. The window is measured on one clock end to end — `now()` writes the log
+row and `now()->subHours()` reads it back — because Laravel's `datetime` cast
+serialises a zoned Carbon without converting it, and a window built on a value
+that crossed a timezone is wrong at both edges by that offset. There is a test
+that runs the whole flow in Europe/Berlin.
+
+The cap falls **open**: a check that cannot be answered lets the mail through
+and says so in the log. That is the deliberate opposite of the suppression gate,
+which falls closed and aborts the campaign. Suppression is the only thing
+between a send and an address that said no; the cap is between a send and
+somebody who has been hearing from us a lot, and refusing to send because a
+count failed would trade a real delivery failure for a hypothetical annoyance.
+
+**Visible at the contact.** Where a cap is configured, each subscriber row shows
+how many marketing mails they have had inside the window against the limit, and
+how many campaigns have actually been held back from them. Without it, "capped"
+on a campaign report names a message that nobody can trace back to a person.
+
+### Changed
+
+- `SendMessageJob::handle()` takes a fifth argument, the `FrequencyCap`. The
+  gate order in the send path is now suppression → what the reader has said they
+  want → the cap, which is the order in which "never", "no" and "not yet" have
+  to be asked.
+- The archive route uses `{marketingCampaign}` rather than `{campaign}`. Route
+  parameter names are application-wide, and `campaign` is a word half this
+  family could reach for; a sibling binding it would resolve our handle against
+  its own repository and 404 every archive page. The name never appears in a
+  URL, so the prefix costs nothing.
+
+### Fixed — every tracked link in a campaign sent through Brevo was a 403
+
+Brevo rewrites every `href` in the HTML part of a message onto its own click counter, and when that
+counter forwards the reader it appends `_se`, the recipient address in base64, in front of the rest of
+the query. Laravel signs the whole query string. One appended parameter is therefore not the URL that
+was signed, and `ValidateSignature` answers 403 before `TrackingController` runs.
+
+Measured at the QA hub against a real `marketing_messages` row, not reasoned about: without a signature
+403 — with a valid signature no longer 403 — with a valid signature **plus `_se`** a 403 again. The
+appended parameter destroys exactly the signature check.
+
+**What that cost.** On a campaign sent through Brevo it hit *every* tracked link, which is every
+absolute `http(s)` link in the message. Twice over: the reader never reached the destination, and the
+click was never counted either, because the middleware aborts ahead of `recordClick()`. Confirmation
+and unsubscribe links came through unharmed — their token is in the path and nothing about them is
+signed — which is why the failure looked partial rather than total. Preference-centre links did not:
+they were missing from the renderer's exception list, so they were rewritten like any other link and
+inherited the same 403, leaving people unable to change what they receive.
+
+**The fix, and the line it does not cross.** `delivery.ignored_query_parameters` names the parameters a
+sending platform may append without invalidating the signature — eleven of them, each one a name a real
+provider adds, each one commented with which. Everything else is still refused.
+
+The boundary matters more here than in the same fix in `statamic-preference-center`, where a magic
+link's payload sits in the path. This route carries its destination **in the query**, as
+`?url=https://…`. A `url` on that list would not be a weaker signature, it would be an open redirect on
+the sender's own domain with the sender's own reputation behind it. So `Support\TrackingParameters`
+refuses to ignore `url`, `expires` or `signature` — in any casing, and through any comma-separated
+smuggling — however the config is edited. The tests prove the refusal at the endpoint, with `url` on
+the live ignore list: an edited destination is still a 403 and still counts no click.
+
+The list is read per request rather than baked into the route, because this addon merges its config
+after Statamic has loaded the route files, and because `route:cache` would otherwise freeze whatever
+was on the list the day the cache was built.
+
+### Added — `delivery.mail_headers`
+
+The other half of the answer: the per-message header that asks the provider not to rewrite the links at
+all, added verbatim to campaigns and double-opt-in mail. Mailgun, Postmark, Mailjet, SparkPost,
+SendGrid, Mandrill and Elastic Email each have one, verified against their own documentation and
+tabulated in `config/marketing.php`. Brevo has none, and none is coming — there the ignore list above is
+not defence in depth, it is the only thing that works. Empty by default: an addon that guessed your
+provider and changed how it behaves would be worse than one that asks.
+
+### Fixed — preference links are no longer rewritten
+
+Unsubscribe and confirm were already out of the click redirect: their token is in the path, and they
+are the routes a reader has to be able to reach when everything else has failed. The preference page
+belongs in that group and was not in it, so it went through the signed redirect and took the 403 above
+with it — the one reader who acted on the footer got an error page instead of their settings.
+
+It is not fixed by adding a path. Since 1.9.0 marketing serves no preference page: it belongs to
+`goldnead/statamic-preference-center`, and where its route lives is that addon's business, not
+something this renderer may spell out. The renderer asks `Support\PreferenceLink` — the one resolver
+that already decides where a subscriber's links point — for this reader's own self-service URLs, and
+keeps what comes back out of the redirect. Install the preference centre and its links are exempt;
+install nothing and marketing's unsubscribe page is. Neither case needs a path written down twice.
+
+The token is cut off the end of each answer, so the exemption covers the page rather than the one URL:
+a footer that appends `?utm_source=` to `&#123;&#123; unsubscribe_url }}` survives too. Ordinary links are still
+tracked with the centre installed, which is its own test — an exemption that widened to the whole host
+would stop counting every click in silence.
+
+### Fixed — CI
+
+Nothing in this section reaches an installed site: it touches `.github/workflows/`,
+`scripts/test-siblings.sh` and `composer.json`'s repository metadata, and no runtime file.
+`resources/views/`, `lang/` and `resources/dist/` are byte-for-byte 1.9.0. (`src/`, `config/` and
+`routes/` are not — the click-tracking fix above changes them.)
+
+- **The cross-addon integration job ran no tests at all.** `scripts/test-siblings.sh` staged its
+  throwaway copy with `git archive HEAD`, and `git archive` applies `.gitattributes` `export-ignore`
+  — which since the packaging sweep earlier today holds `/tests`, `/phpunit.xml` and `/scripts`. The
+  staged copy therefore had no test suite and no PHPUnit config, and Pest aborted with `The test
+  directory [%s] does not exist.` Staging now goes through `git read-tree` into a scratch index plus
+  `git checkout-index`, which is the same HEAD content without the export filter. The
+  `export-ignore` list is correct for what a site downloads and is unchanged.
+- **A skipped integration run no longer passes for green.** All seven tests in `tests/Integration`
+  call `markTestSkipped()` when their sibling class is missing, so a run where the siblings failed to
+  install or their bridges failed to boot exited 0 and read as a pass — the state these tests were in
+  for their entire existence. The script now asserts against the JUnit report that tests ran and none
+  skipped. (`--fail-on-skipped` is not enough: Pest 3 accepts the flag and exits 0 anyway.)
+- **The optional siblings come from Packagist.** `goldnead/statamic-automations` and
+  `goldnead/statamic-webhook-manager` were published today, so the script requires the newest stable
+  release of each instead of writing VCS repository entries and pinning `*@dev` — which tested
+  unreleased sibling branches against a released addon. Only their `src/`, `routes/`, `config/` and
+  `database/migrations/` are needed, none of which is export-ignored, so a dist install is correct
+  and `--prefer-source` is not. Local checkouts via `AUTOMATIONS_PATH`/`WEBHOOK_MANAGER_PATH`/
+  `LEADHUB_PATH` still work, and are now resolved to absolute paths before the script changes
+  directory — the documented relative form pointed at nothing.
+- **`Show what actually resolved` failed on every matrix cell.** `composer show` takes one package,
+  and it was handed four: `Too many arguments to "show" command`. It is `composer show --direct` now,
+  and the `--prefer-lowest` job prints the same table.
+- **`composer validate` is strict.** `--no-check-publish` existed only to hide "this package is not
+  publishable" while the siblings were private. They are public, so the flag is gone and `--strict`
+  replaces it.
+
 ## 1.9.0 — 2026-08-01
-
-::: danger Upgrading: links in mail you have already sent will 404
-The preference route below was removed without a redirect, in a **minor** release. Every
-`/!/marketing/preferences/{token}` link in a newsletter that is already delivered now returns 404,
-and installing the preference centre does not repair them — it registers its own token route, not
-marketing's old one.
-
-If you have sent mail carrying those links, add the redirect in your own application before you
-upgrade. See
-[Troubleshooting → Preference links in already-sent newsletters 404](/marketing/troubleshooting#preference-links-in-already-sent-newsletters-404).
-:::
-
 ### Security — the campaign preview ran in the Control Panel's own origin
 
 `GET marketing/campaigns/{handle}/preview` returns HTML a Control Panel user wrote: the campaign body

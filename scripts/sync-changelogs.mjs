@@ -53,11 +53,47 @@ function escapeInterpolation(markdown) {
 }
 
 /**
+ * Flatten links that point at a file in the addon's repository.
+ *
+ * A changelog written for a repo says `[UPGRADE.md](UPGRADE.md)`, and that path
+ * means nothing here — the docs site has no such page. VitePress builds
+ * strictly, so one of these fails the whole build and, because the deploy runs
+ * on push, takes the site's update with it. It cost a deploy on 2026-08-15.
+ *
+ * The link text is kept and the target dropped, rather than rewritten to
+ * GitHub: the repositories are private, so a link there would be a 404 with
+ * extra steps.
+ *
+ * Only repo-relative targets are touched. Anything absolute (`http…`), rooted
+ * (`/marketing/tracking`) or an anchor (`#brands`) is a link the docs site can
+ * actually resolve, and stays.
+ */
+function flattenRepoLinks(markdown) {
+  let inFence = false
+
+  return markdown
+    .split('\n')
+    .map((line) => {
+      if (/^\s*(```|~~~)/.test(line)) {
+        inFence = !inFence
+        return line
+      }
+      if (inFence) return line
+
+      return line.replace(
+        /\[([^\]]+)\]\((?!https?:|\/|#|mailto:)([^)\s]+\.(?:md|txt|json|ya?ml|php))\)/g,
+        '$1',
+      )
+    })
+    .join('\n')
+}
+
+/**
  * Strip the leading H1 so the page's own heading is the only one, and demote
  * nothing else: a changelog's heading hierarchy is meaningful.
  */
 function body(markdown) {
-  return escapeInterpolation(markdown.replace(/^#\s+.*\n+/, '').trim())
+  return flattenRepoLinks(escapeInterpolation(markdown.replace(/^#\s+.*\n+/, '').trim()))
 }
 
 const header = (addon, found) => `---

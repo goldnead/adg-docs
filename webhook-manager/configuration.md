@@ -9,6 +9,94 @@ php please vendor:publish --tag=webhook-manager-config
 Thirteen sections. The ones you are most likely to change are `retry`, `logging`,
 `alerts` and `http`.
 
+Most of that file can also be changed in the Control Panel, where it takes precedence — see
+[Settings in the Control Panel](#settings-in-the-control-panel) below before you go looking
+for a value on the server.
+
+## Settings in the Control Panel
+
+**2.2.0.** Under **Settings**, with the `manage webhook settings` permission, 32 fields are
+editable: modules, retry policy, HTTP defaults, inbound limits, signature headers, logging
+and retention. Before 2.2.0 that screen printed the config file and told you to go and edit
+it on the server.
+
+There is no read-only version of the screen. It prints the resolved configuration, so being
+allowed to look at it is the same authority as being allowed to change it, and it is gated
+on the one permission.
+
+### Only the difference is stored
+
+One row per changed key in the `webhook_settings` table, applied over the config at boot.
+
+- **A value set back to what the file says deletes its row again.** The shipped defaults keep
+  moving with the package instead of being frozen the day somebody first opened the screen.
+- **An install that never opens the screen behaves exactly as before.**
+- **The table is not brand-scoped**, unlike everything else in this addon. A timeout or a
+  feature toggle that differed per brand would mean one queue worker applying different rules
+  depending on whose delivery it happened to pick up.
+
+The screen, the validation and the boot-time override all read one definition
+(`Support\Settings`), which is the point of the rewrite: the read-only version kept its own
+list of labels **and its own copy of every default**, so it was a second description of the
+config file that could disagree with it — and did.
+
+### What is editable
+
+| Group | Keys |
+| --- | --- |
+| Modules | `features.outbound`, `.inbound`, `.rules`, `.templates`, `.debug_tools` |
+| Retry defaults | `retry.strategy`, `max_attempts`, `base_delay_seconds`, `max_delay_seconds`, `retry_on_status`, `retry_on_network_errors` |
+| HTTP defaults | `http.timeout_seconds`, `connect_timeout_seconds`, `follow_redirects`, `max_redirects`, `user_agent`, `verify_ssl` |
+| Inbound limits | `inbound.max_payload_kb`, `rate_limit_per_minute`, `replay_protection_ttl_seconds` |
+| Signatures | `security.default_hash_algorithm`, `signature_header`, `timestamp_header`, `timestamp_tolerance_seconds`, `mask_secrets_in_ui` |
+| Delivery logging | `logging.mode`, `partial_bytes`, `mask_headers`, `mask_payload_keys` |
+| Retention | `pruning.deliveries_after_days`, `pruning.logs_after_days` |
+| Debug | `debug.expose_full_response_in_dev` |
+
+### What is not, and why
+
+| Not offered | Because |
+| --- | --- |
+| Everything from `env()`: the whole `queue`, `alerts` and `circuit_breaker` blocks | The deployment owns them, and `WEBHOOK_MANAGER_ALERT_SLACK_URL` is a credential with no business in a database backup. `alerts.mail.recipients` is the *result* of parsing a comma-separated env string, so a stored override would have a shape the file never has. |
+| `inbound.route_prefix`, `legacy_route_prefixes`, `middleware` | Read while the routes are registered, and frozen by `route:cache`. A changed prefix would print endpoint URLs that answer 404 until somebody clears the route cache — a failure with no visible cause. `middleware` is class names on top of that. |
+| `retry.schedule` | Read before the addon boots. A control that takes effect only after the next deploy is worse than no control. |
+| `storage.driver` | Switched through the storage panel on the same screen, which **moves** the stored configuration with it. A second, silent switch would strand the config in the old store. |
+| `event_triggers` | Closures and class strings. That is code. |
+| `security.hash_algorithms` | A property of PHP and of the signing code, not an operator's choice. Which of them is the **default** is editable. |
+
+The env-provided values are still shown, read-only, so nobody has to guess what is active:
+queue connection and name, circuit breaker, alerts and their recipients, the inbound URL
+prefix. The chat alert webhook is reported only as configured or not set, never printed.
+
+### The diagnostics block masks credentials
+
+At the foot of the screen the resolved config tree is printed, so an operator can see what
+the install actually loaded. **Secrets in it are masked server-side**, before the page is
+built — not hidden by the browser.
+
+Matching is by key **name**, as a case-insensitive substring, over `secret`, `token`,
+`password`, `passwd`, `api_key`, `apikey`, `webhook_url`, `private_key` and `credential`. A
+key added next year that is called `secret` is covered without anybody remembering to add
+it. The flag is inherited downwards, so `webhook_urls => [a, b]` is covered exactly like a
+single value, and everything nested under a matched key goes with it. A masked value keeps
+its first and last four characters — enough to tell two credentials apart, not enough to use
+one. Anything eight characters or shorter is replaced outright.
+
+::: danger This is why it matters
+Before 2.2.0 the chat alert URL stood in that block in clear text, and that URL **is** the
+password: whoever holds it writes into the channel. It went into screenshots, into shared
+screens and into every front-end error report.
+:::
+
+### `config:cache` is safe
+
+The overrides are deliberately **not** applied while `config:cache` builds its file. Baking
+them in would let an override outlive the row it came from — a deleted setting would keep
+working until the next `config:clear` — and the next boot would read the baked value as the
+shipped default, so a value reset to the file's would count as a difference and be stored
+instead of deleted. The cached file carries the file's values; each process lays its
+overrides over them at its own boot.
+
 ## `features`
 
 Each toggle hides a module's CP screens, navigation entries **and** runtime wiring,

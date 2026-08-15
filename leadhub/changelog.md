@@ -12,34 +12,439 @@ Release notes for `goldnead/statamic-leadhub`, as published with the package.
 Cross-version upgrade notes for the whole suite are in
 [Upgrading](/guide/upgrading).
 
+## 2.4.0 — 2026-08-15
+
+### Added — ein Deal hat jetzt eine eigene Seite
+
+Bis hierher gab es im Control Panel keinen Ort, an dem ein einzelner Deal stand.
+Jeder Link, der auf einen zeigte, führte aufs Board: die Opportunity-Liste auf
+der Kontaktseite, die Karten selbst. Das Board beantwortet „was liegt in dieser
+Spalte", nicht „was ist mit diesem Deal passiert".
+
+Neu: `GET /cp/leadhub/pipelines/opportunities/{opportunity}`. Die Seite zeigt
+Stammdaten (Titel, **verlinkter** Kontakt, Firma, Pipeline, Wert, Confidence,
+Owner, Zeitstempel), die aktuelle Stufe mit einem Wechsel direkt von dort, die
+Aufgaben an diesem Deal und den **Verlauf**.
+
+Der Verlauf ist der eigentliche Punkt. `leadhub_stage_transitions` wird seit dem
+ersten Release des Pipelines-Moduls geschrieben — eine Zeile pro Wechsel, mit
+der Notiz, die sagt *warum* — und wurde von nichts gelesen. Jetzt steht dort, von
+welcher Stufe in welche, wann, durch wen, mit Notiz, und **wie lange der Deal in
+der jeweiligen Stufe lag**. Ein Deal, der nie bewegt wurde, hat keine
+Transition-Zeile; sein Eintritt in die Anfangsstufe kommt aus
+`opportunities.created_at` und ist ein vollwertiger erster Eintrag, keine Lücke.
+
+Der Wechsel von der Detailseite läuft über denselben Endpunkt wie das Drag & Drop
+des Boards, weil das der einzige Weg ist, auf dem die Notiz überhaupt geschrieben
+wird. Die Stufennamen des Verlaufs werden einmal geladen und zugeordnet: die
+Abfragenzahl der Seite ist mit 30 Wechseln dieselbe wie mit 3 (gemessen: 6).
+
+Das Board und die Kontaktseite verlinken jetzt dorthin statt aufs Board; das
+Bearbeiten-Formular kehrt nach dem Speichern und beim Abbrechen auf die Seite
+zurück.
+
+### Fixed — `won_at` und `lost_at` widersprachen dem Status
+
+`StageTransitionService` setzte die beiden Zeitstempel und räumte sie nie wieder
+ab, während `status`, `outcome` und `closed_at` daneben sehr wohl zurückgesetzt
+wurden. Ein wieder eröffneter Deal trug also ein Gewinndatum und war offen; ein
+Deal, der von „Gewonnen" direkt nach „Verloren" ging, trug beide. Acht Releases
+lang hat das niemand gesehen, weil keine Ansicht diese Spalten zeigte — und
+`won_at` ist genau die Spalte, über die jemand „was haben wir dieses Quartal
+gewonnen" summiert.
+
+Der Dienst setzt jetzt in beiden Zweigen beide Stempel, den zutreffenden auf
+`now()` und den anderen auf `null`. Die Migration
+`2026_08_15_000001_repair_leadhub_opportunity_outcome_stamps` räumt die bereits
+gespeicherten Zeilen auf: offene Deals verlieren beide Stempel, geschlossene
+behalten den, den ihr `outcome` benennt. **Es geht dabei nichts verloren** —
+wann ein Deal gewonnen wurde, ist eine Aussage über einen Stufenwechsel, und
+jeder Stufenwechsel hat seine eigene Zeile in `leadhub_stage_transitions`. `down()`
+ist deshalb bewusst leer.
+
+### Fixed — aus der Kritiker-Runde
+
+- **Die Reparatur-Migration parkt, was sie löscht.** Sie behauptete, es gehe
+  nichts verloren, weil zu jedem Stempel eine Zeile in
+  `leadhub_stage_transitions` steht. Das stimmt nur, solange die dort benannte
+  Stufe existiert und ihr `terminal_outcome` unverändert ist — und eine leere
+  Stufe ist löschbar, gerade bei einem wiedereröffneten Deal. Die alten Werte
+  landen deshalb vorher in `metadata_json` unter `repaired_outcome_stamps`. Die
+  Behauptung im Docblock ist auf ihre tatsächliche Bedingung zurückgenommen.
+- **Bei einem abgeschlossenen Deal endet die letzte Dauer beim Abschluss**, nicht
+  heute. Vorher las die oberste Zeile eines im April gewonnenen Deals „115 Tage"
+  und wuchs täglich weiter — in derselben Spalte und Schrift wie die echten
+  Verweildauern darunter, aber auf eine andere Frage antwortend. Ausgerechnet
+  der „läuft"-Marker, der die beiden unterschieden hätte, war auf einem
+  geschlossenen Deal ausgeblendet. Die Fußnote sagt jetzt beides getrennt.
+- **Ein Wechsel auf die Stufe, auf der der Deal schon steht, schreibt nichts.**
+  Der Schirm verhindert es im Browser, ein zweiter Tab oder ein nackter POST
+  nicht — und ein Verlaufseintrag „Angebot → Angebot" ist genau das Rauschen,
+  das eine Historie unlesbar macht.
+- Die Notiz beim Stufenwechsel ist auf 2000 Zeichen begrenzt. Sie wird
+  ungekürzt im Verlauf gerendert.
+- Der Anfangs-Eintrag des Verlaufs fällt bei einem unbekannten `from_stage_id`
+  jetzt über `??` statt `?:` zurück: `null` heißt „unbekannt", nicht „null".
+
+### Changed — Stufe wechseln akzeptiert jetzt auch das Deal-Recht
+
+`POST /pipelines/opportunities/{opportunity}/move` verlangte
+`edit leadhub contacts`, was zu keinem seiner Nachbarn passte: Board ansehen ist
+`view leadhub`, Deal anlegen/bearbeiten/löschen ist
+`manage leadhub opportunities`. Wer eine Rolle nur für die Pipeline hatte, konnte
+einen Deal löschen, aber nicht verschieben.
+
+Die Route akzeptiert jetzt **beide** Rechte, in derselben Form und aus demselben
+Grund wie `TaskController::complete()` seit v1.7.0: eine Verengung auf das
+richtige Recht allein hätte jeder Installation, deren Rollen nur das alte
+tragen, am Upgrade-Tag das Drag & Drop weggenommen. **Niemand verliert etwas**;
+eine Gruppe bekommt, was sie hätte haben sollen. Das Board zeigt den Ziehgriff
+entsprechend für beide Rechte.
+
+### Changed — Modelle sagen jetzt, welche Spalten sie haben
+
+`Opportunity`, `Pipeline`, `Stage`, `StageTransition` und `Task` sind
+`$guarded = []` ohne `$fillable`; nichts in den Dateien sagte, was eine Zeile
+enthält, und die statische Analyse sah keine einzige Eigenschaft. Jedes
+`$opportunity->status` im Addon war ein „undefined property" in der
+PHPStan-Baseline, und ein Tippfehler in einem Spaltennamen sah aus wie ein
+korrekter. Die Spalten und Beziehungen stehen jetzt als `@property` in den
+Klassen-Docblocks. Die Baseline schrumpft dadurch um 150 Einträge.
+
+### Intern
+
+- `money()` lag als byte-gleiche Kopie in `Board.vue` und `Contacts/Show.vue`;
+  eine dritte Kopie wäre daraus geworden. Jetzt `resources/js/support/money.js`.
+- Kein `OpportunityPanels`-Erweiterungspunkt. Die Spiegelung von
+  `ContactPanels` wäre naheliegend gewesen, hätte aber heute keinen Abnehmer:
+  `statamic-marketing` kennt Opportunities überhaupt nicht, und
+  `statamic-automations` kennt sie nur als Verben („lege an", „verschiebe"),
+  ohne einen einzigen Datensatz an einem Deal und ohne Listener auf
+  `LeadHubOpportunityWon/Lost/StageChanged`. Ein leerer Erweiterungspunkt ist
+  Ballast, den der nächste Umbau mitschleppt.
+
+## 2.3.0 — 2026-08-15
+
+### Added — die Einstellungsseite lässt sich bedienen
+
+Der Schirm unter LeadHub → Einstellungen hat bisher `config/leadhub.php`
+abgedruckt und dazu gesagt, man möge die Datei auf dem Server ändern. Jetzt ist
+er ein Formular: Verhalten bei neuen Submissions, Payload-Redaktion, alle
+Feature-Flags, Export-Ziel und Queue-Schwelle, die Scoring-Rückfallwerte, das
+Dedupe-Fenster des Klick-Trackings und die Benachrichtigungs-Schalter.
+
+Gespeichert wird nur, was von der Auslieferung abweicht, als Zeile in der neuen
+Tabelle `leadhub_settings`. Wer einen Wert auf den ausgelieferten zurücksetzt,
+löscht die Zeile wieder, und die laufende Anwendung folgt sofort wieder der
+Datei. Alles nie Angefasste folgt weiterhin `config/leadhub.php`, ein Upgrade
+verschiebt die Standards also nach wie vor.
+
+Formular, Validierung und das Anwenden der Werte beim Boot kommen aus einer
+einzigen Definition (`src/Support/Settings.php`). Die Werte greifen im
+`ServiceProvider`, nicht in einer CP-Middleware: ein Queue-Worker, der später
+hochkommt, sieht sie.
+
+Nicht angeboten werden Zugangsdaten (`crm.destinations.*` mit `token`,
+`api_key`, `secret`), alles env-Gesteuerte (Storage-Treiber, Empfängerlisten,
+Digest-Uhrzeit) und die Status-Map, weil eine Map kein Feld ist. Das
+env-Gesteuerte wird angezeigt, damit man es prüfen kann.
+
+Auf einer Installation mit dem Flat-Treiber, wo Migrationen ausdrücklich nicht
+verlangt werden, schaltet der Schirm auf nur-lesbar mit Begründung, statt beim
+Speichern einen SQL-Fehler zu melden. `php artisan migrate` legt dort auf Wunsch
+nur diese eine Tabelle an.
+
+### Fixed — zwei Fallen, die im Schwester-Addon dieselben waren
+
+Beide gefunden, weil dieselbe Bauform im `webhook-manager` heute Nacht daran
+gescheitert ist. Beide sind hier mit einem Test festgenagelt, der ohne den Fix
+umfällt.
+
+- **`config:cache` fror die Overrides ein.** Der Befehl bootet die Anwendung
+  vollständig und schreibt danach den aufgelösten Config-Baum auf die Platte;
+  die Overrides landeten mit darin. Ein eingebackener Override überlebt die
+  Zeile, aus der er stammt: eine gelöschte Einstellung wirkte bis zum nächsten
+  `config:clear` weiter. Schlimmer noch, der nächste Boot las die eingebackene
+  Datei als „ausgelieferten Default", womit ein auf den Dateiwert
+  zurückgesetzter Wert als Abweichung galt und gespeichert statt gelöscht wurde
+  — genau die Regel, die diese Klasse verspricht, kippte dauerhaft. Während des
+  Cache-Baus wird jetzt nichts angewendet.
+- **Das Schreiben lief ohne Transaktion.** Ein Fehler auf halbem Weg hinterließ
+  eine Tabelle, die keinem zusammenhängenden Zustand entsprach, und der Schirm
+  wurde anschließend aus diesem halben Zustand neu gezeichnet, als wäre er die
+  Wahrheit.
+
+Dazu ein dritter Wächter ohne zugehörigen Fehler: ein Test geht Gruppen, Felder
+und Auswahloptionen in beiden Sprachen durch und prüft, dass keine Beschriftung
+ihren eigenen Übersetzungsschlüssel zeigt. Im Schwester-Addon war genau das
+durch eine grüne Suite gelaufen, weil kein Test je ein Label angesehen hatte.
+
+## 2.2.1 — 2026-08-15
+
+### Fixed — die Zeitleiste zeigt, was in einem Ereignis steht
+
+Nachbar-Addons legen seit 2.2.0 Ereignisse mit `payload.detail` an: Betreff,
+Kampagne, Liste, Hinweise. Auf dem Kontaktschirm war davon nichts zu sehen, nur
+die Überschrift — die Zeilen lagen in der Datenbank und wurden nie gerendert.
+
+Jetzt stehen sie als Beschriftung und Wert unter dem Eintrag. Ein Ereignis ohne
+Details bleibt so schmal wie vorher.
+
+## 2.2.0 — 2026-08-14
+
+### Added — sibling addons can put what they know on the contact screen
+
+The contact page is where somebody goes to answer "who is this person and what
+is going on with them", and a good deal of that lives outside LeadHub: which
+mailing lists they are on, which automations they are enrolled in, what a
+webhook last said about them. None of it could appear there, because the only
+way would have been for this addon to know about its siblings — and the
+direction of that dependency is the one thing this family keeps straight.
+Marketing requires LeadHub; LeadHub requires nobody.
+
+So the sibling registers instead:
+
+```php
+LeadHub::registerContactPanel('marketing.subscriptions', function ($contact) {
+    return [
+        'heading' => __('Mailing lists'),
+        'empty' => __('Not on any mailing list.'),
+        'rows' => [[
+            'label' => 'Der Chorleiter-Brief',
+            'url' => cp_route('marketing.lists.show', 'chorleiter-brief'),
+            'meta' => 'since March',
+            'badge' => ['text' => 'Subscribed', 'color' => 'green'],
+        ]],
+    ];
+});
+```
+
+The shape is deliberately dumb — a heading, rows of label/badge/meta, an
+optional action — rather than a component name or a slot. A registry that
+accepted markup would make every contributor's Vue build a dependency of this
+page, and the first one to ship a broken bundle would take the screen with it.
+
+A contributor that throws is logged and left out, never propagated: this runs
+while the contact screen renders, and a sibling mid-upgrade must not be able to
+500 the page somebody opened to read a phone number. One that returns null, or a
+panel with neither rows nor an empty state, is simply not shown — "nothing to
+say" is a legitimate answer and an empty box is not.
+
+`goldnead/statamic-marketing` 2.6.0 is the first user: it lists the mailing
+lists a contact is on, with their status and since when.
+
+
+## 2.1.1 — 2026-08-13
+
+### Fixed — two findings from the review of 2.1.0
+
+These were meant to be part of 2.1.0 and were pushed onto its tag after the fact. Packagist
+blocked that, correctly: a published stable version is immutable, and moving its tag would
+silently change the content of a version other installs already resolved. So they are their own
+release, and `v2.1.0` points at what Packagist published.
+
+- **The fail-safe catch was swallowing the one error that must be loud.** `LeadHubNotifier`
+  catches `Throwable` so a dead SMTP host cannot roll back a form submission, and that turned
+  the `LogicException` from 2.1.0 — a permanent, silent outage of one notification class — into the
+  same `Log::warning` as a transient failure. It is now reported and logged at error level,
+  like every other refusal in this layer. It still does not propagate.
+- **A contact with no `brand_id` on a multi-brand install now warns**, once per window. It
+  falls back to the host identity, as before, because an alert under the wrong name beats no
+  alert. But it is the half-migrated state `leadhub:brands:integrity` reports, and the
+  resolver's own "brand declares no mail settings" warning cannot fire for a brand it was
+  never given.
+
+Two tests come with them: the loud path over `LeadHubNotifier`, which is the one production
+takes, and the From header of a message that really left over the `array` transport — until
+then every stamping assertion ran against the `MailMessage` object under `Notification::fake()`.
+
+## 2.1.0 — 2026-08-13
+
+### Fixed — staff notifications went out under the host's identity, not the brand's
+
+`Services\LeadHubNotifier` ended in `Notification::route('mail', …)->notify()`: the
+process-wide default mailer with the process-wide `mail.from`, identically for every brand.
+The three notification classes carried no `from()` at all. On a host where each brand's
+sending domain is verified in its own relay account (Scaleway TEM, Postmark, SES with a
+verified identity) that pairs one brand's transport with another brand's address — the relay
+refuses it or substitutes its own.
+
+These are internal mails to staff, so no customer ever saw a wrong name. What a customer saw
+was a lead nobody followed up, because the alert never arrived and nothing said so.
+
+**Now every one of them leaves as the brand the contact belongs to.**
+`Contracts\SenderIdentityResolver` answers "which mailer, which From, which locale for brand
+N" out of `brands.settings.mail`; `Sending\BrandMailer` is the single door and puts the
+answer on the message. Both inherit from `goldnead/statamic-brand-context` 1.8.0 — no fifth
+copy of the rule — which is now required at `^1.8` instead of `^1.6`.
+
+- **The brand comes from the contact row, not from the context.** A new lead is created by a
+  form submission, and a queued listener or a console import may have no brand in context by
+  the time the alert runs. The follow-up digest is the exception and takes the context, because
+  it already runs inside `forEachBrand()`.
+- **Values on the message, never state in the config.** Laravel burns `mail.from` into the
+  cached mailer instance the first time a mailer name is resolved, so a scoped `Config::set`
+  escapes its own `finally` and leaves the first brand's address standing for the rest of the
+  process. `MailMessage::mailer()` and `MailMessage::from()` are what Laravel's own
+  `MailChannel` reads.
+- **A brand that declares `settings.mail` but no `from_address` — or names a mailer
+  `config/mail.php` does not define — sends nothing** and is logged at error level. Half a
+  pair is the failure this layer exists to prevent.
+- **`leadhub:followups:digest` asks before it sends.** It used to print the number of
+  recipients it had assembled; for an unconfigured brand that was a count of refusals reported
+  as deliveries. It now checks the identity before the loop, skips that brand with a warning
+  (exit 0, so the other brands still get their digest) and reports only what went out.
+- **A notification that cannot carry an identity is refused outright.**
+  `Contracts\BrandAddressed` + the `SendsAsBrand` trait are how a notification takes one, and
+  `BrandMailer::notify()` throws rather than dispatch one that does not implement it. Without
+  that, the next notification class somebody adds would send under the host From and nothing
+  would turn red.
+
+**No host dependency, and single-brand behaviour is unchanged.** A brand that declares nothing
+under `settings.mail` resolves the config identity: no `from`, no `mailer` on the message,
+`config('mail.from')` and `config('mail.default')` exactly as before. That is a test of its
+own, and so is the refusal, the contact-not-context rule and the digest's honest count.
+
+`LeadHubNotifier::newLead()`, `assigned()` and `digest()` now return `bool` (whether the mail
+went out) instead of `void`. Callers that ignored the return value are unaffected.
+
+## 2.0.0 — 2026-08-09
+
+### Changed — the licence is now proprietary
+
+This is a paid Marketplace addon. `composer.json` declares `proprietary` and the
+licence file carries the commercial addon licence instead of MIT. Entitlement is
+enforced by the Statamic Marketplace, not by code in this package.
+
+Tags up to and including `v1.12.2` remain MIT. The change takes effect with the next
+release.
+
+## 1.12.2 — 2026-08-05
+
+### Fixed — the breakpoint-less single-column grid utility is no longer used
+
+Every addon in this family ships its own Tailwind build, and `@statamic/cms/tailwind.css`
+routes all of them into the same `addon-utilities` layer. Media queries add no specificity, so
+the bare single-column grid rule from whichever addon stylesheet loads **last** won against an
+earlier addon's `sm:`/`lg:` variant and pinned that addon's grid to one column at every width.
+
+Invisible when this addon is checked alone. It only appeared once two addons of the family were
+installed together, which is the normal case on a real site.
+
+A grid falls back to one column on its own, so the class bought nothing. The overflow guard its
+`minmax(0,1fr)` track provided is preserved explicitly, because the implicit column is `auto`.
+
+## 1.12.1 — 2026-08-04
+
+### Fixed — the addon could not be installed on a current Statamic 6 site
+
+`symfony/yaml` was constrained to `^6.0|^7.0`. Statamic 6.26 on Laravel 13 ships
+`symfony/yaml` v8, so `composer require goldnead/statamic-leadhub` on a site created
+today failed to resolve. Widened to `^6.0|^7.0|^8.0`.
+
+This is not a speculative widening. The addon uses exactly `Yaml::parse`, `Yaml::dump`
+and one `DUMP_*` constant, all unchanged across Symfony 6, 7 and 8, and the suite runs
+green against v8.1.2: 479 passed, 2160 assertions.
+
+It also blocked `goldnead/statamic-marketing`, which requires this package.
+
+## Unreleased
+### Fixed — the webhook-manager integration job tested nothing, then tested nothing loudly
+
+`scripts/test-webhook-manager.sh` staged its throwaway copy with `git archive HEAD`.
+`git archive` applies `export-ignore`, and the `.gitattributes` added in 1.12.0 marks
+`/tests`, `/scripts` and `/phpunit.xml` as export-ignore so the Composer tarball ships code
+only. The copy therefore had no test suite and no Pest config, and the job died on
+`The test directory [%s] does not exist.` It now stages with
+`git ls-files -co --exclude-standard`, which lists tracked and untracked files, honours
+`.gitignore` and is not subject to `export-ignore` — the same way
+`scripts/test-notifications.sh` has always done it. Uncommitted tests are now in the copy too,
+so the run reflects the working tree instead of the last commit.
+
+The script also no longer defaults to a VCS repository and `*@dev`. The addon is on Packagist,
+so the default run resolves the released tag a real installation would get.
+`WEBHOOK_MANAGER_PATH` (local checkout) and `WEBHOOK_MANAGER_REPO` (untagged branch) remain as
+opt-in overrides.
+
+### Fixed — with the job running again, the bridge turned out to register no triggers under test
+
+Once the suite executed, three of the four live tests failed: webhook-manager had only its own
+seven core triggers and none of LeadHub's eighteen. The bridge itself is correct — the test
+harness never gave it the boot attempt a real application does.
+`ServiceProvider::registerWebhookManagerBridge()` defers behind `app->booted()` because the
+`webhook-manager` binding is created in the sibling's `bootAddon()`. In production Statamic's
+`AppServiceProvider` runs `Statamic::runBootedCallbacks()` (which boots the addons) from its own
+`app->booted()` callback, and Laravel walks that queue by index, so LeadHub's appended retry
+runs afterwards and finds the binding. Testbench has no such phase: `bootAddons()` runs from
+`setUp()` after the application is fully booted, so both attempts had already bailed on the
+bound-check. `WebhookManagerTestCase` now performs that retry explicitly, with every one of the
+bridge's own guards still in force. Production behaviour is unchanged; the suite now actually
+covers the both-addons path it was written for.
+
+### Fixed — a segment round-trip assertion that only held on SQLite
+
+`SegmentsTest` compared a persisted rule set with `toBe()`, which is order-sensitive. MySQL's
+native `json` column does not store an object verbatim: it re-emits members sorted by key
+length then bytes, so `{type, field, operator, value}` reads back as
+`{type, field, value, operator}` and the assertion failed on the MySQL leg while passing on
+SQLite.
+
+This is a test defect, not a data defect. Nothing is lost or coerced: `SegmentEvaluator`
+addresses every member by name, neither engine reorders JSON arrays, and no code hashes or
+strictly compares a rule set. Segment membership is identical on both engines. The persisted
+comparison is now canonicalised (recursive `ksort`) and still strict afterwards, so type drift
+— `'30'` where `30` was stored, `''` where `null` was — continues to fail. The in-memory cast
+assertions stay verbatim.
+
+Two tests were added to pin the half that is genuinely not allowed to vary: scalar types, nulls
+and condition order survive persistence, and a reloaded rule set selects exactly the same
+contacts as the one that was written. Both pass on SQLite (eloquent and flat) and on MySQL.
+
 ## 1.12.0 — 2026-08-01
 
 ### Security — the settings screen handed the whole config to the browser
 
-`SettingsController` passed `config('leadhub')` wholesale as an Inertia prop. That object carries `crm.destinations`, which is where CRM tokens and API keys live, and an Inertia prop is rendered into the page as JSON — so anyone who could open LeadHub's settings screen, or read the HTML of a session that had it open, could read those credentials. The controller now passes an allow-list of the seven keys the screen actually uses. A test asserts no secret reaches the response, and a repo-wide search found no second occurrence of the pattern.
+`SettingsController` passed `config('leadhub')` wholesale as an Inertia prop. That object
+carries `crm.destinations`, which is where CRM tokens and API keys live, and an Inertia prop
+is rendered into the page as JSON — so anyone who could open LeadHub's settings screen, or
+read the HTML of a session that had it open, could read those credentials. The controller now
+passes an allowlist of the seven keys the screen actually uses. A test asserts no secret
+reaches the response, and a repo-wide search found no second occurrence of the pattern.
 
-**If you have CRM destination tokens configured, rotate them.** They were exposed to anyone with access to that screen for as long as it has existed. Upgrading closes the leak; it does not un-expose what was already readable. See [CRM connectors](/leadhub/crm-connectors).
+**If you have CRM destination tokens configured, rotate them.** They were exposed to anyone
+with access to that screen for as long as it has existed.
 
 ### Fixed — five deletes asked nothing before deleting
 
-Companies (index and detail), Tasks, Pipelines and Opportunity edit deleted immediately on click, while four other deletes in the same Control Panel asked first. All nine now use the same confirmation modal.
+Companies (index and detail), Tasks, Pipelines and Opportunity edit deleted immediately on
+click, while four other deletes in the same Control Panel asked first. All nine now use the
+same confirmation modal.
 
 ### Fixed — the sync log only ever showed the newest 100 rows
 
-It was a hand-built table with a hardcoded `limit(100)` and no way to reach anything older. It is now a `Listing` in server mode, paginated and searchable, so a 120-row log is fully reachable.
+It was a hand-built table with a hardcoded `limit(100)` and no way to reach anything older.
+It is now a `Listing` in server mode, paginated and searchable, so a 120-row log is fully
+reachable.
 
 ### Fixed — the brand-context floor was wrong
 
-`^1.0` allowed v1.0.0, which predates `RunsForEachBrand`; installing that combination killed the whole suite at boot. Raised to `^1.6`.
+`^1.0` allowed v1.0.0, which predates `RunsForEachBrand`; installing that combination killed
+the whole suite at boot. Raised to `^1.6`.
 
 ### Changed
 
 - `Segments/Edit.vue` used `axios.post` for a preview that only reads. It is a GET now.
 - `Forms/Index.vue` linked to a hardcoded `/cp/forms` instead of resolving the route.
-- 12 hardcoded colours moved onto theme tokens, two hand-rebuilt headers replaced with the real component, and the command palette wired up on four index screens.
-- `laravel/framework` narrowed to `^12.0|^13.0`. The 11.x line is withdrawn behind security advisories and cannot be installed, so declaring support for it was untrue rather than generous. `orchestra/testbench` follows to `^10.0|^11.0`.
-- `tests/Feature/CpWriteRouteAuthorizationTest.php` walks the router and asserts all 38 CP write routes answer 403 to a user without LeadHub permissions. They already did; nothing held that property in place before.
-- Larastan and Pint are wired in as gates; the `repositories` block, which Composer ignores in a dependency anyway, is gone now that brand-context resolves from Packagist.
+- 12 hardcoded colours moved onto theme tokens, two hand-rebuilt headers replaced with the
+  real component, and the command palette wired up on four index screens.
+- `laravel/framework` narrowed to `^12.0|^13.0`. The 11.x line is withdrawn behind security
+  advisories and cannot be installed, so declaring support for it was untrue rather than
+  generous. `orchestra/testbench` follows to `^10.0|^11.0`.
+- `tests/Feature/CpWriteRouteAuthorizationTest.php` walks the router and asserts all 38 CP
+  write routes answer 403 to a user without LeadHub permissions. They already did; nothing
+  held that property in place before.
+- Larastan and Pint are wired in as gates; the `repositories` block, which Composer ignores in
+  a dependency anyway, is gone now that brand-context resolves from Packagist.
 
 ## 1.11.0 — 2026-07-30
 
@@ -1206,7 +1611,7 @@ First stable release — the complete LeadHub feature set on Statamic 6, install
 - **Companies.** Contacts resolve to companies (`CompanyResolver`), giving an organisation-level view over individual leads.
 - **Tasks.** Lightweight task records tied to contacts, managed in the CP.
 - **Pipelines, stages & opportunities.** A Kanban board over configurable pipelines/stages, with opportunities that move between stages; stage transitions are recorded, and `leadhub:followups:fire-due` fires due follow-ups.
-- **Lead assignment + e-mail notifications.** Assign an owner (any user with `view leadhub`) to a contact from the detail page; the change is timelined and the contacts list is filterable by `?mine`, `?assigned_to=<id>` and `?assigned_to=none`. Three opt-in Laravel notifications — new lead, lead assigned, and a scheduled daily follow-up digest (`leadhub:followups:digest`). Gated by `notifications.enabled`; recipients and digest time live under `notifications.*`. Sending is fail-safe.
+- **Lead assignment + e-mail notifications.** Assign an owner (any user with `view leadhub`) to a contact from the detail page; the change is timelined and the contacts list is filterable by `?mine`, `?assigned_to=<id>` and `?assigned_to=none`. Three opt-in Laravel notifications — new lead, lead assigned, and a scheduled daily follow-up digest (`leadhub:followups:digest`). Gated by `features.notifications`; recipients and digest time live under `notifications.*`. Sending is fail-safe.
 - **Marketing attribution.** When `features.attribution` is on, UTM parameters, referrer and landing page are captured from the originating submission onto the contact and shown in an Attribution panel. Field mapping is configurable via `attribution.fields`.
 - **CRM connectors + Sync log.** Push contacts to external systems on create / update / status change via pluggable drivers — `hubspot`, `brevo`, and a generic HMAC-signable `webhook` driver — declared under `crm.destinations` and gated by `features.crm_destinations`. Syncs run on the queue, are retried with backoff, and are recorded both on the contact timeline and in a dedicated **Sync log** CP page. Host apps can register custom drivers via `DestinationManager::extend()`. The flat-file driver degrades gracefully when the log table is absent.
 - **Outbound event surface + Webhook Manager bridge.** The full set of `LeadHub*` lifecycle events is a public integration point. When [goldnead/statamic-webhook-manager](https://github.com/goldnead/statamic-webhook-manager) is installed, LeadHub auto-registers all eleven events as webhook-manager triggers (e.g. `leadhub.status.changed`) and re-emits them as `TriggerDetected` — no glue code. The bridge (`src/Integrations/WebhookManager/`) is fail-safe, loads the addon's classes only when present, and is toggleable via `features.webhook_manager`. Without that addon, the built-in `webhook` CRM driver covers a direct JSON POST.

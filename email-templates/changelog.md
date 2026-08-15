@@ -17,34 +17,168 @@ All notable changes to `statamic-email-templates` are documented here.
 This file was reconstructed from the release tags on 2026-07-30; entries up to
 1.2.1 are written from the tagged commits rather than recorded at the time.
 
-## 1.3.0 — 2026-08-01
+## 2.1.2 — 2026-08-14
 
+### Fixed — das Nachrüsten des Marken-Feldes überschrieb den ganzen Blueprint
+
+Beim Upgrade auf 2.1.x wurde der Blueprint komplett neu geschrieben, statt nur
+das fehlende Feld einzusetzen. Der Blueprint liegt aber in `resources/` der
+Seite und darf dort bearbeitet worden sein — umsortierte Felder, geänderte
+Hinweistexte, ein lesbar benanntes `layout`-Wahlfeld. All das kam als
+Paket-Standard zurück.
+
+Auf dem Hub genau so passiert: aus der Layout-Option
+`FamilyStack (Paper-Craft)` wurde `Familystack`, der aus dem Handle erzeugte
+Name. Nichts fiel aus, niemand bekam eine Meldung, und niemand schaut an dem Tag
+in diese Datei — das ist die Sorte Upgrade, die schlimmer ist als eine, die gar
+nichts tut.
+
+Jetzt wird das Feld an das Ende des ersten Abschnitts **eingesetzt**, der Rest
+der Datei bleibt, wie die Seite ihn hat. Zwei Tests halten das fest: ein
+selbst hinzugefügtes Feld überlebt das Upgrade, und drei Bootvorgänge
+hintereinander erzeugen das Marken-Feld genau einmal.
+
+## 2.1.1 — 2026-08-14
+
+### Fixed — 2.1.0 ging aus einer veralteten Kopie hervor und war noch MIT
+
+Der Marken-Stand aus 2.1.0 wurde auf einem lokalen `main` gebaut, dem die beiden
+Commits aus 2.0.0 fehlten — der Lizenzwechsel auf proprietär und dessen
+CHANGELOG-Eintrag. Der Tag zeigt deshalb auf einen Stand, der `composer.json`
+und die Lizenzdatei noch mit MIT führt.
+
+Am Code des Addons ändert sich zwischen 2.1.0 und 2.1.1 nichts: identische
+Klassen, identische Tests. Was dazukommt, ist der Merge mit 2.0.0.
+
+`v2.1.0` bleibt, wo es ist. Eine veröffentlichte Version ist unveränderlich, und
+Packagist hat das Umhängen des Tags korrekt abgelehnt — der Weg dafür ist eine
+neue Version, nicht ein bewegter Tag.
+
+## 2.1.0 — 2026-08-14
+
+### Added — Vorlagen gehören zu einer Marke
+
+Auf einer Mehrmarken-Installation zeigte die Liste jeder Marke die Vorlagen aller Marken. Auf dem
+Hub hieß das: `?brand=gldnr-studio` und eine Liste FamilyStack-Mails. Der Markenumschalter änderte
+die Kopfzeile und sonst nichts.
+
+Die Ursache war nicht der Filter, sondern das fehlende Feld: dieses Addon kannte keine Marken.
+Statamics Eintragsliste kennt Sites, keine Marken, und ein Slug ist die Adresse, nach der jede
+Automation, jede Kampagne und jeder transaktionale Versand fragt — zwei Marken, die beide eine
+`welcome` verschicken, brauchen zwei `welcome` und keinen Weg zueinander.
+
+Neu ist deshalb ein Pflichtfeld `brand` im Blueprint, ein Filter auf der Liste (über Statamics
+eigenen Haken `EntriesIndexQuery`, nicht über einen umgeschriebenen Controller) und die Auflösung
+per Slug innerhalb der aktuellen Marke.
+
+**Für Einmarken-Installationen ändert sich nichts.** `goldnead/statamic-brand-context` bleibt eine
+weiche Abhängigkeit: kein Composer-Eintrag, kein Klassenname außerhalb von `Support\Brands`, und
+ohne das Paket — oder mit ihm im Einmarken-Betrieb — ist das Blueprint Zeichen für Zeichen das
+alte, ohne Feld, ohne Filter.
+
+**Beim Umstieg** werden Vorlagen ohne Marke beim ersten Booten unter der **Standardmarke**
+abgelegt, dieselbe Antwort, die die Migration von brand-context ihren Tabellen gegeben hat. Das
+ist eine Vermutung, und sie ist auf dem Hub falsch: die sechs FamilyStack-Mails landen unter
+`default`. Sie ohne Marke zu lassen wäre schlimmer — dann fände sie niemand mehr, in keiner Liste
+und bei keinem Versand. Zum Geraderücken:
+
+```
+php please email-templates:assign-brand familystack --from=default --dry-run
+php please email-templates:assign-brand familystack --from=default
+```
+
+Wo kein Versand seine Marke nennen kann (Konsole, Queue-Job außerhalb einer Marke), bleibt die
+Auflösung per Slug ungefiltert statt leer: „kann die Marke nicht nennen" ist nicht dasselbe wie
+„gehört zu keiner".
+
+### Fixed — „Email Templates" stand zweimal in der Seitenleiste
+
+Statamic listet jede Collection unter Content → Collections, und das Addon legt darüber hinaus
+einen eigenen Menüpunkt an. Derselbe Schirm stand also zweimal im Menü, unter zwei Namen, und der
+ungewollte saß zwischen den echten Collections der Seite, als wären E-Mail-Vorlagen Seiten. Der
+automatische Eintrag wird jetzt entfernt.
+
+## 2.0.0 — 2026-08-09
+
+### Changed — the licence is now proprietary
+
+This is a paid Marketplace addon. `composer.json` declares `proprietary` and the
+licence file carries the commercial addon licence instead of MIT. Entitlement is
+enforced by the Statamic Marketplace, not by code in this package.
+
+Tags up to and including `v1.3.1` remain MIT. The change takes effect with the next
+release.
+
+## 1.3.1 — 2026-08-02
+### Fixed — a cold Stache cache broke every read on the templates collection
+
+1.3.0 gave the `et_templates` collection its own entry class, `EmailTemplateEntry`.
+The Stache writes its items into the cache store, and Laravel reads that cache
+back through `unserialize()` with an allowlist of classes
+(`cache.serializable_classes`). Statamic registers its own classes there;
+`EmailTemplateEntry` was not registered, so every cached template entry came back
+as `__PHP_Incomplete_Class` and the first method call on it threw.
+
+The failure was latent: as long as the cache still held entries written by 1.2.x,
+nothing happened. It showed up on the first cold cache after the upgrade, which on
+most sites is a `cache:clear` or a deploy.
+
+How you recognise it:
+
+- `php artisan statamic:stache:warm` aborts with `The script tried to call a
+  method on an incomplete object … "Goldnead\EmailTemplates\Entries\EmailTemplateEntry"`,
+  reported from `Stache/Stores/BasicStore.php`
+- `Statamic\Jobs\HandleEntrySchedule` fails on every scheduler tick and piles up
+  in `failed_jobs`
+- the stack trace runs through the store twice, because the URI index reloads the
+  same item while it is being read
+
+The addon now adds its entry class to `cache.serializable_classes` in `register()`,
+the way Statamic core does for its own classes. Sites that run without an
+allowlist are left alone. After the update one `php artisan cache:clear` is
+enough; no content changes.
+
+## 1.3.0 — 2026-08-01
 ### Fixed — Live Preview no longer needs a fake front-end route
 
-`EmailTemplateEntry` now exists: an entry class that overrides `livePreviewUrl()` so the native
-Live Preview button appears without the collection needing a front-end route. Until now the
-collection was instead given `_email-template-preview/{slug}` — a route that only ever returned
-404 and gave email templates a public URL they should not have.
+`EmailTemplateEntry` now exists. The README has promised it since 1.1: an entry
+class that overrides `livePreviewUrl()` so the native Live Preview button appears
+without the collection needing a front-end route. It was never written, so the
+collection was instead given `_email-template-preview/{slug}` — a route that only
+ever returned 404 and gave email templates a public URL they should not have.
 
-On boot the addon sets `entryClass` and removes that placeholder route from existing collections.
-A route you set yourself is left untouched.
+On boot the addon sets `entryClass` and removes that placeholder route from
+existing collections. A route you set yourself is left untouched.
 
 ### Fixed — a failing `ensure()` is logged instead of swallowed
 
-`ensure()` writes into the site's own content directory on every boot, and its failures were
-caught into an empty block. A permissions problem, corrupt YAML or a blueprint conflict made the
-addon silently do nothing. It now logs a warning with the exception; boot still survives.
+`ensure()` writes into the site's own content directory on every boot, inside a
+`catch (\Throwable)` with an empty body. A permissions problem, corrupt YAML or a
+blueprint conflict made the addon silently do nothing. It now logs a warning with
+the exception; boot still survives.
 
-### Fixed — the test suite actually runs the addon
+### Fixed — the test suite actually ran the addon
 
-The hand-rolled Testbench case never registered the addon manifest, so Statamic's `booted`
-callbacks never fired and commands, routes, views and translations were wired by hand rather than
-the way they are in production. The suite now extends `Statamic\Testing\AddonTestCase`.
+The hand-rolled Testbench case never registered the addon manifest, so Statamic's
+`booted` callbacks never fired: `$commands`, `$routes`, views and translations
+were wired by hand in the test and not at all the way they are in production.
+Three import tests failed with `CommandNotFoundException` and one Live Preview
+test failed outright. The suite now extends `Statamic\Testing\AddonTestCase`.
 
-### Added
+### Added — documentation a buyer can install from
 
-`LICENSE.md` (MIT, matching `composer.json`), `SECURITY.md`, `.gitattributes`, GitHub Actions CI
-across the PHP × Laravel range, Pint and Larastan.
+The README covers requirements, installation, configuration, permissions,
+multi-site, brand scope and blueprint ownership. Plus `LICENSE.md` (MIT, matching
+`composer.json`), `SECURITY.md`, `.gitattributes`, GitHub Actions CI across the
+PHP × Laravel range, Pint and Larastan.
+
+### Major changes
+
+- `EmailTemplateCollectionManager::FRONTEND_ROUTE` is now
+  `LEGACY_FRONTEND_ROUTE` and is only used to recognise and remove the old route.
+- `illuminate/console` and `illuminate/support` are constrained to `^12.40|^13.0`.
+  The previous `^11.0` leg could never resolve — Statamic 6 requires
+  `laravel/framework ^12.40 || ^13.0`.
 
 ## 1.2.1 — 2026-07-24
 

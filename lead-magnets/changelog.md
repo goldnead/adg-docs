@@ -9,118 +9,152 @@ editLink: false
 
 Release notes for `goldnead/statamic-lead-magnets`, as published with the package.
 
-::: warning Nothing is released yet
-The repository has **no git tag** and the package is not on Packagist. Everything below sits under
-`[Unreleased]`.
+Cross-version upgrade notes for the whole suite are in
+[Upgrading](/guide/upgrading).
 
-Composer cannot install this addon from a version constraint until a first version is tagged
-**and** the release workflow succeeds on that tag. The second half matters: the Control Panel
-bundle is not committed, so a tag published without that workflow installs with no CP assets and
-no error.
-:::
+All notable changes to `goldnead/statamic-lead-magnets` are documented here.
+The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/).
 
-Cross-version upgrade notes for the whole suite are in [Upgrading](/guide/upgrading).
+## [2.0.0] — 2026-08-04
 
-## Unreleased
+Grant state moves out of this package and into
+`goldnead/statamic-entitlements`.
+
+**This is a major version, and the reason is the public contract, not the
+internals.** `Goldnead\LeadMagnets\GrantState` was a public class; `$grant->state`
+was a public string property that host code, the Control Panel payload and the
+event payloads all read; `LeadMagnets::revoke()` took one argument. All three
+change. A minor release cannot carry a removed class, a removed column and a new
+required argument, whatever the convenience of pretending otherwise. There is
+also a mandatory data migration, and a version number that did not say so would
+be lying about what an upgrade costs.
+
+### Upgrading
+
+Two steps, in this order. The second schema migration **aborts on purpose**
+while any grant still has no entitlement, so that state cannot be dropped before
+it is carried across:
+
+```bash
+php artisan migrate                              # adds the new columns, then aborts
+php artisan lead-magnets:migrate-grants --dry-run
+php artisan lead-magnets:migrate-grants
+php artisan migrate                              # drops the legacy columns
+```
+
+The command is idempotent, brand-aware and sends no mail. A fresh install sees
+none of it.
+
+Code changes on the consumer side:
+
+| 1.x | 2.0 |
+|---|---|
+| `use Goldnead\LeadMagnets\GrantState;` | `use Goldnead\Entitlements\Enums\EntitlementState;` |
+| `$grant->state` (string) | `$grant->state()` (enum) or `$grant->stateValue()` |
+| `$grant->confirmed_at` | `$grant->confirmedAt()` |
+| `$grant->revoked_at` | `$grant->revokedAt()` |
+| `$grant->expires_at` | `$grant->accessEndsAt()` |
+| `LeadMagnets::revoke($grant)` | `LeadMagnets::revoke($grant, 'why')` |
+
+`request()`, `confirm()`, `findGrant()`, `downloadUrl()` and `reinstate()` are
+unchanged, as are the four domain events, the three public routes, the two
+permissions and every configuration key that existed in 1.x.
+
+### Changed
+
+- **`goldnead/statamic-entitlements` is a hard Composer requirement.** The
+  optional siblings stay optional and the suite still runs with none of them
+  installed; entitlements is not one of them. Access state is not something this
+  addon can half-have.
+- Access state is resolved by entitlements' `StateResolver` and nowhere else.
+  Six states arrive with it; this addon writes three (`pending`, `active`,
+  `revoked`) and reads all six. `expired` is derived from the clock and written
+  by nobody, `scheduled` and `grace_period` have no writer here but are honoured
+  on the download gate — a grant inside its grace period serves, a grant that has
+  not started does not.
+- Revocation now requires a reason, records it, and sets `revoked_at`. In 1.x
+  the column existed, was displayed and was never set by anything.
+- `lead-magnets:sweep` no longer marks grants expired — nothing needs to. It
+  clears confirmation tokens whose window has closed, and the hourly schedule
+  entry stays.
+- The delivery mail is triggered by `EntitlementGranted` rather than by a direct
+  call, and only for a transition out of `pending`. Entitlements sends nothing
+  itself, by design.
+- The Control Panel grant filter offers all six states and the listing renders
+  them.
+- A repeat request after an access window closed opens a **second** entitlement
+  rather than rewriting the first, so an expired period stays on the record.
 
 ### Added
 
-- **Gated resources in the Control Panel**: file or link, with double opt-in switchable per
-  resource.
-- **Public request endpoint** with a honeypot, a throttle and address normalisation.
-- **Confirm-first grant state** (`pending` to `active`), activated by a conditional `UPDATE` so a
-  repeated confirmation activates and delivers exactly once.
-- **Signed, time-boxed download links**, capped by the grant's own lifetime and by an optional
-  download limit.
-- **Download audit**: one row per redemption, with a hashed client address.
-- **Domain events** `ResourceRequested`, `ResourceConfirmed`, `ResourceDelivered` and
-  `ResourceDownloaded`.
-- **Five optional bridges**: leadhub (contact and tags), marketing (mailing-list subscription),
-  email-templates (mail bodies), suppression (send gate) and activity (ledger). Each is inert when
-  its addon is absent.
-- **`lead-magnets:sweep`** and an hourly schedule entry for housekeeping of lapsed grants.
-- **Multi-brand support** through `goldnead/statamic-brand-context`: resources, grants and
-  download rows are brand-scoped, and each session-less public route derives the brand from the
-  value the visitor already carries.
+- `lead-magnets:migrate-grants`, with `--dry-run` and `--brand=`, carrying 1.x
+  grant state into entitlements. Idempotent: a second run changes nothing.
+- `lead_magnet_grants.entitlement_id`, `attempt` and `confirm_expires_at`.
+- `config('lead-magnets.entitlements.source')` and
+  `config('lead-magnets.entitlements.subject_type')`.
+- `Goldnead\LeadMagnets\Support\LeadMagnetSubject`, which turns an address into
+  the entitlements subject reference so a host application can ask
+  `Entitlements::allows()` about it directly.
+- `LeadMagnets::entitlementFor($grant)`.
 
-### Decisions worth recording
+### Removed
 
-**Grant state lives in this package rather than in `goldnead/statamic-entitlements`.** That
-package did not exist when this one was built: it was deferred until a second consumer justified
-designing the shared abstraction, and this addon is meant to be that consumer. Taking the target
-architecture literally would have meant not building this addon at all.
+- `Goldnead\LeadMagnets\GrantState`.
+- The `state`, `confirmed_at`, `revoked_at` and `expires_at` columns on
+  `lead_magnet_grants`, and the model accessors over them.
+- `GrantService::sweepExpired()`, replaced by `sweepExpiredTokens()`.
 
-The cost is two grant models and a migration once entitlements ships. The benefit is that the
-addon exists and supplies the second use case. The alternative, building entitlements first,
-designs the abstraction before the second real case. The full account, including what the local
-model deliberately does not do, is on [Grant state](/lead-magnets/grant-state).
+### Fixed
 
-[Entitlements](/entitlements/) has since been built. The bridge between the two has not, and this
-package still names it in prose only.
+- The confirmation deadline can no longer become the access expiry. In 1.0.0 the
+  two shared one column and activation had to overwrite one with the other;
+  without that single line every confirmed access would have expired silently 72
+  hours later and surfaced weeks on as "the download link stopped working". They
+  are now two columns on two different rows, so there is nothing to overwrite and
+  no overwrite to forget. `tests/Feature/ActivationWindowTest.php` asserts the
+  behaviour rather than the arrangement.
+- Activation no longer decides the winner of a confirmation race from an
+  affected-row count that MySQL and SQLite disagree about. MySQL reports zero
+  changed rows when an UPDATE writes a value a column already holds, which is the
+  common case here (`NULL` over `NULL` for a resource with no lifetime); the
+  winner is decided by the status change instead.
+- Deleting a resource now removes the entitlements this addon wrote for it,
+  including those of earlier access periods. They would otherwise sit in the
+  shared listing as access to a product nothing answers to.
 
-**Idempotency is one statement in the database, not a check in PHP.** `activate()` is a
-conditional `UPDATE … WHERE state = 'pending'` with an affected-row check. It holds against a
-double-clicked link, a mail scanner prefetching the URL, a queue retry and two web workers at
-once, because there is no window between reading the state and writing it.
+---
 
-**`expires_at` means two different things, and activation switches the clock.** While pending it
-is the confirmation window; once active it is the access lifetime. Leaving the confirmation
-deadline in place would have expired every grant three days after it was confirmed, which surfaces
-weeks later as "the download link stopped working".
+## [1.0.0] — 2026-08-02
 
-**Access is decided by the timestamp, not by the state column.** `hasLapsed()` reads `expires_at`,
-so no access decision depends on the sweep having run. The sweep is housekeeping.
+### Added
 
-**Revocation defeats a valid signature.** The signature proves the link was issued; whether the
-access still stands is a separate question the controller asks after the middleware has passed.
-
-**Resource handles are globally unique, not per brand.** The public request endpoint is opened
-with no session, so the handle is the only thing the visitor carries and the brand is derived from
-it. That derivation is safe exactly as long as a handle addresses one resource across all brands.
-The cost is real: two brands cannot both own a `warmup-routine`. Marketing made the same trade for
-list handles.
-
-**No foreign keys anywhere.** `contact_id` points at LeadHub, which may not be installed, and a
-foreign key to a table that may not exist is not a constraint, it is an install failure.
-
-**A resource request is not a mailing-list opt-in.** The Marketing bridge subscribes the confirmed
-address to a named list, and it deliberately does not borrow Marketing's double opt-in to cover the
-file request. The confirmation this package sends is consent to receive one file.
-
-**Never `method_exists()` on a facade class.** Every bridge probes `getFacadeRoot()` instead. A
-facade forwards through `__callStatic` and declares none of the methods it forwards, which is why
-a whole set of LeadHub bridges elsewhere in the suite silently did nothing.
-
-### Not in v1
-
-Account-based access instead of a download, which needs identity decisions this package does not
-make. Follow-up sequences, which belong in Marketing. Segments. Analytics conversion events.
-
-There are also no Antlers tags, no fieldtypes and no widgets. The request form is three fields and
-a documented endpoint.
-
-`goldnead/statamic-marketing` was deliberately **not modified** while this was built. Not out of
-production risk, but out of scope: this addon has to work without Marketing, and the only way to
-prove that is to leave Marketing alone. The coupling is read-only, through existing public
-contracts.
+- Gated resources in the Control Panel: file or link, with double opt-in
+  switchable per resource.
+- Public request endpoint with honeypot, throttle and address normalisation.
+- Confirm-first grant state (`pending` → `active`), activated by a conditional
+  UPDATE so a repeated confirmation activates and delivers exactly once.
+- Signed, time-boxed download links, capped by the grant's own lifetime and by
+  an optional download limit.
+- Download audit: one row per redemption, with a hashed client address.
+- Domain events `ResourceRequested`, `ResourceConfirmed`, `ResourceDelivered`
+  and `ResourceDownloaded`.
+- Optional bridges to leadhub (contact and tags), marketing (mailing-list
+  subscription), email-templates (mail bodies), suppression (send gate) and
+  activity (ledger). Each is inert when its addon is absent.
+- `lead-magnets:sweep` console command and an hourly schedule entry for
+  housekeeping of lapsed grants.
+- Multi-brand support through `goldnead/statamic-brand-context`: resources,
+  grants and download rows are brand-scoped, and each session-less public route
+  derives the brand from the value the visitor already carries. Resource handles
+  are unique across all brands, which is what makes that derivation safe.
 
 ### Notes
 
-- The Control Panel bundle is not committed. It is attached to each GitHub release by the release
-  workflow and fetched at install time by `pixelfear/composer-dist-plugin`.
-- Suite: 12 test files, green against SQLite and MySQL. Two of them exist because the scope spec
-  named them: `ConfirmationIdempotencyTest` for the repeated confirmation, and
-  `DownloadSecurityTest` for the expired and tampered link, fourteen cases.
-- `NoSiblingsInstalledTest` runs the full request, confirm and download flow in a process where
-  **none** of the five sibling classes exists, because none is in `require` or `require-dev`. The
-  absence is structural rather than mocked.
-- `release.versioning` is the only suppressed `addon-lint` rule, and only for the pre-release
-  window.
-- `release.screenshots` is not met. The studio playground lives on a path that is unreadable on
-  the build machine.
-- Two docblocks name test files that do not exist (`BridgeBootOrderTest.php`,
-  `CpWriteRouteAuthorizationTest.php`). The assertions they describe are real and live in
-  `BridgeTest.php` and `CpAuthorizationTest.php`.
-- A Vitest suite is declared in `vite.config.js` and `package.json`, and `tests/js/` does not
-  exist. The three Vue pages have no unit coverage and are exercised only through Inertia response
-  assertions.
+- The Control Panel bundle is not committed. It is attached to each GitHub
+  release by `.github/workflows/release-dist.yml` and fetched at install time
+  by `pixelfear/composer-dist-plugin` (`extra.download-dist`). A tag published
+  without that workflow succeeding installs with no CP assets.
+- Grant state lives in this package rather than in
+  `goldnead/statamic-entitlements`, which does not exist yet. The reasoning and
+  the cost are in the README under "Grant state".

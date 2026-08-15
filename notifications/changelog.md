@@ -12,35 +12,206 @@ Release notes for `goldnead/statamic-notifications`, as published with the packa
 Cross-version upgrade notes for the whole suite are in
 [Upgrading](/guide/upgrading).
 
-## 1.2.0 — 2026-08-01
+## 1.6.0 — 2026-08-12
+### Changed
 
+- **The five sender-identity classes moved to `goldnead/statamic-brand-context` 1.8.0**, which is
+  now required at `^1.8`. They were four byte-identical copies with four namespaces — this package,
+  marketing, preference-center and automations each grew their own on 12.08.2026 — and copies drift:
+  by the evening the marketing one had stopped refusing a transport without an address. Which
+  address a brand sends under is a property of the brand, so the rule lives with the brand.
+
+  Behaviour is unchanged here, down to the log lines. `Goldnead\Notifications\Contracts\SenderIdentityResolver`
+  and `Sending\BrandMailer` stay as this package's own extension points, so a host can still answer
+  "who does a notification come from" separately from "who does marketing post come from".
+  `Sending\SenderIdentity` and `Sending\SaidRecently` are gone from this namespace; use the
+  `Goldnead\BrandContext\Sending\` versions.
+
+## 1.5.0 — 2026-08-12
+
+### Fixed — every brand sent as whoever the process had sent as first
+
+`MailChannel` and `notifications:send-digests` both ended in `Mail::to(...)->send(...)`. That is
+the process-wide default mailer with the process-wide `mail.from`, identically for every brand.
+A host serving several brands out of one queue worker — or one digest run walking its brand list —
+therefore delivered the second brand's mail under the first brand's name and address, and a relay
+that verifies sending domains per account (Scaleway TEM, Postmark, SES) answers that by refusing
+the message or rewriting the From to whichever identity the shared account owns. Either way the
+recipient hears from the wrong company, and nothing turns red.
+
+**Who a notification goes out as is now resolved per message, from values, and never from config.**
+`Contracts\SenderIdentityResolver` answers "which mailer, which From, which locale for brand N";
+`Sending\BrandMailer` is the single door both send paths leave through, and it puts the answer on
+the message (`Mailable::from()`, `Mail::mailer($name)`).
+
+Not on the config, deliberately: Laravel reads `mail.from` the first time a mailer name is resolved,
+burns it into that mailer instance via `alwaysFrom()`, and caches the instance in the `mail.manager`
+singleton. A scoped `Config::set` therefore escapes its own `finally` — whichever brand sends first
+leaves its address standing for the rest of the process. That is the same bug one layer down, and
+it is why nothing here writes to `mail.*`.
+
+### Fixed — the digest could burn a recipient's window without sending anything
+
+`DigestBuilder::markSent()` stamps `digested_at` on every collected item *before* the mail leaves.
+A brand that cannot produce a usable sender identity would have had each recipient's whole window
+marked as delivered with nothing delivered, and the items would never have resurfaced. The check
+now runs in front of the recipient loop: the brand is skipped, nothing is collected, nothing is
+stamped, and everything stays pending until the settings are fixed.
+
+### Changed — a brand that declares a broken mail identity sends nothing
+
+Read from `brands.settings.mail`:
+
+| key | meaning |
+| --- | --- |
+| `from_address` | required once `mail` is present at all |
+| `from_name` | defaults to the brand name |
+| `mailer` | a mailer from `config/mail.php` |
+| `locale` | the language its mail is written in |
+
+A brand that declares `mail` without `from_address`, or names a `mailer` that `config/mail.php`
+does not define, now sends **nothing** and says so at error level (throttled per brand, so a
+fan-out cannot bury it). The alternative was delivering under the host-wide From, which on a
+multi-brand host is somebody else's identity — quietly.
+
+**A single-brand install is unchanged, and that is covered by tests rather than intent.** So is a
+multi-brand install whose brands carry no `settings.mail`: no brand, or no mail settings, resolves
+to the config identity and the send is byte for byte the one it always was. A host that keeps
+sender identities somewhere else rebinds `SenderIdentityResolver` in its own provider instead of
+patching this package.
+
+## 1.4.1 — 2026-08-09
+
+### Fixed — the sibling constraint excluded the new majors
+
+`goldnead/statamic-leadhub` was pinned to `^1.4` to the 1.x line. LeadHub 2.0.0 and Marketing 2.0.0 carry no code change over 1.12.2
+and 1.13.0 — that major is the licence switch alone. A site running both this package and an
+updated sibling could not resolve its dependencies at all. The constraints now accept both
+lines.
+
+## 1.4.0 — 2026-08-05
+
+### Added — Wegweiser zu den Mail-Regeln in `statamic-automations`
+
+Transaktionale Mail-Regeln („wenn ein Formular abgeschickt wird, sende die Dankesmail") werden im
+Addon `goldnead/statamic-automations` konfiguriert. Gesucht werden sie zuerst hier, im Addon, das
+Notifications heißt. Deshalb gibt es jetzt einen Nav-Eintrag **Benachrichtigungen → Mail-Regeln**,
+der dorthin zeigt.
+
+Der Eintrag erscheint nur, wenn zwei Bedingungen gelten (`Support\AutomationRules`): das Addon ist
+installiert, **und** die installierte Version hat den Bildschirm auch (er kam mit automations 1.11).
+Ohne die zweite Prüfung bekäme ein älterer Stand einen Nav-Eintrag auf einen 404 — schlechter als
+gar keiner, weil er wie ein kaputtes Feature aussieht statt wie ein fehlendes.
+
+**Ein Wegweiser, keine zweite Implementierung.** Dieses Addon bekommt keinen eigenen Weg von einem
+Ereignis zu einer Mail. Könnten beide Addons das, hätte „warum kam diese Mail" zwei mögliche
+Antworten und von außen keine Möglichkeit, sie zu unterscheiden. Ein Test hält das fest: er schlägt
+fehl, sobald hier ein Event-Listener auftaucht.
+
+## 1.3.0 — 2026-08-04
+### Changed — the two Control Panel screens are Inertia pages with a real build
+
+Both CP screens moved off Blade onto Vue single-file components rendered through
+Inertia, the way core and the eight sibling addons do it. `resources/views/cp/`
+is gone; `resources/js/pages/Index.vue` and `resources/js/pages/Show.vue` take
+its place, registered in `resources/js/cp.js` and served by
+`Inertia::render('notifications::Index')` and `…::Show`.
+
+Nothing about the screens changed. Same columns in the same order, same three
+filters, same sort default, same saved views and pagination, same detail fields,
+same routes and route names. The listing endpoint at `notifications.listing` is
+untouched — it was always the listing component's contract rather than a view
+concern.
+
+What the move buys, beyond ending the last Blade-shell exception in the family:
+
+- **Inertia navigation between the two screens** instead of a full page load
+  each way, and shared props.
+- **The mustache hazard is gone.** While the pages were Blade, core compiled
+  them into a Vue template, so a `&#123;&#123; … }}` in a producer-supplied message was a
+  compile error that silently stopped the screen from rendering. Every value had
+  to be pushed into a static attribute to avoid it. Props are data and are never
+  compiled; the rule and the gymnastics it forced both retire.
+- **The detail page sends only what it shows.** `brand_id`, the recipient and
+  actor type discriminators and anything a later migration adds no longer travel
+  to the browser just because the model was handed over whole.
+- **The way back to the index is in the command palette**, like every core
+  page-level action.
+
+The build is the standard one: `vite.config.js`, `package.json`,
+`resources/css/cp.css` importing `@statamic/cms/tailwind.css`, and the `$vite`
+property on the service provider — which is the only place Statamic 6 reads it
+from; `extra.statamic.vite` in `composer.json` is kept in sync but is not
+consulted. `resources/dist/build` is committed, because a Marketplace or
+Composer install never runs npm, and `npm run build:check` plus a `build-check`
+CI job fail if the committed bundle drifts from source.
+
+Tests: 19 Vitest component tests for the two pages, and the PHP CP suite now
+asserts the Inertia component name and props rather than rendered HTML. It also
+pins that the addon's `notifications::cp.*` translation keys reach the Control
+Panel's Javascript translator — without that registration the screens would
+render raw keys and nothing else would fail.
+
+`resources/views` stays published and `$viewNamespace` stays set: the mail
+templates (`notifications::mail.notification`, `notifications::mail.digest`) are
+Blade and remain so.
+
+## 1.2.0 — 2026-08-01
 ### Fixed — the Control Panel was below the standard the rest of the package holds
 
-`resources/views/cp/_styles.blade.php` is gone. Its header comment justified 112 lines of substitute CSS with the claim that `mb-4`, `flex` and `gap-3` do not exist at runtime. All three ship in `statamic/cms` v6.26.0's CP bundle. The class the views actually relied on is `.card`, and *that* one has been hollowed out to nothing but `border-radius` in v6 — which is why every panel rendered as a transparent box. A correct observation ("the screen looks wrong") led to a wrong diagnosis and then to a hand-built HTML table propped up by unowned CSS.
+`resources/views/cp/_styles.blade.php` is gone. Its header comment justified 112 lines of substitute
+CSS with the claim that `mb-4`, `flex` and `gap-3` do not exist at runtime. All three ship in
+`statamic/cms` v6.26.0's CP bundle. The class the views actually relied on is `.card`, and *that* one
+has been hollowed out to nothing but `border-radius` in v6 — which is why every panel rendered as a
+transparent box. A correct observation ("the screen looks wrong") led to a wrong diagnosis and then
+to a hand-built HTML table propped up by unowned CSS.
 
-Both screens are now core components. The listing is Statamic's own `<ui-listing>`, so it brings search, sortable columns, saved views, column customisation, pagination and a native filter stack — type, read state and recipient — instead of three text inputs and a submit button. The detail screen is `<ui-header>`, `<ui-panel>`, `<ui-card>` and `<ui-table>`. No Vite build was introduced.
+Both screens are now core components. The listing is Statamic's own `<ui-listing>`, so it brings
+search, sortable columns, saved views, column customisation, pagination and a native filter stack —
+type, read state and recipient — instead of three text inputs and a submit button. The detail screen
+is `<ui-header>`, `<ui-panel>`, `<ui-card>` and `<ui-table>`. No Vite build was introduced: core's
+documented non-Inertia path compiles the yielded Blade into a Vue template, where every `<ui-*>`
+component resolves.
 
-One hazard comes with that path and is worth stating, because nothing looks wrong when it bites: the page's Blade *is* a Vue template, so producer-supplied text containing a mustache would be a compile error and the screen would simply not render. Every database value now goes into a static attribute rather than element text, and a test holds that in place.
+One hazard comes with that path and is worth stating, because nothing looks wrong when it bites: the
+page's Blade *is* a Vue template, so producer-supplied text containing a mustache would be a compile
+error and the screen would simply not render. Every database value now goes into a static attribute
+rather than element text, and a test holds that in place.
 
-Also: the nav icon is `->icon('bell')` instead of 300 characters of inline SVG, `message`, `link`, `actor` and `dedupe_key` are translated like every neighbouring label, and the CP test count went from 5 to 18 — permissions per route, filters alone and combined, search, a sort whitelist that rejects injected input, pagination, column visibility, and brand isolation for the listing as well as the detail page.
+Also: the nav icon is `->icon('bell')` instead of 300 characters of inline SVG, `message`, `link`,
+`actor` and `dedupe_key` are translated like every neighbouring label, and the CP test count went
+from 5 to 18 — permissions per route, filters alone and combined, search, a sort whitelist that
+rejects injected input, pagination, column visibility, and brand isolation for the listing as well
+as the detail page.
 
 ### Fixed — config keys the code reads but the config file never shipped
 
-`notifications.cp.enabled` and `notifications.sources.leadhub` were read by the service provider and absent from `config/notifications.php`, so publishing the config gave you no way to switch either off. Both are in the file now, with `NOTIFICATIONS_CP_ENABLED` and `NOTIFICATIONS_SOURCE_LEADHUB`.
+`notifications.cp.enabled` and `notifications.sources.leadhub` were read by the service provider and
+absent from `config/notifications.php`, so publishing the config gave you no way to switch either
+off. Both are in the file now, with `NOTIFICATIONS_CP_ENABLED` and `NOTIFICATIONS_SOURCE_LEADHUB`.
 
 ### Changed — version constraints that were never installable
 
-`laravel/framework` narrows from `^11.0|^12.0|^13.0` to `^12.0|^13.0` and `php` from `^8.2` to `^8.3`. Neither is a reduction in what works: `statamic/cms ^6.0` requires `laravel/framework ^12.40 || ^13.0`, every Laravel 11 release up to v11.55.0 is covered by security advisories Composer refuses to install, and Laravel 12.40+ requires PHP 8.3. `orchestra/testbench` follows to `^10|^11`.
-
-**This makes Notifications the only package in the suite that requires PHP 8.3.** An 8.2 host can install the rest of the family and not this one.
+`laravel/framework` narrows from `^11.0|^12.0|^13.0` to `^12.0|^13.0` and `php` from `^8.2` to
+`^8.3`. Neither is a reduction in what works: `statamic/cms ^6.0` requires `laravel/framework
+^12.40 || ^13.0`, every Laravel 11 release up to v11.55.0 is covered by security advisories Composer
+refuses to install, and Laravel 12.40+ requires PHP 8.3. `orchestra/testbench` follows to `^10|^11`.
 
 ### Changed — CI now runs what the README says matters
 
-`phpunit.mysql.xml` shipped in every release and no workflow had ever executed it, while the README called that run the thing standing between us and a repeat of v1.0.4's index defect. It is a job now. The matrix also crosses PHP 8.3/8.4 with Laravel 12/13 and `prefer-lowest`/`prefer-stable` instead of testing PHP alone, and Pint, PHPStan (level 5, baselined) and addon-lint are gates.
+`phpunit.mysql.xml` shipped in every release and no workflow had ever executed it, while the README
+called that run the thing standing between us and a repeat of v1.0.4's index defect. It is a job
+now. The matrix also crosses PHP 8.3/8.4 with Laravel 12/13 and `prefer-lowest`/`prefer-stable`
+instead of testing PHP alone, and Pint, PHPStan (level 5, baselined) and addon-lint are gates.
 
 ### Changed — the test bed uses Statamic's own harness
 
-`tests/TestCase.php` extends `Statamic\Testing\AddonTestCase`. The hand-rolled Testbench setup had no addon manifest, so `getAddon()` returned null and the provider's entire boot chain never ran.
+`tests/TestCase.php` extends `Statamic\Testing\AddonTestCase`. The hand-rolled Testbench setup had
+no addon manifest, so `getAddon()` returned null and the provider's entire boot chain never ran;
+`bootAddon()` and the CP routes were invoked by hand, and the CP tests therefore ran with plain
+`web` middleware rather than the real CP stack. They now go through it, which is what surfaced that
+a denied operator sees Statamic's redirect rather than a 403.
+
 
 ## 1.1.0 — 2026-07-30
 

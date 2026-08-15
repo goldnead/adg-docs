@@ -69,6 +69,52 @@ writes a timeline entry on it. Leave it on: the CRM timeline then shows that an
 automation did this, not a person, which is the difference between a useful history and a
 confusing one.
 
+### The LeadHub timeline
+
+Since 2.5.0 the **mails** an automation sends land there too. The contact screen answers "what has
+this person had from us"; campaigns report themselves from Marketing's side, and the mails an
+automation sends — often the very first ones anybody receives — were the one part of that answer
+missing.
+
+```php
+'timeline' => [
+    'enabled' => true,
+],
+```
+
+::: warning What the entry cannot say, it says itself
+An automation's mail goes out **through the mailer, not through Marketing's tracked send path**.
+There is no pixel and no rewritten link, so there is no open and no click to report.
+
+One entry, "sent", with that note attached. A timeline that stayed quiet about it would read as
+"never opened", which is a different and untrue thing.
+:::
+
+Four properties worth knowing:
+
+- **Only for contacts that already exist.** An automation may legitimately mail somebody who is not
+  in the CRM, and creating a record here would be the automation quietly filing people.
+- **Never fatal.** It hangs off the end of a send that has already succeeded. A CRM mid-upgrade must
+  not turn a delivered mail into a failed step.
+- **Test runs write nothing.** Not because the action happens to withhold the address in test mode,
+  but checked explicitly on the run: `test_mode.send_real_emails` is a shipped, supported option, and
+  with it on the success path hands back a real recipient again.
+- **`marketing.send_email` stays out of it** and reports itself from Marketing's side, or every such
+  mail would appear on the contact twice.
+
+Everything goes through `Integrations\LeadHub\LeadHubAdapter`, which resolves LeadHub out of the
+container and answers "not installed" without an error. No class name from the sibling addon appears
+anywhere on this path — that is what keeps the integration optional.
+
+The entry type is `automations.mail_sent`, deduplicated per run and step.
+
+The address is read out of whatever the node's recipient field held, so `Lea <lea@example.test>`
+resolves to a mailbox the CRM can look up. Without that the entry would simply never appear —
+silently — for every automation whose recipient is written with a display name.
+
+A step that mails several people writes the entry for the **first** address only. The alternative is
+a CRM lookup per recipient on a path that hangs off every send, and multi-recipient steps are rare.
+
 ::: tip Two namespaces that have cost real time
 LeadHub's PSR-4 namespace is `Goldnead\Leadhub` — **lowercase "hub"** — even though the
 brand is "LeadHub". And this addon's own namespace is `Goldnead\StatamicAutomations`, not

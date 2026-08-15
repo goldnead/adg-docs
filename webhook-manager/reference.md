@@ -141,8 +141,17 @@ Namespace `Goldnead\WebhookManager\Events`.
 | `manage inbound endpoints` | inbound CRUD |
 | `manage webhook rules` | the rule builder |
 | `manage webhook templates` | template CRUD |
-| `manage webhook settings` | settings, including the storage driver |
+| `manage webhook settings` | the settings screen, its 32 editable fields and the storage driver |
 | `use webhook debug tools` | the debug utilities |
+
+Eleven, and that is the complete list.
+
+`manage webhook settings` guards three endpoints in the Control Panel: `GET` on the settings
+screen, `PATCH` on the same path to save the
+[editable fields](/webhook-manager/configuration#settings-in-the-control-panel), and `POST`
+on `settings/storage` to switch the driver. The read is gated on the same permission as the
+write on purpose — the screen prints the resolved configuration, so there is nothing weaker
+to grant.
 
 ## Configuration
 
@@ -237,6 +246,7 @@ Node 18+ only if you rebuild the CP bundle from a clone.
 | Inbound rate limit | per endpoint, first step of the pipeline; shared across the canonical and legacy prefixes |
 | Failure isolation | a delivery failure never breaks the event that triggered it |
 | Config storage | eloquent or flat; a CP choice outranks config and env |
+| Settings overrides | 32 keys, one row per changed key in `webhook_settings`, applied over the config at boot; a value reset to the file's default deletes its row. Not brand-scoped |
 | Telemetry storage | always the database |
 | Circuit breaker | disables after 10 consecutive terminal failures; never re-enables itself |
 | Masking | applies in the CP; unmasking is a separate permission |

@@ -26,9 +26,94 @@ read it.
 | Score change | With `features.scoring` and `scoring.timeline` on |
 | Source event | Through `LeadHub::ingest()` |
 | Sync attempt | A CRM connector push, success or failure |
+| Marketing and automation mail | From the sibling addons — see [below](#what-the-sibling-addons-write) |
 
 Timeline entries are deduplicated by `dedupe_key`, which is unique **per brand**. That is
 what makes ingestion idempotent: a producer may be as noisy as it likes.
+
+## What the sibling addons write
+
+LeadHub requires nobody, and that direction does not change here: the siblings write
+**through the ingestion API**, with their own event keys. LeadHub renders whatever it is
+handed and knows none of them by name.
+
+[Marketing](/marketing/) **2.8.0** records every mail against the contact it went to:
+
+| Key | Written when |
+| --- | --- |
+| `marketing.mail_sent` | The message left |
+| `marketing.mail_opened` | An open that looks like a person |
+| `marketing.mail_prefetched` | An open that looks like a mail client loading images |
+| `marketing.mail_clicked` | A tracked link was clicked |
+| `marketing.mail_bounced` | The address did not accept it |
+| `marketing.mail_complained` | It was marked as spam |
+
+A prefetch is filed separately rather than counted as an open, because a mail client that
+loads images on delivery has told you nothing about a reader. See
+[Tracking](/marketing/tracking). Both the whole feature and the individual types are
+switchable there.
+
+[Automations](/automations/) **2.5.0** records one key, `automations.mail_sent`, for mails
+sent by its own send-email node. Mails a marketing campaign sends through an automation are
+left to marketing, so nothing is reported twice, and a test run writes nothing at all.
+
+::: warning A tracking pixel never creates a contact
+Both recorders look the address up first and return without writing when there is none.
+`LeadHub::ingest()` would otherwise create the contact, and an open pixel is exactly the
+wrong authority for that: a mail sent to an address nobody ever added to the CRM would
+conjure a record out of a fetched image.
+
+Consent is the other case and behaves differently on purpose. A **subscription** — somebody
+confirming they want the mail — does create or update a contact, and writes
+`marketing.subscribed` / `marketing.unsubscribed`.
+:::
+
+### Readable detail lines
+
+An entry may carry `payload.detail`: an array of label and value pairs the source wrote
+because it knows what its own event means. The contact screen renders them under the entry
+as of **2.2.1** — before that they sat in the database and nothing showed them.
+
+```php
+'detail' => [
+    ['label' => 'Subject', 'value' => 'The choir letter, issue 14'],
+    ['label' => 'Campaign', 'value' => 'chorleiter-brief'],
+],
+```
+
+Malformed lines are dropped rather than trusted, so a bad contributor costs a missing line
+and not a broken page. An entry without details stays exactly as narrow as before, and the
+raw payload remains available underneath either way.
+
+The convention is LeadHub's own and names no sibling: anything that ingests may use it.
+
+### Panels, for what is not an event
+
+A sibling that wants to show **state** rather than a dated entry registers a panel instead
+(**2.2.0**):
+
+```php
+LeadHub::registerContactPanel('marketing.subscriptions', function ($contact) {
+    return [
+        'heading' => __('Mailing lists'),
+        'empty' => __('Not on any mailing list.'),
+        'rows' => [[
+            'label' => 'The choir letter',
+            'meta' => 'since March',
+            'badge' => ['text' => 'Subscribed', 'color' => 'green'],
+        ]],
+    ];
+});
+```
+
+Headings and rows of label, badge and meta — deliberately not a component name or a slot,
+because a registry that accepted markup would make every contributor's Vue build a
+dependency of the contact screen. A provider that throws is logged and left out rather than
+propagated, and one that returns nothing is not shown, since "nothing to say" is an answer
+and an empty box is not.
+
+Marketing 2.6.0 is the first user: the mailing lists a contact is on, with status and since
+when.
 
 ## The event surface
 

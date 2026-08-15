@@ -12,6 +12,880 @@ Release notes for `goldnead/statamic-automations`, as published with the package
 Cross-version upgrade notes for the whole suite are in
 [Upgrading](/guide/upgrading).
 
+## 2.6.1 — 2026-08-15
+
+### Fixed — `config:cache` hätte die Einstellungen eingefroren
+
+`config:cache` bootet die Anwendung vollständig und schreibt danach den
+aufgelösten Config-Baum auf die Platte. Die gespeicherten Overrides landeten
+mit darin, und ein eingebackener Override überlebt die Zeile, aus der er
+stammt: eine gelöschte Einstellung hätte bis zum nächsten `config:clear`
+weitergewirkt. Schlimmer, der nächste Boot hätte die eingebackene Datei als
+„ausgelieferten Default" gelesen — ein auf den Dateiwert zurückgesetzter Wert
+wäre dann als Zeile gespeichert statt gelöscht worden, also genau die
+Eigenschaft, die diese Klasse verspricht.
+
+Während des Cache-Baus wird jetzt nichts mehr angewendet. Die gecachte Datei
+trägt die Dateiwerte, und jeder Prozess legt seine Overrides beim eigenen Boot
+darüber.
+
+Dieselbe Falle steckte in den beiden Addons, die diese Bauform übernommen
+haben; dort wurde sie am 15.08. behoben. **Hier, im Original, war sie noch
+offen** — gefunden beim Schreiben des README gegen den Code, nicht von einem
+Test. Jetzt hält ein Test sie fest, der ohne den Fix umfällt.
+
+### Docs — das README beschreibt wieder, was das Addon tut
+
+Ergänzt: die Aktivitätsansicht, die Mails einer Automation auf der
+Kontakt-Zeitleiste, die im Control Panel bearbeitbaren Einstellungen (seit
+v2.3.0 undokumentiert), `timeline.enabled` und
+`send_email.refuse_marketing_recipients` in der Config-Tabelle, und ein erster
+Datenschutz-Abschnitt (`subject_key`, Lauf-Kontexte, Zeitleisten-Einträge, und
+wie man das löscht).
+
+Korrigiert: die Zeile zu `runs.prune_after_days` sagte, `null` schalte das
+Aufräumen ab, ohne zu erwähnen, dass das Feld im Control Panel bewusst nicht
+unter 1 geht. Die feste Angabe „408 PHP tests / 141 JS tests" ist raus; eine
+Zahl im README ist Wartungsschuld.
+
+## 2.6.0 — 2026-08-15
+
+### Added — die Aktivitätsansicht
+
+Eine Automation zeigte, ob sie läuft, aber nicht, **was sie tut**. `RunStats`
+lieferte fünf Zahlen für das Ganze, `automation_node_runs` wurde nirgends
+ausgewertet, und einen Zeitraumfilter gab es überhaupt nicht.
+
+Der Builder bekommt eine dritte Ansicht neben Flow und Mails:
+
+- **Zahlen am Knoten**, direkt auf der Leinwand. Ein Knoten ohne Läufe zeigt
+  nichts, keine Null — eine frische Automation soll nicht aussehen wie eine
+  kaputte.
+- **Trichter mit Zeitraum** (7/30/90 Tage oder alles), der zeigt, **wo** Leute
+  hängenbleiben, nicht nur wie viele.
+- **Protokoll** mit Filtern nach Schritt, Ergebnis und Zeitraum, echt
+  serverseitig paginiert, dazu ein CSV-Export derselben Auswahl.
+- **Kontakte im Ablauf**: wer gerade drinsteckt, seit wann und an welchem
+  Schritt. Läufe ohne Person (ein geplanter Lauf, ein Webhook ohne Adresse)
+  werden beziffert statt still geschluckt.
+
+Dafür tragen `automation_node_runs` jetzt `automation_uuid` und `is_test`. Beide
+stehen auf dem Elternlauf und werden bei dessen Erzeugung entschieden; kopiert
+sind sie, weil `is_test` im **Filter** gebraucht wird, nicht zum Beschriften —
+sonst bräuchte jede Kennzahl weiterhin den JOIN. Derselbe Grund, aus dem
+`brand_id` auf den Kindtabellen liegt.
+
+### Fixed — die Zahl am Knoten zählte Durchläufe, nicht Menschen
+
+Der Trichter beschriftete `COUNT(*)` über Knotenläufe als „so viele haben
+diesen Schritt erreicht". Eine Schleife schreibt aber pro Durchlauf eine Zeile
+je Körperknoten, und ein Wait-Until wird beim Fortsetzen erneut geschrieben. Bei
+zehn Schleifendurchläufen meldete der Körperknoten das Zehnfache — und weil die
+Balken gegen den belebtesten Knoten gemessen werden, schrumpften alle anderen
+Schritte auf einen Bruchteil. Die Ansicht zeichnete einen Absturz genau dort, wo
+keiner war, also bei der einen Frage, für die es sie gibt.
+
+Gezählt werden jetzt eigene Läufe (`COUNT(DISTINCT automation_run_id)`), und
+zwar je Knoten statt je Knoten und Ergebnis: ein Lauf, der einen Schritt erst
+verpatzt und beim zweiten Versuch schafft, ist einmal dort angekommen.
+
+Nachgemessen an echten Daten: ein Schritt mit vier Zeilen für eine Person.
+
+### Fixed — der Export
+
+- **Zellen sind sicher zu öffnen.** `subject` kommt aus dem Trigger-Kontext, den
+  ein Fremder über ein Formular oder einen Webhook füllt; der Einschreibungs-
+  Filter trimmt und kleinschreibt ihn, mehr nicht. Excel führt eine Zelle mit
+  führendem `=` beim Öffnen aus, bei der Person mit `view automation runs`.
+- **Backslashes bleiben stehen.** PHPs Standard-Escape gehört nicht zu RFC 4180
+  und zerlegt jeden Wert mit Backslash — also jede Fehlermeldung mit
+  Klassennamen. Dazu ein BOM, damit „Willkommensgruß" nicht als Buchstabensalat
+  ankommt.
+- **Die Datei folgt der Sortierung der Tabelle.** `Listing` merkt sich die Wahl
+  des Lesers; wer einmal aufsteigend sortiert hatte, bekam von da an jede Datei
+  in umgekehrter Reihenfolge zu der Tabelle, als die sie sich ausgibt.
+- Ein Schritt, dessen Knoten gelöscht wurde, ist in der Datei als solcher
+  benannt. Auf dem Schirm gab es dafür ein Kennzeichen, in der Datei nichts.
+
+### Fixed — „Im Ablauf" verschwieg die, auf die es ankommt
+
+Der Zeitraum wurde auch auf diese Liste angewendet. Wer vor 40 Tagen
+eingeschrieben wurde und in einer 60-Tage-Wartezeit parkt, fiel bei der
+Voreinstellung „letzte 30 Tage" heraus — und aus der Zahl daneben gleich mit, so
+dass nichts auf dem Schirm auch nur andeutete, dass jemand fehlt. Die Frage
+lautet „wer steckt jetzt drin", und das ist keine Frage nach einem Zeitraum.
+
+### Fixed — Kleinigkeiten
+
+- Die Statusspalte zeigte `success` und `failed` roh, während das Filtermenü
+  daneben „Erfolg" und „Fehlgeschlagen" anbot. Dieselbe Tatsache in zwei
+  Sprachen auf einem Schirm.
+- Die Kachel „Completed" heißt jetzt „Ran to the end" und hat eine eigene
+  Übersetzung. Der Schlüssel `Completed` gehört LeadHub (für eine erledigte
+  Aufgabe), und CP-weit gemergte Wörterbücher hätten deren Wort überschrieben.
+- Der Satz über den Läufen ohne Person sagte „:n weitere" über einer leeren
+  Tabelle.
+- Ein Knotenlauf ohne `created_at` hätte den Export an dieser Stelle still
+  abbrechen lassen.
+
+## 2.5.0 — 2026-08-15
+
+### Added — die Mails einer Automation stehen jetzt am Kontakt
+
+Die Kontaktseite in LeadHub beantwortet „was hat diese Person von uns bekommen".
+Kampagnen melden sich dort von Marketings Seite selbst; die Mails, die eine
+Automation verschickt — oft die allerersten, die jemand überhaupt bekommt —
+waren der eine fehlende Teil dieser Antwort.
+
+Was der Eintrag **nicht** sagen kann, sagt er selbst: eine Automations-Mail
+geht durch den Mailer, nicht durch Marketings gemessenen Sendepfad. Kein Pixel,
+keine umgeschriebenen Links, also keine Öffnung und kein Klick. Ein Eintrag,
+„versendet", mit dem Hinweis dazu. Eine Zeitleiste, die dazu schweigt, liest
+sich als „nie geöffnet", und das ist eine andere und unwahre Sache.
+
+- **Kein Klassenname des Nachbar-Addons taucht hier auf.** Alles läuft über
+  `Integrations\LeadHub\LeadHubAdapter`, der LeadHub aus dem Container holt
+  und „nicht installiert" ohne Fehler beantwortet. Das ist es, was die
+  Integration optional hält.
+- **Nur für Kontakte, die es schon gibt**, und nie fatal: der Weg hängt hinten
+  an einem bereits erfolgreichen Versand.
+- **Testläufe schreiben nichts.** `automations.test_mode.send_real_emails` ist
+  eine ausgelieferte Option; mit ihr an liefert der Erfolgspfad wieder eine
+  echte Adresse.
+- `marketing.send_email` bleibt außen vor und meldet sich weiter selbst, sonst
+  stünde jede solche Mail zweimal am Kontakt.
+
+Abschaltbar über `automations.timeline.enabled`.
+
+### Fixed
+
+- `AutomationRun::automation()` ist jetzt als Beziehung dokumentiert, die auch
+  leer sein kann: ein Lauf überlebt die Automation, aus der er stammt. Damit
+  fällt ein Altbefund aus der phpstan-Baseline.
+
+## 2.4.1 — 2026-08-14
+
+Alles aus der Kritiker-Runde zu 2.4.0. Die Sperre stand, der Katalog daneben
+zeigte weiter auf die Lücke.
+
+### Added — der zweite Weg zum selben Defekt wird benannt
+
+Die Sperre erkannte Werbepost nur am Marketing-Auslöser (`subscriber.*` im
+Kontext). Es gibt einen zweiten Weg zur identischen Mail, und der Katalog führt
+hin: `form_submitted` → `marketing.subscribe` → eine Mail an die eben
+angemeldete Adresse. Das ist die Vorlage „Form Submission to Newsletter" plus
+den naheliegenden nächsten Knoten.
+
+Dieser Fall wird **gewarnt, nicht verweigert**, und das ist der Punkt: derselbe
+Graph ist auch die Auslieferung einer angeforderten Datei an jemanden, den man
+vorher angemeldet hat. Beide Lesarten sind echt, nichts im Lauf trennt sie, und
+eine Verweigerung wäre geraten — geraten würde dabei, ob man jemandem seinen
+laufenden Ablauf zerbricht. Die Warnung nennt `marketing.send_email` beim Namen.
+Die Vorlage selbst sagt es jetzt in ihrer Beschreibung, weil dort entschieden
+wird, was als Nächstes gebaut wird (in `statamic-marketing` 2.7.2).
+
+### Fixed — drei Löcher in der Sperre
+
+- **Anzeigename und Empfängerliste.** `Lea <lea@example.test>` und
+  `team@example.com, lea@example.test` liefen an der Sperre vorbei, weil roh
+  verglichen wurde. Ein Anzeigename ist kein anderer Empfänger. Plus-Adressen
+  und Punkte bleiben absichtlich unnormalisiert — das wären andere Postfächer.
+- **Der Kill-Switch schwieg.** Wer `refuse_marketing_recipients` ausschaltet,
+  bekommt jetzt für jeden durchgelassenen Versand eine Warnung im Log. Ein
+  Schalter, der lautlos zum Ausgangsdefekt zurückführt, ist die stillste Art,
+  ihn wiederzubekommen.
+- **Die Naht zum Marketing-Addon war ungeprüft.** Die Sperre findet den
+  Nachbarn über einen Klassennamen als String; eine Umbenennung drüben hätte sie
+  klanglos zur Logzeile degradiert. Der Pin liegt jetzt in
+  `statamic-marketing`s Integrationssuite, wo beide Pakete wirklich installiert
+  sind.
+
+### Docs — die eine Vorlage, die an eine echte Person mailt, sagt jetzt warum sie darf
+
+`lead_magnet_delivery` ist der einzige mitgelieferte Katalogeintrag, der nicht
+an die eigene Redaktion schreibt, sondern an `&#123;&#123; form.email }}`. Er darf das:
+die Mail ist die Datei, die vor Sekunden angefordert wurde, und sie meldet
+niemanden zu irgendetwas an. Nur stand das nirgends — und neben einer frischen
+Warnung stand damit eine Vorlage, die wie ihr Gegenbeispiel aussah.
+Beschreibung, README und `docs/templates.md` sagen es jetzt, mitsamt dem Satz,
+auf den es ankommt: die nächste Mail danach ist Werbung und braucht eine
+Anmeldung und `marketing.send_email`.
+
+Dazu ein Hinweis am Fixture `tests/Fixtures/stored-automations/hub-2026-07-29.json`:
+die dortige Nurture-Strecke ist ein Foto des Defekts, den 2.4.0 abstellt, und
+bleibt absichtlich so stehen. Eine Kompatibilitätsprüfung gegen aufgeräumte
+Daten prüft nichts.
+
+## 2.4.0 — 2026-08-14
+
+### Changed — „Send Email" ist der transaktionale Knoten, und sagt es jetzt auch
+
+Der Knoten beschrieb sich selbst als geeignet für „a transactional **or
+marketing** email". Er ist für das Zweite nicht geeignet und kann es nicht
+werden: er fragt niemanden nach Einwilligung, Sperrliste, Opt-out oder
+Frequenz-Deckel — ein Passwort-Reset muss trotz aller vier raus — und trägt aus
+demselben Grund weder Abmeldelink noch Anbieterkennzeichnung. Zwei echte
+Willkommensstrecken sind auf ihm gebaut worden, beide sahen richtig aus, beide
+verschickten ungeprüft.
+
+Beschreibung, `help` am Empfängerfeld, README und `docs/sequences.md` sagen
+jetzt, wofür der Knoten da ist und wofür `marketing.send_email` aus
+`goldnead/statamic-marketing` da ist. Eine transaktionale Mail an jemanden, der
+zufällig Abonnent ist, gehört ebenfalls dorthin, mit Klassifizierung
+`transactional`: das nimmt sie vom Deckel aus und behält die Tore.
+
+### Added — der Knoten verweigert Werbepost, statt nur vor ihr zu warnen
+
+Worte haben es zweimal nicht gehalten. Ist `statamic-marketing` installiert,
+verweigert `send_email` **einen** Versand: eine Mail an genau die Person, um
+deren Abo der Lauf geht (`marketing.subscribed` / `.unsubscribed` legen sie als
+`subscriber.email` auf einer benannten Liste in den Kontext). Das ist die Form,
+die beide historischen Defekte hatten.
+
+Verglichen werden **Adressen**, nicht Auslöser. Der Abmelde-Alarm und die
+„Kampagne verschickt"-Nachricht laufen auf denselben Auslösern, schreiben aber
+an die eigene Redaktion — sie sind unberührt und müssen es bleiben. Ohne das
+Marketing-Addon gibt es keinen Knoten, auf den zu verweisen wäre: dann bleibt es
+bei einer Warnung im Log und die Mail geht wie bisher raus. Die Prüfung läuft
+vor dem Testmodus-Kurzschluss, damit sie auf „Test" sichtbar wird und nicht drei
+Tage später.
+
+Abschaltbar über `automations.send_email.refuse_marketing_recipients`
+(Standard: an) — bewusst site-weit und nicht als Häkchen am Knoten, weil ein
+Häkchen am Knoten in derselben Minute gesetzt wird, in der der Fehler passiert.
+
+## 2.3.0 — 2026-08-14
+
+Alles aus Adrians Durchgang durch das Control Panel des Hubs.
+
+### Added — die Einstellungen sind bearbeitbar
+
+Die Seite war ein Ausdruck von `config/automations.php` mit dem Hinweis, die Datei auf dem Server
+zu ändern. Sie ist jetzt ein Formular: Queue, Aufbewahrung der Läufe, Testmodus und die
+Redaktionsliste werden im Control Panel geschrieben (`manage automation settings`).
+
+Gespeichert werden **nur Abweichungen**, eine Zeile je geänderter Schlüssel in
+`automation_settings`. Wer einen Wert auf den Standard zurückstellt, löscht die Zeile — die
+Einstellung folgt danach wieder der Datei, auch wenn ein späteres Release den Standard verschiebt.
+Eine Tabelle, die jeden Schlüssel spiegelt, hätte die Standards des Installationstags eingefroren.
+
+`Support\Settings` ist die einzige Definition: das Formular, die Validierung und das Überschreiben
+beim Booten lesen dieselbe Liste. Die alte Seite hielt ihre Beschriftungen in JavaScript und war
+damit eine zweite Beschreibung der Config-Datei, die ihr widersprechen konnte.
+
+Nicht bearbeitbar und mit Absicht: `storage.driver` (entscheidet, wo Automationen liegen, und ist
+unter laufendem Betrieb nicht umschaltbar), alles aus `env()` — ein Schlüssel in der Datenbank
+läge im Backup statt im Secret-Store — und `integrations`, das keine Einstellung ist, sondern
+eine Erkennung.
+
+Die Tabelle ist **nicht** brand-scoped, anders als jede andere in diesem Addon. Es sind
+Eigenschaften der Installation; ein Queue-Name je Marke hieße, dass der Worker die Jobs der einen
+Marke leert und die der anderen nicht, ohne dass irgendwo etwas dazu stünde.
+
+### Added — eine Mail aus der Liste öffnen und bearbeiten
+
+In der Mails-Ansicht ließ sich eine Mail verschieben, zuweisen und löschen, aber nicht lesen. Ein
+Klick auf den Namen öffnet sie jetzt in einem Stack. Das Formular darin ist `ConfigPanel` — das
+gleiche, das die Canvas in ihrer rechten Spalte zeigt —, damit eine Mail einen Editor hat und
+nicht zwei, die auseinanderlaufen.
+
+### Fixed — der Editor lief nicht über die volle Breite, und sein Kopf war grau
+
+Drei Befunde, eine Ursache. Die Seite trug `bg-body-bg`, also den Seitenhintergrund, obwohl sie
+in der Content-Karte sitzt: daher das graue Band hinter dem Kopf, während jeder andere Schirm des
+Control Panels dort weiß ist. Und sie zog sich mit `lg:-mx-12` aus der Karte heraus, was den Kopf
+mitnahm — der Titel klebte am Fensterrand statt an der Rinne des Control Panels.
+
+Jetzt hebt die Seite die Breitenbegrenzung von innen auf (`[data-sa-full-bleed]`, siehe `cp.css`)
+und behält die Polsterung der Karte. Eine Canvas ist kein Lesetext; die 85rem-Grenze ließ den
+Graphen auf einem breiten Schirm in einer Spalte mit leeren Rändern stehen.
+
+### Fixed — die Menüs mit den drei Punkten hatten einen Rollbalken
+
+`DropdownItem` ist `grid-cols-subgrid`, und `DropdownMenu` ist das Raster, das diese Spalten
+definiert. An drei Stellen — Kopfzeile des Editors, Knotenkarte, Variablen-Einfüger — standen die
+Einträge ohne diesen Rahmen im Menü. Ohne Raster ist jede Zeile ein paar Pixel breiter als das
+Menü, und am unteren Rand erscheint ein waagerechter Rollbalken.
+
+### Fixed — der Stack des Laufprotokolls ging nie auf
+
+`Stack` hat eine kontrollierte `open`-Eigenschaft mit Vorgabe `false`, und `name` ist gar keine
+Eigenschaft. Das Protokoll wurde also gemountet und nie gezeigt. Dazu heißt die Überschrift von
+`StackHeader` `title`, nicht `heading` — `heading` fiel als einfaches HTML-Attribut durch und die
+Leiste blieb leer.
+
+### Changed — das Dashboard sieht aus wie der Rest der Familie
+
+Die Kennzahlen benutzten `Widget`, ein Dashboard-Rahmen mit eigener Kopflinie und Mindesthöhe, in
+dem jede Zahl oben links in einer hohen leeren Kiste hing. Jetzt `Card` + `Subheading` +
+`Heading`, wie in `statamic-marketing`. Die Diagramme lagen direkt in einem `Panel`: ein Panel ist
+ein Bereich mit Überschrift, keine Fläche, deshalb nahm sein Rumpf den Seitenhintergrund an und
+las sich als grauer Klotz neben den weißen Kacheln. Sie liegen jetzt auf einer `Card`.
+
+### Changed — „Mail rules" steht nur im Menü, wenn es welche gibt
+
+Die Seite bearbeitet Automationen, die ein Auslöser und eine Mail sind, aus dem Satz heraus. Wo es
+keine gibt, ist sie leer und ihr einziger Link führt zur Canvas — sie las sich als Menüpunkt, der
+nichts tut außer weiterzuleiten. `Sequence\MailRules` beantwortet die Frage mit einem `exists()`,
+nicht mit dem Laden aller Automationen wie die Seite selbst: die Navigation fragt bei jedem
+Aufruf. Der Eintrag kommt mit der ersten passenden Automation von selbst zurück, und die Seite
+bleibt die ganze Zeit über ihre URL erreichbar.
+
+
+## 2.2.1 — 2026-08-13
+
+### Fixed — die Wiedereintrittsregel wurde von vier Auslösern gar nicht gelesen
+
+`EnrollmentGate` war für `TriggerDispatcher` geschrieben, und dort wurde sie auch gefragt. Die
+vier eigenen Listener — Marketing, LeadHub, Formulareinsendung, Eintrag veröffentlicht — bauen
+ihren Kontext selbst und riefen `createRun()` direkt auf. Für jede Automation, die von einem von
+ihnen startet, hat die Regel auf dem Trigger-Knoten **niemand gelesen**.
+
+Der Fehler war still in der schlimmsten Form: das Feld steht in der Konfiguration, das Control
+Panel zeigt die Auswahl, ein Export trägt sie mit, und es passierte nichts. `marketing.subscribed`
+ist der Auslöser, mit dem eine Willkommensstrecke anfängt, und der, bei dem `ignore` am meisten
+zählt: wer sich abmeldet und neu anmeldet, bekam die ganze Strecke ein zweites Mal, parallel zur
+ersten, beide weiterlaufend. Genau das soll die Regel verhindern.
+
+Dazu blieb `automation_runs.subject_key` bei diesen vier Auslösern immer `null` — der Wert, nach
+dem der Funnel verschiedene Personen zählt und an dem das nächste Ereignis derselben Person
+gemessen wird.
+
+Neu: `Concerns\AppliesEnrollmentPolicy`, benutzt von allen vier Listenern. Für jede Automation auf
+der Vorgabe `always` ändert sich nichts, und das ist jede, bis jemand etwas anderes wählt. Der
+Test dazu fällt gegen die vorherige Fassung um (zwei Läufe statt einem).
+
+## 2.2.0 — 2026-08-12
+### Changed
+
+- **The five sender-identity classes moved to `goldnead/statamic-brand-context` 1.8.0**, which is
+  now required at `^1.8`. They were four byte-identical copies with four namespaces — this package,
+  marketing, notifications and preference-center each grew their own on 12.08.2026 — and copies
+  drift: by the evening the marketing one had stopped refusing a transport without an address, and
+  disagreed with this package about whether a per-message from-address beats the brand's. Both are
+  settled in favour of the stricter reading, which is the one this package already had.
+
+  Behaviour is unchanged here, down to the log lines and the `help` text on the `send_email` node's
+  `from` field. `Goldnead\StatamicAutomations\Contracts\SenderIdentityResolver` and
+  `Sending\BrandMailer` stay as this package's own extension points. `Sending\SenderIdentity` and
+  `Sending\SaidRecently` are gone from this namespace; use the `Goldnead\BrandContext\Sending\`
+  versions.
+
+## 2.1.0 — 2026-08-12
+
+### Fixed — der `send_email`-Knoten paarte die Adresse der einen Marke mit dem Relay der anderen
+
+Der Knoten rief `Mail::html()` bzw. `Mail::raw()`. Der Transport war damit immer
+`config('mail.default')`, und der einzige Absender, den er je setzte, war der in den Knoten
+getippte. Auf einem Mehr-Marken-Host trennt das genau das Paar, auf das es ankommt: eine
+Nurture-Strecke, adressiert als `hallo@familystack.de`, ging über das Relay-Projekt raus, das
+`gldnr.studio` verifiziert. Ein Anbieter, der Sendedomains je Konto prüft (Scaleway TEM, Postmark,
+SES), lehnt die Adresse dann ab oder ersetzt sie durch die eigene verifizierte — und beides
+passiert still.
+
+**Absender und Transport kommen jetzt zusammen aus `brands.settings.mail`.**
+`Contracts\SenderIdentityResolver` beantwortet „welcher Mailer, welche Adresse, welche Sprache für
+Brand N", `Sending\BrandMailer` ist die eine Stelle, die die Frage stellt.
+
+| Schlüssel | Bedeutung |
+| --- | --- |
+| `from_address` | Pflicht, sobald `mail` überhaupt gesetzt ist |
+| `from_name` | sonst der Brand-Name |
+| `mailer` | ein Mailer aus `config/mail.php` |
+| `locale` | die Sprache ihrer Post |
+
+Die Antwort steht an der Nachricht, nie in der Config: Laravel liest `mail.from` beim ersten
+Auflösen eines Mailers, brennt es per `alwaysFrom()` in die Instanz und hält die im Singleton
+`mail.manager` fest. Ein `Config::set` überlebt deshalb sein eigenes `finally`, auch mit sauberem
+Rückbau — das wäre derselbe Fehler eine Ebene tiefer.
+
+### Changed — die Brand gewinnt gegen das `from` des Knotens
+
+Nur dort, wo eine Brand eine eigene Adresse deklariert. Eine Brand, die das tut, hat dem Host
+gesagt, welche Adresse ihr Relay-Konto besitzt; ein Knoten-Override gäbe diese Zusage an den
+zurück, der den Flow zuletzt bearbeitet hat. Wo keine Brand etwas deklariert — also in jeder
+Single-Brand-Installation — entscheidet weiterhin allein das `from` des Knotens, unverändert.
+
+### Changed — eine Brand mit kaputter Mail-Identität verschickt nichts
+
+Eine Brand, die `settings.mail` deklariert, aber keine `from_address` trägt, oder die einen Mailer
+nennt, den `config/mail.php` nicht kennt, verschickt **gar nichts**, wird auf Fehler-Ebene
+protokolliert (je Brand gedrosselt) und der Knoten meldet einen Fehlschlag. Die Alternative wäre
+die Zustellung unter der Host-Adresse, auf einem Mehr-Marken-Host also unter fremdem Namen.
+
+**Der Dedupe-Schlüssel wird in diesem Fall nicht gesetzt.** Er ist ein Stempel mit einem Jahr
+Haltbarkeit; für eine Mail, die nie rausging, würde er genau den zweiten Versuch unterdrücken, den
+das Korrigieren der Brand-Einstellungen ermöglichen soll.
+
+### Unverändert, mit Begründung — `FailureAlerter`
+
+Die Störungsmail bleibt am Vorgabe-Transport. Das ist die Anwendung, die ihrem eigenen Betreiber
+von einem kaputten Lauf schreibt, an eine Adresse aus der Config; sie spricht für keine Marke. Die
+Brand aus dem Kontext aufzugreifen wäre schlechter statt besser — eine fehlschlagende Automation
+von Marke A sähe dann aus wie Marke A, die dem Administrator des Hosts schreibt.
+
+**Eine Single-Brand-Installation ändert sich nicht, und das steht als Test da, nicht als Vorsatz.**
+Ebenso eine Mehr-Marken-Installation, deren Brands kein `settings.mail` tragen. Ein Host, der
+Absenderidentitäten anderswo führt, bindet `SenderIdentityResolver` in seinem eigenen Provider neu,
+statt dieses Addon zu ändern.
+
+## 2.0.0 — 2026-08-09
+
+### Removed — editions and the licence manager
+
+The addon shipped a Free/Pro edition split: `extra.statamic.editions`, a
+`LicenseManager` with a local key list and a remote verification endpoint, a
+Pro gate on the AI action and on custom node registration, and a License panel
+in the Settings screen.
+
+That contradicts how this family is sold. There is one feature set, and
+entitlement is enforced by the Statamic Marketplace rather than by code in the
+package — the Marketplace has no licence-check API to call, and building one
+means shipping a gate a buyer can simply switch off.
+
+Gone with it: `config('automations.license.*')`, the feature flags
+`custom_actions_requires_pro` and `ai_action_requires_pro`, the
+`GET /cp/automations/api/license/status` route, `Automations::license()`, and
+the `STATAMIC_AUTOMATIONS_LICENSE_*` environment variables.
+
+**What changes for a host:** the AI action and custom action/trigger
+registration now work unconditionally. Anything that set those config keys or
+read that route needs updating — hence a major version when this is released.
+
+## 1.11.0 — 2026-08-05
+
+### Added — Mail-Regeln: eine Ein-Mail-Automation als Satz
+
+Eine Automation, die genau eine Sache tut — wenn etwas passiert, sende eine Mail — liest sich als
+Satz: „Wenn ein Formular abgeschickt wird, sende die Dankesmail an den Absender." Dafür eine
+Leinwand mit zwei Kästen zu öffnen, ist die falsche Oberfläche. Neu ist der Bildschirm
+**Tools → Automations → Mail rules**, der jede Automation mit genau einem Mail-Knoten als Zeile
+zeigt und aus dieser Zeile heraus bearbeitbar macht.
+
+```
+GET   /cp/automations/api/automations/{automation}/rule
+PATCH /cp/automations/api/automations/{automation}/rule
+```
+
+Bearbeitbar sind Empfänger, Template, An/Aus und der Sync-Schalter aus 1.10. Geschrieben wird nur,
+was gesendet wurde — ein Statuswechsel in einer Zeile darf nicht das Template überschreiben, das
+jemand anders gerade gewählt hat.
+
+**Was die Ansicht ausdrücklich nicht kann.**
+
+*Anlegen.* Sie bearbeitet bestehende Automationen, wie die Mail-Listenansicht auch. Eine Automation
+aus einer Zeile zu erzeugen hieße, Trigger, Knotentyp und Handle auf einmal zu entscheiden; das ist
+ein eigener Schnitt. Auf der Leinwand gebaut, erscheint sie hier, sobald sie ein Trigger, eine Mail
+und eine Kante ist.
+
+*Eine Form bearbeiten, die keine Regel ist.* `Sequence\RuleShape` entscheidet das und setzt dafür
+auf `LinearityRule` auf, statt dieselben Graph-Regeln ein zweites Mal zu implementieren: jeder
+Grund, aus dem eine Mail-Liste nicht bearbeitbar ist, ist auch einer für eine Regel. Ein Delay
+zwischen Trigger und Mail, eine zweite Mail, eine Verzweigung — die Zeile wird trotzdem angezeigt,
+mit dem Grund daran und einem Link auf die Leinwand. Das Anzeigen ist der Punkt: „welche Mail geht
+raus, wenn das Kontaktformular abgeschickt wird" verdient eine Antwort, auch wenn der Flow
+dahinter inzwischen ein Delay hat.
+
+*Ein Feld schreiben, das der Mail-Knoten nicht hat.* Empfänger ist `to`, Template ist `template` —
+aber beides wird zuerst im Schema des Knotens nachgesehen (`Sequence\RuleFields`). Ein Mail-Knoten,
+der seine Empfänger aus einer Liste zieht, hat kein `to`; es trotzdem zu schreiben, hinterließe
+einen Config-Key, den nichts liest — eine Änderung, die aussieht, als sei sie angekommen. Lese- und
+Schreibseite nutzen dieselbe Nachschlagestelle, also kann eine Zeile nie ein Feld zeigen und ein
+anderes schreiben.
+
+**Die Warnung am Sync-Schalter sagt jetzt das Richtige.** Nicht „Fehler schlagen in den Request
+durch" (das tun sie nicht, siehe 1.10), sondern: der Request wartet auf den ganzen Lauf.
+
+**`statamic-notifications` bekommt keinen eigenen Sendeweg**, nur einen Nav-Eintrag hierher. Könnten
+beide Addons ein Ereignis in eine Mail verwandeln, hätte „warum kam diese Mail" zwei mögliche
+Antworten und keine Möglichkeit, sie zu unterscheiden.
+
+## 1.10.0 — 2026-08-05
+
+> Nie separat getaggt. Diese Änderungen sind mit 1.11.0 ausgeliefert worden: der Stand von
+> 1.10.0 hatte keinen eigenen grünen CI-Lauf, und getaggt wird in dieser Familie nur, was
+> vollständig grün war.
+
+### Added — Versand je Trigger synchron schaltbar
+
+Jeder Lauf ging bisher über die Queue, ausnahmslos. Für die meisten Automationen ist das richtig;
+für eine Mail, die raus sein muss, bevor die Seite fertig geladen ist, nicht. Wer so eine Mail aus
+dem eigenen Controller in eine Automation verlagert, macht daraus still einen Queue-Job — die
+Verlagerung ist dann nicht verhaltensneutral, also verlagert sie niemand, und die
+Automations-Ebene bleibt genau für die Mails ungenutzt, denen sie am meisten helfen würde.
+
+Neu: `_dispatch_mode` am Trigger-Knoten, Default `async`. Ein unbekannter Wert wird als `async`
+gelesen — die konservative Richtung ist die, die nichts ändert.
+
+Am Trigger und nicht an der Automation, aus zwei Gründen. Eine Automation kann mehrere Trigger
+tragen, und nur einer davon ist der aus dem Request; ein nächtlicher Sweep derselben Automation
+gehört weiter in die Queue. Und die Einstellung liegt damit dort, wo ihre Nachbarin schon liegt:
+die Re-Entry-Policy wird zwei Zeilen früher aus demselben Node-Config gelesen.
+
+**Was der Schalter nicht tut: er ändert die Fehlerbehandlung nicht.** Ein Fehler landet auch
+synchron als `failed` auf dem Run und nicht beim Aufrufer, weil `WorkflowRunner` grundsätzlich
+nicht wirft. Was sich ändert, ist der Zeitpunkt: synchron ist der Lauf fertig, bevor der Aufrufer
+weitermacht. Der Preis dafür ist Zeit — der Request wartet auf jeden Knoten, jeden HTTP-Aufruf,
+jede Mail.
+
+## 1.9.1 — 2026-08-05
+
+### Fixed — the breakpoint-less single-column grid utility is no longer used
+
+Every addon in this family ships its own Tailwind build, and `@statamic/cms/tailwind.css`
+routes all of them into the same `addon-utilities` layer. Media queries add no specificity, so
+the bare single-column grid rule from whichever addon stylesheet loads **last** won against an
+earlier addon's `sm:`/`lg:` variant and pinned that addon's grid to one column at every width.
+
+Invisible when this addon is checked alone. It only appeared once two addons of the family were
+installed together, which is the normal case on a real site.
+
+A grid falls back to one column on its own, so the class bought nothing. The overflow guard its
+`minmax(0,1fr)` track provided is preserved explicitly, because the implicit column is `auto`.
+
+## 1.9.0 — 2026-08-04
+
+<!--
+    Additive, and all four parts ship inert. The re-entry policy defaults to
+    the behaviour every automation has today; the mail list is a second way to
+    read a graph nobody has to open; the funnel counts runs that were already
+    there. A `composer update` changes no run.
+
+    The one thing it does change is the shipped Control Panel bundle, which was
+    three releases out of date. See "Fixed" below.
+-->
+
+### Added — the enrollment funnel, read out of the runs that were already there
+
+An automation knew how many times it had run. It did not say how many people
+were *in* it right now, how many had come out the far end, and how many had
+left along the way — which are the three numbers that tell you whether a
+sequence works.
+
+`Support\RunStats` answers all three from `automation_runs`, grouped by status,
+in one query for the whole listing. No new table: a run *is* an enrollment, and
+a second table recording the same facts would be a second place for them to
+disagree. Test runs are left out, because an editor pressing "test" is not a
+person going through the flow.
+
+What was genuinely missing was an index. `automation_uuid` and `status` existed
+as two separate single-column indexes, which answers "this automation's runs"
+and "everything that failed" and neither of the questions above. The migration
+adds `(automation_uuid, status)`.
+
+### Added — a re-entry policy, so a repeat sign-up stops meaning a second welcome series
+
+Until now, every matching event created another run. For a webhook that is
+right. For a five-mail sequence it is the most common way to mail somebody
+twice in one morning: they unsubscribed, subscribed again, and now two copies
+of the series are ticking.
+
+A trigger can now carry one of four rules — the field is on every trigger,
+including third-party ones and the config-driven event triggers, because the
+registry appends it rather than each class declaring it:
+
+- **Enroll again every time** — today's behaviour, and still the default. **No
+  existing automation changes.** An unrecognised value reads as this one, so a
+  typo in an imported file cannot start suppressing enrollments.
+- **Ignore** — once per contact, ever. What a welcome series wants.
+- **Restart from the beginning** — cancel the open pass and start fresh. The
+  scheduled job goes with it; a cancelled run whose wake-up call survives
+  resumes days later beside the new pass, which is the exact thing this rule
+  exists to prevent.
+- **Leave the running pass where it is** — an open pass carries on from its own
+  position; nothing new is added.
+
+Runs now carry `subject_key` (normally the lower-cased address) so the three
+rules have somebody to compare against, and so the listing can tell enrollments
+from people. A trigger that names nobody — a scheduled sweep, a webhook with no
+address in it — falls back to the default and says so in the log, because
+treating every subjectless run as the same subject would make one nightly sweep
+block every later one for ever.
+
+### Added — the mail list: the same automation, read as the mails it sends
+
+A sequence is a list of mails with gaps between them. A graph is the right tool
+for building one and the wrong one for reading it back. There is now a second
+view of the same object — no second object, no compile step, no synchronised
+copy.
+
+**Showing it always works.** Even a branched flow has a knowable set of mails
+and knowable gaps; the list marks the ones only some readers get as
+conditional, and names the fork they hang off. It is incomplete as a picture of
+the flow and correct as what it claims to be.
+
+**Editing is bound to the flow being a straight line**, and the rule is written
+out in full on `Sequence\LinearityRule`: one trigger, no node with more than
+one edge in or out, every edge on the `default` output, no Branch / Switch /
+Loop / Parallel node, everything reachable from the trigger, no cycle. Where it
+does not hold, the list stays readable and the canvas is the editing surface —
+erring towards "locked when it need not have been", because the other direction
+rewrites a graph nobody asked to have rewritten.
+
+**Every gap is measured from the mail before it, never from the start.** That
+is what makes reordering lossless: "5 days after the previous mail" travels
+with the mail when it moves, where "day 7" would silently misdescribe every row
+below the one that moved.
+
+Endpoints: `GET`, `POST`, `POST …/reorder` and `DELETE` under
+`api/automations/{automation}/mail-list`. The three writes snapshot a version
+first, refuse a non-linear graph with a 422 that carries the rule's own
+reasons, and rewrite the chain rather than patching four edges around a moved
+node.
+
+A node declares itself a mail with a static `mailStep(): bool` — which is how
+`goldnead/statamic-marketing` contributes its send node from its own side, and
+why this addon still knows nothing about newsletters. Additional handles can be
+named in `automations.sequence.mail_nodes`.
+
+### Added — the mail list has a screen now
+
+The endpoints above had no surface. The builder page carries a **Flow / Mails**
+switch: the same automation, the same page, read either as what it does or as
+what it sends. A view and not a second screen, because two screens over one
+object is how the two start disagreeing.
+
+**Showing works for every automation**, branched or not. A mail only some
+readers get carries a `Conditional` badge and the fork it hangs off in words
+underneath it. Anything else sitting in the same gap — a tag, a CRM write — is
+named on the row, so a reorder is never a silent rewrite of what the flow does.
+Each row says how long after the *previous mail* it goes out, and the first row
+says how long after the trigger; no row ever says "day 7".
+
+**Where the list may not be edited, it says which of the seven conditions is
+broken.** "This automation is not linear" is a sentence an editor cannot act
+on: it names no node, no condition and no next step. Instead the notice reads
+*Condition 5 of 7: the automation contains no Branch, Switch, Loop or Parallel
+step* — with what to do about it, the rule's own sentence naming the node
+underneath, and a button back to the canvas. The rule hands out prose, so the
+mapping from its sentences back onto the numbered conditions lives in
+`resources/js/support/mailList.js` and is tested against the sentences the rule
+actually emits.
+
+Reordering is two buttons per row, not a drag handle: a drag is unreachable
+from a keyboard and silent to a screen reader, and focus follows the row it
+moved. Deleting goes through Statamic's `ConfirmationModal` and says that the
+waiting time in front of the mail goes with it while everything else in that
+gap is kept.
+
+Three separate locks, each with its own message, because they call for three
+different actions: the flow is not a straight line (rework it on the canvas),
+the user lacks `edit automations` (ask for it), or the canvas holds unsaved
+changes (press Save first — a list edit writes straight to the stored
+automation, and the next canvas save would otherwise put the old order back).
+After a list edit the page re-reads the stored graph, so the canvas is never
+left showing the order the server has just replaced.
+
+The page also gained the enrollment funnel it was already being handed, as
+badges above the list.
+
+### Changed
+
+- `Sequence\MailSteps` answers `isMailHandle()` as well as `isMail()`, and the
+  builder page hands the screen a `mailTypes` list built from it. A node only
+  becomes a mail *row* once it is on the canvas, so an automation that sends
+  nothing yet — the one that most needs to add its first mail — could not have
+  read the candidates off its own rows. Asking the registry is what keeps the
+  UI from hardcoding a handle, which is the one thing `MailSteps` exists to
+  prevent.
+- `Nodes\Actions\SendEmailAction` declares itself a mail step and summarises
+  itself for the list. Its behaviour is unchanged.
+- The automations listing carries `in_progress`, `completed` and `exited`
+  columns. `runs_count` still counts everything, including test runs, so
+  nothing an existing screen shows has moved.
+- The models carry `@property` annotations. Static analysis stopped needing
+  164 of the 366 baseline entries, and the baseline shrank accordingly.
+
+### Fixed — the shipped Control Panel bundle was three releases out of date
+
+`3e611e9` (01.08.) added the `call_real_ai` option and its description to
+`resources/js/pages/Settings/Show.vue` without rebuilding `resources/dist`. It
+sits six commits after the last dist commit, in the middle of the hardening run.
+
+So **1.8.0, 1.8.1 and 1.8.2 all shipped a Control Panel in which that option does
+not exist**, while `Nodes\Actions\AiGenerateAction` supported it the whole time.
+Anyone on those versions could not switch an AI step to the real provider,
+because the control was not in the bundle they installed.
+
+The bundle is rebuilt and `npm run build:check` passes again. Nothing else about
+the option changed; it is the same code that has been in the source since 1.8.0.
+
+`scripts/check-dist-fresh.sh` names this exact failure in its own header comment,
+citing the webhook-manager "vue is not defined" incident. The guard existed. It
+was not run, because twelve repositories were being hardened at once.
+
+## 1.8.2 — 2026-08-01
+
+### Fixed — the Test button could never pass for a whole class of automations
+
+A test run starts from an empty context, so `&#123;&#123; lead.id }}` resolves to nothing. Nine LeadHub
+actions validated their lead / contact / opportunity reference *before* the test-mode
+short-circuit, which meant they returned `failed` in every test run — on correctly configured
+automations. A real case: `waitlist-follow-up-task` reported
+
+```
+leadhub.add_tag   failed :: Both lead reference and tag are required.
+```
+
+with the node configured as `{"lead_id":"&#123;&#123; lead.id }}","tag":"waitlist"}`. Nothing was wrong
+with the automation. The Test button simply could not be used on any chain that acts on a lead,
+which is most of them.
+
+**Where the line now runs.** Not "skip validation in test mode" — that would let a genuinely
+broken node pass:
+
+- **Static configuration is still validated before the short-circuit.** A missing tag, note
+  body, task title, target status, target stage or pipeline fails a test run, because that node
+  is broken and would be broken in production.
+- **Data references are validated after it.** The fields a schema declares as `data_reference`
+  can only be filled by the run itself, so a test run previews them as empty and carries on. On
+  the live path they are still required, and now fail through
+  `ActionResult::missingDataReference()`, which records the field handle in the node output.
+
+Reordered: `leadhub.add_tag`, `leadhub.remove_tag`, `leadhub.add_note`, `leadhub.change_status`,
+`leadhub.change_score`, `leadhub.create_follow_up`, `leadhub.complete_follow_up`,
+`leadhub.move_stage`, `leadhub.create_or_update_opportunity`. Unaffected, and checked:
+`leadhub.create_task` (its lead reference is optional, and its required `title` is static
+configuration that must keep failing), `leadhub.create_or_update_lead` (`email` is configured,
+not a reference), the three Marketing actions, `webhook_manager.send`, and all seventeen native
+actions — none of them validated a reference ahead of their test-mode branch.
+
+`test_mode.persist_leadhub_changes` is unchanged: with it on, a test run behaves like a live run
+for LeadHub, reference check included.
+
+### Fixed — an error message that accused the wrong field
+
+`Both lead reference and tag are required.` was returned when the tag was set and only the
+reference was missing, which sends the next person to check the wrong half of the node. Messages
+are now split per field and name the reference and the token that should have filled it:
+`No Lead to act on: the "Lead" field is empty and &#123;&#123; lead.id }} did not resolve in this run.`
+
+### Fixed — `leadhub.move_stage` mislabelled its opportunity field
+
+`opportunity_id` was declared `type: text` while the action read `&#123;&#123; opportunity.id }}` from the
+run context — a data reference in everything but the declaration, which is why it was missed by
+eye twice. It is now declared `type: data_reference`. The CP renders it identically (both types
+map to a text input with the token inserter); stored automations keep loading, since the handle
+is unchanged.
+
+### Added — a structural test, so the next action cannot repeat this
+
+`tests/Feature/TestModeDataReferenceTest.php` walks every `AutomationAction` class in `src/` off
+the filesystem — not off the registry, since the integration actions only register when the
+sibling addon is installed — builds a config that fills everything except the data references,
+and runs each action in test mode against an empty context. Nothing may fail on an unresolved
+reference. It also asserts the converse: outside a test mode, a required reference still refuses
+to run, and names itself.
+
+Three actions are allowed to fail the sweep, each with its reason recorded in the test
+(`ai_generate` needs a Pro licence, `call_automation` and `marketing.send_campaign` point at
+resources that do not exist in the test app). That list is asserted exactly, so a new action
+that repeats the defect makes the suite red rather than sliding in.
+
+### Documentation
+
+`docs/getting-started.md` gained a "What a test run does (and does not) check" section: the
+reference rule above, the full `test_mode.*` table including `persist_leadhub_changes`, and how
+to hand a test run a real context instead of loosening a flag. The `call_real_ai` flag now has a
+proper label on the Settings screen instead of the generic fallback.
+
+## 1.8.1 — 2026-08-01
+
+### Fixed — the "Webhook Failure Alert" template could never fire
+
+The template shipped with the trigger `webhook_manager.outbound_failed`, and nothing registered
+that handle. Installing it produced an automation that looked complete in the builder, stayed
+enabled, and never ran once, no matter how often a destination failed. If you installed it, it
+starts working after this update; nothing to reconfigure.
+
+The trigger now exists (`Outbound Webhook Failed`, under the Webhook Manager group) and is
+bridged to Webhook Manager's `DeliveryFailedTerminally` event — the one it has fired all along
+when a delivery exhausts its retries. Registration is guarded on Webhook Manager being
+installed, exactly like the inbound `webhook_received` bridge, and the event class is
+overridable via `automations.integrations.webhook_manager.outbound_failed_event`.
+
+The template's `min_attempts` field is now a real field on that trigger: the automation only
+runs once the delivery has been tried at least that many times. It previously sat in the
+template as config no code read.
+
+Context exposed to the flow: `webhook.destination`, `webhook.destination_name`, `webhook.url`,
+`webhook.attempts`, `webhook.status`, `webhook.error`, `webhook.delivery_id`.
+
+### Fixed — failure alerts for a deleted automation silenced each other
+
+`FailureAlerter` throttled per `automation_id`. A run whose automation has been deleted has
+`automation_id = null` (the foreign key is `ON DELETE SET NULL`), so every such run in the
+installation shared the single cache key `automations:alert:` and the first failure suppressed
+all the others for the whole throttle window. The throttle now falls back to the run's
+`automation_uuid`, which survives the delete, and the alert text names the automation instead
+of printing a bare `#`.
+
+### Added — a test that holds every template against the registries
+
+`tests/Feature/TemplateNodeCoverageTest.php` walks all eleven built-in templates and checks
+every node handle against the node registry, every config key against that node's schema, every
+edge against the template's own node keys, and every `requires` entry against the integration it
+names. A template is a pile of strings pointing at registrations elsewhere; neither `php -l` nor
+PHPStan can see when one of them points at nothing. This is the third defect of that shape in
+the addon family, and the first one caught by a test rather than by reading.
+
+### Fixed — the test suite ran without foreign keys and hid a real one
+
+SQLite ignores foreign keys unless asked to enforce them, so the suite accepted rows MySQL
+rejects outright and never performed the `ON DELETE SET NULL` the schema promises. One test
+built an orphaned run by inventing `automation_id = 999`, a data shape production cannot reach.
+`foreign_key_constraints` is now on for the SQLite bed, and that test takes the production path:
+create the automation, run it, delete it, let the database null the column.
+
+### Changed
+
+- The automations empty state no longer promises "eight built-in patterns" while eleven ship.
+  The count comes from the registry, so it cannot go stale when a template is added.
+
+## 1.8.0 — 2026-08-01
+
+### Fixed — "Start from a template" led nowhere
+
+The button on the automations index built its target by rewriting the *create* URL, and that
+URL carries a doubled `automations/automations` segment. The Templates screen was registered
+and working the whole time at `/cp/automations/templates`; only the link was wrong. The target
+now comes from the controller instead of from string surgery.
+
+Worth knowing for anyone debugging a CP link: Statamic registers two catch-all routes, one for
+the CP (`cp/{segments}` → `statamic.cp.404`) and one for the front end (`{segments?}` →
+`statamic.site`). So *every* `/cp/…` string matches a route on some verb, and "does it match a
+route" tells you nothing. Only the route name distinguishes a live target from a dead one.
+`tests/Feature/CpLinkTargetsTest.php` now walks the Inertia props of every page and checks each
+CP URL against the registered route names, so the next dead link fails in CI.
+
+### Fixed — every host received 415 KB of dist nobody loaded
+
+`resources/dist/{cp.js,cp.css,.vite/manifest.json}` predated the move to `build/` and no
+manifest referenced them, but they shipped in the tarball all the same. Removed, and
+`check-dist-fresh.sh` now fails on any tracked file under `resources/dist` outside `build/`.
+
+### Fixed — listeners and CP routes registered twice under test
+
+Moving to `Statamic\Testing\AddonTestCase` surfaced that the manual `bootAddon()` call had
+become a duplicate: saving one entry ran every listener twice. Both the manual call and the
+hand-mounted routes are gone.
+
+### Changed
+
+- 25 hardcoded colours moved onto theme tokens, so the canvas and the node palette follow
+  Statamic's dark mode instead of approximating it.
+- The node palette is reachable by keyboard.
+- `laravel/framework` narrowed to `^12.0|^13.0`. The 11.x line is withdrawn behind security
+  advisories and cannot be installed, so declaring support for it was untrue rather than
+  generous. `orchestra/testbench` follows to `^10.0|^11.0`, and `pestphp/pest` gains `^4.0`,
+  which is what actually installs on Laravel 13.
+- The README no longer describes a drag-to-canvas flow that was removed, no longer claims the
+  screenshots don't exist while shipping six, and links into the docs site rather than into a
+  `docs/` folder that `.gitattributes` strips from the tarball.
+- The 141 JavaScript tests now run in CI. They existed and were never executed there.
+- Larastan and Pint are wired in as gates; the `repositories` block, which Composer ignores in
+  a dependency anyway, is gone now that the siblings resolve from Packagist.
+
 ## 1.7.1 — 2026-07-30
 
 ### Fixed — `automations:sync` could import over a database it could not see

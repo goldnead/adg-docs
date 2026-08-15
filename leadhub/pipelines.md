@@ -24,6 +24,7 @@ confidence, and with full stage-transition history.
 | Screen | What it is for |
 | --- | --- |
 | **Kanban board** | Drag opportunities between stages |
+| **Deal screen** | One opportunity: its data, its stage, its history, its tasks. **2.4.0** |
 | **Pipeline management** | Define pipelines and their stages |
 
 <Figure
@@ -32,6 +33,109 @@ confidence, and with full stage-transition history.
   caption="The board. Won and Lost are terminal, and the header totals open, won and lost value separately." />
 
 Pipeline slugs are unique **per brand**.
+
+### The deal screen
+
+**2.4.0.** Until then a deal had no place of its own: every link that pointed at one — the
+opportunity list on the contact screen, the cards themselves — led to the board. The board
+answers "what is in this column", not "what happened to this deal".
+
+```
+GET /cp/leadhub/pipelines/opportunities/{opportunity}
+```
+
+Route name `leadhub.pipelines.opportunities.show`. Reading it is the same authority as
+reading the board it sits on, `view leadhub`.
+
+It shows four things:
+
+| | |
+| --- | --- |
+| **The data** | Title, the contact **as a link**, company, pipeline, value, confidence, owner, timestamps |
+| **The current stage** | With a stage-change form, including a note |
+| **The history** | Every stage transition: from, to, when, by whom, with the note, and how long the deal sat in each stage |
+| **The tasks** | The tasks on this deal, open work first, with `features.tasks` on |
+
+The board and the contact screen link here now instead of to the board, and the edit form
+returns here on save and on cancel.
+
+#### The note is the only "why"
+
+A stage change writes a row into `leadhub_stage_transitions`, and the note on that row is
+the only place anybody ever writes down *why* the deal moved. It is not copied to the
+contact timeline, and no other screen collects it.
+
+The stage-change form on the deal screen posts to the same endpoint the board's drag & drop
+uses, because that endpoint is the only path that records a note at all. Drag a card and the
+note is empty by construction; change the stage from here and you can say what happened.
+
+The note is capped at **2000 characters** and rendered in full in the history — it is not
+truncated, so a long one is a long paragraph on somebody else's screen.
+
+::: tip Moving a deal onto the stage it is already on does nothing
+The form prevents it in the browser; a second tab or a plain POST does not. The endpoint
+answers with a success message and writes no row, because a history entry reading
+"Proposal → Proposal" is exactly the noise that makes a history unreadable.
+:::
+
+#### Time in stage
+
+Each history row carries the distance to the **next** transition, so "how long did this sit
+in Proposal" is read off the screen rather than computed by hand.
+
+The topmost row is the open end, and what it means depends on the deal:
+
+- an **open** deal's newest stage runs until now, and is marked as still running;
+- a **closed** deal's last stretch ends at the close (`closed_at`, falling back to `won_at`
+  or `lost_at`), not today.
+
+That distinction matters more than it looks. Left running, the top row of a deal won in
+April would read "115 days" and grow by one every morning, in the same column and the same
+type as the real dwell times below it, while answering a different question.
+
+A deal that was never moved has no transition row at all. Its entry into the starting stage
+comes from `opportunities.created_at` and is a full first history entry, not a gap.
+
+### Who may move a deal
+
+The move endpoint (`POST /pipelines/opportunities/{opportunity}/move`) accepts **either**
+`manage leadhub opportunities` **or** `edit leadhub contacts`, and the board draws its drag
+handle for both.
+
+Before 2.4.0 it required `edit leadhub contacts` alone, which fitted none of its neighbours:
+viewing the board is `view leadhub`, and creating, editing or deleting a deal is
+`manage leadhub opportunities`. Somebody with a pipeline-only role could delete a deal and
+not move it.
+
+Accepting both rather than narrowing to the correct one is deliberate: a narrowing would have
+taken drag & drop away, on upgrade day, from every install whose roles carry only the old
+permission. Nobody loses anything; one group gains what it should have had.
+
+The stage-change form on the deal screen is offered to holders of
+`manage leadhub opportunities`, alongside the edit and delete actions on that screen.
+
+### Won and lost timestamps
+
+::: warning 2.4.0 repairs stored data. Read this if you report on `won_at`.
+`won_at` and `lost_at` were set on a stage transition and never cleared again, while
+`status`, `outcome` and `closed_at` beside them were. A reopened deal therefore carried a
+win date and was open, and a deal moved from Won straight to Lost carried both. No screen
+rendered those columns, so nothing showed it — but `won_at` is the column a revenue report
+groups by, and a stale one inflates every period it lands in.
+
+The service now sets both stamps on every transition, the applicable one to `now()` and the
+other to `null`. The migration
+`2026_08_15_000001_repair_leadhub_opportunity_outcome_stamps` cleans up what is already
+stored: an open deal loses both, a closed one keeps the one its `outcome` names.
+
+**The old values are parked before they are cleared**, in the deal's `metadata_json` under
+`repaired_outcome_stamps`, together with the date the repair ran. `down()` is deliberately
+empty — there is no earlier state worth restoring, only the contradiction — so that column
+is where you look if a number changed and you want to know what it was.
+:::
+
+Until you migrate, the deal screen shows each stamp only where the status agrees with it, so
+the screen stays honest on an install that has not run the migration yet.
 
 ### Events
 

@@ -16,6 +16,9 @@ php artisan vendor:publish --tag=marketing-config
 | `subscriptions.double_opt_in` | `true` | Default for new lists, overridable per list |
 | `unsubscribe.global_opt_out` | `false` | Also set LeadHub `do_not_contact` on unsubscribe |
 | `tracking.opens` / `tracking.clicks` | `true` | Toggle tracking |
+| `timeline.enabled` | `true` | Write every mail onto the recipient's LeadHub timeline |
+| `timeline.types` | `[]` | Which kinds of entry to write; empty means all six |
+| `archive.enabled` | `false` | The public web version of a campaign. **Off unless asked for.** |
 | `leadhub.tag_subscribers` | `true` | Tag contacts with `list:{handle}` |
 
 ## Storage
@@ -110,6 +113,46 @@ image-blocking clients never report, prefetching clients report opens nobody mad
 rate may be your audience's mail client rather than your subject line. See
 [Tracking](/marketing/tracking).
 
+## Timeline
+
+```php
+'timeline' => [
+    'enabled' => true,
+    'types' => [],
+],
+```
+
+Every mail this addon sends is written onto the recipient's LeadHub timeline, so "what has this
+person had from us, and did they read it" is answerable where somebody actually asks it — on the
+contact, rather than in a table keyed by message.
+
+**Nothing is written for an address with no contact.** A tracking pixel must not be able to create a
+CRM record.
+
+`types` narrows what is written. An installation sending to fifty thousand people may not want a row
+per open on every contact; leaving it empty means all six kinds. The constants are on
+`Integrations\Leadhub\TimelineRecorder`. See [Tracking](/marketing/tracking#on-the-leadhub-timeline).
+
+## Web archive
+
+```php
+'archive' => [
+    'enabled' => env('MARKETING_ARCHIVE', false),
+    'prefix' => env('MARKETING_ARCHIVE_PREFIX', 'newsletter'),
+    'title' => env('MARKETING_ARCHIVE_TITLE'),
+    'neutral_name' => null,
+    'feed_limit' => 20,
+],
+```
+
+A public web version of a campaign, on a stable readable URL. **Off in the shipped default**, and
+while it is off its three routes are not registered at all — which is also why the per-campaign
+"Publish a public web version" switch is not on screen until you turn this on.
+
+`enabled` defaults to `false` because the archive claims a readable path, and a site that already has
+a page at `/newsletter` would lose it to a `composer update`. Visibility is then still per campaign
+and off by default. See [Campaigns → The web archive](/marketing/campaigns#the-web-archive).
+
 ## Routes
 
 ```php
@@ -172,6 +215,9 @@ MARKETING_FROM_NAME=
 MARKETING_FROM_EMAIL=
 MARKETING_ROUTE_PREFIX=!/marketing
 MARKETING_ESP_WEBHOOK_SECRET=
+MARKETING_ARCHIVE=false
+MARKETING_ARCHIVE_PREFIX=newsletter
+MARKETING_ARCHIVE_TITLE=
 ```
 
 `MARKETING_ESP_WEBHOOK_SECRET` is read by the ESP inbound endpoint, which stays **disabled** until
