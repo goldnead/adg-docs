@@ -321,6 +321,153 @@ html.dark[data-addon='toc'] {
   --vp-c-brand-soft: rgba(6, 182, 212, 0.16);
 }
 
+html[data-addon='payments'] {
+  --gn-accent-from: #8B5CF6;
+  --gn-accent-to: #4C1D95;
+  --vp-c-brand-1: #8555ef;
+  --vp-c-brand-2: #723dd7;
+  --vp-c-brand-3: #8B5CF6;
+  --vp-c-brand-soft: rgba(139, 92, 246, 0.16);
+  --vp-button-brand-bg: #8B5CF6;
+  --vp-button-brand-hover-bg: #4C1D95;
+  --vp-button-brand-active-bg: #4C1D95;
+  --vp-button-brand-text: #ffffff;
+  --vp-button-brand-hover-text: #ffffff;
+}
+
+html.dark[data-addon='payments'] {
+  --vp-c-brand-1: #9466ff;
+  --vp-c-brand-2: #a97dff;
+  --vp-c-brand-3: #4C1D95;
+  --vp-c-brand-soft: rgba(148, 102, 255, 0.16);
+}
+
+html[data-addon='offers'] {
+  --gn-accent-from: #EC4899;
+  --gn-accent-to: #9D174D;
+  --vp-c-brand-1: #d63187;
+  --vp-c-brand-2: #bd0b72;
+  --vp-c-brand-3: #EC4899;
+  --vp-c-brand-soft: rgba(236, 72, 153, 0.16);
+  --vp-button-brand-bg: #EC4899;
+  --vp-button-brand-hover-bg: #9D174D;
+  --vp-button-brand-active-bg: #9D174D;
+  --vp-button-brand-text: #1a1a1a;
+  --vp-button-brand-hover-text: #ffffff;
+}
+
+html.dark[data-addon='offers'] {
+  --vp-c-brand-1: #ec4899;
+  --vp-c-brand-2: #ff60af;
+  --vp-c-brand-3: #9D174D;
+  --vp-c-brand-soft: rgba(236, 72, 153, 0.16);
+}
+
+html[data-addon='invoices'] {
+  --gn-accent-from: #0EA5E9;
+  --gn-accent-to: #075985;
+  --vp-c-brand-1: #007cbe;
+  --vp-c-brand-2: #0067a7;
+  --vp-c-brand-3: #0EA5E9;
+  --vp-c-brand-soft: rgba(14, 165, 233, 0.16);
+  --vp-button-brand-bg: #0EA5E9;
+  --vp-button-brand-hover-bg: #075985;
+  --vp-button-brand-active-bg: #075985;
+  --vp-button-brand-text: #1a1a1a;
+  --vp-button-brand-hover-text: #ffffff;
+}
+
+html.dark[data-addon='invoices'] {
+  --vp-c-brand-1: #0ea5e9;
+  --vp-c-brand-2: #39bcff;
+  --vp-c-brand-3: #075985;
+  --vp-c-brand-soft: rgba(14, 165, 233, 0.16);
+}
+
+html[data-addon='funnels'] {
+  --gn-accent-from: #FACC15;
+  --gn-accent-to: #A16207;
+  --vp-c-brand-1: #996d00;
+  --vp-c-brand-2: #845900;
+  --vp-c-brand-3: #FACC15;
+  --vp-c-brand-soft: rgba(250, 204, 21, 0.16);
+  --vp-button-brand-bg: #FACC15;
+  --vp-button-brand-hover-bg: #A16207;
+  --vp-button-brand-active-bg: #A16207;
+  --vp-button-brand-text: #1a1a1a;
+  --vp-button-brand-hover-text: #ffffff;
+}
+
+html.dark[data-addon='funnels'] {
+  --vp-c-brand-1: #facc15;
+  --vp-c-brand-2: #ffe341;
+  --vp-c-brand-3: #A16207;
+  --vp-c-brand-soft: rgba(250, 204, 21, 0.16);
+}
+
+html[data-addon='booking'] {
+  --gn-accent-from: #22D3EE;
+  --gn-accent-to: #0E7490;
+  --vp-c-brand-1: #00809a;
+  --vp-c-brand-2: #006b85;
+  --vp-c-brand-3: #22D3EE;
+  --vp-c-brand-soft: rgba(34, 211, 238, 0.16);
+  --vp-button-brand-bg: #22D3EE;
+  --vp-button-brand-hover-bg: #0E7490;
+  --vp-button-brand-active-bg: #0E7490;
+  --vp-button-brand-text: #1a1a1a;
+  --vp-button-brand-hover-text: #ffffff;
+}
+
+html.dark[data-addon='booking'] {
+  --vp-c-brand-1: #22d3ee;
+  --vp-c-brand-2: #4aeaff;
+  --vp-c-brand-3: #0E7490;
+  --vp-c-brand-soft: rgba(34, 211, 238, 0.16);
+}
+
+html[data-addon='consent'] {
+  --gn-accent-from: #22C55E;
+  --gn-accent-to: #15803D;
+  --vp-c-brand-1: #008820;
+  --vp-c-brand-2: #007300;
+  --vp-c-brand-3: #22C55E;
+  --vp-c-brand-soft: rgba(34, 197, 94, 0.16);
+  --vp-button-brand-bg: #22C55E;
+  --vp-button-brand-hover-bg: #15803D;
+  --vp-button-brand-active-bg: #15803D;
+  --vp-button-brand-text: #1a1a1a;
+  --vp-button-brand-hover-text: #ffffff;
+}
+
+html.dark[data-addon='consent'] {
+  --vp-c-brand-1: #22c55e;
+  --vp-c-brand-2: #46dc74;
+  --vp-c-brand-3: #15803D;
+  --vp-c-brand-soft: rgba(34, 197, 94, 0.16);
+}
+
+html[data-addon='flow-canvas'] {
+  --gn-accent-from: #A1A1AA;
+  --gn-accent-to: #3F3F46;
+  --vp-c-brand-1: #74747c;
+  --vp-c-brand-2: #606068;
+  --vp-c-brand-3: #A1A1AA;
+  --vp-c-brand-soft: rgba(161, 161, 170, 0.16);
+  --vp-button-brand-bg: #A1A1AA;
+  --vp-button-brand-hover-bg: #3F3F46;
+  --vp-button-brand-active-bg: #3F3F46;
+  --vp-button-brand-text: #1a1a1a;
+  --vp-button-brand-hover-text: #ffffff;
+}
+
+html.dark[data-addon='flow-canvas'] {
+  --vp-c-brand-1: #a1a1aa;
+  --vp-c-brand-2: #b7b7c0;
+  --vp-c-brand-3: #3F3F46;
+  --vp-c-brand-soft: rgba(161, 161, 170, 0.16);
+}
+
 html[data-addon='block-editor'] {
   --gn-accent-from: #57534E;
   --gn-accent-to: #1C1917;

@@ -97,6 +97,48 @@ export const ART = {
     "light": "#00819e",
     "dark": "#06b6d4"
   },
+  "payments": {
+    "from": "#8B5CF6",
+    "to": "#4C1D95",
+    "light": "#8555ef",
+    "dark": "#9466ff"
+  },
+  "offers": {
+    "from": "#EC4899",
+    "to": "#9D174D",
+    "light": "#d63187",
+    "dark": "#ec4899"
+  },
+  "invoices": {
+    "from": "#0EA5E9",
+    "to": "#075985",
+    "light": "#007cbe",
+    "dark": "#0ea5e9"
+  },
+  "funnels": {
+    "from": "#FACC15",
+    "to": "#A16207",
+    "light": "#996d00",
+    "dark": "#facc15"
+  },
+  "booking": {
+    "from": "#22D3EE",
+    "to": "#0E7490",
+    "light": "#00809a",
+    "dark": "#22d3ee"
+  },
+  "consent": {
+    "from": "#22C55E",
+    "to": "#15803D",
+    "light": "#008820",
+    "dark": "#22c55e"
+  },
+  "flow-canvas": {
+    "from": "#A1A1AA",
+    "to": "#3F3F46",
+    "light": "#74747c",
+    "dark": "#a1a1aa"
+  },
   "block-editor": {
     "from": "#57534E",
     "to": "#1C1917",

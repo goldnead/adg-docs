@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="512" y2="512" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#22C55E"/>
+      <stop offset="1" stop-color="#15803D"/>
+    </linearGradient>
+    <filter id="sh" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="6" stdDeviation="10" flood-color="#15803D" flood-opacity="0.32"/>
+    </filter>
+  </defs>
+
+  <!-- rounded square background -->
+  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
+
+  <!-- a switch, thrown on: consent is a decision a person makes, one service at
+       a time, and a switch is the only glyph that shows a state rather than a
+       thing. -->
+  <g filter="url(#sh)">
+    <rect x="72" y="176" width="368" height="160" rx="80" fill="#FFFFFF"/>
+  </g>
+  <circle cx="358" cy="256" r="56" fill="url(#bg)"/>
+  <path d="M128 256 L162 292 L226 222" stroke="url(#bg)" stroke-width="30" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+</svg>

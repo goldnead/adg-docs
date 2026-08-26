@@ -31,6 +31,10 @@ import { pathToFileURL } from 'node:url'
 
 import { chromium } from 'playwright'
 
+// The system Chrome, not Playwright's own: this host has no downloaded
+// browsers, and pulling 300 MB for a run that happens when an addon is born is
+// not worth it. `shoot-playground.mjs` does the same.
+
 import { documented, entryBySlug, repoDir } from '../.vitepress/addons.mjs'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
@@ -101,7 +105,7 @@ const iconPage = (svg) => `<!doctype html>
   svg { display: block; width: 512px; height: 512px; }
 </style></head><body>${svg}</body></html>`
 
-const browser = await chromium.launch()
+const browser = await chromium.launch({ channel: 'chrome' })
 let rendered = 0
 const skipped = []
 
