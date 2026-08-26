@@ -108,12 +108,17 @@ members:
 included, and every one of those installs with a bare `composer require`. Only
 Invoices is untagged and unpublished.
 
-Being on Packagist is not the same as being free. **Nine are commercial** —
-Automations, Table of Contents, Payments, Offers, Invoices, Funnels, Booking,
-Consent and Flow Canvas. They resolve as ordinary Composer packages but are
-licensed rather than sold, and the licence is bought and managed through the
-[Statamic Marketplace](https://statamic.com/addons). **The other thirteen are
+Being on Packagist is not the same as being free. **Eight are commercial** —
+Automations, Table of Contents, Payments, Offers, Invoices, Funnels, Booking and
+Consent. They resolve as ordinary Composer packages but are licensed rather than
+sold, and the licence is bought and managed through the
+[Statamic Marketplace](https://statamic.com/addons). **The other fourteen are
 MIT**, and `composer require` is the whole transaction.
+
+Flow Canvas is MIT from 1.2.0 on, and deliberately: Funnels requires it, so a
+commercial editor behind a commercial addon would have meant two licences for
+one purchase. A shared foundation that our own addons consume belongs with
+Brand Context and Identity Contracts, not in the shop.
 
 
 For the MIT packages there is nothing further to do. `composer require` is the
