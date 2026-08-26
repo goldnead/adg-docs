@@ -23,6 +23,11 @@ appears one request later than the page is a banner the visitor has already scro
 and revealed by the script; doing it the other way round makes the banner flash on every
 page for visitors who decided months ago.
 
+<Figure
+  src="consent-banner-mobile"
+  alt="The same banner on a narrow screen, stacked and full width"
+  caption="On a phone the banner stacks rather than shrinking." />
+
 ## The shape
 
 The banner is a **card in the bottom-left corner**, not a bar across the page. The settings

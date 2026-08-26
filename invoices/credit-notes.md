@@ -11,6 +11,11 @@ use Goldnead\Invoices\Facades\Invoices;
 Invoices::creditNoteFor($payment);   // Invoice|null
 ```
 
+<Figure
+  src="invoices-credit-note"
+  alt="A rendered credit note referencing the invoice it reverses, with the same two VAT rates"
+  caption="A refund is not a correction. It is a second document that names the first." />
+
 ## What it writes
 
 A second invoice row with `kind = credit_note`, pointing at the original through

@@ -11,6 +11,11 @@
 Until the visitor presses the button, that iframe is **not in the document**. It sits inside
 a `<template>`, which browsers parse but issue no requests for. Nothing reaches YouTube.
 
+<Figure
+  src="consent-dialog"
+  alt="The settings dialog listing each service with its own switch"
+  caption="Per service, not per category. Somebody who says yes to a map has not said yes to advertising." />
+
 ## Absent, not hidden
 
 This is the distinction the tag exists for.

@@ -15,6 +15,11 @@ php please consent:install
 Under `php artisan` the same command is `statamic:consent:install`; `please` drops the
 prefix.
 
+<Figure
+  src="consent-cp-banner"
+  alt="The Banner tab of the Consent global set, with the wording fields"
+  caption="The wording is yours. The addon ships defaults, not a voice." />
+
 ## What the install command does
 
 Three things, in this order:

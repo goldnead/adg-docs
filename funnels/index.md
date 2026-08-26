@@ -9,6 +9,11 @@ Money goes through [Payments](/payments/) at the price
 that lives in [Offers](/offers/), and the walk moves on
 only when the payment addon says the money arrived.
 
+<Figure
+  src="funnels-editor"
+  alt="The funnel editor: the node library on the left, a graph of entry, form, offer and finish steps on the canvas"
+  caption="A funnel is drawn, not configured. The editor is the same one Automations runs on." />
+
 ## A funnel is not an automation
 
 An **automation** is *event → action*: something happened, do something.

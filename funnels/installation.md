@@ -12,6 +12,11 @@ php artisan vendor:publish --tag=statamic-funnels
 
 Funnels then live under **Utilities → Funnels**.
 
+<Figure
+  src="funnels-list"
+  alt="The Funnels listing with handles, live and draft badges"
+  caption="Funnels live under Utilities. A draft is reachable only through preview." />
+
 ## What comes with it
 
 Three packages are hard dependencies and install alongside it:

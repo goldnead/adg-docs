@@ -28,6 +28,11 @@ model treats a coupon with neither as not live. The check lives in PHP rather th
 database constraint because SQLite cannot express it, and a constraint that exists on one
 engine is worse than none.
 
+<Figure
+  src="offers-coupons"
+  alt="The Coupons listing with percentage and fixed-amount codes, validity windows and redemption counts"
+  caption="Codes people type to pay less, with the window and the number of redemptions each one has left." />
+
 ## Live, or not
 
 A coupon applies when all of these hold:

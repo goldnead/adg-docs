@@ -9,6 +9,11 @@ ways to get the last instalment wrong.
 
 The difference between the first two is one column: `times`.
 
+<Figure
+  src="payments-subscriptions"
+  alt="The Subscriptions listing showing both a payment plan at 1 of 2 cycles and open-ended subscriptions, with running, waiting, completed, cancelled and suspended states"
+  caption="One screen, both faces: a plan counts down, a subscription runs until somebody stops it." />
+
 ## A product becomes recurring
 
 ```php

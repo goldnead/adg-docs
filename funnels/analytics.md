@@ -16,6 +16,11 @@ Every step card in the editor carries three figures:
 There is no separate report screen. The numbers sit on the card of the step they describe,
 because a drop-off number in a report somewhere else is a number nobody looks at.
 
+<Figure
+  src="funnels-graph"
+  alt="Step cards carrying visitors, how many carried on, and the share, next to a step that shows nothing"
+  caption="Counted per visitor, not per page load. A step nobody reached shows nothing rather than a zero." />
+
 ## Counted per visitor
 
 Every figure is a count of **distinct walks**, not of events. Somebody who reloads the

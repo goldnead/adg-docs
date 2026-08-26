@@ -16,6 +16,11 @@ php artisan vendor:publish --tag=statamic-payments-config
 No front-end build step: the addon ships its compiled Control Panel assets under `dist/`,
 and Statamic publishes them on install.
 
+<Figure
+  src="payments-filters"
+  alt="The listing with the filter menu open, offering status, fulfilment and date range"
+  caption="Filters narrow the listing to the question you actually have: paid but not fulfilled, say." />
+
 ## What comes with it
 
 | Package | Constraint | |

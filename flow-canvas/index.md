@@ -15,6 +15,11 @@ dependency of an addon that draws graphs, and these pages are for developers who
 draw graphs in their own.
 :::
 
+<Figure
+  src="flow-canvas-canvas"
+  alt="The canvas inside Funnels: node library, graph with per-step figures, zoom toolbar and minimap"
+  caption="The same editor Automations uses, here hosting a funnel. Kinds and wording come from the host." />
+
 ## What is in here
 
 The canvas, the node card, the node library, the config panel section, the control bar,

@@ -8,6 +8,11 @@ An appointment is made in Cal.com. This addon receives the webhook, verifies it,
 one row, and fires a plain Laravel event so the rest of your site can react. That is the
 whole product.
 
+<Figure
+  src="booking-listing"
+  alt="The Bookings listing with scheduled time, event type, attendee and status"
+  caption="What Cal.com decided, recorded here. The calendar itself stays where it is good." />
+
 ## It does not build a calendar, on purpose
 
 Availability, time zones, reschedules and reminders are a solved problem, and solving them

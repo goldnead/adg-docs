@@ -4,6 +4,11 @@
 
 A product, a price of its own, the words that sell it, and where it appears.
 
+<Figure
+  src="offers-listing"
+  alt="The Offers listing with handle, product, own price, placement and state"
+  caption="Offers live under Utilities. Each one points at a product and may carry a price of its own." />
+
 ## An offer is not a product
 
 A **product** is a thing that exists and costs money. An **offer** is that thing

@@ -9,6 +9,11 @@ Built for sites where the same person maintains the site and answers for it: the
 lives in a global set the client can edit, the service handles live in the config file the
 developer controls, and neither can break the other.
 
+<Figure
+  src="consent-banner"
+  alt="The consent banner in the corner of a live page, with accept, reject and settings"
+  caption="The banner as a visitor meets it. Antlers, and no build step." />
+
 ## What you get
 
 - **A cookie banner and a settings dialog**, in the visitor's language, with every text

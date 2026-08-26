@@ -8,6 +8,11 @@ A checkout, a webhook that trusts nothing in the request, fulfilment that runs e
 once, and a handful of events your site listens to. What a payment *means* — access, a
 file, an email — stays yours.
 
+<Figure
+  src="payments-listing"
+  alt="The Payments listing: date, product, amount, status, fulfilled timestamp and buyer, across five brands"
+  caption="Every payment the site took, with the status and whether fulfilment has run." />
+
 ## The rule everything else follows
 
 **The amount is looked up in the catalogue. It never comes from a request.**

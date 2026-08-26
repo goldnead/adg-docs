@@ -15,6 +15,11 @@ publishes them on install.
 
 Two entries appear under **Utilities**: **Offers** and **Coupons**.
 
+<Figure
+  src="offers-editor"
+  alt="The offer form: product picker, price, currency, placement, the words that sell it, and the bumps field"
+  caption="One offer, edited whole. The product it points at is chosen, never typed." />
+
 ## What comes with it
 
 | Package | Constraint | |

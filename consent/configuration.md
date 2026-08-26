@@ -25,6 +25,11 @@ Two rules follow, and both exist because the naive version broke a real site:
   not a missing value. Falling back to the config here would hand a client back the services
   they had just removed, along with a banner asking about services their site does not load.
 
+<Figure
+  src="consent-cp-services"
+  alt="The Services tab of the Consent global set in the Control Panel, listing each service and its cookies"
+  caption="Services are content, edited in the Control Panel like anything else." />
+
 ## `cookie`
 
 ```php

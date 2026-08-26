@@ -29,6 +29,11 @@ showed.
 The template is deliberately free of images and external fonts. A page that depends on a CDN
 is, in five years, an invoice without a layout — and you have to keep it for ten.
 
+<Figure
+  src="invoices-invoice"
+  alt="A rendered German invoice with three lines at two VAT rates, showing net and tax broken out per rate before the total"
+  caption="Two rates on one invoice. § 14 Abs. 4 Nr. 8 UStG wants the split, so the document carries it." />
+
 ## What the document shows
 
 - Recipient block: name, address, country, as they were frozen

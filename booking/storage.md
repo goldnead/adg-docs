@@ -5,6 +5,11 @@
 One table, `bookings`, one row per booking. No brand column, no site column, no soft
 deletes.
 
+<Figure
+  src="booking-filter"
+  alt="The bookings listing with the filter menu open, offering status and time range"
+  caption="A requested booking is not an upcoming one, and the filters keep the two apart." />
+
 ## The columns
 
 | Column | Type | Holds |

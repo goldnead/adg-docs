@@ -16,6 +16,11 @@ costume; this is a path with pages on it, and the shape of the path is the produ
 All five are pages a visitor stands on, so all five have a URL and all five carry the
 shared page fields below.
 
+<Figure
+  src="funnels-offer-step"
+  alt="An Offer step selected, showing the offer picker, the deadline fields and the accepted and declined outputs"
+  caption="An offer step has two ways out. Declining is an answer, and it needs somewhere to go." />
+
 ## Fields every step has
 
 | Field | Type | What it does |

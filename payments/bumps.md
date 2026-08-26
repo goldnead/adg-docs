@@ -11,6 +11,11 @@ Two different things, and the difference is *when the money moves*.
 | Needs | nothing | `follow_up.enabled`, `collect_mandate`, and a mandate on the first payment |
 | Off by default | no | **yes** |
 
+<Figure
+  src="payments-follow-up-offer"
+  alt="A follow-up offer presented after a completed payment"
+  caption="A follow-up offer is a second payment, not an edit to the first." />
+
 ## Order bumps
 
 A checkbox at checkout that adds a second item. It is one payment with two lines, because
