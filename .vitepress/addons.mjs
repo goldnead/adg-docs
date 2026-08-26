@@ -28,6 +28,7 @@ export const LAYERS = {
   integration: 'Integration & automation',
   crm: 'CRM & marketing',
   platform: 'Platform services',
+  commerce: 'Commerce',
   content: 'Content tooling',
 }
 
@@ -310,6 +311,124 @@ export const addons = [
       { text: 'The toc modifier', link: 'modifier' },
       { text: 'Blueprint setup', link: 'blueprints' },
       { text: 'Recipes', link: 'recipes' },
+    ],
+  },
+  {
+    slug: 'payments',
+    name: 'Payments',
+    package: 'goldnead/statamic-payments',
+    license: 'Commercial',
+    layer: 'commerce',
+    tagline:
+      'Take payments with Mollie — and never believe the caller. Subscriptions, instalments and trials included.',
+    icon: '⬢',
+    pages: [
+      { text: 'Products and the catalogue', link: 'catalogue' },
+      { text: 'Starting a checkout', link: 'checkout' },
+      { text: 'Reacting to a payment', link: 'events' },
+      { text: 'Bumps and follow-up offers', link: 'bumps' },
+      { text: 'Subscriptions, plans and trials', link: 'subscriptions' },
+      { text: 'Refunds', link: 'refunds' },
+      { text: 'Abandoned checkouts', link: 'abandoned' },
+      { text: 'Tax facts and retention', link: 'tax-and-retention' },
+    ],
+  },
+  {
+    slug: 'offers',
+    name: 'Offers',
+    package: 'goldnead/statamic-offers',
+    license: 'Commercial',
+    layer: 'commerce',
+    tagline:
+      'A product, a price of its own, the words that sell it, and where it appears.',
+    icon: '◈',
+    pages: [
+      { text: 'An offer is not a product', link: 'concepts' },
+      { text: 'The price rule', link: 'price-rule' },
+      { text: 'Bumps', link: 'bumps' },
+      { text: 'Coupons', link: 'coupons' },
+      { text: 'In a template', link: 'templates' },
+    ],
+  },
+  {
+    slug: 'invoices',
+    name: 'Invoices',
+    package: 'goldnead/statamic-invoices',
+    license: 'Commercial',
+    layer: 'commerce',
+    tagline:
+      'An invoice from a payment: a gapless number, VAT by country, reverse charge.',
+    icon: '▤',
+    pages: [
+      { text: 'The number', link: 'numbering' },
+      { text: 'VAT, reverse charge, small business', link: 'vat' },
+      { text: 'An invoice does not change', link: 'immutability' },
+      { text: 'Credit notes and refunds', link: 'credit-notes' },
+      { text: 'Delivery and storage', link: 'delivery' },
+    ],
+  },
+  {
+    slug: 'funnels',
+    name: 'Funnels',
+    package: 'goldnead/statamic-funnels',
+    license: 'Commercial',
+    layer: 'commerce',
+    tagline:
+      'A path a visitor walks: pages, forms, offers and payments in one flow, drawn on a canvas.',
+    icon: '⤳',
+    pages: [
+      { text: 'A funnel is not an automation', link: 'concepts' },
+      { text: 'The five kinds of step', link: 'steps' },
+      { text: 'Landing pages from entries', link: 'landing-pages' },
+      { text: 'Deadlines and split tests', link: 'deadlines-and-tests' },
+      { text: 'Where people stop', link: 'analytics' },
+    ],
+  },
+  {
+    slug: 'booking',
+    name: 'Booking',
+    package: 'goldnead/statamic-booking',
+    license: 'Commercial',
+    layer: 'platform',
+    tagline:
+      'Records Cal.com bookings in Statamic — signed, idempotent, and out of your way.',
+    icon: '◷',
+    pages: [
+      { text: 'Why it does not build a calendar', link: 'concepts' },
+      { text: 'Endpoints and Cal.com setup', link: 'endpoints' },
+      { text: 'Reacting to a booking', link: 'events' },
+      { text: 'What it stores', link: 'storage' },
+    ],
+  },
+  {
+    slug: 'consent',
+    name: 'Consent',
+    package: 'goldnead/statamic-consent',
+    license: 'Commercial',
+    layer: 'content',
+    tagline:
+      'Cookie banner and two-click embed gate, editable in the Control Panel. Antlers, no build step.',
+    icon: '◱',
+    pages: [
+      { text: 'The banner', link: 'banner' },
+      { text: 'The two-click embed gate', link: 'embeds' },
+      { text: 'When there is nothing to ask', link: 'nothing-to-ask' },
+      { text: 'Proof of consent', link: 'proof' },
+    ],
+  },
+  {
+    slug: 'flow-canvas',
+    name: 'Flow Canvas',
+    package: 'goldnead/statamic-flow-canvas',
+    layer: 'platform',
+    license: 'Commercial',
+    tagline:
+      'The shared node-graph editor behind Automations and Funnels. One editor, consumed twice.',
+    icon: '◇',
+    pages: [
+      { text: 'What is in here, and what is not', link: 'concepts' },
+      { text: 'Kinds are data', link: 'kinds' },
+      { text: 'Using it in your own addon', link: 'consuming' },
     ],
   },
 ]
