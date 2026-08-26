@@ -12,6 +12,148 @@ Release notes for `goldnead/statamic-marketing`, as published with the package.
 Cross-version upgrade notes for the whole suite are in
 [Upgrading](/guide/upgrading).
 
+## 2.16.0 — 2026-08-25
+
+### Fixed
+
+- **The Control Panel printed a translation key at a reader.** `ContactSubscriptionsPanel` built its
+  status label as `__('marketing::leadhub.status_'.$status)`, and `__()` hands back the key it cannot
+  find. A subscription row carrying a status this addon does not know — from an older schema, an
+  import, another system — showed the literal string `marketing::leadhub.status_confirmed` in the
+  panel. It now falls back to the raw value as a headline: not pretty, but a word rather than a bug
+  report addressed to the user.
+
+- **The fallback layout said "Unsubscribe" in English on every site.** The word was hard-coded in
+  `EmailTemplate::fallback()`, and in this addon every campaign without its own template renders
+  through exactly that layout — so on a German installation it was every campaign. It uses
+  `marketing::mail.footer_unsubscribe` now, which was already translated.
+
+## 2.15.0 — 2026-08-24
+
+### Added — die Kampagnen-Vorschau ändert sich beim Tippen
+
+Bisher zeigte sie die **gespeicherte** Fassung, und die Oberfläche sagte es auch
+dazu: „Save your changes first." Damit war sie drei Schritte vom Bearbeiteten
+entfernt — schreiben, speichern, ansehen.
+
+Jetzt dasselbe Muster wie bei den Vorlagen: ein POST auf
+`marketing.campaigns.live-preview` rendert, was gerade im Formular steht.
+Gerendert wird durch **denselben `CampaignRenderer`**, den der echte Versand
+nimmt; ein zweiter Renderer wäre ein zweites Ding, das man in Gleichschritt
+halten muss, und die erste Abweichung fände jemand in seinem Posteingang.
+
+**Nichts wird dabei gespeichert.** Die Kampagne wird aus den geschickten Werten
+gebaut und nach dem Rendern weggeworfen — ein Test hält das fest.
+
+Der Rahmen behält `sandbox=""` und wechselt nur von `src` auf `srcdoc`: ein
+srcdoc-Rahmen ohne Tokens ist derselbe undurchsichtige Ursprung ohne Skripte.
+Der Link „Open in new tab" zeigt weiterhin auf die gespeicherte Fassung.
+
+
+## 2.14.0 — 2026-08-24
+
+### Fixed — der Testversand behauptete vier Tore und hatte eines
+
+`CampaignSender::sendTest()` prüfte die Sperrliste und sonst nichts, während
+sein Docblock „gated like the real thing" sagte. Das ist die gefährlichere
+Hälfte: wer den Satz liest, hört auf zu prüfen.
+
+Neu geprüft wird **`do_not_contact` am Kontakt** — die zweite „nie"-Fahne. Die
+Sperrliste hält, was ein Anbieter gemeldet hat; diese Fahne hält, was ein
+Mensch entschieden hat (Abmeldung mit globalem Opt-out, oder eine Hand im CRM).
+Keins folgt aus dem anderen. Der Fall, der bisher durchging, ist der
+naheliegende: „nur mal kurz zum Ansehen" an eine Kundin, die sich abgemeldet
+hat.
+
+**Bewusst nicht geprüft:** Abo-Status, Einwilligung und Frequenz-Deckel. Ein
+Testversand geht an eine Adresse, die der Absender eintippt — meist die eigene,
+die per Definition nicht auf der Liste steht. Ein Abo zu verlangen würde den
+Knopf für genau das kaputt machen, wofür er da ist. Der Docblock sagt das jetzt
+im Wortlaut, statt das Gegenteil zu behaupten.
+
+
+## 2.13.0 — 2026-08-24
+
+### Changed — die Anbieterkennzeichnung wird aufgeloest, nicht gelesen
+
+2.12.0 las `marketing.footer.postal_line` direkt. Das ist fuer eine Marke
+richtig und fuer sechs in einem Prozess falsch: alle sechs bekaemen dieselbe
+Anschrift — genau die Fehlerklasse, die die Absenderidentitaet schon hatte.
+
+Neu: `Contracts\PostalLineResolver`. Die mitgelieferte Fassung
+(`Support\ConfiguredPostalLine`) liest weiterhin die Config, ein
+Mehrmarken-Host bindet seine eigene und liefert die Zeile der aktuellen Marke.
+**Fuer Ein-Marken-Installationen aendert sich nichts.**
+
+## 2.12.0 — 2026-08-24
+
+### Fixed — Werbepost konnte still ohne Anbieterkennzeichnung rausgehen
+
+`ensureSelfServiceFooter()` haengt seinen Fuss nur an, wenn die Vorlage **gar
+keinen** Selbstbedienungs-Weg enthaelt. Das mitgelieferte Ersatzlayout hat
+einen Abmeldelink — und **keine Anschrift**. Genau diese Kombination rutschte
+durch: Ausweg ja, Pflichtangabe nein.
+
+Es braucht dafuer nicht einmal eine Loeschung. Ein `et_templates`-Eintrag mit
+demselben Slug gewinnt gegen die Marketing-Vorlage und tauscht das Layout
+lautlos aus.
+
+Zwei Aenderungen:
+
+1. **Ein zweites Netz.** Ist `marketing.footer.postal_line` gesetzt und die
+   gerenderte Mail enthaelt sie nicht, haengt der Renderer sie an. Getrennt von
+   der Abmelde-Pruefung, weil eine Vorlage den Link haben kann und die
+   Anschrift nicht.
+2. **Der Rueckfall sagt es.** Loest ein Vorlagen-Handle nicht auf, steht das
+   jetzt im Log. Vorher war „umbenannt" von „geloescht" nicht zu unterscheiden
+   — und beides von „alles in Ordnung" auch nicht.
+
+**Leer ausgeliefert.** Ein Addon kann die Anschrift seines Betreibers nicht
+erfinden, und eine erfundene waere schlimmer als keine. Auf einem Host mit
+mehreren Marken gehoert der Wert je Marke gesetzt.
+
+Die `text/plain`-Fassung war nie betroffen — dort kommt die Zeile aus der
+Mailable. Betroffen war die Darstellung, die fast jeder sieht.
+
+
+## 2.11.0 — 2026-08-22
+
+### Fixed — keine Werbemail mehr ohne sichtbaren Ausweg
+
+`&#123;&#123; unsubscribe_url }}` steht jeder Vorlage zur Verfügung, aber eine Vorlage
+kann es vergessen. Genau das ist passiert: die fünfteilige Willkommensstrecke
+von adriangoldner.com ging monatelang ohne sichtbaren Abmelde-Link raus. Der
+`List-Unsubscribe`-Kopfeintrag war da, doch den zeigt nicht jedes
+Mailprogramm — und wer ihn nicht sieht, hat keinen Weg hinaus.
+
+Der Renderer hängt jetzt einen Fuß an, wenn die fertig gerenderte Mail auf
+keinen Selbstbedienungs-Weg zeigt. Eine Vorlage, die den Link selbst setzt,
+bleibt unangetastet.
+
+**Warum das so lange niemandem auffiel:** die mitgelieferte Ersatzvorlage trägt
+selbst einen Abmelde-Link. Die Lücke entstand nur dort, wo ein Host seinen
+eigenen Rahmen mitbringt — und dort schaut niemand mehr in die
+Addon-Vorlage. Deshalb liegt die Zusicherung jetzt im Renderer statt in einer
+Vorlage: sie gilt für jeden eigenen Rahmen, auch für künftige.
+
+### Added — Ausstieg aus einer einzelnen Serie
+
+`sequence_unsubscribe_url` steht bereit, wenn die Mail aus einer Automation
+kommt. Den Weg dorthin kennt `goldnead/statamic-automations`, nicht dieses
+Addon; fehlt das Paket, bleibt der Wert leer und der Fuß trägt nur die
+vollständige Abmeldung.
+
+**Im Fuß steht der Serien-Ausstieg vor der vollständigen Abmeldung.** Das ist
+keine Kosmetik: wer eine Willkommensstrecke loswerden will, will selten den
+Newsletter los. Stünde die vollständige Abmeldung vorn, klickt sie jemand, weil
+sie die erste ist — und ist dann ganz weg.
+
+### Changed
+
+`SingleSend::send()` und `sendTemplate()` nehmen ein optionales
+`$sequenceUuid`. Es steht am Ende der Signatur, damit bestehende Aufrufe
+unverändert bleiben.
+
 ## 2.10.0 — 2026-08-15
 
 ### Added — drei Diagramme, jedes für eine Frage

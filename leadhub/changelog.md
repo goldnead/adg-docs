@@ -12,6 +12,95 @@ Release notes for `goldnead/statamic-leadhub`, as published with the package.
 Cross-version upgrade notes for the whole suite are in
 [Upgrading](/guide/upgrading).
 
+## 2.6.2 — 2026-08-25
+
+### Security
+
+- **The contact export handed a colleague an executable file.** Excel and LibreOffice run a cell that
+  begins with `=`, `+`, `-`, `@`, a tab or a carriage return the moment the file is opened.
+  `ExportService` wrote names, companies and tags straight through — and it writes a UTF-8 BOM first,
+  so the file is meant for exactly the program in which the formula fires.
+
+  What makes this the worst of the family's three CSV exports to have missed it: the others are fed
+  by data the site's own people typed. This one is fed by **strangers filling in a public form**, so
+  an attacker picks the content of a cell that a colleague later opens on their own machine.
+  `statamic-automations` and `statamic-marketing` both carry the apostrophe guard and explain it at
+  length; this one did not.
+
+  Values are now neutralised the same way, and `tests/Feature/ExportIsNotAFormulaTest.php` covers all
+  six leading characters plus the case that matters just as much: an ordinary name with umlauts comes
+  out untouched.
+
+## 2.6.1 — 2026-08-25
+
+### Fixed
+
+- **A task's due date field was not there.** `<DatePicker>` passes its value to reka-ui, which calls
+  `.copy()` on it during setup; a string has no `.copy`, so the component threw before rendering and
+  every task with a due date showed the label "Due" over nothing. The page itself survived, the field
+  did not.
+- `support/datetime.js` gains `toDateValue()`, the counterpart to the `toDateTimeString()` it has had
+  since 1.4. The comment beside it claimed the way *in* needed no conversion. That was the bug.
+- Adds `@internationalized/date`. A second copy of a library core already ships, and acceptable here:
+  it is a leaf with no shared state, unlike Vue. Hand-rolling a DateValue would be forking a core
+  dependency.
+
+## 2.6.0 — 2026-08-24
+
+### Security — der Klick-Endpunkt war ein offener Redirect
+
+`/lh/track/click` prüfte am Ziel nur das Schema. Wer `http://` oder `https://`
+davorschrieb, durfte überall hin: **jeder** konnte
+`https://<deine-domain>/lh/track/click?url=https://phishing.example` verteilen,
+und der Link trug deine Domain bis zum Angreifer. Der Rufschaden trifft die
+Domain, nicht den Absender. Gefunden am 01.08.2026, seitdem offen.
+
+Der Fix ruht auf etwas, das schon galt: `url` ist ein **signierter** Parameter.
+
+- **Gültige Signatur** → die URL stammt von uns, sie wird unverändert
+  weitergeleitet. Daran ändert sich nichts.
+- **Keine gültige Signatur** → die URL ist die Behauptung eines Fremden. Sie
+  wird nur zu einem Host weitergeleitet, den wir kennen; sonst auf die
+  Startseite.
+
+Bekannt sind immer die eigene Domain und alles unter
+`click_tracking.allowed_redirect_hosts`. **Eine Installation, die dort nichts
+einträgt, ist damit sicher und funktioniert weiter** — ihre eigenen Links
+gehen ohnehin auf die eigene Domain.
+
+Die „golden rule" bleibt für den Fall, für den sie geschrieben wurde: ein
+Versanddienst hängt seinen Parameter an, die Signatur bricht, der Leser kommt
+trotzdem an. Sie gilt nicht mehr für Links, die wir nie ausgestellt haben —
+das war nie ihre Absicht.
+
+**Was du prüfen solltest:** verlinken deine Mails auf fremde Domains
+(Ticketshop, Partner, Formularanbieter)? Dann gehören die in
+`allowed_redirect_hosts`. Der Abgleich ist **exakt**: `example.com` erlaubt
+nicht `mail.example.com`.
+
+
+## 2.5.0 — 2026-08-22
+
+### Fixed — die Aufgaben-Benachrichtigung stand in jeder Selbstbedienungs-Seite
+
+`crm.task_assigned` ist eine **interne** Benachrichtigung: Aufgaben werden
+Menschen im Team zugewiesen, nicht Kontakten. Auf der Selbstbedienungs-Seite
+tauchte sie trotzdem bei jedem auf — auch bei einer Newsletter-Adresse, die
+nie eine Aufgabe bekommen kann. Aufgefallen an adriangoldner.com, wo ein
+frisch angemeldeter Abonnent fünf Benachrichtigungsarten mal drei Kanäle sah.
+
+Die Art gilt jetzt nur noch für Empfänger mit einem Konto in der Anwendung
+(`userId`), und der Digest-Kanal ist für sie zu: eine Aufgabenzuweisung wäre
+dort einen Tag alt, und wer sie erst dann liest, hat einen Tag verloren.
+
+**Der Digest verliert dadurch nichts.** Die offenen Aufgaben kommen weiterhin
+über die eigene Quelle `leadhub-tasks` hinein — und das ist im Digest das
+Nützliche: der Stand, nicht das einzelne Ereignis.
+
+Braucht `goldnead/statamic-notifications` 1.7+. Mit einer älteren Fassung
+daneben bleibt alles wie zuvor: die beiden Angaben werden übersprungen, statt
+einen fatalen Fehler auszulösen.
+
 ## 2.4.0 — 2026-08-15
 
 ### Added — ein Deal hat jetzt eine eigene Seite

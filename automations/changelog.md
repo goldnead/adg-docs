@@ -12,6 +12,107 @@ Release notes for `goldnead/statamic-automations`, as published with the package
 Cross-version upgrade notes for the whole suite are in
 [Upgrading](/guide/upgrading).
 
+## 2.9.0 — 2026-08-25
+
+### What's new
+
+- **Trigger `payments.checkout_abandoned`.** Somebody started a checkout and did not finish it.
+  Requires `statamic-payments` 1.7, which does the once-only claim and the sweep; this side is the
+  trigger, filterable by product like its two siblings.
+
+  A sequence built on it should end on `payments.paid` — a payment arriving afterwards clears the
+  claim on the other side, and that is the honest signal that they bought it.
+
+  **A mail step on this trigger is a consent question**, not a configuration one: the address on an
+  unfinished checkout was given to complete a purchase. Put the suppression list in front of the send.
+
+## 2.8.0 — 2026-08-25
+
+### Neu — sechs Auslöser für Funnel- und Zahlungs-Ereignisse
+
+Beide Nachbar-Addons feuerten diese längst, und niemand konnte sie hören: es gab keinen
+Trigger-Knoten dafür. „Schick den Kurs, wenn die Zahlung durch ist" brauchte einen selbst
+geschriebenen Listener.
+
+- **Funnels** (mit `goldnead/statamic-funnels`): Schritt betreten, Formular abgeschickt, Angebot
+  angenommen, Funnel abgeschlossen. Filterbar nach Funnel; „Schritt betreten" zusätzlich nach
+  Schritt, weil dieser Auslöser sonst bei jedem Seitenaufruf feuert.
+- **Payments** (mit `goldnead/statamic-payments`): bezahlt, fehlgeschlagen. Filterbar nach Produkt.
+  Beide genau einmal je Zahlung, egal wie oft der Anbieter zustellt.
+
+„Angebot angenommen" feuert **nach** der Zahlung, nicht auf den Klick.
+
+Registriert nur, wenn der jeweilige Nachbar installiert ist, wie bei LeadHub.
+
+### Geändert
+
+- Der Zahlen-Streifen auf einer Knotenkarte nimmt jetzt eine Liste vom Wirt entgegen
+  (`goldnead/statamic-flow-canvas` ^1.1), statt drei fest benannte englische Zahlen mitzubringen.
+  Die alte Form wird weiter unverändert gezeichnet.
+
+## 2.7.1 — 2026-08-22
+
+### Fixed — der Serien-Ausstieg lief unter Mehrmarken-Betrieb ins 404
+
+Die Marke der Seite kommt aus der Automation, die Anmeldung dahinter ist
+aber selbst markengebunden. Sobald beide auseinanderlagen, fand die Seite den
+Token nie und antwortete 404 — was aussah wie „diesen Token gibt es nicht",
+tatsächlich aber die fail-closed-Trennung war. Auf der Kommandozeile, wo gar
+keine Marke aktiv ist, schlug dieselbe Abfrage immer fehl.
+
+Der Token wird jetzt ohne Marken-Scope gelesen. Er adressiert genau eine Zeile
+über alle Marken hinweg, was das sicher macht; die Prüfung, ob Anmeldung und
+Serie zusammengehören, steht dafür ausdrücklich im Controller — dort, wo beide
+bekannt sind. Ohne sie könnte der Token der einen Marke einen Ausstieg bei der
+anderen auslösen.
+
+Gefunden beim Prüfen am laufenden System, nicht von einem Test: in einer
+Einzelmarken-Installation tritt der Fall nicht auf.
+
+## 2.7.0 — 2026-08-22
+
+### Added — aus einer Serie aussteigen, ohne alles abzubestellen
+
+Bis hierher gab es nur ganz oder gar nicht. Die Abmeldung von einer Liste
+stoppt zwar auch laufende Serien — der Sendeknoten prüft vor jedem Schritt, ob
+noch eine Anmeldung besteht —, aber sie kostet denjenigen eben auch den
+Newsletter. Wer eine fünfteilige Willkommensstrecke nicht zu Ende lesen will,
+sonst aber gerne Post bekommt, hatte keine Wahl außer der, die ihn ganz
+verliert.
+
+Neu ist die Zwischenstufe: eine Zeile in `automation_opt_outs` heißt „diese
+Person will von dieser Automation nichts mehr". Nicht mehr und nicht weniger —
+die Listen-Anmeldung bleibt unberührt.
+
+**Geprüft wird an zwei Punkten, und beide sind nötig.** Im `EnrollmentGate`,
+damit ein Ausstieg auch für einen späteren zweiten Durchlauf gilt; sonst hätte
+sich jemand aus der Willkommensstrecke abgemeldet und bekäme sie beim nächsten
+Anlass wieder. Und vor jedem Sendeschritt, weil eine Serie tagelang zwischen
+den Mails wartet: wer an Tag 3 aussteigt, darf Mail 4 nicht mehr bekommen, und
+zwischen den Wartezeiten läuft nichts außer diesem Knoten.
+
+Die öffentliche Seite trennt Zeigen und Handeln wie das Double-Opt-in, und aus
+demselben Grund: der Link-Scanner eines Mailservers ruft jeden Link in einer
+Mail auf, bevor der Mensch sie überhaupt sieht. Ein GET, das schon austrägt,
+würde Leute aus Serien werfen, die nie geklickt haben. Der Weg zurück steht auf
+derselben Seite, damit ein versehentlicher Ausstieg nicht endgültig ist.
+
+### Changed — der Kontext weiß jetzt, zu welcher Automation er gehört
+
+`WorkflowRunner` legt `_automation` in den Kontext, bevor der Graph läuft. Der
+Kontext war bisher reine Nutzlast; ein Knoten konnte nicht wissen, wovon er
+Teil ist. Der Sendeknoten braucht genau das, um zu fragen „will diese Person
+diese Serie noch?" — und ein nach zwei Tagen fortgesetzter Lauf braucht es
+genauso wie ein frischer, weshalb es in `walk()` steht und nicht in den drei
+Einstiegen darüber.
+
+### Notes
+
+Der Routen-Parameter heißt `sequence`, nicht `automation`. Letzteres wäre der
+Name, den dieses Addon binden würde, wenn es je einen bindet — ein ungebundener
+Parameter mit genau diesem Namen ist eine Stolperfalle für den nächsten, der
+eine Bindung ergänzt. `RouteParameterCollisionTest` hält das fest.
+
 ## 2.6.1 — 2026-08-15
 
 ### Fixed — `config:cache` hätte die Einstellungen eingefroren

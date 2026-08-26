@@ -12,6 +12,37 @@ Release notes for `goldnead/statamic-webhook-manager`, as published with the pac
 Cross-version upgrade notes for the whole suite are in
 [Upgrading](/guide/upgrading).
 
+## 2.3.0 — 2026-08-24
+
+### Fixed — die Regel-Mail kannte die Marke nicht
+
+Regeln sind markenskaliert (`Storage\BrandSegments`), die Mail, die sie
+verschicken, war es nicht: `SendEmailAction` rief `Mail::raw()` und traf damit
+den prozessweiten Vorgabe-Mailer. Auf einem Host, der mehrere Marken in einem
+Prozess bedient, heißt das: die Regel von Marke A geht über das Relay von
+Marke B raus. Scaleway lehnt das ab, weil die Domain dort nicht verifiziert
+ist — oder es geht durch, unter fremder Identität.
+
+Die Aktion geht jetzt durch `Sending\BrandMailer`, dieselbe Tür wie in
+marketing, notifications, preference-center, automations und leadhub. Der
+Vertrag steht in `statamic-brand-context` ^1.8, hier wird nur der eigene Name
+gebunden.
+
+**Für Ein-Marken-Installationen ändert sich nichts.** Ohne erklärte
+Marken-Identität bleibt die `from`-Angabe der Regel stehen, genau wie bisher.
+Erklärt eine Marke einen Absender, gewinnt die Marke — eine Regel darf keine
+Marke imitieren.
+
+**Neu:** verweigert die Marken-Identität (etwa weil `from_address` fehlt),
+scheitert die Aktion sichtbar, statt „Email sent" zu melden während nichts das
+Haus verlassen hat.
+
+**Unverändert und beabsichtigt:** Störungsmeldungen
+(`SendFailureAlertListener`, `DeliveryFailedNotification`) bleiben beim Host.
+Eine Meldung *über* eine Marke ist keine Meldung *von* ihr — und sie muss
+ankommen, gerade wenn das Relay der Marke das Kaputte ist.
+
+
 ## 2.2.0 — 2026-08-15
 
 ### Added — the settings screen writes

@@ -12,6 +12,107 @@ Release notes for `goldnead/statamic-preference-center`, as published with the p
 Cross-version upgrade notes for the whole suite are in
 [Upgrading](/guide/upgrading).
 
+## 1.7.0 — 2026-08-25
+
+### Fixed
+
+- **A person with an umlaut in their address could never reach their own preferences.** The magic
+  link form validated with `filter_var($email, FILTER_VALIDATE_EMAIL)`, which predates RFC 6531 and
+  rejects every non-ASCII character. `bärbel.öztürk@beispiel.de` — a contact in the CRM, a
+  subscriber on two lists, and someone whose token link works perfectly — was answered as unknown.
+
+  The failure had no symptom, and that is the point: this form answers the same neutral sentence to
+  everyone on purpose, so that nobody can use it to find out who is on a list. A rejected address is
+  therefore indistinguishable from an unknown one. The page the GDPR expects a person to be able to
+  reach was closed to them, silently, for as long as the check existed.
+
+  `EmailNormalizer::looksDeliverable()` now judges the domain through its punycode form and a
+  Unicode local part on its own terms, while still refusing what is genuinely undeliverable.
+
+## 1.6.3 — 2026-08-23
+
+### Fixed — die Matrix zeichnete Kästchen für Kanäle, die es nicht gibt
+
+Die Spalten kommen aus der globalen Kanalliste, die Zeilen aus den Arten. Seit
+`goldnead/statamic-notifications` 1.7 kann eine Art sagen, welche Kanäle sie
+überhaupt führt — die Zeile fragte aber nicht danach und zeichnete für jede
+Spalte ein Kästchen.
+
+Auf der Produktion sichtbar an `crm.task_assigned`: die Art führt seit
+leadhub 2.5 keinen Digest mehr, in der Tabelle stand die Digest-Spalte
+trotzdem. Anklickbar, gespeichert, und beim Versand ignoriert.
+
+Genau die Sorte Bedienelement, die diese Reihe abschaffen sollte: ein
+Kästchen, das aussieht wie eine Wahl und keine ist.
+
+Eine Art ohne diesen Kanal bekommt jetzt eine leere Zelle. Wichtig dabei:
+„nicht vorhanden" und „aus" bleiben verschieden — ein ausgeschalteter Kanal
+ist eine Wahl, ein fehlender ist keine.
+
+## 1.6.2 — 2026-08-23
+
+### Fixed — ein Mensch, eine Einstellung, egal durch welche Tür
+
+Ein Besuch über den Mail-Link wurde immer als **Kontakt** aufgelöst, auch bei
+jemandem, der ein Konto hat. Das hatte zwei Folgen, und beide sind Fehler:
+
+- `notification_preferences` hängt an `(user_id, contact_uuid)`. Wer über den
+  Mail-Link etwas einstellte, schrieb in eine andere Zeile als angemeldet —
+  derselbe Mensch, zwei Einstellungssätze, keiner sah den anderen. Das war
+  schon vor dieser Reihe so und fiel nur niemandem auf.
+- Seit 1.6.1 die Arten nach Zuständigkeit filtert, verschwanden über den
+  Mail-Link zusätzlich alle Einstellungen, die ein Konto voraussetzen.
+
+Findet sich zu der Adresse ein Konto, wird der Besuch jetzt als dieses Konto
+aufgelöst — dieselbe Kennung wie beim Anmelden. Mehr darf dabei niemand: der
+Token beweist ohnehin die Verfügung über das Postfach, und
+`canStoreNotificationPreferences()` hing nie am Kontotyp, sondern nur daran,
+ob die Person überhaupt einzuordnen ist.
+
+Gefunden in einem Nutzertest mit einem echten Konto — kein Test hätte das
+treffen können, weil keiner je einen Nutzer anlegte.
+
+### Fixed — die Testsuite hing von früheren Läufen ab
+
+`statamic.users.repository` steht in der Suite auf `file`, und der Treiber
+schreibt echte YAML-Dateien. Die Datenbank wird zwischen Tests zurückgesetzt,
+diese Dateien nicht. Solange kein Test Nutzer anlegte, blieb das folgenlos;
+mit dem ersten, der es tut, fielen prompt drei fremde Tests um. `setUp()` räumt
+das Verzeichnis jetzt aus.
+
+## 1.6.1 — 2026-08-22
+
+### Fixed — der leere Benachrichtigungs-Block stand mit einem falschen Satz da
+
+Seit `goldnead/statamic-notifications` 1.7 die Arten nach Zuständigkeit
+filtert, kommt eine leere Liste regelmäßig vor: eine Newsletter-Adresse ohne
+Konto hat schlicht keine Benachrichtigungen einzustellen. Der Block wurde
+trotzdem gezeichnet — mit der Zeile „Diese Installation kennt keine
+Benachrichtigungsarten", die dann doppelt falsch war: die Installation kennt
+sehr wohl welche, und dem Leser hilft der Satz ohnehin nicht.
+
+`hasTypes()` verlangt jetzt Zeilen, nicht nur ein vorhandenes Array. Für den
+Menschen davor sind „keine registriert" und „keine für dich" dasselbe: es gibt
+nichts einzustellen, und eine Überschrift ohne Inhalt ist schlimmer als keine.
+
+## 1.6.0 — 2026-08-22
+
+### Added — laufende Serien verlassen
+
+Der vierte Block, und der einzige mit einer Zwischenstufe. Listen sind An/Aus
+für ein ganzes Thema, die Frequenz gilt für alles — eine Serie ist ein
+einzelner Strang, den man verlassen kann, ohne den Rest aufzugeben. Genau das
+ist der Fall, den jemand meint, der eine Willkommensstrecke nicht zu Ende lesen
+will.
+
+Gezeigt werden laufende Serien (ein Lauf wartet noch auf seinen nächsten
+Schritt) **und bereits verlassene**. Ohne die verlassenen wäre der Block nach
+dem Ausstieg leer und der Weg zurück nirgends zu finden.
+
+Wie die drei anderen Quellen über `class_exists` geschützt: ohne
+`goldnead/statamic-automations` gibt es keine Serien und damit keinen Block.
+Abschaltbar über `preference-center.sources.sequences`.
+
 ## 1.5.2 — 2026-08-13
 
 ### Added — a test holds the informal address, and the way back is documented
