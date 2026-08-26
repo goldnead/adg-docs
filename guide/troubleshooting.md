@@ -128,8 +128,8 @@ fresh, which produces a half-correct segment. See
 
 A `composer.json` referencing `../statamic-*` cannot resolve on any machine
 without those sibling directories, including every Docker build. Remove the
-`repositories` block and let the package resolve from Packagist, where twelve of
-the fifteen are published. A path repository is a development convenience only,
+`repositories` block and let the package resolve from Packagist, where twenty-one of
+the twenty-two are published. A path repository is a development convenience only,
 except for Entitlements, Lead Magnets and Events, which are unpublished and have
 no other way in yet.
 

@@ -1,13 +1,14 @@
 # The suite
 
-Fifteen packages, five layers. Every arrow below is a Composer dependency;
+Twenty-two packages, six layers. Every arrow below is a Composer dependency;
 anything not drawn is optional and detected at runtime with `class_exists`,
 which is why you can install any addon without the rest.
 
-::: warning Three of the fifteen are unreleased
-`entitlements`, `lead-magnets` and `events` are built and documented but carry
-no git tag and are not on Packagist. Everything said about them below describes
-their current `main`.
+::: warning One of the twenty-two is unreleased
+`invoices` is built and documented but carries no git tag and is not on
+Packagist. Everything said about it below describes its current `main`. The
+other twenty-one are tagged and published, `entitlements`, `lead-magnets` and
+`events` among them — an earlier version of this page said otherwise.
 :::
 
 ```
@@ -28,6 +29,17 @@ Foundation ───────────────────────
 Between the domain addons ───────────────────────────────────────────
 
   marketing  ──requires──▶  leadhub
+
+Commerce ────────────────────────────────────────────────────────────
+
+  payments               required by 3:  offers, invoices, funnels
+
+  offers     ──requires──▶  payments
+  invoices   ──requires──▶  payments
+  funnels    ──requires──▶  payments, offers, flow-canvas
+
+  flow-canvas            the editor, consumed twice: funnels requires it,
+                         automations uses the same code
 
 Standalone ──────────────────────────────────────────────────────────
 
@@ -55,7 +67,7 @@ are worth naming, because they look like dependencies and are not:
 `notifications` rather than an optional extra: both ask the gate before they
 queue mail, and a gate that might not be there would be no gate at all.
 
-## The fifteen
+## The twenty-two
 
 ### Foundation
 
@@ -140,6 +152,38 @@ Email templates as native Statamic entries with a Bard body, rendered to email
 HTML at send time, with Statamic's own Live Preview wired up. Marketing and
 Automations consume it optionally; neither depends on it.
 
+### Commerce
+
+**[Payments](/payments/)** &nbsp;·&nbsp; `goldnead/statamic-payments`
+
+The till. Mollie checkout, a webhook that trusts nothing in the request,
+fulfilment that runs exactly once, subscriptions, payment plans and trials. One
+rule carries the rest: the amount is looked up in the catalogue and never comes
+from a request. Mollie rather than Stripe because SEPA, iDEAL and Bancontact are
+what a European buyer reaches for, and there is no monthly floor.
+
+**[Offers](/offers/)** &nbsp;·&nbsp; `goldnead/statamic-offers`
+
+A product *presented*: at a place, for a price that may be its own, with words
+about this moment. The same product is a €29 purchase on the sales page and a
+€12 upsell on the thank-you page — two offers, one product. Adds bumps and
+coupon codes, and hangs into the payment catalogue through its `Catalogue`
+seam rather than beside it.
+
+**[Invoices](/invoices/)** &nbsp;·&nbsp; `goldnead/statamic-invoices`
+
+A payment becomes a document: a gapless number per brand, VAT by the buyer's
+country, reverse charge on a valid VAT ID, and the per-rate breakdown German law
+wants. It renders HTML and stops there — turning that into a PDF is a decision
+about infrastructure an addon should not make for its host.
+
+**[Funnels](/funnels/)** &nbsp;·&nbsp; `goldnead/statamic-funnels`
+
+A path somebody is standing on: pages, forms, offers and payments in one flow,
+drawn on a canvas. Not an automation — an automation is event then action, a
+funnel needs a page and a memory of how far each visitor got. Landing pages come
+from ordinary Statamic entries rather than a second, worse page builder.
+
 ### Platform services
 
 **[Activity](/activity/)** &nbsp;·&nbsp; `goldnead/statamic-activity`
@@ -164,6 +208,20 @@ idempotency enforced by a unique index present in the first migration, and a
 revocation that requires a reason. It decides access and sends nothing: the four
 domain events are where a consumer hangs its mail and its account creation.
 
+**[Booking](/booking/)** &nbsp;·&nbsp; `goldnead/statamic-booking`
+
+Records Cal.com bookings: signed, idempotent, one event per real change. It
+deliberately builds no calendar — availability, time zones, reschedules and
+reminders are a solved problem, and solving them again badly is the usual way a
+booking feature goes wrong. An endpoint without a secret refuses every request.
+
+**[Flow Canvas](/flow-canvas/)** &nbsp;·&nbsp; `goldnead/statamic-flow-canvas`
+
+The node-graph editor itself, extracted so that Automations and Funnels cannot
+drift apart. Node kinds are data and the wording belongs to the host, which is
+what lets one editor speak two vocabularies. Infrastructure rather than a
+product: it is here for the developer building on it.
+
 ### Content tooling
 
 **[Events](/events/)** &nbsp;·&nbsp; `goldnead/statamic-events` &nbsp;·&nbsp; *unreleased*
@@ -181,6 +239,14 @@ Markdown field or any HTML string, and add matching anchor ids to the rendered
 headings. No migrations and no CP screens; it does ship a config file and a
 publishable view. It is also the one addon in the suite that still supports
 Statamic 5 alongside 6.
+
+**[Consent](/consent/)** &nbsp;·&nbsp; `goldnead/statamic-consent`
+
+Cookie banner and two-click embed gate, both edited in the Control Panel.
+Antlers and no build step, which is the difference from most consent tooling.
+Per service rather than per category: somebody who agreed to a map has not
+agreed to advertising. When a page has nothing that needs asking, it asks
+nothing.
 
 ## Which ones talk to each other
 

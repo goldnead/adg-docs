@@ -7,7 +7,7 @@ hero:
   name: Statamic Addons
   text: One suite, one set of docs
   tagline: >
-    Fifteen packages for Statamic 6: a CRM, email marketing, a visual automation
+    Twenty-two packages for Statamic 6: a CRM, email marketing, a visual automation
     builder, a webhook layer, an activity ledger, notifications, a subscriber
     preference centre, entitlements, gated resources, events and content tooling.
     Built to be installed one at a time and to compose when you install the next one.

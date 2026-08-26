@@ -15,6 +15,12 @@ works, just badly. This page starts from the problem.
 | Send a newsletter | [Marketing](/marketing/) | Automations' send-email action, which is for one-off transactional mail |
 | Send one email in response to one event | [Automations](/automations/nodes) | Marketing, which is built around lists and consent |
 | Let editors write the email HTML | [Email Templates](/email-templates/) | |
+| Take money for something | [Payments](/payments/) | a posted price, which is how a €19 thing sells for a cent |
+| Sell the same product twice at different prices | [Offers](/offers/) | two products, which makes the catalogue lie |
+| Give a German buyer a proper invoice | [Invoices](/invoices/) | a receipt email, which is not one |
+| Walk a visitor through pages, a form and an offer | [Funnels](/funnels/) | Automations, which has no notion of a page or of where somebody is standing |
+| Record appointments people booked | [Booking](/booking/) | building a calendar, which is a solved problem elsewhere |
+| Ask before setting cookies or loading an embed | [Consent](/consent/) | |
 | Answer "what happened to this person, across every part of the site" | [Activity](/activity/) | LeadHub's timeline, which only knows about the CRM |
 | Answer "what happened to this contact, in the CRM" | [LeadHub timelines](/leadhub/timelines) | Activity, which is not a per-contact view |
 | Tell a user something and have it still be there tomorrow | [Notifications](/notifications/) | Laravel's mail-only notifications |

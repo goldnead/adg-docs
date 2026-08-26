@@ -104,13 +104,17 @@ members:
 
 ## Buying
 
-**Twelve of the fifteen packages are on Packagist**, commercial ones included,
-and every one of those installs with a bare `composer require`. Entitlements,
-Lead Magnets and Events are untagged and unpublished; they are MIT like the rest,
-and there is nothing to buy. Being on Packagist is not
-the same as being free: Automations and Table of Contents resolve as normal
-Composer packages but are licensed, not sold, and their licence is bought and
-managed through the [Statamic Marketplace](https://statamic.com/addons).
+**Twenty-one of the twenty-two packages are on Packagist**, commercial ones
+included, and every one of those installs with a bare `composer require`. Only
+Invoices is untagged and unpublished.
+
+Being on Packagist is not the same as being free. **Nine are commercial** —
+Automations, Table of Contents, Payments, Offers, Invoices, Funnels, Booking,
+Consent and Flow Canvas. They resolve as ordinary Composer packages but are
+licensed rather than sold, and the licence is bought and managed through the
+[Statamic Marketplace](https://statamic.com/addons). **The other thirteen are
+MIT**, and `composer require` is the whole transaction.
+
 
 For the MIT packages there is nothing further to do. `composer require` is the
 whole transaction.
