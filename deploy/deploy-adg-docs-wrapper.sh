@@ -19,10 +19,63 @@ set -u
 REPO=/opt/adg-docs
 WEBROOT=/srv/adg-docs
 LOG=/var/log/adg-docs-deploy.log
+LOCK=/opt/adg-docs/.deploy.lock
+MAX_WAIT_SECONDS=1800
+SLEEP_SECONDS=5
 
 log() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*" >> "$LOG"; }
 
 log "=== webhook deploy start ==="
+
+# --- Deploy-Sperre ---------------------------------------------------------------
+# Zwei gleichzeitige Zustellungen (Doppel-Hook, GitHub-Retry, Deploy von Hand) duerfen
+# nicht parallel laufen: beide Laeufe teilen sich denselben Checkout und denselben
+# Webroot, und der Webroot wird zwischendurch geleert. Ein zweiter Lauf, der genau in
+# dieses Fenster faellt, kopiert in ein halb geloeschtes Verzeichnis.
+# Die BusyBox-flock im Webhook-Container kennt kein -w, deshalb begrenztes Warten per
+# "flock -n" in einer Schleife mit Countdown (gleiches Muster wie
+# /opt/recipes/deploy-recipes-wrapper.sh).
+#
+# Die Sperrdatei ist im Repo eingecheckt und entsteht dadurch beim Deploy von selbst:
+# der Webhook laeuft als uid 1000 und kann in /opt/adg-docs (root-owned Bind-Mount)
+# nichts anlegen. Weil die Datei leer ist und leer bleibt, laesst "git reset --hard" sie
+# in Ruhe und die Inode bleibt ueber Deploys hinweg dieselbe.
+# Fehlt sie doch einmal (z.B. nach "git clean -fdx"), wird sie angelegt, sofern das
+# Verzeichnis schreibbar ist, sonst weicht die Sperre sichtbar auf /tmp aus.
+if [ ! -e "$LOCK" ]; then
+    ( umask 000; : > "$LOCK" ) 2>/dev/null || true
+fi
+if [ ! -e "$LOCK" ]; then
+    LOCK=/tmp/adg-docs.deploy.lock
+    log "WARN: Sperrdatei im Repo fehlt und ist nicht anlegbar — weiche auf $LOCK aus"
+    log "WARN: serialisiert damit nur Laeufe im selben Container, nicht gegen Host-Laeufe"
+    ( umask 000; : > "$LOCK" ) 2>/dev/null || true
+fi
+if [ ! -r "$LOCK" ]; then
+    log "=== webhook deploy ABGEBROCHEN: Sperrdatei $LOCK nicht lesbar ==="
+    exit 1
+fi
+
+# Nur lesend oeffnen: flock(2) braucht kein Schreibrecht, und die eingecheckte Datei
+# gehoert root, waehrend der Webhook als uid 1000 laeuft.
+exec 9<"$LOCK"
+
+start_ts=$(date +%s)
+deadline_ts=$((start_ts + MAX_WAIT_SECONDS))
+
+while ! flock -x -n 9; do
+    now_ts=$(date +%s)
+    if [ "$now_ts" -ge "$deadline_ts" ]; then
+        log "=== webhook deploy ABGEBROCHEN: Lock nach ${MAX_WAIT_SECONDS}s noch belegt — live site untouched ==="
+        exit 1
+    fi
+    remaining=$((deadline_ts - now_ts))
+    log "deploy lock belegt, neuer Versuch in ${SLEEP_SECONDS}s (${remaining}s Frist uebrig)"
+    sleep "$SLEEP_SECONDS"
+done
+
+log "=== deploy lock acquired ($LOCK) ==="
+# --- Ende Deploy-Sperre ----------------------------------------------------------
 
 # node:22 (bookworm, not -alpine) ships git, which is why one container can do both
 # halves. --network host is not needed; the default bridge reaches GitHub.
