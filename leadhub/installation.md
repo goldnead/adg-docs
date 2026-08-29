@@ -170,4 +170,4 @@ That is the fastest way to prove a bug is in the addon rather than in your proje
 
 ## Licence
 
-MIT.
+Commercial: `composer.json` says `proprietary`. See [Licensing](/guide/licensing) for how the commercial addons in the suite resolve their licence.

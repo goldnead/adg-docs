@@ -90,7 +90,7 @@ export const addons = [
     name: 'Webhook Manager',
     package: 'goldnead/statamic-webhook-manager',
     layer: 'integration',
-    license: 'MIT',
+    license: 'Commercial',
     tagline:
       'Outbound hooks, inbound endpoints, deliveries, retries, replays and rules in the Control Panel.',
     icon: '⇄',
@@ -131,7 +131,7 @@ export const addons = [
     name: 'LeadHub',
     package: 'goldnead/statamic-leadhub',
     layer: 'crm',
-    license: 'MIT',
+    license: 'Commercial',
     tagline:
       'Turn form submissions into contacts, timelines, pipelines and follow-ups inside the CP.',
     icon: '◎',
@@ -154,7 +154,7 @@ export const addons = [
     name: 'Marketing',
     package: 'goldnead/statamic-marketing',
     layer: 'crm',
-    license: 'MIT',
+    license: 'Commercial',
     tagline:
       'Lists, double opt-in, campaigns, sending and tracking on top of LeadHub contacts.',
     icon: '✉',
@@ -192,7 +192,7 @@ export const addons = [
     name: 'Lead Magnets',
     package: 'goldnead/statamic-lead-magnets',
     layer: 'crm',
-    license: 'MIT',
+    license: 'Commercial',
     unreleased: true,
     tagline:
       'Confirm-first resource delivery: ask for a file, confirm the address, download through a signed and audited link.',
@@ -211,7 +211,7 @@ export const addons = [
     name: 'Email Templates',
     package: 'goldnead/statamic-email-templates',
     layer: 'crm',
-    license: 'MIT',
+    license: 'Commercial',
     tagline:
       'Bard-authored email templates in a shared collection, consumed by Marketing and Automations.',
     icon: '▤',
@@ -282,7 +282,7 @@ export const addons = [
     name: 'Events',
     package: 'goldnead/statamic-events',
     layer: 'content',
-    license: 'MIT',
+    license: 'Commercial',
     unreleased: true,
     tagline:
       'Events with any number of dates, per-event timezones, venues, ICS downloads and a subscribable feed.',
@@ -421,7 +421,7 @@ export const addons = [
     name: 'Flow Canvas',
     package: 'goldnead/statamic-flow-canvas',
     layer: 'platform',
-    license: 'Commercial',
+    license: 'MIT',
     tagline:
       'The shared node-graph editor behind Automations and Funnels. One editor, consumed twice.',
     icon: '◇',

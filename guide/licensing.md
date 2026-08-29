@@ -5,24 +5,17 @@ on the addon.
 
 ## Per addon
 
-| Addon | Licence |
-| --- | --- |
-| [Brand Context](/brand-context/) | MIT |
-| [Identity Contracts](/identity-contracts/) | MIT |
-| [Suppression](/suppression/) | MIT |
-| [Webhook Manager](/webhook-manager/) | MIT |
-| [LeadHub](/leadhub/) | MIT |
-| [Marketing](/marketing/) | MIT |
-| [Email Templates](/email-templates/) | MIT |
-| [Activity](/activity/) | MIT |
-| [Notifications](/notifications/) | MIT |
-| [Preference Center](/preference-center/) | MIT |
-| [Automations](/automations/) | Commercial, via the Statamic Marketplace |
-| [Table of Contents](/toc/) | Commercial, via the Statamic Marketplace |
+<LicenceTable />
 
 The MIT-licensed packages need no key and impose no runtime check. The commercial
 ones are licensed, not sold, and resolve their status through Statamic's own
 licensing system.
+
+This table is generated from the addon registry, and
+`scripts/sync-licenses.mjs` checks that registry against each package's own
+`composer.json`. It is generated rather than typed out because a hand-copied
+licence has nothing keeping it honest: for a stretch of August 2026 this page
+listed six commercial addons as MIT.
 
 ## Statamic's licensing system
 
@@ -35,34 +28,13 @@ A site in development mode does not need a licence. A production domain does.
 
 ## Editions
 
-**Automations** ships in two editions:
+Statamic supports addon editions natively: a package declares them in its
+`composer.json` and resolves the active one through Statamic's own licensing,
+with no key handling of its own.
 
-- **Free** — the full visual builder, all triggers, all logic nodes and the core
-  actions.
-- **Pro** — premium features, currently the AI action and custom node
-  registration, unlocked with a Pro licence.
-
-The active edition is resolved natively through Statamic's licensing system, and
-the licensing utility in the CP shows which one is active. A Free install is not
-crippled: the builder, the triggers, the branches and the actions you use daily
-are all in it.
-
-Automations also exposes a licence configuration for self-hosted arrangements.
-The mode is a value under `license.mode`, not a key of its own:
-
-```php
-// config/automations.php
-'license' => [
-    'key'      => env('STATAMIC_AUTOMATIONS_LICENSE_KEY', ''),
-    'mode'     => env('STATAMIC_AUTOMATIONS_LICENSE_MODE', 'config'), // config | remote
-    'endpoint' => env('STATAMIC_AUTOMATIONS_LICENSE_ENDPOINT', ''),
-],
-```
-
-`config` mode is the right answer for an install that must not make outbound
-calls: the key is compared against `license.allowed_keys` locally and no
-request leaves the server. `remote` mode checks `license.endpoint` instead and
-caches the answer for `license.cache_ttl_minutes`.
+**No addon in this suite currently ships editions.** Automations did until 2.0.0,
+where the edition gates and a home-grown licence manager were both removed. There
+is nothing to configure, and no `license` block in any addon's config.
 
 ## Statamic Pro
 
@@ -105,21 +77,30 @@ members:
 ## Buying
 
 **Twenty-one of the twenty-two packages are on Packagist**, commercial ones
-included, and every one of those installs with a bare `composer require`. Only
-Invoices is untagged and unpublished.
+included, and every one of those installs with a bare `composer require`. Invoices
+is tagged (v1.1.0) but not published.
 
-Being on Packagist is not the same as being free. **Eight are commercial** —
-Automations, Table of Contents, Payments, Offers, Invoices, Funnels, Booking and
-Consent. They resolve as ordinary Composer packages but are licensed rather than
-sold, and the licence is bought and managed through the
-[Statamic Marketplace](https://statamic.com/addons). **The other fourteen are
-MIT**, and `composer require` is the whole transaction.
+Being on Packagist is not the same as being free. **Fourteen are commercial** and
+**eight are MIT**; the table above is the authoritative list. The commercial ones
+resolve as ordinary Composer packages but are licensed rather than sold.
+
+::: warning Only one of the fourteen can actually be bought today
+[Table of Contents](/toc/) has a Statamic Marketplace listing. The other
+thirteen commercial packages are declared `proprietary` in their
+`composer.json` — twelve of them resolve from Packagist, Invoices is unpublished —
+but **no listing exists for any of them yet**, so there is currently no way to buy a licence for one.
+
+If you are running one of them on a production site, that is not a licence
+breach you need to fix today — it is a listing that does not exist yet. Get in
+touch at [info@adriangoldner.com](mailto:info@adriangoldner.com) and we will
+sort it out when the listing goes up. Tags published before the licence changed
+in August 2026 were MIT and stay MIT.
+:::
 
 Flow Canvas is MIT from 1.2.0 on, and deliberately: Funnels requires it, so a
 commercial editor behind a commercial addon would have meant two licences for
 one purchase. A shared foundation that our own addons consume belongs with
 Brand Context and Identity Contracts, not in the shop.
-
 
 For the MIT packages there is nothing further to do. `composer require` is the
 whole transaction.

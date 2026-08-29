@@ -134,6 +134,7 @@ export default defineConfig({
         text: 'Reference',
         items: [
           { text: 'Suite overview', link: '/guide/suite' },
+          { text: 'The commerce suite', link: '/guide/commerce' },
           { text: 'Compatibility matrix', link: '/guide/compatibility' },
           { text: 'Choosing an addon', link: '/guide/choosing' },
           { text: 'Glossary', link: '/guide/glossary' },
@@ -149,6 +150,7 @@ export default defineConfig({
           items: [
             { text: 'Introduction', link: '/guide/' },
             { text: 'The suite', link: '/guide/suite' },
+            { text: 'The commerce suite', link: '/guide/commerce' },
             { text: 'Installation', link: '/guide/installation' },
             { text: 'Choosing an addon', link: '/guide/choosing' },
             { text: 'Compatibility', link: '/guide/compatibility' },

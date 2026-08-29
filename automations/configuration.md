@@ -230,7 +230,7 @@ Switch it off and nothing else changes. See
 ],
 ```
 
-Backs the AI action, which is a Pro feature. No key means the action is unavailable
+Backs the AI action. No key means the action is unavailable
 rather than failing at run time.
 
 ## Features
@@ -241,8 +241,6 @@ rather than failing at run time.
     'filter_nodes' => true,
     'delay_nodes' => true,
     'custom_actions' => true,
-    'custom_actions_requires_pro' => true,
-    'ai_action_requires_pro' => true,
     'custom_triggers' => true,
     'templates' => true,
     'export_import' => true,
@@ -281,26 +279,6 @@ addons' lists do not — add whatever your own fields are called. A field named
 
 Where exported JSON files are written. See
 [Export, import & file sync](/automations/export-import).
-
-## License
-
-```php
-'license' => [
-    'key' => env('STATAMIC_AUTOMATIONS_LICENSE_KEY', ''),
-    'mode' => env('STATAMIC_AUTOMATIONS_LICENSE_MODE', 'config'),  // config | remote
-    'endpoint' => env('STATAMIC_AUTOMATIONS_LICENSE_ENDPOINT', ''),
-    'cache_ttl_minutes' => 360,
-    'allowed_keys' => [],
-    'features' => ['custom_actions', 'custom_triggers'],
-],
-```
-
-`config` mode validates against `allowed_keys` locally and is the right answer for an
-install that must not make outbound calls. `remote` checks an endpoint, cached for six
-hours.
-
-Independently of this, the edition also resolves through Statamic's own licensing
-system, which is what the CP licensing utility reports.
 
 ## Secrets
 
@@ -377,7 +355,4 @@ STATAMIC_AUTOMATIONS_ENCRYPT_CONTEXT=false
 STATAMIC_AUTOMATIONS_FILE_PATH=
 STATAMIC_AUTOMATIONS_AI_MODEL=claude-sonnet-4-5
 ANTHROPIC_API_KEY=
-STATAMIC_AUTOMATIONS_LICENSE_MODE=config
-STATAMIC_AUTOMATIONS_LICENSE_KEY=
-STATAMIC_AUTOMATIONS_LICENSE_ENDPOINT=
 ```

@@ -108,9 +108,6 @@ and Export all 404'd. Upgrade.
 2. **Wrapped in `app->booted()`.** Statamic already calls `bootAddon()` inside one, so
    nesting fires immediately and is still too early.
 3. **Handle collision.** A matching handle **replaces** rather than adds.
-4. **No Pro licence.** `features.custom_actions_requires_pro` is `true` by default, and a
-   failed gate **skips the registration silently**. Nothing throws and nothing is logged.
-   This is the one to check first when the code looks right.
 
 Ask the registries:
 

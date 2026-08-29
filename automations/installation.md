@@ -100,28 +100,6 @@ Statamic Pro:
 STATAMIC_PRO_ENABLED=true
 ```
 
-## Pro features
-
-The Free edition includes the full builder, all triggers, all logic nodes and the core
-actions. Pro unlocks the AI action and custom node registration:
-
-```php
-'features' => [
-    'custom_actions_requires_pro' => true,
-    'ai_action_requires_pro' => true,
-],
-```
-
-The edition resolves through Statamic's own licensing system. For a self-hosted
-arrangement that must not make outbound calls, the addon also supports a local key:
-
-```dotenv
-STATAMIC_AUTOMATIONS_LICENSE_MODE=config
-STATAMIC_AUTOMATIONS_LICENSE_KEY=…
-```
-
-See [Configuration](/automations/configuration#license).
-
 ## Developing against a clone
 
 The front end is built with the official Statamic 6 Vite convention
@@ -147,5 +125,4 @@ it, not in the addon.
 
 ## Licence
 
-Commercial software, licensed (not sold) through the
-[Statamic Marketplace](https://statamic.com/addons).
+Commercial: `composer.json` says `proprietary`. See [Licensing](/guide/licensing) for how the commercial addons in the suite resolve their licence.

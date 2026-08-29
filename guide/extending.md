@@ -64,12 +64,11 @@ again replaces the mapper, and never adds a second listener.
 This is the opposite of what you would hope for, and worth knowing before you
 debug a missing node.
 
-Automations gates `registerTrigger()`, `registerAction()` and
-`registerLogicNode()` on the Pro licence. **A failed gate skips the
-registration and does not throw**, so that a package boot never crashes when a
-customer's licence has lapsed. The cost of that choice is that a custom node on
-a Free install simply never appears, with nothing in the log to say so.
-`registerOptionSource()` and `registerEventTrigger()` are not gated at all.
+`registerTrigger()`, `registerAction()` and `registerLogicNode()` are switchable
+through `automations.features`, and a switch that is off skips the registration
+rather than throwing. Registration also has to happen in `boot()`: Statamic boots
+addon providers first, so the registries do not exist yet in `register()`. Either
+way a custom node simply never appears, with nothing in the log to say so.
 
 To find out what the registry actually holds, use `Automations::describe()`.
 It takes the class you registered and tells you the handle and kind it resolved

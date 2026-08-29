@@ -102,5 +102,4 @@ STATAMIC_PRO_ENABLED=true
 
 ## Licence
 
-Commercial software, licensed (not sold) through the
-[Statamic Marketplace](https://statamic.com/addons).
+Commercial: `composer.json` says `proprietary`. See [Licensing](/guide/licensing) for how the commercial addons in the suite resolve their licence.

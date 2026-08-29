@@ -169,4 +169,4 @@ it expires; it is inert.
 
 ## Licence
 
-Commercial, one edition. See [Licensing](/guide/licensing).
+Commercial: `composer.json` says `proprietary`. See [Licensing](/guide/licensing) for how the commercial addons in the suite resolve their licence.

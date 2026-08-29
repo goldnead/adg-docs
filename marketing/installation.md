@@ -184,4 +184,4 @@ add the redirect in your application before you upgrade.
 
 ## Licence
 
-MIT.
+Commercial: `composer.json` says `proprietary`. See [Licensing](/guide/licensing) for how the commercial addons in the suite resolve their licence.

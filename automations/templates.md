@@ -29,7 +29,7 @@ Six of the eleven involve LeadHub or Webhook Manager. Those appear, and work, on
 that addon is installed; installing one without it produces an automation whose nodes are
 flagged as unavailable rather than one that fails at run time.
 
-*AI Triage of Inquiries* uses the AI action, which is a Pro feature and needs an
+*AI Triage of Inquiries* uses the AI action, which needs an
 `ANTHROPIC_API_KEY`.
 
 ## Installing one
@@ -118,8 +118,7 @@ public function boot(): void
 handle that collides with a built-in **replaces** it, which is how you swap a shipped
 template for your own version rather than ending up with two.
 
-Templates are not licence-gated. They only materialise nodes the user could also place by
-hand, so registering one needs no Pro licence even where registering a custom node would.
+Templates only materialise nodes the user could also place by hand.
 
 `requires` names the sibling addons a template depends on (`leadhub`, `webhook_manager`),
 and drives the "unavailable" marking rather than hiding the template.

@@ -205,13 +205,8 @@ class does not exist, does not implement `AutomationNode`, returns an empty `han
 or does not satisfy the contract for the kind you registered it as. You get a stack trace
 at boot, which is the point.
 
-**A failed licence gate does not throw.** Custom node registration is a Pro feature
-(`features.custom_actions_requires_pro`, on by default). Without a Pro licence the
-registration is **skipped silently** so a lapsed licence never crashes somebody's boot.
-Nothing is logged and nothing is thrown; the node is simply absent from the library.
-
-So: node missing and nothing threw → check the licence first, then check whether the
-registration code ran at all.
+So: node missing and nothing threw → check whether the registration code ran at all,
+and whether it ran in `boot()`.
 
 `registerOptionSource()` and `registerEventTrigger()` are **not** gated. They register
 regardless of licence state.
@@ -289,25 +284,19 @@ This is also how you reach LeadHub events that the curated trigger set does not 
 `LeadHubSourceIngested`, `LeadHubOpportunityWon`, `LeadHubContactsMerged` and the rest.
 Register the event class and you have a node.
 
-## Custom nodes are a Pro feature
+## Custom nodes are not licence-gated
 
 ```php
 'features' => [
     'custom_actions' => true,
-    'custom_actions_requires_pro' => true,
     'custom_triggers' => true,
 ],
 ```
 
-Registering a **node** — action, trigger or logic node — requires a Pro licence by
-default, and without one the registration is skipped silently rather than throwing.
-
-`registerOptionSource()`, `registerEventTrigger()` and `template()` are **not** gated.
-They register whatever the licence state is. So an option source for a node you cannot
-register is not an error, just an option source nothing asks for yet.
-
-Built-in nodes are exempt: the addon marks its own handles with `registerBuiltIn()` before
-registering them, which is why a Free install still has every shipped node.
+Registering a node — action, trigger or logic node — needs no licence. Automations
+carried a Pro gate on this until 2.0.0, along with a licence manager of its own; both
+were removed. The switches above turn the capability off entirely if you want that, and
+they are on by default.
 
 ## Keeping credentials out of exports
 

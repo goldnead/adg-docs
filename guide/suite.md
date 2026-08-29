@@ -4,11 +4,11 @@ Twenty-two packages, six layers. Every arrow below is a Composer dependency;
 anything not drawn is optional and detected at runtime with `class_exists`,
 which is why you can install any addon without the rest.
 
-::: warning One of the twenty-two is unreleased
-`invoices` is built and documented but carries no git tag and is not on
-Packagist. Everything said about it below describes its current `main`. The
-other twenty-one are tagged and published, `entitlements`, `lead-magnets` and
-`events` among them — an earlier version of this page said otherwise.
+::: warning One of the twenty-two is unpublished
+`invoices` is built, documented and tagged (v1.1.0), but its repository is
+private and it is not on Packagist, so `composer require` will not resolve it.
+Everything said about it below describes that tag. The other twenty-one are
+tagged and published, `entitlements`, `lead-magnets` and `events` among them.
 :::
 
 ```

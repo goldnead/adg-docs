@@ -1,0 +1,100 @@
+---
+title: The commerce suite
+description: Eight packages that turn a Statamic site into its own checkout, invoicing and fulfilment stack. Running in production on one site, not yet sold. This page exists to find out whether anyone wants it.
+---
+
+# The commerce suite
+
+Eight of the twenty-two packages form one chain: **someone buys, and everything
+that has to happen afterwards happens.** Payment, licence-free invoice numbering
+under German law, access granted, follow-up sent, all on the site you already
+run.
+
+[Payments](/payments/) · [Offers](/offers/) · [Invoices](/invoices/) ·
+[Funnels](/funnels/) · [Entitlements](/entitlements/) · [LeadHub](/leadhub/) ·
+[Marketing](/marketing/) · [Automations](/automations/)
+
+::: tip This page is a question, not an offer
+The chain runs in production on one site and has done for months. It has never
+been sold to anyone. Before building the parts a second site would need, it is
+worth finding out whether a second site exists. **If you would use this, say so**
+— that is the whole purpose of the page.
+:::
+
+## Why you might want it
+
+The alternative for a German Statamic site today is a hosted cart. The numbers
+are the argument, not the feature list.
+
+CopeCart's advertised fee is 4.9% + €1, charged on the **gross** amount. Their own
+worked example: €1,190 gross, €59.31 fee. That is **5.93% of net**. On €100,000 of
+revenue it is roughly **€5,900 a year**, every year, on top of losing the customer
+relationship, the invoice layout and the data.
+
+ThriveCart and SamCart are software rather than resellers, so you stay the
+merchant — but neither issues an invoice that satisfies German requirements, and
+neither has a §312k cancellation button on your own site.
+
+## What is actually built
+
+Checked against the code, not the roadmap:
+
+- **Invoice numbering that holds up.** Numbers come from a locked counter row in
+  the same transaction as the invoice, never from `MAX()+1`. Gapless and unique
+  are both concurrency properties, and both are tested against MySQL rather than
+  SQLite. Corrections are cancellation invoices that copy the tax rather than
+  recompute it.
+- **No guessed tax rate.** If the rule, the country, the `digital` flag, the
+  sender details or (over €250, §33 UStDV) the recipient address is missing, **no
+  invoice is created at all** and `invoices:pending` tells you which field is
+  missing. Nine machine-readable reasons, no silent fallback.
+- **Multi-brand for real.** Separate number series per brand, fail-closed
+  isolation, and a brand that would collide on its prefix is rejected rather than
+  guessed.
+- **CRM and newsletter in the same house.** A contact, their timeline, their
+  consent and the campaign that reached them are one system, not three with a Zap
+  between them.
+- **A visual automation builder** with eighteen built-in triggers plus the ones
+  each addon above contributes, and its own action and logic nodes. The full list
+  is on the [Automations nodes page](/automations/nodes).
+- **0% revenue share.** Nothing phones home to count your orders.
+
+## What is missing
+
+Stated plainly, because a page that hides this would waste your time and mine.
+
+| Gap | Where it stands |
+| --- | --- |
+| **Stripe** | Not built. Mollie is the only gateway adapter. The seam for a second one exists and is unbound. |
+| **Customer portal** | Not built. No customer-facing route for orders, invoices, subscriptions or payment methods. |
+| **Invoice PDF** | Half built. The document renders as HTML (`Support\Renderer`); there is no PDF and no delivery. See [Delivery](/invoices/delivery). |
+| **Dunning** | Not built. A failed charge mirrors Mollie's status and stops there. |
+| **Revenue reporting** | Not built. There is no sum query in the payments or offers Control Panel. |
+| **Revenue per campaign** | Attribution is written: `LeadhubBridge` freezes the UTM fields onto the contact at purchase. What is missing is the report that sums revenue by campaign. |
+
+None of these is unknown or unplanned. They are the reason this page asks a
+question instead of quoting a price.
+
+## What it would cost
+
+An intention, not an offer, and it will move if the answers below say it should:
+
+- **Per site**, roughly the price of two hosted-cart months, one payment,
+  including a year of updates.
+- **A yearly renewal** at a fraction of that, for updates only. **The site keeps
+  working if you never renew** — you simply stop receiving new versions. A client
+  site outlives the retainer that built it, and a licence that can switch it off
+  is not one you should accept.
+- **An agency tier** for unlimited client sites.
+
+## If you want this
+
+Email **[info@adriangoldner.com](mailto:info@adriangoldner.com?subject=Statamic%20commerce%20suite)**
+with whatever of this you can answer:
+
+1. What are you selling, and what are you selling it through today?
+2. Which of the missing pieces above would block you?
+3. One site or many?
+
+No list, no sequence, no follow-up unless you ask for one. The mail goes to a
+person.

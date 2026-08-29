@@ -186,7 +186,7 @@ Available only when [Marketing](/marketing/) is installed.
 
 | Action | Notes |
 | --- | --- |
-| AI | Requires a Pro licence and an `ANTHROPIC_API_KEY`. Model configurable. |
+| AI | Requires an `ANTHROPIC_API_KEY`. Model configurable. |
 
 Without a key the action is unavailable rather than failing at run time.
 

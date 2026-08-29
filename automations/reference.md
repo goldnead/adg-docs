@@ -214,13 +214,9 @@ API is documented in the addon repository's `docs/api.md`.
 | `ai.max_tokens` · `ai.timeout` | `1024` · `30` |
 | `features.branch_nodes` · `filter_nodes` · `delay_nodes` | `true` |
 | `features.custom_actions` · `custom_triggers` | `true` |
-| `features.custom_actions_requires_pro` | `true` |
-| `features.ai_action_requires_pro` | `true` |
 | `features.templates` · `export_import` · `file_storage` · `multisite` | `true` |
 | `file_storage.enabled` | `true` |
 | `security.redact_keys` | `password, passwort, token, secret, api_key, authorization, credit_card, …` |
-| `license.mode` | `config` (`config` \| `remote`) |
-| `license.cache_ttl_minutes` | `360` |
 | `secrets` | `[]` |
 | `builtin_nodes.*` | `true` — one switch per built-in trigger, logic node and action, keyed by handle. A handle absent from the map is on. |
 | `event_triggers` | `[]` — application events as triggers, keyed by **event FQCN** |
@@ -244,9 +240,6 @@ STATAMIC_AUTOMATIONS_FILE_PATH=
 STATAMIC_AUTOMATIONS_AI_MODEL=claude-sonnet-4-5
 ANTHROPIC_API_KEY=
 ANTHROPIC_BASE_URL=https://api.anthropic.com
-STATAMIC_AUTOMATIONS_LICENSE_MODE=config
-STATAMIC_AUTOMATIONS_LICENSE_KEY=
-STATAMIC_AUTOMATIONS_LICENSE_ENDPOINT=
 ```
 
 ## Requirements
