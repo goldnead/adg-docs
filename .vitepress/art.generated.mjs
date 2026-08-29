@@ -103,6 +103,12 @@ export const ART = {
     "light": "#8555ef",
     "dark": "#9466ff"
   },
+  "insights": {
+    "from": "#818CF8",
+    "to": "#1E1B4B",
+    "light": "#626ad2",
+    "dark": "#818cf8"
+  },
   "offers": {
     "from": "#EC4899",
     "to": "#9D174D",

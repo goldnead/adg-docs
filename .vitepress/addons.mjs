@@ -334,6 +334,20 @@ export const addons = [
     ],
   },
   {
+    slug: 'insights',
+    name: 'Insights',
+    package: 'goldnead/statamic-insights',
+    license: 'Commercial',
+    layer: 'commerce',
+    tagline:
+      'Which campaign sold anything. Revenue, campaigns and products, read from what the checkout already recorded.',
+    icon: '◫',
+    pages: [
+      { text: 'Reading the numbers', link: 'reading-the-numbers' },
+      { text: 'On the contact screen', link: 'contact-panel' },
+    ],
+  },
+  {
     slug: 'offers',
     name: 'Offers',
     package: 'goldnead/statamic-offers',
