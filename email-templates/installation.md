@@ -93,4 +93,5 @@ permissions apply — grant your editors access to `et_templates` and nothing el
 
 ## Licence
 
-Commercial: `composer.json` says `proprietary`. See [Licensing](/guide/licensing) for how the commercial addons in the suite resolve their licence.
+Commercial: `composer.json` says `proprietary`. See [Licensing](/guide/licensing) for how
+the commercial addons in the suite resolve their licence.

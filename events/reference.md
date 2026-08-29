@@ -297,7 +297,8 @@ statamic/cms                    ^6.0
 Suggested: `goldnead/statamic-activity`, `goldnead/statamic-automations`,
 `goldnead/statamic-notifications`. Only the first has code in this package.
 
-Licence: Commercial: `composer.json` says `proprietary`. See [Licensing](/guide/licensing) for how the commercial addons in the suite resolve their licence.
+Licence: Commercial: `composer.json` says `proprietary`. See [Licensing](/guide/licensing) for how
+the commercial addons in the suite resolve their licence.
 
 Tested against SQLite and MySQL 8. **PostgreSQL is untested**: nothing in the package is
 knowingly MySQL-only, but there is no PostgreSQL run and the index-length test compiles against

@@ -329,6 +329,7 @@ Suggested: `goldnead/statamic-leadhub`, `goldnead/statamic-marketing`,
 `goldnead/statamic-email-templates`, `goldnead/statamic-suppression`,
 `goldnead/statamic-activity`.
 
-Licence: Commercial: `composer.json` says `proprietary`. See [Licensing](/guide/licensing) for how the commercial addons in the suite resolve their licence.
+Licence: Commercial: `composer.json` says `proprietary`. See [Licensing](/guide/licensing) for how
+the commercial addons in the suite resolve their licence.
 
 Tested against SQLite and MySQL 8. There are no Antlers tags, no fieldtypes and no widgets.

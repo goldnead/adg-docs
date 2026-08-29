@@ -222,4 +222,5 @@ the Control Panel, which migrates the existing config as it goes. See
 
 ## Licence
 
-MIT. No key, no licence check.
+Commercial: `composer.json` says `proprietary`. See [Licensing](/guide/licensing) for how
+the commercial addons in the suite resolve their licence.
