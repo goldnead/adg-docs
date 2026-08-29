@@ -96,6 +96,7 @@ Restoring is a separate decision with a separate permission, not an undo.
 | Who the actor was | [Identity Contracts](/identity-contracts/) |
 | Which brand a grant belongs to | [Brand Context](/brand-context/) |
 | What a product is | Your site. The grant holds a slug |
+| Counting grants on a screen | [Insights](/insights/what-the-family-reports#entitlements), through four figures this package contributes |
 
 The four domain events are the seam. A consumer listens and does whatever its own domain requires.
 

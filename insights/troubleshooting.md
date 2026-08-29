@@ -80,8 +80,43 @@ app(\Goldnead\Leadhub\Services\RevenueService::class)->recalculate($contact);
 
 That is LeadHub's repair, not this addon's — nothing here writes money.
 
-## The chart is empty but the totals are not
+## There is no chart, but there are totals
 
-Only possible if the period is open-ended and no payment carries a `paid_at`. Every other
-combination draws a bar per bucket, including zero-height ones for the days that earned
-nothing.
+Expected in two cases.
+
+**The range has only one bucket.** A single bar is not a chart, it is the number above it
+stretched, so none is drawn. Widen the period.
+
+**Nothing was measured in any bucket.** A bucket that earned nothing gets no bar at all —
+never a short one, which would draw activity on a quiet day.
+
+## The breadcrumb says "Revenue" while you are on the Metrics screen
+
+Statamic caches the list of URLs its Control Panel navigation knows about. Upgrading
+from 1.0 adds a second child page, and until that cache is rebuilt the breadcrumb still
+resolves to the only child it knew — so the page heading, the sidebar and the breadcrumb
+disagree with each other.
+
+Nothing is wrong with the data, and clearing the cache is the whole fix:
+
+```
+php artisan cache:clear
+```
+
+It applies to any addon that adds a nav item during an upgrade, not only this one.
+
+## A group is missing from the Metrics screen
+
+The addon that contributes it is not installed, or it is too old to register metrics, or
+its own tables have not been migrated. A metric that cannot answer is left out rather than
+shown as zero: *nothing to measure* and *measured nothing* are different statements.
+
+An unresolved brand is **not** one of the causes. On a multi-brand install with no brand
+picked, the tiles stay and read zero — see
+[which figures narrow by brand](/insights/reading-the-numbers#a-figure-over-a-brand-scoped-table-counts-the-current-brand).
+
+## One tile is missing while the rest of its group is there
+
+That metric threw. Failures are contained per metric on purpose, so a contributor
+mid-upgrade costs its own tile and a line in `laravel.log`, never the page. The log entry
+names the handle.

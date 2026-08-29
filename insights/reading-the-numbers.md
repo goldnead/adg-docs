@@ -6,6 +6,37 @@ Every figure on the revenue screen is the answer to a question that could have
 been asked three different ways. This page says which way was chosen, and why —
 so that a number which looks surprising can be checked rather than distrusted.
 
+The first section applies to the whole addon, both screens. Everything after it
+is about the money, and the figures the other thirteen addons contribute answer
+for themselves — each states its own reading in the sentence under its tile, and
+they are collected in [What the family reports](/insights/what-the-family-reports).
+
+## A figure over a brand-scoped table counts the current brand
+
+On a multi-brand install, such a tile counts the brand shown in the switcher —
+the same rows the listings beside it would show, filtered by the same rules the
+rest of the install uses. Switch brand and the number changes with it.
+
+Pick no brand at all and those figures read **zero rather than disappearing**.
+That is deliberate: an unresolved brand is a question about the data, not a
+statement that the metric has ceased to exist, and a reader can make sense of a
+zero but cannot notice a tile that is not there.
+
+Two kinds of figure are not narrowed, and it is worth knowing which:
+
+**A table that has no brand column.** [Booking](/booking/), [Consent](/consent/)
+and [Funnels](/funnels/) store no `brand_id` at all, so their nine figures are
+installation-wide on any install. Nothing crosses a boundary that was never
+drawn, but the numbers are not the switcher's either.
+
+**A table that has the column and deliberately ignores it.**
+[Suppression](/suppression/)'s two figures. A hard bounce is recorded against
+every brand at once, so narrowing would throw away exactly the rows worth
+keeping. Both say so in their own description; see
+[the exceptions](/insights/what-the-family-reports#suppression-counts-across-every-brand).
+
+On a single-brand install none of this applies and nothing is filtered.
+
 ## A sale counts on the day it was paid
 
 Not the day the checkout started, not the day the order was fulfilled. The
@@ -90,6 +121,18 @@ one, and a floor under the empty days draws revenue that never happened.
 
 Over ranges longer than about three months the bars become months, or the chart
 would have three hundred columns.
+
+**A day that lost money is drawn downwards**, in the danger colour, because a
+refund day drawn upwards was indistinguishable from a day that earned a little.
+The scale is the tallest magnitude in either direction, so a period that only
+went backwards still has one.
+
+**With only one bucket there is no chart at all.** One bar is not a chart; it is
+the number above it, stretched.
+
+A bucket a metric returned as `null` — the question does not apply on that day,
+which happens to rates — gets no bar either, and is not the same thing as a
+bucket of zero. Neither is ever drawn as a measurement.
 
 ## Where the campaign comes from
 

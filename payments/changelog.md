@@ -12,6 +12,162 @@ Release notes for `goldnead/statamic-payments`, as published with the package.
 Cross-version upgrade notes for the whole suite are in
 [Upgrading](/guide/upgrading).
 
+## 1.14.0 — 2026-08-29
+
+### Behoben: Umsatzzahlen zählten jede Marke, und verloren die letzte Sekunde
+
+Drei Fehler derselben Familie, keiner davon mit einem roten Test.
+
+**Die Marke.** `paidInPeriod()` und `refundedInPeriod()` summierten jede Marke, ganz gleich was der
+Markenwähler oben rechts sagte. Ein Test, der eine eigene Zeile gegen zwei fremde stellt, meldet
+gegen den alten Stand 13.000 statt 1.000 Cent. `brandScoped()` ist hier wortgleich zu
+`TableMetric::brandScoped()` abgeschrieben — diese Klasse baut nicht darauf auf, sie ist älter und
+liest zwei Tabellen und einen Join —, denn zwei Schreibweisen einer Regel sind der Weg, auf dem zwei
+Kacheln nebeneinander verschiedene Dinge zählen.
+
+**Das Fenster.** Die Obergrenze war einschließend, und eine Bindung formatiert `23:59:59.999999`
+als `Y-m-d H:i:s`. Auf einer Millisekunden-Spalte fiel damit jeder Verkauf der letzten Sekunde
+heraus: auf SQLite immer, auf einfachen MySQL-Zeitstempeln zufällig richtig, in beiden Fällen
+unsichtbar. Jetzt halboffen. Der Test schreibt eine Millisekunde und meldet gegen den alten Stand
+1 statt 2.
+
+**Der Join.** `productRows()` geht nicht durch `paidInPeriod()`, sondern fängt bei den Positionen an
+und verbindet zurück — genau die Form, die an einem zentral gesetzten Filter vorbeiläuft. Dort steht
+jede Bedingung jetzt ausgeschrieben.
+
+### Neu: sieben Zahlen in Insights
+
+Brutto, netto, erstattet, Bestellungen, Käufer, mittlerer Bestellwert und Erstattungsquote, mit
+Aufteilungen nach Kampagne, Quelle, Produkt und Land. `statamic-insights` liest dafür **keine**
+Tabelle dieses Addons mehr — die Rechnerei liegt jetzt auf der Seite des Zauns, der die Daten
+gehören. Die Kopplung ist in beide Richtungen `suggest`, nie `require`.
+
+
+### Neu: `grants` darf eine Liste sein
+
+Ein Produkt konnte genau einen Zugang vergeben. Für ein Bündel — eine Zeile, ein Preis, drei
+Dinge — reichte das nicht, und `statamic-offers` 1.4 verkauft genau so etwas.
+
+`grants` nimmt jetzt auch eine Liste:
+
+    'fruehlings-buendel' => [
+        'name' => 'Frühlings-Bündel',
+        'amount_cent' => 4900,
+        'grants' => ['noten-fruehling', 'playback-fruehling', 'workshop-mitschnitt'],
+    ],
+
+Eine einzelne Zeichenkette bleibt erlaubt und ist unverändert der Normalfall; alte Konfigurationen
+ändern sich nicht. Doppelte Slugs werden einmal vergeben — zwei Zeilen mit derselben Aussage sind
+kein zweiter Zugang.
+
+Betroffen sind alle vier Wege, an denen ein Zugang hängt: Kauf, Verlängerung, Kündigung und
+Erstattung. Jeder Slug ist ein eigener Versuch, damit der Fehlschlag des zweiten nicht den dritten
+verhindert — und die Zeile im Log nennt den fehlenden Slug statt „das Bündel".
+
+**Vorher war das ein stiller Totalausfall, kein Teilausfall.** Eine Liste fiel an `is_string()`
+heraus, und `slugFor()` gab `null` zurück: nicht das erste Stück, sondern nichts. Zahlung durch,
+Rechnung geschrieben, kein Zugang, keine Fehlermeldung.
+
+
+### Neu: Selbstbedienung für Käufer
+
+Ein Käufer kann jetzt ohne Konto seine Bestellungen ansehen, seine Rechnung herunterladen, sein
+Abo kündigen und sein Zahlungsmittel wechseln. Der Weg hinein ist ein signierter, ablaufender
+Link an die Adresse, die auf der Bestellung steht — kein Passwort, kein Konto, weil ein Käufer
+eines Notenhefts keins anlegen wollte.
+
+Die Mechanik ist die von `statamic-preference-center`, übernommen statt neu erfunden: doppelte
+Drosselung, eine Antwort für jeden Ausgang, Antwortzeit auf einen Boden gehalten, Sitzungs-ID beim
+Öffnen erneuert. Dasselbe Aussehen, dieselbe Palette, kein Build-Schritt — die Seite wird aus einem
+Mailprogramm geöffnet und muss beim ersten Byte da sein.
+
+**§ 312k BGB liefert das Addon mit.** Kündigungsschaltfläche mit eigener URL, Bestätigungsseite,
+die den Vertrag benennt, und danach eine Bestätigung in Textform mit Datum und Uhrzeit — als Mail,
+nicht als grüner Kasten, der beim Neuladen weg ist. **Jeder vorgeschriebene Wortlaut steht in
+`lang/*/portal.php`** und in keiner PHP-Datei; er gehört vor einen Anwalt, und die Vorschrift ist
+schon einmal geändert worden. `--tag=statamic-payments-translations`.
+
+Gekündigt wird über `Subscriptions::cancel()`: der Anbieter wird zuerst gefragt, seine Antwort wird
+geschrieben. Antwortet er nicht — oder nimmt er den Aufruf an und lässt das Abo weiterlaufen —,
+bleibt die Zeile unangetastet und der Käufer bekommt eine ehrliche Meldung statt einer Bestätigung.
+
+### Neu: `brand_id` auf `payments` und `subscriptions`
+
+Bisher trug hier nichts eine Marke, und `statamic-invoices` schrieb genau das in eine
+Ausnahme-Klasse: „a brand is not recoverable from the payment either". Für den Kundenbereich ist
+diese Lücke nicht bezahlbar — auf einem Mandanten-Host ist die Marke auf der Bestellung das
+Einzige, was den Link der Marke A von der Bestellung der Marke B fernhält.
+
+Die Naht kennt **drei** Zustände, nicht zwei: „keine Mandanten", „Mandanten, und die aktuelle ist
+bekannt" und „das Geschwister-Addon ist da und hat nicht geantwortet". Ein `bool` fasst die letzten
+beiden zusammen, und ein `catch (Throwable) { return false; }` um `multiBrandEnabled()` hätte einen
+werfenden Lizenz-Rückruf — den der Host selbst schreibt — in „diese Installation hat keine
+Mandanten" verwandelt, also in „kein Filter". Ein defensiver Fang, der nach außen aufmacht, ist
+schlimmer als kein Fang: er erzeugt eine Seite, die funktioniert.
+
+`default(0)`, kein Fremdschlüssel, keine harte Abhängigkeit auf `brand-context`: auf jeder
+Ein-Marken-Installation steht überall 0 und nichts ändert sich. Gestempelt wird aus der Marke, in
+der die Zeile entsteht; entsteht sie im Webhook für eine andere Zeile — ein Abo-Zyklus, eine
+Nachfass-Zahlung —, erbt sie deren Marke, statt eine zu raten. Im Mandanten-Betrieb gehört eine
+Zeile auf 0 niemandem und wird niemandem gezeigt.
+
+**Der Altbestand wird abgeleitet, nicht geraten.** Die erste Fassung dieser Migration nahm die
+kleinste Marken-Id und schrieb sie auf jede bestehende Zahlung und jedes Abo. Am Demo-Playground
+machte das elf Zahlungen zu „nordlicht", und `invoices:brand-check` fand sieben Rechnungen, die in
+der Reihe einer anderen Marke stehen als die Zahlung, zu der sie gehören. Die Rechnungen hatten
+recht — und seit `statamic-invoices` die Spalte liest, wäre die geratene Antwort ab sofort in neue
+Dokumente weitergereicht worden.
+
+Drei Wege, stärkster zuerst: eine Zahlung mit Rechnung bekommt die Marke der Rechnung, ein Abo die
+Marke seiner ersten Zahlung, eine Folgeabbuchung die Marke der Zeile, zu der sie gehört. Gefahren
+bis nichts mehr dazukommt, weil jeder Weg den nächsten speist. Was danach übrig bleibt, steht
+weiter auf `0` und wird ins Log geschrieben; die Standardmarke wird nirgends eingesetzt. Der
+Zugriff auf `invoices` läuft über `Schema::hasTable()` und ist ein Hinweis, keine Voraussetzung:
+das Rechnungs-Addon ist ein `suggest`, und die echte Abhängigkeit läuft andersherum.
+
+### Neu: `payments:brand-backfill`
+
+Die kaputte Migration ist committet und auf mindestens zwei Installationen schon gelaufen; dort
+läuft sie nie wieder, und die Zeilen stehen auf der falschen Marke statt auf `0`. Dieser Befehl
+fährt **dieselbe** Ableitung (eine Stelle, `Support\BrandBackfill`, nicht zweimal geschrieben) und
+korrigiert eine Zeile nur dann, wenn eine abgeleitete Quelle ihr widerspricht. Eine Zeile, für die
+sich nichts ableiten lässt, bleibt, wie sie ist — auch wenn sie die geratene Marke trägt: fehlender
+Beleg ist kein Beleg. Gezählt und ausgegeben wird beides.
+
+`--dry-run` zeigt nur. Ohne die Option wird geschrieben, mit einer Zusammenfassung, wie viele
+Zeilen aus welcher Quelle stammen.
+
+### Neu: eine weiche Naht zur Rechnung
+
+`Contracts\InvoiceSource` + `Support\Invoices` (Registry, wie `Catalogue`). Ohne
+Rechnungs-Addon zeigt sich die Bestellung ohne Download, statt zu brechen.
+`Integrations\InvoiceBridge` erkennt `goldnead/statamic-invoices` **an der Form, nicht am Typ**:
+eine einzige Zeichenkette nennt dessen Fassade, alles danach ist `method_exists`. Dort wird gerade
+parallel PDF und Zustellung gebaut; eine Brücke gegen die heutigen Klassen wäre eine Wette auf
+unfertige Arbeit.
+
+### Neu: `Contracts\MandateGateway`
+
+Zahlungsmittel wechseln über den Mandats-Weg des Anbieters. `MollieGateway` implementiert es; der
+Kundenbereich fragt, ob das gebundene Gateway es kann, und nennt Mollie nirgends beim Namen. Auf
+Mollie kostet das den Käufer einen Cent — es gibt dort keine Null-Betrags-Autorisierung —, und der
+Betrag steht über der Schaltfläche statt später auf dem Kontoauszug.
+
+### Behoben
+
+- `Payment` kannte die Attributions-Spalten aus 1.13 in seinem `@property`-Block nicht.
+- `Checkout` fragte `request()` mit `?->`, was nie null wird.
+
+### Added
+
+- **Seven metrics for `statamic-insights`** — gross revenue, net, refunded,
+  orders, buyers, average order and refund rate, with splits by campaign,
+  source, product and country. The addon that owns the data now owns the query;
+  Insights owns the screen. Optional in both directions: a `suggest`, a
+  `class_exists` guard, and nothing loaded when the sibling is absent.
+- `HasFilterOptions` on every metric, so the currency switch on the reporting
+  screen is filled by this addon rather than guessed by the other one.
+
 ## 1.13.0
 
 ### Neu: eine Naht für Angaben, die dem Paket nichts bedeuten

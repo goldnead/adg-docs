@@ -35,6 +35,8 @@ sales tools — and it can grow into a lightweight CRM when you turn the opt-in 
 - **CRM connectors** — push contacts to HubSpot, Brevo or any webhook, with a per-attempt
   sync log
 - **A complete outbound event surface** — 25+ domain events across the contact lifecycle
+- **Six figures for [Insights](/insights/what-the-family-reports#crm)**, filed there under
+  *CRM* and simply absent when that addon is not installed
 
 ## CRM-core modules, off by default
 

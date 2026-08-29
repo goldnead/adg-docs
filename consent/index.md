@@ -29,6 +29,8 @@ developer controls, and neither can break the other.
 - **Proof of consent**, off by default: a server-side record of every decision, with no IP
   address and no user agent.
 - **English and German** out of the box, with a per-field fallback to the shipped text.
+- **A decision count for [Insights](/insights/what-the-family-reports#consent)**, offered
+  at boot and simply absent when that addon is not installed.
 
 ## Antlers, no build step
 

@@ -41,6 +41,9 @@ button. It does not own workflows — that is
 - **Rules** — `When → If → Then` flows.
 - **Pluggable storage** — keep webhook config in the database, or as
   git-versionable YAML under `content/webhooks/`.
+- **Four of those figures for [Insights](/insights/what-the-family-reports#webhooks)**,
+  filed there under *Webhooks* beside every other addon's, and simply absent when that
+  addon is not installed.
 
 ## The shortest useful example
 

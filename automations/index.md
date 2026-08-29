@@ -45,6 +45,8 @@ overkill, and custom code for every small workflow is expensive to maintain.
 - **JSON export and import** for version control and cross-environment moves
 - **A public developer API** for custom triggers, actions, logic nodes, option sources
   and event triggers
+- **Five figures for [Insights](/insights/what-the-family-reports#automations)**, offered
+  at boot and simply absent when that addon is not installed
 
 ## Quick start
 

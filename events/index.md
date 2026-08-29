@@ -83,6 +83,7 @@ you.
 | Reacting to the four domain events with a workflow | [Automations](/automations/) |
 | Which brand an event belongs to | [Brand Context](/brand-context/) |
 | Anything to do with contacts or mail | Not this package, and not by accident |
+| Counting events and dates on a screen | [Insights](/insights/what-the-family-reports#events), through three figures this package contributes |
 
 The package emits domain events and orchestrates nothing. It has no dependency on
 [LeadHub](/leadhub/), [Marketing](/marketing/) or Entitlements, because a concert calendar on

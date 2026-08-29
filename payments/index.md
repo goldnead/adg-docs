@@ -53,6 +53,8 @@ documentation refers back to it rather than restating it:
 - **Two Control Panel screens**: Payments and Subscriptions, each behind its own permission
 - **The facts an invoice needs** — the buyer's country and the discount per line — recorded
   while they still exist
+- **Seven figures for [Insights](/insights/what-the-family-reports#payments)** — the whole
+  arithmetic of that addon's revenue screen lives here, in the package that owns the money
 
 ## Mollie, and why
 

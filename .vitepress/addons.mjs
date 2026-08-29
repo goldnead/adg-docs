@@ -340,10 +340,12 @@ export const addons = [
     license: 'Commercial',
     layer: 'commerce',
     tagline:
-      'Which campaign sold anything. Revenue, campaigns and products, read from what the checkout already recorded.',
+      'The reporting layer for the suite. Fourteen addons contribute the figures; this one owns the period, the chart and the screens.',
     icon: '◫',
     pages: [
+      { text: 'What the family reports', link: 'what-the-family-reports' },
       { text: 'Reading the numbers', link: 'reading-the-numbers' },
+      { text: 'Contributing a metric', link: 'contributing-a-metric' },
       { text: 'On the contact screen', link: 'contact-panel' },
     ],
   },

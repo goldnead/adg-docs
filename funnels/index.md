@@ -46,6 +46,8 @@ See [A funnel is not an automation](/funnels/concepts) for the full version.
 - **Four events** for [Automations](/automations/) to hang off, and an optional bridge to
   [LeadHub](/leadhub/)
 - **Two Antlers tags**: `{{ funnels:link }}` and `{{ funnels:progress }}`
+- **Four figures for [Insights](/insights/what-the-family-reports#funnels)**, offered at
+  boot and simply absent when that addon is not installed
 
 ## Quick start
 

@@ -82,6 +82,9 @@ goldnead/statamic-suppression      the send gate
 goldnead/statamic-activity         the ledger
 ```
 
+A sixth, [Insights](/insights/what-the-family-reports#lead-magnets), is detected the same
+way and takes four figures from this package when it is there.
+
 Install none of them and the whole flow still works: the request, the confirmation over this
 package's own mail, and the download. That claim is not a footnote, it is a structural test.
 `tests/Feature/NoSiblingsInstalledTest.php` runs in a process where none of the five classes

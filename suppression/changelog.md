@@ -12,6 +12,30 @@ Release notes for `goldnead/statamic-suppression`, as published with the package
 Cross-version upgrade notes for the whole suite are in
 [Upgrading](/guide/upgrading).
 
+## 1.2.0 — 2026-08-29
+
+### Added: this addon's figures appear in Insights
+
+From 1.1.0 `statamic-insights` is no longer a revenue report but the family's reporting layer: an
+addon registers what it can count and gets the period, the comparison against the period before,
+the chart, the breakdowns and two finished screens in return.
+
+The coupling is optional in **both** directions. Without Insights nothing here is missing; without
+this addon only its own group is missing over there. `suggest`, never `require`.
+
+Every figure follows the contract's house rules: **null is not zero** (a rate with no denominator
+has no answer and does not print 0 %), `available()` decides existence and never the data, gaps in
+a series are filled by Insights rather than by the metric, and a filter a metric does not
+understand is ignored rather than fatal.
+
+Two figures: events in the window, and the size of the list.
+
+**Both count across every brand on purpose, and now say so on screen.** The reason is specific to
+these two tables: `brand_id = 0` here does not mean "brand 0" but "applies to all" — that is how
+hard bounces are recorded. Filtering on the current brand would throw exactly those global entries
+away and report a brand fewer blocked addresses than actually stop its sends. Wrong in the dangerous
+direction, so the description says it in both languages instead.
+
 ## 1.1.0 — 2026-08-01
 ### Major changes
 

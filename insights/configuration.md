@@ -18,8 +18,8 @@ return [
 
 ## `currency`
 
-Which currency the screen opens on. `null` follows
-`config('statamic-payments.currency')`.
+Which currency the revenue screen opens on, and the default for every metric that takes a
+currency filter. `null` follows `config('statamic-payments.currency')`.
 
 It is only a starting point. If the configured currency has never actually been taken, the
 screen opens on the **busiest one the data contains** instead — a site that only ever sold
@@ -35,15 +35,19 @@ than producing an empty range.
 
 The period and currency both live in the query string —
 `/cp/insights?period=90d&currency=CHF` — so a view can be bookmarked or pasted into a
-message, and survives a reload.
+message, and survives a reload. The Metrics screen and a single metric's detail view read
+the same parameters.
+
+Both keys govern presentation only. A contributing addon decides for itself what a figure
+counts and on which day; nothing here can change that.
 
 ## Permissions
 
 | Permission | What it opens |
 | --- | --- |
-| `view insights` | The revenue screen and its navigation entry |
+| `view insights` | Both screens and their navigation entries |
 
-One permission, no children. The screen is read-only: there is nothing on it to grant
+One permission, no children. The screens are read-only: there is nothing on them to grant
 separately.
 
 ::: tip The nav entry is registered unconditionally

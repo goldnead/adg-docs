@@ -99,6 +99,19 @@ async function openFilters(page) {
 }
 
 const SHOTS = [
+  // ---- Insights
+  //
+  // The Metrics screen, which lists every figure the family registered. Not in
+  // `sync-screenshots.mjs`: that table copies pictures the addon repos ship, and
+  // `statamic-insights` ships only the four revenue shots. This screen exists
+  // solely on an install that has the other thirteen addons, which is the
+  // playground and nowhere else.
+  //
+  // 2500ms to settle rather than the default: the screen builds fifty-eight
+  // figures and their comparison against the previous period on request, and
+  // `networkidle` returns before the last group has painted.
+  { name: 'insights-metrics', url: '/cp/insights/metrics', settle: 2500 },
+
   // ---- Payments
   { name: 'payments-listing', url: '/cp/utilities/payments' },
   { name: 'payments-filters', url: '/cp/utilities/payments', prepare: openFilters },

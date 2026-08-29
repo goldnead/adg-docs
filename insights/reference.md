@@ -11,7 +11,10 @@ computed when the screen is requested.
 
 | Permission | |
 | --- | --- |
-| `view insights` | The revenue screen and its navigation entry |
+| `view insights` | Both screens and the navigation entries |
+
+One permission, no children. The screens are read-only, so there is nothing on them to
+grant separately.
 
 ## Configuration keys
 
@@ -24,57 +27,115 @@ computed when the screen is requested.
 
 | Route | |
 | --- | --- |
-| `cp_route('insights.revenue')` | The screen. `?period=` and `?currency=` are read from the query string. |
+| `cp_route('insights.revenue')` | The curated revenue screen. `?period=` and `?currency=` are read from the query string. |
+| `cp_route('insights.metrics')` | Every registered metric, grouped by contributor. |
+| `cp_route('insights.metrics.show', $handle)` | One metric: its chart, its comparison and any splits it offers. |
 
-## Classes you may use
+All three are registered unconditionally, because a nav item resolves its target through
+`cp_route()` while the navigation is built, on every Control Panel page. A conditionally
+registered route behind an unconditional nav item takes the whole panel down with a
+`RouteNotFoundException`.
 
-The addon is a screen, not a library, so the surface is small and it is not a facade.
+## The registration API
 
 ```php
-use Goldnead\StatamicInsights\Support\Period;
-use Goldnead\StatamicInsights\Support\RevenueReport;
+use Goldnead\StatamicInsights\Facades\Insights;
 
-$period = Period::fromPreset('90d');        // an unknown preset falls back to 30d
-$period->previous();                        // same length, ending where this one begins
-$period->days();                            // calendar days, inclusive of both ends
+Insights::registerMetric(ActiveMembers::class, 'memberships.active');
 
-$report = new RevenueReport($period, 'EUR');
-
-RevenueReport::available();                 // are the payments tables even there
-RevenueReport::currencies();                // every currency ever taken, busiest first
-
-$report->totals();                          // gross, refunded, net, orders, buyers, average, rate, previous
-$report->byCampaign(20);                    // [{ campaign, source, orders, gross_cent }]
-$report->byProduct(20);                     // [{ handle, name, orders, quantity, gross_cent }]
-$report->overTime();                        // [{ bucket, gross_cent }], every bucket in range
-$report->productSumCent();                  // what the product rows add up to
-$report->otherCurrencies();                 // taken in this period, not in this figure
+Insights::metricHandles();          // every registered handle
+Insights::metric('payments.orders'); // one metric, or null
+Insights::metrics();                // handle => Metric, everything registered
 ```
 
-`totals()['refund_rate']` is **`null`**, not `0`, when nothing came in. A rate against zero
-is a question that does not apply, and printing `0 %` beside a refund amount would be a
-statement contradicted by the figure next to it.
+Registration takes a class name, an instance or a closure, and is keyed by handle: the same
+handle registered twice replaces the first rather than appearing twice.
+
+Pass the handle as the second argument. It lets the registry list a metric without
+constructing it, which is what keeps a screen from building fourteen addons' worth of
+objects to draw a list. Omit it and the registry has to construct the class to ask; omit it
+on a **closure** and there is nothing it can do but log and skip, because probing a closure
+means calling it.
+
+How to write the metric on the other end of that call, and why the registration is guarded
+the way it is, is [Contributing a metric](/insights/contributing-a-metric).
+
+## The contracts
+
+| | |
+| --- | --- |
+| `Contracts\Metric` | The whole coupling: handle, label, description, group, unit, `available()`, `value()`, `series()`, `meta()` |
+| `Contracts\HasBreakdowns` | Optional. `breakdowns()` and `breakdown()` |
+| `Contracts\HasFilterOptions` | Optional. `filterOptions()` |
+| `Support\TableMetric` | Optional base class for a metric over one table with a timestamp |
+| `Support\MetricQuery` | What is being asked: a period, a bucket, free-form filters |
+| `Support\Period` | `fromPreset()`, `between()`, `previous()`, `days()`, `toExclusive()`, `isOpenEnded()` |
+| `Support\Unit` | `COUNT`, `CURRENCY`, `PERCENT`, `DURATION` |
+
+```php
+use Goldnead\StatamicInsights\Support\{MetricQuery, Period};
+
+$period = Period::fromPreset('90d');   // an unknown preset falls back to 30d
+$period->previous();                   // same length, ending where this one begins
+$period->days();                       // calendar days, null when open-ended
+$period->toExclusive();                // the upper bound as `< midnight`, never `<= 23:59:59`
+
+$query = new MetricQuery($period, MetricQuery::bucketFor($period));
+$query->with('currency', 'CHF');       // the same question, one filter changed
+```
+
+::: warning `Support\RevenueReport` is gone
+It was removed in 1.1.0, one day after it shipped. It read the `payments` tables directly,
+which meant two packages computed the same money — and which is the coupling an analytics
+addon must not have. Its arithmetic moved to `statamic-payments`, where it is tested
+against the real tables.
+
+If you were reaching for it, the seven `payments.*` metrics
+[replace it](/insights/what-the-family-reports#payments) and are reachable through
+`Insights::metric()`.
+:::
 
 ## What it reads
 
-Straight from the payments tables with SQL aggregates — an aggregate is a read, not a call,
-and hydrating ten thousand rows to add up a column would be slower and no more correct.
+**No tables of its own, and none of anybody else's.** Every figure is a query living in the
+contributing addon. This package holds a registry, a reader that catches what a metric
+throws, and two screens.
 
-| Table | Columns |
-| --- | --- |
-| `payments` | `status`, `currency`, `amount_cent`, `paid_at`, `email`, `product`, `refunded_cent`, `refunded_at`, `utm_campaign`, `utm_source` |
-| `payment_items` | `payment_id`, `product`, `amount_cent`, `quantity`, `discount_cent` |
+`Support\RevenueView::HANDLES` maps the screen's own slots onto the seven handles it is
+built from:
 
-Product *names* are the exception: those go through Payments' catalogue, because a handle
-only becomes a product there and an offer's handle resolves nowhere else.
+```php
+[
+    'net'         => 'payments.revenue_net',
+    'gross'       => 'payments.revenue_gross',
+    'refunded'    => 'payments.refunded',
+    'orders'      => 'payments.orders',
+    'buyers'      => 'payments.buyers',
+    'average'     => 'payments.average_order',
+    'refund_rate' => 'payments.refund_rate',
+]
+```
+
+Missing handles are simply absent. The absence of `payments.revenue_gross` in particular is
+what the screen distinguishes as "no payments addon" rather than "no sales yet" — two
+different sentences, because a zero for the first is the quiet kind of wrong.
+
+## Failure containment
+
+A metric that throws costs its own tile and a line in the log, never the page. A
+contributor mid-upgrade, a table half-migrated, a query that is wrong on one engine: all of
+them degrade to one missing figure.
 
 ## Database support
 
-The time buckets are the only dialect-specific SQL, and all three are written out:
-`strftime` on SQLite, `date_format` on MySQL and MariaDB, `to_char` on PostgreSQL.
+The time buckets are the only dialect-specific SQL, and `TableMetric` writes all three:
+`strftime` on SQLite, `date_format` on MySQL and MariaDB, `to_char` on PostgreSQL. A metric
+that builds its own bucket expression has to do the same — written for one engine, a chart
+is green on SQLite in the test suite and a 500 on the first production install running
+MySQL.
 
 ::: warning Verified on SQLite
-The test suite runs on SQLite. The MySQL and PostgreSQL expressions are correct by the
+The test suites run on SQLite. The MySQL and PostgreSQL expressions are correct by the
 documentation but have no automated run behind them yet. If you are the first to run this
 on either, the chart is where a problem would appear.
 :::

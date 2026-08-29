@@ -38,6 +38,8 @@ on — a third party to declare, block and explain. A signed webhook loads nothi
 - **Two Antlers tags** that carry no personal data at all, not even the booking title.
 - **A read-only Control Panel screen** under Utilities, built on core's `Listing`.
 - **A retention command**, because a booking carries a name and an address.
+- **Four figures for [Insights](/insights/what-the-family-reports#bookings)**, offered at
+  boot and simply absent when that addon is not installed.
 
 ## Three rules it will not bend
 

@@ -41,6 +41,8 @@ have none, and those get no invoice rather than one at the seller's own rate.
 - **Credit notes**, taking the next number and copying the original's figures
 - **An HTML document**, the same one the preview shows
 - **`invoices:pending`**, which lists paid payments with no invoice and says what is missing
+- **Four figures for [Insights](/insights/what-the-family-reports#invoices)**, dated by
+  invoice date and simply absent when that addon is not installed
 
 ## What it depends on, and why
 

@@ -34,6 +34,8 @@ None of them could be reused by the next domain that needed notifying, which is 
 - **Idempotency** via a dedupe key
 - **A read-only CP inspector** at **Tools → Notifications**
 - **Optional realtime** — a content-free refresh signal
+- **Four figures for [Insights](/insights/what-the-family-reports#notifications)**, offered
+  at boot and simply absent when that addon is not installed
 
 <Figure
   src="notifications-inspector"

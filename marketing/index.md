@@ -45,6 +45,8 @@ beside it, so a bare `composer require` installs three addons whether or not you
   `content/marketing/`; runtime data is always Eloquent.
 - **A dashboard** — audience totals, the most recent campaigns, and two charts: engagement across
   the last twelve sent campaigns, and list growth week by week. See [The dashboard](#the-dashboard).
+- **Six figures for [Insights](/insights/what-the-family-reports#newsletter)**, filed there
+  under *Newsletter* and simply absent when that addon is not installed.
 
 ## The consent rule
 

@@ -12,6 +12,27 @@ Release notes for `goldnead/statamic-consent`, as published with the package.
 Cross-version upgrade notes for the whole suite are in
 [Upgrading](/guide/upgrading).
 
+## 1.7.0
+
+### Added: this addon's figures appear in Insights
+
+From 1.1.0 `statamic-insights` is no longer a revenue report but the family's reporting layer: an
+addon registers what it can count and gets the period, the comparison against the period before,
+the chart, the breakdowns and two finished screens in return.
+
+The coupling is optional in **both** directions. Without Insights nothing here is missing; without
+this addon only its own group is missing over there. `suggest`, never `require`.
+
+Every figure follows the contract's house rules: **null is not zero** (a rate with no denominator
+has no answer and does not print 0 %), `available()` decides existence and never the data, gaps in
+a series are filled by Insights rather than by the metric, and a filter a metric does not
+understand is ignored rather than fatal.
+
+One figure: decisions recorded, splittable by purpose and by outcome.
+
+`consent_records` carries no brand column — checked against the migration rather than assumed — so
+there is nothing to narrow here.
+
 ## 1.6.0
 
 ### Removed

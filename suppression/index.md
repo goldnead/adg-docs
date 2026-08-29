@@ -70,3 +70,4 @@ blocked again" stays readable in full.
 | Who performed a release | [Identity Contracts](/identity-contracts/) |
 | Which brand a row belongs to | [Brand Context](/brand-context/) |
 | SPF, DKIM, reputation | your mail provider |
+| Counting blocks on a screen | [Insights](/insights/what-the-family-reports#suppression), through two figures this package contributes across all brands |
