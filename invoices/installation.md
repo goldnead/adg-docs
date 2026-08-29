@@ -16,13 +16,15 @@ Three tables: `invoices`, `invoice_items`, `invoice_counters`.
 
 | Package | Constraint | |
 | --- | --- | --- |
-| [`goldnead/statamic-payments`](/payments/) | `^1.9` | Installed automatically. Earlier versions record neither the buyer's country nor the discount per line, and **neither can be reconstructed afterwards**. |
+| [`goldnead/statamic-payments`](/payments/) | `^1.14` | Installed automatically. Earlier versions record neither the buyer's country nor the discount per line nor the brand of the purchase, and **none of the three can be reconstructed afterwards**. |
+| [`goldnead/statamic-brand-context`](/brand-context/) | `^1.11` | Installed automatically. One number series per brand instead of one for the whole installation, and the `BrandMailer` the invoice mail leaves through. |
+| [`dompdf/dompdf`](https://github.com/dompdf/dompdf) | `^3.1` | Installed automatically. The bundled print engine, pure PHP — no Node, no system binary. See [Delivery](/invoices/delivery). |
 
 Suggested, not required:
 
 | Package | | |
 | --- | --- | --- |
-| [`goldnead/statamic-brand-context`](/brand-context/) | `^1.11` | One number series per brand instead of one for the whole installation. Detected at runtime. |
+| [`goldnead/statamic-insights`](/insights/) | | Shows documents issued, net, gross and VAT on the Insights dashboard, split by kind, buyer country and tax rate. Detected at runtime. |
 
 ## Fill in the sender first
 

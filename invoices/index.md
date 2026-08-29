@@ -46,8 +46,8 @@ have none, and those get no invoice rather than one at the seller's own rate.
 
 ## What it depends on, and why
 
-`goldnead/statamic-payments` **^1.9**, and the floor is not arbitrary. Two facts arrived in
-1.9.0, both recorded at checkout because neither can be reconstructed afterwards:
+`goldnead/statamic-payments` **^1.14**, and the floor is not arbitrary. Three facts arrived
+there, each recorded at checkout because none can be reconstructed afterwards:
 
 **The buyer's country** (`country`, `country_source`). The VAT rate on a digital sale to a
 consumer in the EU depends on where the buyer is. A country not recorded at the time of the
@@ -58,6 +58,11 @@ not accept "we looked it up later".
 cannot split a single discount figure across them: from the total alone, which part belonged
 to the 7% line and which to the 19% one is unrecoverable. Not visibly wrong — *indeterminate*,
 which is worse.
+
+**The brand of the purchase** (`brand_id` on the payment, from 1.14.0). The invoice belongs to
+the brand that sold, not to the brand whose process happened to write it. Without the column
+the number series can silently be the wrong one, and a number already counted in one series
+cannot be moved to another afterwards.
 
 See [Tax facts and retention](/payments/tax-and-retention).
 
@@ -74,9 +79,6 @@ See [Tax facts and retention](/payments/tax-and-retention).
 ## What it deliberately does not do
 
 - **Bookkeeping, DATEV export, dunning.** Different job, different software.
-- **PDF rendering.** It renders HTML — the same template the preview shows, so the two
-  cannot drift. Turning that into a PDF is a decision about infrastructure (a print dialog,
-  a headless browser, a queue worker) that an addon should not make for its host.
 - **The OSS threshold.** Below €10,000 of annual turnover into other EU countries the
   seller's own rate applies; above it, the recipient's. That is a state over time and needs
   a turnover figure, which is a bookkeeping question rather than a per-line one. There is a

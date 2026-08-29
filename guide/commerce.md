@@ -57,6 +57,16 @@ Checked against the code, not the roadmap:
 - **A visual automation builder** with eighteen built-in triggers plus the ones
   each addon above contributes, and its own action and logic nodes. The full list
   is on the [Automations nodes page](/automations/nodes).
+- **An invoice PDF that is the same file twice.** The document prints from the
+  same Blade template the preview shows, through pure-PHP dompdf, so installing
+  the addon does not install a headless browser. Creation date and document ID
+  are derived from the invoice rather than the wall clock, so re-rendering the
+  same invoice in nine years produces a byte-identical file. It is delivered on
+  `InvoiceIssued` through the brand's own sender identity. See
+  [Delivery](/invoices/delivery).
+- **A customer portal.** Buyers reach their own orders, invoices,
+  subscriptions and payment methods over a magic link, with the § 312k
+  cancellation button on your site rather than a reseller's.
 - **A revenue screen.** [`statamic-insights`](https://github.com/goldnead/statamic-insights)
   reports over what the other addons already record, and answers which campaign
   sold anything. It is not yet documented on this site.
@@ -69,17 +79,17 @@ Stated plainly, because a page that hides this would waste your time and mine.
 | Gap | Where it stands |
 | --- | --- |
 | **Stripe** | Not built. Mollie is the only gateway adapter. The seam for a second one exists and is unbound. |
-| **Customer portal** | Not built. No customer-facing route for orders, invoices, subscriptions or payment methods. |
-| **Invoice PDF** | Half built. The document renders as HTML (`Support\Renderer`); there is no PDF and no delivery. See [Delivery](/invoices/delivery). |
 | **Dunning** | Not built. A failed charge mirrors Mollie's status and stops there. |
 
 None of these is unknown or unplanned. They are the reason this page asks a
 question instead of quoting a price.
 
-Two further gaps — revenue reporting and revenue per campaign — were on this list
-when the page went up on 29 August 2026 and closed the same day, with
-[`statamic-insights`](https://github.com/goldnead/statamic-insights) 1.0.0 and the
-LeadHub bridge in Payments. The list above is what is left.
+Four further gaps — revenue reporting, revenue per campaign, the invoice PDF and
+the customer portal — were on this list when the page went up on 29 August 2026
+and closed within the day, with
+[`statamic-insights`](https://github.com/goldnead/statamic-insights) 1.0.0, the
+LeadHub bridge in Payments, Invoices 1.2.1 and Payments 1.14.0. The list above is
+what is left.
 
 ## What it would cost
 

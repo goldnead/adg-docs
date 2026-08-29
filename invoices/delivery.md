@@ -2,8 +2,8 @@
 
 <AddonHeader />
 
-The addon writes the document and stops there. Sending it, filing it and handing it to an
-accountant all hang off two events.
+The addon writes the document, prints it and sends it to the buyer. Filing it and handing it
+to an accountant hang off two events.
 
 ## Rendering it
 
@@ -14,20 +14,59 @@ $html = app(Renderer::class)->html($invoice);     // a string
 $view = app(Renderer::class)->view($invoice);     // a View, to return from a controller
 ```
 
-**HTML, and only HTML.** The same template the preview shows, so the two cannot drift — there
-is no second, rebuilt preview to fall out of step with what gets printed.
+```php
+use Goldnead\Invoices\Contracts\PdfRenderer;
 
-## Why no PDF
+$pdf = app(PdfRenderer::class)->render($invoice); // raw PDF bytes
+```
 
-Turning HTML into a PDF is a decision about infrastructure: a print dialog, a headless
-browser, a queue worker, a hosted service. Every one of those is a choice about how a site is
-deployed, and an addon should not make it for its host.
+**One template, two outputs.** The PDF prints the same Blade the preview shows, so the two
+cannot drift — there is no second, rebuilt layout to fall out of step with what gets printed.
 
-What the addon guarantees instead is that whatever renders it sees exactly what the preview
-showed.
+## The print engine
 
-The template is deliberately free of images and external fonts. A page that depends on a CDN
-is, in five years, an invoice without a layout — and you have to keep it for ten.
+`Contracts\PdfRenderer` hangs in the container; the bundled implementation is `DompdfRenderer`.
+**dompdf, because it is pure PHP.** Every other candidate makes an infrastructure decision on
+your behalf — Browsershot wants Node and a Chromium, wkhtmltopdf wants a system binary and a
+queue worker to keep it off the request. An addon that quietly adds a system dependency is an
+addon that stops being installable.
+
+A host that already runs a headless browser rebinds that interface and the bundled engine
+stops mattering. Paper size is `invoices.pdf.paper`, `A4` by default.
+
+**The same invoice is the same file, byte for byte.** dompdf otherwise stamps every render
+with the wall clock (`CreationDate`, `ModDate`) and a random document id (`/ID`), so two
+renders of one invoice would differ. Both are derived from the invoice instead — the creation
+date is the date it was issued, which is also the truer answer. Without that, the second
+download in nine years is a different document from the one the buyer holds, visible to nobody
+until it is a question during an audit.
+
+The template is deliberately free of images and external fonts, and remote fetching is switched
+off in the engine rather than left to convention. A page that depends on a CDN is, in five
+years, an invoice without a layout — and you have to keep it for ten.
+
+## Sending it to the buyer
+
+Delivery hangs off `InvoiceIssued`, not a cron run: exactly the invoices that were written go
+out, once each. If a mandatory field is missing, **no invoice is created at all**, so the
+sending path only ever sees finished documents and cannot get round that check.
+
+```php
+// config/invoices.php
+'delivery' => [
+    'enabled' => env('INVOICES_DELIVER', true),
+    'subject' => 'Ihre Rechnung :number',
+    'filename' => 'Rechnung-:number.pdf',
+],
+```
+
+`:number` is the invoice number in both strings. Switch `enabled` off and the host sends them
+itself; the event stays where it is.
+
+The mail leaves through brand-context's `BrandMailer`, so the sender identity belongs to the
+brand. A brand that declares a mail identity and omits the address **sends nothing at all**; a
+brand that declares none falls back to the seller frozen on *this* invoice rather than the
+host-wide sender, which in a multi-brand setup belongs to somebody else.
 
 <Figure
   src="invoices-invoice"
@@ -71,8 +110,11 @@ a host may have redefined.
 
 ## Serving it to a buyer
 
-That is a route of yours, and it needs a lock of yours. The addon ships no route, no
-controller and no signed URL, because who may see an invoice is a question about your site's
+If you run `statamic-payments`, its customer portal already does this: the buyer reaches their
+own invoices over a magic link, and you write nothing.
+
+Without it, that is a route of yours, and it needs a lock of yours. This addon ships no route,
+no controller and no signed URL, because who may see an invoice is a question about your site's
 accounts, not about invoicing.
 
 ```php
@@ -115,8 +157,8 @@ Event::listen(CreditNoteIssued::class, function (CreditNoteIssued $event) {
 `CreditNoteIssued` carries both documents, because a credit note read alone says nothing
 about what it undid.
 
-Emailing the invoice is the obvious listener. A second one worth having is whatever your
-bookkeeping does with a document — an export, a folder, a message to somebody.
+The addon's own delivery listener hangs off `InvoiceIssued`. The one worth adding is whatever
+your bookkeeping does with a document — an export, a folder, a message to somebody.
 
 ::: warning A listener that throws
 Nothing here releases a fulfilment claim: by the time these fire, the invoice exists. But a
