@@ -57,6 +57,9 @@ Checked against the code, not the roadmap:
 - **A visual automation builder** with eighteen built-in triggers plus the ones
   each addon above contributes, and its own action and logic nodes. The full list
   is on the [Automations nodes page](/automations/nodes).
+- **A revenue screen.** [`statamic-insights`](https://github.com/goldnead/statamic-insights)
+  reports over what the other addons already record, and answers which campaign
+  sold anything. It is not yet documented on this site.
 - **0% revenue share.** Nothing phones home to count your orders.
 
 ## What is missing
@@ -69,11 +72,14 @@ Stated plainly, because a page that hides this would waste your time and mine.
 | **Customer portal** | Not built. No customer-facing route for orders, invoices, subscriptions or payment methods. |
 | **Invoice PDF** | Half built. The document renders as HTML (`Support\Renderer`); there is no PDF and no delivery. See [Delivery](/invoices/delivery). |
 | **Dunning** | Not built. A failed charge mirrors Mollie's status and stops there. |
-| **Revenue reporting** | Not built. There is no sum query in the payments or offers Control Panel. |
-| **Revenue per campaign** | Attribution is written: `LeadhubBridge` freezes the UTM fields onto the contact at purchase. What is missing is the report that sums revenue by campaign. |
 
 None of these is unknown or unplanned. They are the reason this page asks a
 question instead of quoting a price.
+
+Two further gaps — revenue reporting and revenue per campaign — were on this list
+when the page went up on 29 August 2026 and closed the same day, with
+[`statamic-insights`](https://github.com/goldnead/statamic-insights) 1.0.0 and the
+LeadHub bridge in Payments. The list above is what is left.
 
 ## What it would cost
 
