@@ -1,0 +1,37 @@
+---
+title: Booking changelog
+editLink: false
+---
+
+# Changelog
+
+<AddonHeader slug="booking" />
+
+Release notes for `goldnead/statamic-booking`, as published with the package.
+
+Cross-version upgrade notes for the whole suite are in
+[Upgrading](/guide/upgrading).
+
+## 1.1.0
+
+### What's new
+
+- **A screen in the Control Panel.** Utilities → Bookings: when, who, status, duration, endpoint.
+  Built on core's `Listing`, so search, sorting, column choice and saved views behave exactly like
+  the Entries screen. Read-only, because Cal.com owns these appointments and a cancel button here
+  would put the site and the calendar out of step.
+- Access is the `access bookings utility` permission, which core registers along with the screen.
+  **This is the only place names and addresses are shown**; the Antlers tags still carry none of it.
+- **Filters for status and for upcoming vs. past**, built as real Statamic filters: they show a
+  badge, survive sorting and paging, and can be kept as a saved view.
+- The column picker works and is remembered per user, and the buyer's address is a column of its own
+  that stays hidden until asked for. A listing shared on a projector should not carry it by default.
+- CI now rebuilds the committed Control Panel bundle and fails if it differs from the sources. A
+  source change shipping without a rebuild would leave every installed site running the old screen,
+  with green tests and no symptom to trace.
+
+
+## 1.0.0
+
+Initial release. Cal.com webhook endpoint with per-funnel secrets, HMAC verification, idempotent
+recording, three events, two Antlers tags, and a retention command.

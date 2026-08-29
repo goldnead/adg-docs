@@ -12,6 +12,116 @@ Release notes for `goldnead/statamic-leadhub`, as published with the package.
 Cross-version upgrade notes for the whole suite are in
 [Upgrading](/guide/upgrading).
 
+## 2.7.1 — 2026-08-28
+
+### Fixed — ein Navigationseintrag ohne Route legte das ganze Control Panel lahm
+
+2.7.0 hat die eigenen Felder halb verdrahtet ausgeliefert. Der `ServiceProvider` registriert auf
+dem Eloquent-Treiber einen Navigationseintrag auf `leadhub.custom-fields.index`, und `routes/cp.php`
+hat diese Route nie definiert.
+
+**Warum das nicht eine Seite trifft, sondern jede.** `NavItem->route()` löst den Namen sofort über
+`cp_route()` auf, also in dem Moment, in dem der Eintrag entsteht. Die Navigation wird auf jeder
+Control-Panel-Seite gebaut, weil Statamics `HandleAuthenticatedInertiaRequests` sie in den geteilten
+Props mitschickt. Ein Name, der nicht auflöst, versteckt darum keinen Screen, sondern wirft
+`RouteNotFoundException` während die Navigation zusammengesetzt wird. Kontakte, Einträge, Benutzer,
+Utilities: alles antwortet 500. Der Screen der eigenen Felder ist die einzige Seite, um die es
+dabei nicht geht.
+
+**Warum es niemandem auffiel.** Zwei Dinge haben gleichzeitig verdeckt.
+
+In der einzigen Installation, die 2.7.0 bekommen hat, lag im `vendor/` eine von Hand gepatchte Kopie
+des Addons, die die Route hatte. Der Fehler war also da, und sichtbar war er nirgends. Sichtbar
+wurde er erst, als diese Kopie ersetzt wurde: sieben Tests im Hostprojekt wurden allein durch das
+Update von 2.5.0 auf 2.7.0 rot, jeder mit derselben Ausnahme.
+
+Der zweite Grund liegt in dieser Testsuite selbst. 580 Tests waren grün, und keiner davon hatte je
+eine Control-Panel-Seite gerendert, die keine LeadHub-Seite ist. Die Controller des Addons
+beantworten Inertia direkt und bauen die Navigation nie; im Testbett laufen die eigenen CP-Routen
+außerdem ohne Statamics CP-Middleware. Eine Suite, die nur die eigenen Screens abfragt, kann einen
+kaputten eigenen Screen sehen und ist blind für ein kaputtes Control Panel.
+
+**Was jetzt dagegensteht.** `tests/Feature/NavigationTakesTheWholeCpWithItTest.php` prüft beides
+getrennt. Der erste Test ruft eine Kern-CP-Seite auf, die mit dem Addon nichts zu tun hat, rendert
+sie vollständig und erwartet 200, in drei Konfigurationen: Eloquent mit allen Modulen aus, Eloquent
+mit allen Modulen an, Flat. Ohne die Route sind die beiden Eloquent-Fälle rot, der Flat-Fall bleibt
+grün, was zugleich zeigt, dass die Bedingung des Navigationseintrags und die der Route nicht
+auseinanderlaufen. Der zweite Test liest jeden LeadHub-Routennamen, den das Addon in `src/` und
+`resources/` selbst nennt, und prüft, ob der Router ihn kennt. Von den 71 gefundenen Namen fehlte
+genau einer; die übrigen 70 sind damit gleich mit nachgewiesen. Eine künftige Lücke meldet er als
+Liste von Routennamen statt als weiße Seite bei einem Kunden.
+
+Die Route ist bewusst ohne Bedingung registriert. Der Treiber wird dort geprüft, wo dieses Addon ihn
+überall prüft, nämlich im Controller über `abortUnlessEloquent()`. Eine Route, die auflöst und 404
+antwortet, ist harmlos; ein Routenname, der nicht auflöst, ist es nicht. Dazu kommt `route:cache`:
+eine bedingte Route friert den Treiberzustand auf den Moment ein, in dem der Cache geschrieben
+wurde, während die Navigation pro Anfrage neu ausgewertet wird. Ein späterer Wechsel von flat auf
+eloquent brächte damit exakt diesen Ausfall zurück, auf einer Installation, die nichts geändert hat
+als einen Config-Wert.
+
+### Fixed — der Flat-Lauf der Testsuite war rot, bevor irgendjemand hinsah
+
+Vierzehn Fehler in zwei Dateien, unabhängig von allem oben, und schon vor 2.7.0 vorhanden.
+`ExportIsNotAFormulaTest` legte seine Kontakte über das Eloquent-Model an, während `ExportService`
+über das treiberabhängig gebundene Repository liest. Auf dem Flat-Treiber bestand jede erzeugte CSV
+nur aus der Kopfzeile, und der Schutz gegen Formeln in Zellen war dort schlicht ungeprüft: ein
+sicherheitsrelevanter Test, der auf einem von zwei Treibern nichts prüfte. Die Kontakte entstehen
+jetzt über das Repository, damit läuft der Pfad auf beiden Treibern echt durch.
+
+`BrandSenderIdentityTest` hatte eine andere Wurzel. `brand_id` wird von einem Eloquent-Hook
+gestempelt, und der Flat-Treiber schreibt bewusst keinen Brand-Schlüssel in die YAML, weil die
+Zugehörigkeit dort im Verzeichnispfad liegt. Fünf der sechs Fälle laufen jetzt innerhalb der Brand,
+so wie eine Formular-Einsendung in Produktion behandelt wird. Der sechste verlangt
+definitionsgemäß die Brand aus der Kontaktzeile, die es auf flat nicht gibt, und wird dort
+übersprungen statt mit einem erfundenen Zustand grün gemacht.
+
+### Fixed — der Harness konnte diese Klasse von Fehler nicht sehen
+
+Damit ein Test überhaupt eine Kern-CP-Seite rendern kann, fehlten dem Testbett zwei Dinge, die jede
+echte Installation hat: der ServiceProvider von `inertiajs/inertia-laravel`, den Laravel in
+Produktion selbst findet und den testbench mit `ignorePackageDiscoveriesFrom('*')` ausschließt, und
+der Alias `Statamic` im Wurzelnamensraum. Ohne den ersten stirbt jede Kern-CP-Seite in
+`HandleAuthenticatedInertiaRequests` an einem fehlenden `$request->inertia()`, ohne den zweiten in
+`nav/updates.blade.php`. Beides sah aus wie ein kaputtes Control Panel und war keins, weshalb es
+den echten Defekt zusätzlich verdeckt hätte.
+
+## 2.7.0 — 2026-08-26
+
+### Added — eigene Felder am Kontakt
+
+Bis jetzt war ein Tag der einzige Weg, etwas über einen Kontakt festzuhalten, das nicht Name,
+E-Mail oder Status ist — und ein Tag kann nur ja oder nein sagen. Stimmlage, Chorgröße, Bundesland
+sind Werte. In Tags gepresst werden daraus `chorgroesse-20-40`, `chorgroesse-40-60` und ein Segment,
+das niemand mehr pflegen kann.
+
+Fünf Typen (Text, Zahl, Auswahl, Datum, Ja/Nein), jeder mit den Vergleichen, die er beantworten
+kann. Ein Datum bietet kein „enthält", ein Ja/Nein kein „größer als" — sonst lässt sich im
+Regelbauer eine Bedingung schreiben, die nie wahr werden kann, und nichts sagt es.
+
+**Definiert wird im Control Panel, nicht in einer Config-Datei.** Wer ein Feld braucht, ist die
+Person, die das CRM benutzt; ein Feld, das einen Deploy braucht, wird nie angelegt.
+
+**Gecastet wird beim Schreiben, nicht beim Vergleichen.** Aus einem Formular kommt eine Zahl als
+Zeichenkette und ein Häkchen als „on". So gespeichert wird jeder spätere Vergleich zum Raten —
+`"20" > 40` ist eine andere Frage als `20 > 40`, und nur eine davon hat die Antwort, die jemand
+gemeint hat.
+
+**Gelöscht wird nur die Definition, nie die Werte.** Unlesbar ist reparabel (Kürzel wieder anlegen),
+gelöscht wäre es nicht — und ein Knopf mit der Aufschrift „Feld löschen" darf keine
+unwiderrufliche Datenlöschung sein.
+
+### Fixed — `is_false` traf auch das nie beantwortete Ja/Nein
+
+`(bool) null === false` ist wahr. „Nein gesagt" und „nichts gesagt" waren im Segment nicht zu
+unterscheiden, obwohl `is_set` danebensteht.
+
+### Added — eine Wache gegen weiße Seiten
+
+`EveryInertiaPageIsRegisteredTest` vergleicht, was ein Controller ausliefern kann, mit dem, was
+`cp.js` registriert. Der neue Screen ging genau daran zuerst unter: Route 200, Inertia-Nutzlast
+nannte die Komponente, Browser weiß. Kein Test konnte das sehen — ein Routentest prüft den Status,
+ein Inertia-Test den **Namen** der Komponente, und keiner fragt, ob dieser Name irgendwo auflöst.
+
 ## 2.6.2 — 2026-08-25
 
 ### Security

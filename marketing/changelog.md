@@ -12,6 +12,86 @@ Release notes for `goldnead/statamic-marketing`, as published with the package.
 Cross-version upgrade notes for the whole suite are in
 [Upgrading](/guide/upgrading).
 
+## 2.18.0 — 2026-08-26
+
+### Added — Versandfenster in der Zeit der Empfängerin
+
+Ein Newsletter, der um 03:40 ankommt, liest sich wie eine Maschine. Einer, der um 03:40 **Ortszeit**
+ankommt, liest sich wie eine Maschine, die nicht weiß, wo man ist — und „um neun" von einem
+deutschen Server ist neun Uhr morgens für die meisten und mitten in der Nacht für die eine in
+Vancouver.
+
+`sending.window.from` / `.to` als ganze Stunden, gelesen in der Zeitzone der Empfängerin:
+`marketing_subscriptions.timezone`, dann die der Konfiguration, dann die der Anwendung. **Nie
+geraten** — eine falsche Zeitzone scheitert nicht, sie stellt zur falschen Stunde zu, und danach
+sagt nichts mehr, welche der drei Antworten benutzt wurde.
+
+**Ab Werk aus.** Beide Werte leer heißt: jede Stunde ist erlaubt, also genau das, was jede
+Installation heute tut. Ein Fenster, das niemand eingestellt hat, darf keine Post zurückhalten.
+
+Ein Fenster über Mitternacht (22 bis 6) wird verstanden. Die naive Prüfung `>= von && < bis` liest
+das als „nie" — eine stille Art, allen Versand anzuhalten.
+
+Zurückgestellt wird auf **den Moment, an dem das Fenster öffnet**, nicht stündlich erneut versucht:
+ein Wiederholungslauf würde das Aufschub-Budget des Frequenzdeckels aufbrauchen und die Nachricht
+verwerfen, bevor der Morgen der Empfängerin je da war. Und er zahlt nicht auf den Deckel ein — „zu
+viel Post diese Woche" und „die falsche Stunde" sind verschiedene Fragen.
+
+**Auf `sync` wird das Fenster übergangen.** Dort gibt es keinen Arbeiter, der später wiederkommt.
+Der erste Bau hatte den Zweig an der falschen Stelle: die Nachricht wurde weder zurückgestellt noch
+gesendet, sie verschwand einfach — auf genau der Installation, auf der es niemandem auffällt.
+Gefunden vom Test, der für den umgekehrten Fall geschrieben war.
+
+## 2.17.0 — 2026-08-26
+
+### Fixed
+
+- **One recipient could receive the same campaign mail twice.** `SendMessageJob` opened with
+  `if ($message->status !== 'pending') return;` — a read, then a send, then a write. Two workers
+  read before either wrote, both passed, both sent. Reproduced before it was fixed: one message
+  row, two mails at the same address, and the row afterwards reads `sent` exactly once, so nothing
+  in the data says it happened.
+
+  Two ordinary situations produced it. `marketing:send-scheduled` runs every minute and had no
+  overlap protection, so a run lasting longer than a minute stood beside its successor; and any
+  worker killed between the send and the status write left the row `pending` for the retry to send
+  again. The second needs no concurrency at all — one worker and bad timing.
+
+  The guard is now a claim: `pending → sending` as a single conditional update, and only the winner
+  sends.
+
+### Added
+
+- **`sending`**, the state a claimed message holds until it is resolved. It counts as outstanding
+  in `scopePending()`, which is load-bearing rather than cosmetic: `maybeFinalize()` marks a
+  campaign sent once nothing is pending, and a message in flight that stopped counting would let a
+  campaign report itself complete while somebody was still waiting for it. It also has its own
+  figure in the report, its own filter and its own label — a state the interface cannot show is a
+  state nobody can find.
+
+- **`marketing:release-stale-sends`**, scheduled every five minutes. A claim that cannot be given
+  back trades a duplicate mail for a missing one, which is the worse half of the bug: a duplicate
+  gets complained about, a missing newsletter does not. Anything held past
+  `marketing.sending.claim_lease_minutes` (15) comes back.
+
+  It distinguishes two ways a worker dies, because they need opposite answers. `sent_at` is stamped
+  immediately *before* the handover to the transport. A stuck row without it never reached the mail
+  server and is delivered again; a stuck row with it did, and is closed without a second copy —
+  loudly, because whether it arrived cannot be known from here. A second copy is certain harm, a
+  missed mail is possible harm and can be looked into.
+
+- `SendMessageJob::failed()` hands the claim back. Between the claim and the first status write sit
+  four lookups that can throw outside any try; a throw there used to strand the row where neither
+  the retry nor a fresh campaign run could reach it.
+
+### Changed
+
+- `withoutOverlapping(5)` on the minute schedule and `withoutOverlapping(10)` on the sweeper, with
+  the expiry spelled out. Laravel's default is a full day and the lock is released on SIGTERM and
+  SIGINT but not on SIGKILL, an OOM kill or a hard reboot — a `schedule:run` killed that way would
+  otherwise silence both commands for twenty-four hours without printing a line, the sweeper
+  included.
+
 ## 2.16.0 — 2026-08-25
 
 ### Fixed

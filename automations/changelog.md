@@ -12,6 +12,420 @@ Release notes for `goldnead/statamic-automations`, as published with the package
 Cross-version upgrade notes for the whole suite are in
 [Upgrading](/guide/upgrading).
 
+## 2.13.0 (2026-08-29)
+
+### Neu: drei cal.com-Aktionen, die Gegenrichtung zu den fünf Auslösern
+
+Seit 2.12.0 kommen fünf cal.com-Ereignisse im Editor an. Was ein Ablauf daraufhin tun konnte, war
+melden. Ab jetzt kann er handeln: **Termin absagen**, **freie Zeiten holen**, **Termin anlegen**.
+
+Damit läuft eine Wiedervorlage ohne Handgriff durch. Jemand sagt ab, der Ablauf holt die freien
+Zeiten der Terminart, schickt drei Vorschläge, und was der Kunde wählt, wird gebucht.
+
+**Was nicht dabei ist:** ein Knoten „Terminarten holen". Die Kennung einer Terminart ist ein fester
+Wert in der Einrichtung eines Ablaufs und nichts, was zur Laufzeit gesucht wird. Die einzige
+Stelle, die sie wirklich braucht, ist die Gegenprobe in „Freie Zeiten holen", und die holt sie sich
+selbst. Verlegen, bestätigen und ablehnen kann die API auch; heute ruft es kein Ablauf.
+
+### Ein zweiter Schlüssel, an einer anderen Stelle
+
+Die Aktionen brauchen einen API-Schlüssel, und das ist nicht das Webhook-Geheimnis aus 2.12.0. Der
+Schlüssel steht in cal.com unter Settings, Developer, API keys:
+
+```dotenv
+STATAMIC_AUTOMATIONS_CALCOM_API_KEY=cal_live_…
+```
+
+Ohne ihn tun die drei Aktionen nichts und sagen das, statt ins Leere zu rufen. Die Auslöser laufen
+davon unberührt weiter, sie brauchten nie einen Schlüssel.
+
+### Die Kopfzeile, an der alles hängt
+
+cal.coms API v2 versioniert **je Endpunkt**, über `cal-api-version`, und die richtige Version ist
+für jeden Endpunkt eine andere. Es gibt keine, die für alle passt. Bei der falschen antwortet
+cal.com nicht mit 400, sondern (gemessen am 29.08.2026):
+
+| Endpunkt | Richtige Version | Bei falscher Version |
+| --- | --- | --- |
+| `/v2/bookings*` | `2024-08-13` | 200, richtiger Umschlag, andere Form darin |
+| `/v2/slots` | `2024-09-04` | 404 `Cannot GET /v2/slots` |
+| `/v2/event-types*` | `2024-06-14` | 404, ohne Kopfzeile 200 in anderer Form |
+
+Zwei von drei sind still. Der Client trägt die Version deshalb als Konstante neben jeder Operation
+statt als eine gemeinsame Kopfzeile, und jede Aktion verlangt das Feld, das ihre Behauptung belegt:
+eine Absage gilt erst als Absage, wenn der Termin als `cancelled` zurückkommt, ein Termin erst als
+Termin, wenn er eine Kennung hat. Einzustellen ist daran nichts. Es zählt, wenn jemand eine
+Operation ergänzt.
+
+### Was ein doppelter Lauf anrichtet
+
+Keine der drei Aktionen hat einen Idempotenz-Schlüssel, weil cal.com keinen anbietet.
+
+**Absagen ist gefahrlos.** cal.com lehnt die zweite Absage mit 400 ab, und die Aktion sieht
+daraufhin den Zustand des Termins nach, statt den Wortlaut auszulegen. Der Knoten bleibt grün. Was
+die beiden Läufe unterscheidet, ist `&#123;&#123; node.cancelled }}`: `true` heißt „dieser Lauf hat es
+getan", `false` zusammen mit `&#123;&#123; node.already_cancelled }}` heißt „ein früherer war es". Eine
+Benachrichtigung gehört an `cancelled` und nicht daran, dass der Knoten grün ist, sonst geht die
+Absage-Mail beim zweiten Lauf ein zweites Mal hinaus.
+
+Ein Fall geht absichtlich rot: die Absage ging hinaus, cal.com hat sie ausgeführt, und die Antwort
+kam nicht zurück. Der Termin ist abgesagt, und von hier aus ist nicht zu erkennen, ob dieser Lauf
+es war. Einen früheren Lauf zu behaupten wäre die bequeme Antwort und die schlimmere Hälfte des
+Fehlers: `cancelled` bliebe `false`, und die Absage-Mail ginge dann in **keinem** Lauf hinaus. Die
+Ablauf-Maschine wiederholt einen roten Knoten von sich aus; wer den roten Knoten dem Verlust der
+Benachrichtigung vorzieht, setzt dort `_retry_attempts` auf 0.
+
+**Anlegen ist gefahrlos, solange der Zeitpunkt derselbe ist.** cal.com antwortet auf einen belegten
+Zeitpunkt mit 409 und legt keinen zweiten Termin an. Der Schutz kommt vom Kalender und nicht von
+der API, und daraus folgt die eine Bauregel: der Zeitpunkt muss von außen kommen. Wer ihn im Ablauf
+ausrechnen lässt, bekommt beim zweiten Lauf einen anderen, keinen Konflikt und einen zweiten
+Termin. Was der Kunde gewählt hat, gehört in den Kontext des Laufs.
+
+`&#123;&#123; node.slot_unavailable }}` sagt, dass der Zeitpunkt nicht zu haben war. Es sagt **nicht**, dass
+ein Termin steht: cal.coms eigene Meldung lautet „already has booking at this time **or is not
+available**", und ein Zeitpunkt außerhalb der Verfügbarkeit oder eine falsche Zeitzone ergibt
+denselben 409 ganz ohne Termin.
+
+**Freie Zeiten holen** liest nur und ändert bei cal.com nichts. Es ist allerdings die Stelle, an
+der die einzige echte Doppelbuchung dieses Anschlusses anfängt. „Freie Zeiten holen" in „Termin
+anlegen" mit `&#123;&#123; node.first }}` im Startfeld sieht harmlos aus und ist es nicht: beim zweiten Lauf
+ist der Zeitpunkt des ersten belegt, der Knoten fragt neu und gibt den **nächsten** heraus, der 409
+greift nie, und derselbe Mensch hat zwei Termine. `first` gehört in eine Mail oder in eine
+Verzweigung, nicht in einen Anlage-Knoten.
+
+### Leer ist bei cal.com nicht gleich leer
+
+`/v2/slots` antwortet auf eine **unbekannte** Terminart mit `{}` und Status 200, also genauso wie
+auf einen ausgebuchten Kalender. Ein Ablauf mit einer vertippten oder inzwischen gelöschten Kennung
+würde deshalb still nichts vorschlagen, monatelang, ohne dass etwas kaputt aussieht.
+
+„Freie Zeiten holen" macht die Gegenprobe: kommt nichts zurück, fragt die Aktion nach, ob es die
+Terminart überhaupt gibt. Gibt es sie nicht, geht der Knoten rot und sagt warum. Gibt es sie, ist
+`&#123;&#123; node.count }}` gleich 0, und das ist eine echte Auskunft. Die Gegenprobe läuft nur auf dem
+leeren Pfad.
+
+### Gebucht, oder auf Bestätigung wartend
+
+„Termin anlegen" gibt `&#123;&#123; node.status }}` als `accepted` oder `pending` zurück und
+`&#123;&#123; node.confirmed }}` als die Ja-Nein-Fassung davon. Was von beidem, entscheidet allein die
+Bestätigungs-Einstellung der Terminart.
+
+Das ist die Stelle, die einen Nachmittag kostet: `GET /v2/event-types` gibt dieses Feld **nicht**
+heraus, und es heißt auch nicht `requiresConfirmation`. Es steht nur in
+`GET /v2/event-types/{id}`, unter `confirmationPolicy`. Wer in der Liste nachsieht, findet nichts
+und liest die Abwesenheit als „keine Bestätigung nötig".
+
+Daran hängt eine zweite Überraschung: **ein `pending`-Termin löst `BOOKING_CREATED` nicht aus.**
+cal.com schickt für eine Buchung, die auf Bestätigung wartet, `BOOKING_REQUESTED`, und dafür gibt
+es seit 2.12.0 den Auslöser „Booking Requested". `BOOKING_CREATED` kommt erst, wenn jemand
+bestätigt.
+
+Ein grüner Knoten heißt also „cal.com hat es angenommen" und nicht „der Termin steht". Wer auf
+einen stehenden Termin baut, verzweigt auf `&#123;&#123; node.confirmed }}`.
+
+### Ein Testlauf sagt nichts ab und legt nichts an
+
+Beides schreibt in fremde Kalender und verschickt Post, und eine Absage lässt sich von hier aus gar
+nicht zurücknehmen. Ein Testlauf zeigt, was er schicken würde, und schickt nichts, solange
+`automations.test_mode.persist_cal_com_changes` nicht ausdrücklich an ist.
+
+Freie Zeiten zu lesen fällt bewusst nicht darunter: das ändert drüben nichts, und eine Vorschau aus
+erfundenen Zeiten wäre nichts wert. Ein Testlauf fragt wirklich. Ohne Schlüssel geht er deshalb
+rot, und das ist die richtige Antwort auf einen Knoten, der nicht arbeiten kann.
+
+## 2.12.0 (2026-08-29)
+
+### Neu: VocalFlow im Flow-Editor, sieben Auslöser und zwei Aktionen
+
+VocalFlow ist das System, in dem die Coaching-Sessions stattfinden. Es lief bisher neben den
+Abläufen her: eine Session wurde gehalten, eine Aufgabe zugewiesen, ein Protokoll veröffentlicht,
+und was danach passieren sollte, passierte von Hand. Ab jetzt steht beides im Editor, in beide
+Richtungen.
+
+**Herein kommen sieben Auslöser.** Sechs für die Ereignisse, die VocalFlow über seinen
+Webhook-Kanal schickt: Session **angelegt** und **abgeschlossen**, Aufgabe **angelegt**,
+**geändert**, **zugewiesen** und **gelöscht**. Der siebte ist die **veröffentlichte Session**, und
+der kommt über einen eigenen Endpunkt, weil VocalFlow ihn anders bedient.
+
+Die Session-Auslöser lassen sich nach Sitzungsart filtern, über den Slug oder die Kennung, und nach
+Zustand. Der Zustandsfilter ist kein Beiwerk. „Session angelegt" heißt bei VocalFlow nicht „steht
+als Termin an": der Vorgabewert eines neuen Datensatzes ist `draft`, und der Import von
+Alt-Sitzungen legt sie direkt als `completed` an. Ein Ablauf „Unterlagen zur Vorbereitung
+schicken" ohne diesen Filter mailt beim nächsten Import an jeden Studenten einmal pro Altstunde.
+
+Die Aufgaben-Auslöser filtern nach Zustand und Dringlichkeit. Die Aufgabenart wäre die
+naheliegende dritte Achse und ist bewusst keine: VocalFlow legt sie nur bei „zugewiesen" in die
+Nutzlast, ein Filter darauf fiele bei den anderen still aus, und ein still ausfallender Filter ist
+die schlechteste Sorte. Der Ablauf läuft dann einfach nie, und niemand sucht danach.
+
+**Hinaus gehen zwei Aktionen:** einen **Studenten anlegen** und ihm ein **Paket gutschreiben**. Das
+sind die beiden Schritte, die im Onboarding wirklich vorkommen. Die Partner-API von VocalFlow kann
+mehr, und der Rest ist absichtlich nicht gebaut: ein Knoten, den heute nichts ruft, steht trotzdem
+im Editor und will bei jeder Änderung mitgetestet werden.
+
+Ein Paket gutzuschreiben ist nicht von sich aus wiederholbar, anders als einen Studenten anzulegen.
+Dafür gibt es das Feld **Idempotenz-Schlüssel**, und es bleibt leer, solange niemand es füllt.
+Hinein gehört der Wert, der den Kaufvorgang benennt: eine Bestellnummer, eine Zahlungs-Kennung.
+Einen aus der Nutzlast abzuleiten wäre bequem und falsch, denn er wäre für denselben Studenten mit
+demselben Paket immer derselbe und verschluckte damit den zweiten echten Kauf.
+
+### Die Signatur ist hier anders als bei cal.com
+
+VocalFlow signiert nicht die Bytes, die es verschickt, sondern eine kanonisch neu kodierte Fassung
+der Nutzlast. Die Bytes auf der Leitung escapen Schrägstriche und Umlaute abweichend davon. Ein
+Empfänger, der wie bei cal.com über den rohen Rumpf prüft, würde deshalb **jede echte Zustellung**
+ablehnen, sobald irgendwo ein `/` oder ein `ö` in der Nutzlast steht, und in einer
+VocalFlow-Nutzlast steht beides immer. Der Fehler sähe aus wie ein falsch eingetragenes Geheimnis
+und würde genau dort gesucht.
+
+Dieser Anschluss bildet das Verfahren deshalb nach. Was verglichen wird, ist der Inhalt der
+Nutzlast, nicht ihre Schreibweise. Die Reihenfolge der Schlüssel zählt weiterhin.
+
+### Einzurichten sind vier Werte
+
+Zwei Adressen bei VocalFlow eintragen, `https://deine-seite.de/!/automations/vocalflow` für die
+Ereignisse und `https://deine-seite.de/!/automations/vocalflow/session-published` für die
+veröffentlichte Session. Dazu vier Umgebungsvariablen:
+
+- `STATAMIC_AUTOMATIONS_VOCALFLOW_SECRET`: das Geheimnis des Ereignis-Abos
+- `STATAMIC_AUTOMATIONS_VOCALFLOW_PUBLICATION_SECRET`: das Token der zweiten Adresse
+- `STATAMIC_AUTOMATIONS_VOCALFLOW_PARTNER_URL` und `_PARTNER_SECRET`: für die beiden Aktionen
+
+**Ohne diese Werte nimmt die jeweilige Route nichts an und tun die Aktionen nichts.** Die Routen
+stehen dann nicht offen, sondern antworten mit 503. Ein Anschluss ohne Zugangsdaten ruft nicht ins
+Leere und ist kein Formular, in das jeder Fremde Sessions schreiben kann.
+
+Beide Routen haben eine Schranke gegen Doppelzustellung. Sie hängt beim Ereignis-Kanal am
+Fingerabdruck der signierten Nutzlast und nicht an der Kennung des Vorgangs, und das ist der
+Unterschied zu cal.com: eine Buchung wird einmal angelegt und einmal abgesagt, eine Aufgabe aber
+mehrfach echt geändert. Wer auf die Aufgaben-Kennung sperrte, verwürfe die zweite echte Änderung,
+und der Ablauf, der auf „Aufgabe ist jetzt fertig" wartet, liefe nie.
+
+### Was fehlt, und warum
+
+`session.updated` gibt es bei VocalFlow und hat hier keinen Auslöser. Es wäre das einzige Ereignis,
+mit dem sich heute „Session verlegt" oder „Session abgesagt" bauen ließe. Es stand nicht in der
+Liste, gegen die dieser Anschluss gebaut wurde, und ein Handle ist endgültig: einen zu vergeben ist
+keine Kleinigkeit, die man nebenbei mitnimmt. Wer es braucht, sagt Bescheid.
+
+Von den sechs Ereignissen des Webhook-Kanals kommen bei VocalFlow heute zwei wirklich an,
+`session.created` und `task.assigned`. Bei den übrigen fehlt auf VocalFlows Seite der Absender. Die
+Auslöser stehen trotzdem alle im Editor: der Name ist der Vertrag, und wer die Lücke drüben
+schließt, soll den Auslöser hier vorfinden statt ihn dann erst zu vermissen.
+
+## 2.11.0 (2026-08-29)
+
+### Neu: cal.com im Flow-Editor, fünf Auslöser
+
+Wer Termine über cal.com annimmt, konnte damit bisher nichts anfangen. Eine Buchung kam an, und
+was danach passieren sollte, passierte von Hand: die Vorbereitungsmail, der Eintrag im CRM, die
+Nachricht ans eigene Team. Ab jetzt stehen fünf Auslöser im Editor, einer je Ereignis, das cal.com
+über eine Buchung schickt: **angelegt**, **angefragt**, **abgesagt**, **abgelehnt**, **verlegt**.
+
+Alle fünf lassen sich nach der **Terminart** filtern, wahlweise über den Slug oder über die
+Nummer. Das ist kein Beiwerk. Ein Betrieb führt bei cal.com mehrere Terminarten nebeneinander, und
+ein kostenloses Erstgespräch und eine bezahlte Stunde sind verschiedene Vorgänge mit verschiedenen
+Mails. Beide feuern denselben Webhook. Ein Ablauf ohne diesen Filter schickt die Rechnungsmail an
+jemanden, der ein Erstgespräch gebucht hat.
+
+Zwei Felder, weil beide ihren Nachteil haben. Den Slug liest man im cal.com-Konto ab und trägt ihn
+ohne Nachschlagen ein, aber er steckt in der Buchungs-URL und wird geändert, wenn die URL hübscher
+werden soll; ein Filter, der daran hängt, fällt dann still aus. Die Nummer ändert sich nie, steht
+aber nirgends, wo man sie einfach abliest. Der Titel ist bewusst keine Filterachse.
+
+### Der Anschluss hängt an nichts
+
+cal.com ist kein Nachbar-Addon, sondern ein Dienst. Der Anschluss bringt deshalb seine eigene
+Route mit, seine eigene Signaturprüfung und seinen eigenen Schutz gegen Doppelzustellung. Es
+braucht kein zweites Addon, um ihn zu benutzen.
+
+Einzurichten ist eins: die Adresse `https://deine-seite.de/!/automations/cal-com` bei cal.com als
+Webhook eintragen und das Secret, das cal.com dabei zeigt, als
+`STATAMIC_AUTOMATIONS_CALCOM_SECRET` hinterlegen.
+
+**Ohne dieses Secret nimmt die Route nichts an.** Sie steht dann nicht offen, sondern antwortet
+mit 503. Ein Anschluss ohne Zugangsdaten tut nichts, statt alles anzunehmen: eine offene
+POST-Adresse, die Abläufe startet, ist sonst ein Formular, in das jeder Fremde Buchungen schreiben
+kann, und diese Buchungen verschicken Mails.
+
+Geprüft wird die Signatur über den **rohen** Rumpf der Anfrage, bevor irgendetwas dekodiert wird,
+und der Vergleich läuft in konstanter Zeit. Eine Eigenheit von cal.com steckt darin, die man leicht
+übersieht: ist auf cal.coms Seite kein Secret gesetzt, fehlt der Signatur-Header nicht, sondern
+enthält wörtlich `no-secret-provided`. Wer nur prüft, ob ein Header da ist, lässt das durch.
+
+Dazu drei Schranken, die kein Secret ersetzt. cal.com legt weder eine Zustell-Kennung noch einen
+Zeitstempel in die Kopfzeilen, ein einmal mitgeschnittener, gültig signierter Rumpf bliebe also für
+immer gültig; wer ihn aus einem Protokoll hat, könnte den Ablauf später beliebig oft auslösen. Der
+Zeitstempel im Rumpf ist mitsigniert, und ein Umschlag, der älter als einen Tag ist, wird
+abgewiesen. Rümpfe über 256 KB werden abgewiesen, bevor die Prüfsumme über sie läuft. Und auf der
+Route liegt eine Bremse von 120 Anfragen je Minute, gegen jemanden, der die Adresse kennt und sie
+ohne Secret in Dauerschleife aufruft. Alle drei Werte stehen in der Konfiguration.
+
+### Dieselbe Buchung zweimal startet den Ablauf einmal
+
+cal.com stellt erneut zu, wenn eine Antwort ausbleibt. Das Paar aus Ereignis und Buchungs-`uid`
+wird deshalb einen Tag lang festgehalten; kommt es ein zweites Mal, wird es beantwortet, ohne den
+Ablauf noch einmal zu starten. Das Paar und nicht die `uid` allein: dieselbe Buchung wird angelegt,
+verlegt und abgesagt, und alle drei sollen laufen.
+
+Zwei Dinge, die daran leicht schiefgehen, sind ausdrücklich geregelt. Scheitert der Start des
+Ablaufs, etwa weil die Queue gerade nicht erreichbar ist, wird die Vormerkung zurückgenommen. Ohne
+das wäre die Buchung verloren: die Vormerkung stünde, cal.coms Wiederholung liefe in „schon
+dagewesen", und der Ablauf startete nie. Und die Schranke hängt am Cache. Steht `cache.default` auf
+`null` oder `array`, kann sie nicht wirken, und das Addon sagt es im Log, statt still gar nichts
+mehr zu tun. Ein Anschluss, der Erfolg meldet und nichts tut, ist die zäheste Fehlerform.
+
+### Was ein Folgeknoten bekommt
+
+cal.coms Nutzlast ist tief verschachtelt und trägt rund vierzig Felder, die meisten davon für den
+Betrieb einer Kalender-App. Der Auslöser legt die Auswahl flach hin, an der ein Ablauf wirklich
+hängt: `booking.uid`, `booking.title`, `booking.starts_at`, `booking.ends_at`,
+`booking.duration_minutes`, `booking.status`, `booking.event_type_slug`, `booking.event_type_title`,
+`booking.price_cent` mit `booking.currency`, `booking.notes`, `booking.attendee.*`,
+`booking.organizer.*`, `booking.meeting_url` und der Grund einer Absage, einer Ablehnung oder einer
+Verlegung. Dazu `booking.answers` mit allem, was im Buchungsformular beantwortet wurde, also auch
+den eigenen Fragen wie „In welchem Chor singst du?", und `booking.attendee_emails` als eine Zeile
+für das `to`-Feld der Mail-Aktion, das keine Liste annimmt. Die unveränderte Nutzlast liegt daneben
+unter `cal_com.payload`, für den seltenen Fall, den diese Auswahl nicht trifft.
+
+Fünf Eigenheiten von cal.com werden dabei geradegezogen, weil sie sonst im Betrieb auffallen und
+nicht vorher. `payload.type` ist der Slug der Terminart und nicht ihr Titel; der Titel steht in
+`payload.eventTitle`, und `payload.title` ist wieder etwas Drittes, nämlich der Titel der Buchung.
+`language` kommt als Objekt und wird zur Zeichenkette, sonst steht in der Mail „Array". Die
+Zeitschreibweise wechselt je Ereignis zwischen drei Formen, die alle denselben Zeitpunkt in UTC
+meinen; hier kommt eine Form an, dieselbe wie bei den Nachbar-Auslösern, sonst fände eine Bedingung
+denselben Termin auf dem einen Ereignis und auf dem anderen nicht. Der Preis steht in der kleinsten
+Währungseinheit und heißt deshalb `price_cent`, damit niemand „9000 EUR" in eine Mail schreibt. Und
+die Telefonnummer des Buchers steht nicht bei jedem Ereignis am Teilnehmer, sondern in der Antwort
+auf das Formularfeld; sie wird von dort geholt, statt ein Feld anzubieten, das nie etwas trägt.
+
+Ein Feld bleibt roh, und das mit Absicht: **`booking.location` ist keine Ortsangabe.** Bei einem
+Videotermin steht dort eine Maschinenkennung wie `integrations:daily`, bei einem Termin vor Ort die
+echte Adresse. In eine Mail gehört `booking.meeting_url`.
+
+**Eine Verlegung ist bei cal.com keine geänderte Buchung, sondern eine neue.** Die alte wird
+abgesagt, die neue bekommt eine eigene `uid`. `booking.uid` ist deshalb die neue Buchung,
+`booking.rescheduled_from_uid` und `booking.rescheduled_from_starts_at` sind die alte. Wer den
+Termin in einem eigenen System nachhält, sucht ihn über das zweite Feld.
+
+### Was bewusst fehlt
+
+**Aktionen.** Einen Termin über cal.com anzulegen oder abzusagen braucht einen API-Schlüssel, und
+das ist eine andere Zugangsart an einem anderen Ort. Diese Entscheidung steht noch aus, deshalb
+gibt es vorerst nur Auslöser.
+
+**`MEETING_ENDED` und `MEETING_STARTED`.** Beide schickt cal.com in einer anderen Form: flach, ohne
+den `payload`-Umschlag, und mit der rohen Datenbankzeile statt des aufbereiteten Termins, also
+`user` statt `organizer` und `id` statt `bookingId`. Das ist ein zweiter Flattener und ein zweites
+Ausgabeschema, kein Beifang.
+
+**`RECORDING_READY`.** Trägt keine vollständige Buchung, sondern im Kern einen Downloadlink, und
+gilt nur für Cal Video. Auch das wäre ein eigenes Ausgabeschema.
+
+**`BOOKING_PAYMENT_INITIATED`.** In cal.coms Dokumentation ist nicht belegt, welche Form die
+Nutzlast hat. Ein Auslöser, dessen Felder geraten sind, fällt beim ersten echten Webhook um.
+
+## 2.10.0 (2026-08-29)
+
+### Neu: sechzehn Auslöser und vier Aktionen für die Handels-Addons
+
+Vier Nachbar-Addons feuern zusammen neunzehn Ereignisse. Drei davon hatten einen Trigger-Knoten,
+die übrigen sechzehn feuerten ins Leere. Wer wollte, dass beim Widerruf eines Zugangs jemand
+Bescheid bekommt, oder dass eine gekündigte Ratenzahlung anders behandelt wird als eine
+abbezahlte, musste den Listener selbst schreiben. Genau diese Arbeit soll dieses Addon abnehmen.
+
+**Payments** (mit `goldnead/statamic-payments`), sechs neue Auslöser: Erstattung, Abo gestartet,
+Abo verlängert, Abo gekündigt, Abo beendet, Abo-Start fehlgeschlagen. Alle filterbar nach Produkt,
+wie ihre drei Geschwister.
+
+Zwei Unterscheidungen stecken darin, die im Ablauf zählen. „Gekündigt" und „beendet" sind nicht
+dasselbe: das eine ist jemand, der geht, das andere jemand, der die letzte Rate bezahlt hat, und
+ein gemeinsamer Ablauf für beide schickt „schade, dass du gehst" an einen Kunden, der gerade
+fertig abbezahlt hat. Und die Erstattung trägt getrennt, wie viel diesmal zurückging und ob damit
+alles zurück ist. Nur die zweite Angabe darf einen Zugangsentzug auslösen, deshalb gibt es dafür
+den Filter „nur vollständige Erstattungen" direkt am Auslöser.
+
+„Abo-Start fehlgeschlagen" ist der Fall, den ein Betrieb sonst erst erfährt, wenn der Kunde
+schreibt: Das Geld ist da, die Vereinbarung dahinter existiert nicht. Dahinter gehört eine
+Meldung an einen Menschen, keine Kundenmail.
+
+**Entitlements** (mit `goldnead/statamic-entitlements`), fünf neue Auslöser: Zugang gewährt,
+entzogen, abgelaufen, verlängert, wartet auf Bestätigung. Filterbar nach Produkt und nach Quelle.
+Derselbe Kurs per Opt-in gewonnen und derselbe Kurs gekauft sind zwei verschiedene Sachverhalte
+und verdienen zwei verschiedene Mails.
+
+„Zugang entzogen" trägt den Grund und den Verursacher mit. Eine Rückbuchung, die ein Webhook
+verarbeitet hat, und eine Erstattung, die ein Mensch bewilligt hat, sind dieselbe Datenzeile und
+sehr verschiedene Tatsachen.
+
+Dazu zwei Aktionen: **Zugang gewähren** und **Zugang entziehen**. Beide vertragen einen zweiten
+Lauf. Ein Zugang ist über (Subjekt, Produkt, Quelle, Quellreferenz) eindeutig, das Addon hält
+diese Kombination mit einem Unique-Index, und ein zweiter Lauf mit denselben Werten gibt den
+vorhandenen Zugang zurück, statt einen zweiten anzulegen.
+
+Das Ergebnis führt drei Angaben, weil „der Aufruf hat geklappt" und „diese Person hat Zugang"
+zwei verschiedene Tatsachen sind. `grants_access` beantwortet die zweite. `created` sagt nur, ob
+dieser Lauf die Zeile geschrieben hat, was enger ist, als es aussieht: Eine bestätigte
+Doppel-Anmeldung schaltet einen vorhandenen Zugang frei, ohne etwas zu schreiben. Wer eine
+Willkommensmail genau einmal verschicken will, hängt sie deshalb an den Auslöser
+„Zugang gewährt", den das Addon je Zustandswechsel genau einmal feuert.
+
+Ein entzogener Zugang bleibt entzogen, absichtlich, damit ein erneut zugestellter Webhook keine
+Erstattung rückgängig macht. Ein zweiter Gewähren-Lauf ändert daran nichts, und deshalb **färbt
+die Aktion ihren Knoten in diesem Fall rot**, statt Erfolg zu melden. Andernfalls liefe der
+Ablauf zufrieden weiter über einen Menschen, der keinen Zugang hat. Ein Zugang, dessen Startdatum
+noch in der Zukunft liegt, ist kein Fehler und sagt das über `provisional`.
+
+„Zugang entziehen" entzieht jeden Zugang, den das Subjekt für dieses Produkt hält, nicht den
+ersten gefundenen. `revoked` sagt, wie viele dieser Lauf wirklich geändert hat, `matched`, wie
+viele Zeilen es überhaupt gibt.
+
+**Booking** (mit `goldnead/statamic-booking`), drei neue Auslöser: gebucht, storniert, verschoben.
+Filterbar nach Endpunkt, und dieser Filter ist keine Zierde: Eine Website betreibt mehrere
+Endpunkte nebeneinander, ein kostenloses Gespräch und eine bezahlte Stunde, und alle feuern
+dieselben drei Ereignisse.
+
+„Verschoben" ist der einzige der drei, der sich wiederholen kann. Das Booking-Addon schreibt und
+meldet eine Verschiebung, ohne zu prüfen, ob sich etwas geändert hat, also feuert eine erneut
+zugestellte Verschiebung ein zweites Mal. Steht etwas Teures dahinter, gehört eine Entdopplung
+davor. Das steht auch am Knoten selbst.
+
+**Invoices** (mit `goldnead/statamic-invoices`), zwei neue Auslöser: Rechnung ausgestellt,
+Gutschrift ausgestellt. Die Gutschrift trägt beide Dokumente, weil eine Gutschrift für sich
+gelesen nichts darüber sagt, was sie aufhebt.
+
+Dazu zwei Aktionen: **Rechnung ausstellen** und **Gutschrift ausstellen**. Auch beide vertragen
+einen zweiten Lauf, gehalten von einem Unique-Index auf (Zahlung, Art) im Rechnungs-Addon. Und
+auch hier ist `created` das Feld, an dem ein Folgeschritt hängen sollte: Die Aktion gelingt auch
+dann, wenn sie nur das schon vorhandene Dokument zurückgibt.
+
+Die Gutschrift storniert immer die ganze Rechnung, unabhängig davon, wie viel Geld tatsächlich
+zurückgeflossen ist. Bei einer Teilerstattung ist sie das falsche Dokument. Sie gehört hinter eine
+Bedingung auf vollständige Erstattung oder hinter den Payments-Auslöser mit eingeschaltetem Filter.
+
+### Was bewusst nicht dabei ist
+
+**Keine Erstattungs-Aktion.** `statamic-payments` kann beim Zahlungsanbieter keine Erstattung
+auslösen; es kann nur nachbuchen, was jemand im Dashboard des Anbieters getan hat. Eine Aktion
+namens „Erstattung auslösen" würde also kein Geld bewegen, aber den erstatteten Betrag schreiben
+und das Erstattungs-Ereignis feuern, woraufhin das Rechnungs-Addon eine Gutschrift für nie
+zurückgeflossenes Geld ausstellt. Solange das Addon keine echte Erstattung anbietet, gibt es hier
+keine.
+
+**Keine Booking-Aktionen.** Das Booking-Addon bietet nach außen keinen Weg, eine Buchung
+anzulegen, zu verschieben oder zu stornieren; seine einzige öffentliche Methode nimmt einen
+Anbieter-Webhook entgegen. Direkt in die Tabelle zu schreiben würde seinen Eindeutigkeitsschlüssel
+umgehen und keines seiner Ereignisse feuern. Eine Aktion, die still das Falsche tut, ist schlechter
+als keine.
+
+### Ohne die Nachbar-Addons ändert sich nichts
+
+Alle neuen Knoten hängen wie bisher an der Erkennung: Ist das jeweilige Addon nicht installiert,
+erscheint kein Knoten in der Bibliothek und es wird kein Listener registriert. Eine Installation
+ohne `statamic-booking` verhält sich exakt wie vorher. Das ist jetzt auch als Test festgehalten,
+zusammen mit dem Fall, dass eine Aktion scheitert: Sie färbt ihren Knoten rot und beendet den Lauf
+als fehlgeschlagen, statt eine Ausnahme in einen Queue-Worker zu werfen, in den niemand schaut.
+
 ## 2.9.0 — 2026-08-25
 
 ### What's new
