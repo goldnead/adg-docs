@@ -22,6 +22,9 @@ hero:
       text: Start here
       link: /guide/
     - theme: alt
+      text: Try the live demo
+      link: https://demo.adriangoldner.dev
+    - theme: alt
       text: Browse the suite
       link: /guide/suite
     - theme: alt
@@ -63,6 +66,16 @@ features:
 ---
 
 <AddonGrid />
+
+## Try it before you install
+
+A seeded playground with the whole suite installed runs at
+[demo.adriangoldner.dev](https://demo.adriangoldner.dev). Sign in to the
+[Control Panel](https://demo.adriangoldner.dev/cp/auth/login) with
+`mira@nordlicht.beispiel` and the password `demo-local-password`, or browse
+the four public brand sites under `/chorwerkstatt`, `/halbmond`, `/lindhorst`
+and `/sonderzeichen`. The demo resets itself every night, so nothing you
+change sticks.
 
 ## Install what you need
 
