@@ -11,8 +11,8 @@
 | Database | MySQL 8+, SQLite |
 
 **Laravel 11 is not supported by any package in the suite.** Every one of them
-requires `^12.0|^13.0` or narrower, and Brand Context — a dependency of eleven
-of the twenty-two — requires `^12.40|^13.0`, which sets the real floor for most
+requires `^12.0|^13.0` or narrower, and Brand Context — a dependency of twelve
+of the twenty-four — requires `^12.40|^13.0`, which sets the real floor for most
 installs. Table of Contents is the exception that declares no Laravel
 constraint at all and takes whatever its Statamic version takes.
 
@@ -34,11 +34,13 @@ difference matters more than it sounds:
   per-character byte cost. A schema MySQL refuses outright can pass a fully
   green SQLite test run. That is not a hypothetical: it is how one release
   reached production with a schema MySQL could not build.
-- Eight addons therefore ship a `phpunit.mysql.xml` and a unit test
+- Eleven addons therefore ship a `phpunit.mysql.xml` and a unit test
   (`IndexKeyLengthTest`) that compiles the migrations through Laravel's MySQL
   grammar and measures every index against InnoDB's 3072-byte limit: Activity,
-  Automations, Brand Context, LeadHub, Marketing, Notifications, Suppression
-  and Webhook Manager. Those are exactly the eight that own tables.
+  Automations, Brand Context, Entitlements, Events, LeadHub, Lead Magnets,
+  Marketing, Notifications, Suppression and Webhook Manager. More addons own
+  tables than that, so a MySQL run is not yet the same thing as a suite-wide
+  guarantee.
 
 **PostgreSQL is untested.** Nothing in the suite is knowingly MySQL-only beyond
 the index-length work above, and the migrations use Laravel's schema builder
@@ -64,8 +66,11 @@ for you:
 | `statamic-offers` | `statamic-payments` | An offer is a price for a product the till already sells. |
 | `statamic-invoices` | `statamic-payments` | An invoice is written from a payment, never beside one. |
 | `statamic-funnels` | `statamic-payments`, `statamic-offers` | A paid step is an offer, and an offer is charged by the till. |
-| `statamic-funnels` | `statamic-flow-canvas` | The editor is one package, consumed by Funnels and Automations alike. |
-| eleven of the twenty-two | `statamic-brand-context` | See [Multi-brand](#multi-brand) below. |
+| `statamic-automations` | `statamic-flow-canvas` | The editor is one package, consumed by Funnels and Automations alike. |
+| `statamic-funnels` | `statamic-flow-canvas` | The same editor, the second consumer. |
+| `statamic-products` | `statamic-payments` | A product is read through the payment catalogue, and contributing to it needs `^1.15`. |
+| `statamic-lead-magnets` | `statamic-entitlements` | The grant behind a confirmed download is an entitlement. |
+| twelve of the twenty-four | `statamic-brand-context` | See [Multi-brand](#multi-brand) below. |
 
 Everything beyond that is a `suggest` plus a runtime `class_exists` check. The
 version constraints that matter when both are installed:
@@ -104,6 +109,11 @@ install that had LeadHub. Always resolve the root first.
 | LeadHub | yes, `resources/dist/build/` | yes |
 | Marketing | yes, `resources/dist/build/` | yes |
 | Brand Context | yes, `resources/dist/build/` | yes |
+| Activity | yes, `resources/dist/build/` | yes |
+| Notifications | yes, `resources/dist/build/` | yes |
+| Entitlements | yes, `resources/dist/build/` | yes |
+| Events | yes, `resources/dist/build/` | yes |
+| Insights | yes, `resources/dist/build/` | yes |
 | others | no CP JavaScript of their own | no |
 
 Brand Context is easy to overlook in that list: it is mostly an invisible
@@ -119,11 +129,12 @@ Two Statamic 6 specifics worth knowing if you fork one of these:
 
 ## Multi-brand
 
-Brand Context is a dependency of eight packages: Webhook Manager, Automations,
-LeadHub, Marketing, Activity, Notifications, Suppression and Preference Center.
-All eight are brand-aware, and all eight behave identically on a single-brand
-install. There is no partial support to check for: if an addon depends on
-`brand-context`, its records carry `brand_id` from their first migration.
+Brand Context is a dependency of twelve packages: Webhook Manager, Automations,
+LeadHub, Marketing, Activity, Notifications, Suppression, Preference Center,
+Entitlements, Lead Magnets, Events and Invoices. All twelve are brand-aware, and
+all twelve behave identically on a single-brand install. There is no partial
+support to check for: if an addon depends on `brand-context`, its records carry
+`brand_id` from their first migration.
 
 Table of Contents, Identity Contracts and Email Templates are not brand-scoped,
 because none of them persists anything that could belong to a brand.

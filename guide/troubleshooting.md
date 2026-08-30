@@ -128,10 +128,8 @@ fresh, which produces a half-correct segment. See
 
 A `composer.json` referencing `../statamic-*` cannot resolve on any machine
 without those sibling directories, including every Docker build. Remove the
-`repositories` block and let the package resolve from Packagist, where twenty-one of
-the twenty-two are published. A path repository is a development convenience only,
-except for Entitlements, Lead Magnets and Events, which are unpublished and have
-no other way in yet.
+`repositories` block and let the package resolve from Packagist, where all
+twenty-four are published. A path repository is a development convenience only.
 
 For private VCS repositories, `preferred-install: source` avoids needing a token
 for the dist zipball, and `COMPOSER_AUTH` must be set **as an environment

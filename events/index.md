@@ -10,12 +10,6 @@ It exists because the same calendar had been rebuilt four times in four projects
 the four was reusable. This package is the shared version: a data model, a Control Panel, seven
 Antlers tags, an ICS download per date and one subscribable feed.
 
-::: warning Not released yet
-Nothing here is tagged and the package is not on Packagist. Everything below describes the
-current `main`, and [Installation](/events/installation) is a path or VCS repository rather
-than a `composer require`.
-:::
-
 ## An event is not an entry with a date field
 
 That is the decision the whole package rests on, so it is worth stating before anything else.

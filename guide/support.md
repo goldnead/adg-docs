@@ -51,7 +51,7 @@ addon wired in as a path repository, which is the fastest way to prove a bug is
 in the addon rather than in your project:
 
 ```bash
-./scripts/setup-playground.sh      # webhook-manager, automations, leadhub
+./scripts/setup-playground.sh      # webhook-manager, automations, leadhub, marketing
 cd playground && php artisan serve  # → http://127.0.0.1:8000/cp
 ```
 

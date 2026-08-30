@@ -1,21 +1,18 @@
 # Introduction
 
-This site documents twenty-two packages for **Statamic 6**. They are separate
+This site documents twenty-four packages for **Statamic 6**. They are separate
 Composer packages, released and versioned independently, and each one is useful
-on its own. Thirteen of them are Statamic addons; Identity Contracts and Suppression
-are plain Laravel libraries that the addons build on. What makes them a suite is that they agree on four things: how a brand is
-scoped, who an actor is, where configuration lives, and which addon owns which
-concern.
+on its own. Twenty-two of them are Statamic addons; Identity Contracts and Flow
+Canvas are plain libraries the addons build on, the first needing Laravel and
+nothing else, the second only PHP. What makes them a suite is that they agree on
+four things: how a brand is scoped, who an actor is, where configuration lives,
+and which addon owns which concern.
 
 If you only ever install one of them, you can ignore all four. This guide exists
 for the point at which you install the second one.
 
-::: warning One of the twenty-two is not released
-[Entitlements](/entitlements/), [Lead Magnets](/lead-magnets/) and
-[Events](/events/) are built and documented, but they carry no git tag and are
-not on Packagist. `composer require` does not resolve them today. Their
-installation pages describe a path or VCS repository instead.
-:::
+All twenty-four are tagged and published on Packagist, so a bare
+`composer require` resolves any of them.
 
 ## What is here
 
@@ -24,10 +21,11 @@ installation pages describe a path or VCS repository instead.
 | Foundation | [Brand Context](/brand-context/), [Identity Contracts](/identity-contracts/), [Suppression](/suppression/) | Install-once packages the others build on. Inert on their own. |
 | Integration | [Webhook Manager](/webhook-manager/), [Automations](/automations/) | Getting data in and out of the site, and reacting to events. |
 | CRM & marketing | [LeadHub](/leadhub/), [Marketing](/marketing/), [Preference Center](/preference-center/), [Lead Magnets](/lead-magnets/), [Email Templates](/email-templates/) | Contacts, consent, campaigns. |
-| Platform | [Activity](/activity/), [Notifications](/notifications/), [Entitlements](/entitlements/) | Shared services any domain addon can record into or ask. |
-| Content | [Events](/events/), [Table of Contents](/toc/) | Dated content and front-end helpers for editorial work. |
+| Platform | [Activity](/activity/), [Notifications](/notifications/), [Entitlements](/entitlements/), [Booking](/booking/), [Flow Canvas](/flow-canvas/) | Shared services any domain addon can record into, ask, or build on. |
+| Commerce | [Payments](/payments/), [Products](/products/), [Offers](/offers/), [Invoices](/invoices/), [Funnels](/funnels/), [Insights](/insights/) | Selling on the site you already run: the till, the thing sold, how it is presented, the document and the figures. |
+| Content | [Events](/events/), [Table of Contents](/toc/), [Consent](/consent/) | Dated content, cookie consent, and front-end helpers for editorial work. |
 
-A one-page tour of all twenty-two, with the dependency graph, is in
+A one-page tour of all twenty-four, with the dependency graph, is in
 [The suite](/guide/suite). If you know the problem but not the addon, read
 [Choosing an addon](/guide/choosing).
 

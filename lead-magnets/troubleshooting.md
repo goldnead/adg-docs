@@ -2,16 +2,12 @@
 
 <AddonHeader />
 
-## `composer require goldnead/statamic-lead-magnets` cannot find the package
-
-It is not on Packagist and has no tag. Install from a checkout with a path or VCS repository. See
-[Installation](/lead-magnets/installation).
-
 ## The Control Panel screens have no styling and no JavaScript
 
 The bundle is not committed to the repository. It is attached to each GitHub release as
-`dist.tar.gz` and fetched at install time by `pixelfear/composer-dist-plugin`. With no release
-there is nothing to fetch, and there is no error to tell you so.
+`dist.tar.gz` and fetched at install time by `pixelfear/composer-dist-plugin`. An install that
+has no release to fetch from — a path repository, or a tag whose release workflow did not
+succeed — gets nothing, and there is no error to tell you so.
 
 ```bash
 cd ../statamic-lead-magnets && npm install && npm run build

@@ -193,7 +193,6 @@ export const addons = [
     package: 'goldnead/statamic-lead-magnets',
     layer: 'crm',
     license: 'Commercial',
-    unreleased: true,
     tagline:
       'Confirm-first resource delivery: ask for a file, confirm the address, download through a signed and audited link.',
     icon: '↧',
@@ -266,7 +265,6 @@ export const addons = [
     package: 'goldnead/statamic-entitlements',
     layer: 'platform',
     license: 'MIT',
-    unreleased: true,
     tagline:
       'Who may access what: one state machine, idempotency enforced by the database, and a revocation you can audit.',
     icon: '⊙',
@@ -283,7 +281,6 @@ export const addons = [
     package: 'goldnead/statamic-events',
     layer: 'content',
     license: 'Commercial',
-    unreleased: true,
     tagline:
       'Events with any number of dates, per-event timezones, venues, ICS downloads and a subscribable feed.',
     icon: '◷',
@@ -331,6 +328,22 @@ export const addons = [
       { text: 'Refunds', link: 'refunds' },
       { text: 'Abandoned checkouts', link: 'abandoned' },
       { text: 'Tax facts and retention', link: 'tax-and-retention' },
+    ],
+  },
+  {
+    slug: 'products',
+    name: 'Products',
+    package: 'goldnead/statamic-products',
+    license: 'Commercial',
+    layer: 'commerce',
+    tagline:
+      'The thing that is sold: a name, a list price, and the access a paid copy opens.',
+    icon: '▣',
+    pages: [
+      { text: 'What a product is', link: 'concepts' },
+      { text: 'The kind and the pointer', link: 'kinds' },
+      { text: 'The handle is a promise', link: 'handles' },
+      { text: 'In the payment catalogue', link: 'catalogue' },
     ],
   },
   {

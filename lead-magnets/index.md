@@ -6,10 +6,10 @@ A visitor asks for a file, confirms their address, and receives a download link 
 time-boxed, capped and audited. That flow existed on one site and was the cleanest reusable thing
 in the estate, so it was lifted out rather than rebuilt a fourth time.
 
-::: warning Not released yet
-Nothing here is tagged and the package is not on Packagist. Everything below describes the
-current `main`. [Installation](/lead-magnets/installation) is a path or VCS repository, and it
-has a consequence for the Control Panel assets that is worth reading before you try it.
+::: warning The Control Panel bundle is not in the repository
+The built assets are attached to each GitHub release rather than committed, so an install from
+a checkout has no Control Panel styling and no error to say so. See
+[Installation](/lead-magnets/installation).
 :::
 
 ## Confirm first, deliver once

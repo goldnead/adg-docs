@@ -1,11 +1,18 @@
 # Privacy & retention
 
-Five packages in the suite store personal data: LeadHub (contacts), Marketing
-(subscriptions and message events), Activity (facts about people),
+Five packages hold the personal data this page is about: LeadHub (contacts),
+Marketing (subscriptions and message events), Activity (facts about people),
 Notifications (what somebody was told) and Suppression (addresses that must not
 be mailed). A sixth, Preference Center, stores nothing of its own but is the
 page a data subject actually uses. This page collects the guarantees and the
-levers, because a GDPR question is never about one addon.
+levers for those, because a GDPR question is never about one addon.
+
+The commerce packages hold buyer data of their own: [Payments](/payments/)
+records the name, email address and country a checkout collected, and
+[Invoices](/invoices/) freezes the buyer's details into a document that by law
+must not change afterwards. Those two answer to tax retention rather than to the
+levers below, and their rules are on
+[Tax facts and retention](/payments/tax-and-retention).
 
 ## What is deliberately not collected
 

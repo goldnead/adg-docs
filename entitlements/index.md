@@ -9,11 +9,6 @@ It decides access. **It sends nothing**: no mail, no notifications, no magic lin
 creation. Those are three other domains, and the system this package was extracted from had all
 three tangled into one class.
 
-::: warning Not released yet
-Nothing here is tagged and the package is not on Packagist. Everything below describes the current
-`main`, and [Installation](/entitlements/installation) is a path or VCS repository.
-:::
-
 ## A grant
 
 ```php

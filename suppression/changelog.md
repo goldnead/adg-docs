@@ -12,6 +12,21 @@ Release notes for `goldnead/statamic-suppression`, as published with the package
 Cross-version upgrade notes for the whole suite are in
 [Upgrading](/guide/upgrading).
 
+## Unreleased
+
+### Fixed: the last second of a period is inside the "blocked" figure
+
+The event figure compares its window half-open — `< midnight` rather than `<= 23:59:59.999999` —
+because a query binding formats a date as `Y-m-d H:i:s` and drops the fraction. `Blocked` could not
+inherit that: a holding is asked *of an instant*, so it writes its own comparisons, and they were
+the inclusive kind. Every instant it asks about is the end of something, and every one of those is
+23:59:59.999999.
+
+Two consequences, both silent and both only on engines that keep the fraction. An address blocked at
+23:59:59.500 was reported by the event figure and missing from the holding beside it. And an address
+released — or a temporary block lapsing — in that same fraction was still counted as on the list at
+the close of the day.
+
 ## 1.2.0 — 2026-08-29
 
 ### Added: this addon's figures appear in Insights

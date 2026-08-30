@@ -93,6 +93,24 @@ async function zoomCanvas(page) {
 }
 
 /** Open a Statamic listing's filter menu, which is a button labelled "Filters". */
+/** Take focus off whatever holds it, so no stray ring lands in the picture. */
+async function blurActiveElement(page) {
+  await page.evaluate(() => document.activeElement instanceof HTMLElement && document.activeElement.blur())
+  await page.waitForTimeout(300)
+}
+
+/**
+ * Open the product editor on the first row.
+ *
+ * By clicking the name cell rather than the row actions: the cell is the button
+ * the screen advertises, and going through the dropdown would put an open menu
+ * in the picture.
+ */
+async function openProductEditor(page) {
+  await page.locator('table tbody tr button').first().click()
+  await page.waitForTimeout(900)
+}
+
 async function openFilters(page) {
   await page.getByRole('button', { name: /filters?/i }).first().click()
   await page.waitForTimeout(600)
@@ -120,6 +138,15 @@ const SHOTS = [
   // ---- Booking
   { name: 'booking-listing', url: '/cp/utilities/bookings' },
   { name: 'booking-filter', url: '/cp/utilities/bookings', prepare: openFilters },
+
+  // ---- Products
+  //
+  // `blur` on the listing: dismissing the licence dialog leaves focus on the
+  // search box here, and the ring around it appears in no other screenshot on
+  // the site. The editor shot does not need it — the click that opens the panel
+  // moves focus into the panel.
+  { name: 'products-listing', url: '/cp/utilities/products', prepare: blurActiveElement },
+  { name: 'products-editor', url: '/cp/utilities/products', prepare: openProductEditor },
 
   // ---- Offers
   { name: 'offers-listing', url: '/cp/utilities/offers' },

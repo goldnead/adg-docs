@@ -4,34 +4,18 @@
 
 <Requirements php="8.2+" statamic="6.0+" laravel="12.40+ / 13.x" database="MySQL or SQLite" queue="Scheduler required" />
 
-::: danger `composer require goldnead/statamic-entitlements` does not work today
-The package has **no git tag and is not on Packagist**. There is no version to resolve.
-:::
-
-## From a checkout
+## Requiring it
 
 ```bash
-git clone git@github.com:goldnead/statamic-entitlements.git ../statamic-entitlements
-```
-
-```json
-{
-  "repositories": [
-    { "type": "path", "url": "../statamic-entitlements" }
-  ]
-}
-```
-
-```bash
-composer require goldnead/statamic-entitlements:@dev
+composer require goldnead/statamic-entitlements
 php artisan migrate
 ```
 
-A path repository resolves only on a machine that has the sibling directory, which excludes every
-Docker build and every deploy. That is the cost of an untagged package.
+The package is tagged and on Packagist, so nothing else is needed: no `repositories` block, no
+`@dev` constraint, and the two hard requirements below resolve on their own.
 
-The Control Panel bundle **is** committed to this repository, so a checkout install has working
-Control Panel assets. That is not true of every addon in the suite.
+The Control Panel bundle **is** committed to this repository, so an install from a checkout has
+working Control Panel assets too. That is not true of every addon in the suite.
 
 ## What comes with it
 

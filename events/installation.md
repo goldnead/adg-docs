@@ -4,34 +4,16 @@
 
 <Requirements php="8.2+" statamic="6.0+" laravel="12.40+ / 13.x" database="MySQL or SQLite" />
 
-::: danger `composer require goldnead/statamic-events` does not work today
-The package has **no git tag and is not published on Packagist**. There is no version to
-resolve and no dist to download. Install it from a checkout, as below, and expect the command
-above to start working only once a first release is tagged.
-:::
-
-## From a checkout
+## Requiring it
 
 ```bash
-git clone git@github.com:goldnead/statamic-events.git ../statamic-events
-```
-
-```json
-{
-  "repositories": [
-    { "type": "path", "url": "../statamic-events" }
-  ]
-}
-```
-
-```bash
-composer require goldnead/statamic-events:@dev
+composer require goldnead/statamic-events
 php artisan migrate
 ```
 
-A path repository resolves on the machine that has the sibling directory and nowhere else,
-which includes every Docker build and every deploy. That is the cost of installing an untagged
-package and there is no way around it until there is a tag.
+The package is tagged and on Packagist, so nothing else is needed: no `repositories` block and
+no `@dev` constraint. The Control Panel bundle is committed to the repository, so the screens
+work straight after the install with no front-end build step.
 
 ## What comes with it
 

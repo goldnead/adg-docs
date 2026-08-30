@@ -76,18 +76,17 @@ members:
 
 ## Buying
 
-**Twenty-one of the twenty-two packages are on Packagist**, commercial ones
-included, and every one of those installs with a bare `composer require`. Invoices
-is tagged (v1.1.0) but not published.
+**All twenty-four packages are on Packagist**, commercial ones
+included, and every one of them installs with a bare `composer require`.
 
-Being on Packagist is not the same as being free. **Fourteen are commercial** and
+Being on Packagist is not the same as being free. **Sixteen are commercial** and
 **eight are MIT**; the table above is the authoritative list. The commercial ones
 resolve as ordinary Composer packages but are licensed rather than sold.
 
-::: warning Only one of the fourteen can actually be bought today
+::: warning Only one of the sixteen can actually be bought today
 [Table of Contents](/toc/) has a Statamic Marketplace listing. The other
-thirteen commercial packages are declared `proprietary` in their
-`composer.json` — twelve of them resolve from Packagist, Invoices is unpublished —
+fifteen commercial packages are declared `proprietary` in their
+`composer.json` and resolve from Packagist like any other package,
 but **no listing exists for any of them yet**, so there is currently no way to buy a licence for one.
 
 If you are running one of them on a production site, that is not a licence

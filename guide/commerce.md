@@ -1,18 +1,18 @@
 ---
 title: The commerce suite
-description: Eight packages that turn a Statamic site into its own checkout, invoicing and fulfilment stack. Running in production on one site, not yet sold. This page exists to find out whether anyone wants it.
+description: Nine packages that turn a Statamic site into its own checkout, invoicing and fulfilment stack. Running in production on one site, not yet sold. This page exists to find out whether anyone wants it.
 ---
 
 # The commerce suite
 
-Eight of the twenty-two packages form one chain: **someone buys, and everything
+Nine of the twenty-four packages form one chain: **someone buys, and everything
 that has to happen afterwards happens.** Payment, licence-free invoice numbering
 under German law, access granted, follow-up sent, all on the site you already
 run.
 
-[Payments](/payments/) · [Offers](/offers/) · [Invoices](/invoices/) ·
-[Funnels](/funnels/) · [Entitlements](/entitlements/) · [LeadHub](/leadhub/) ·
-[Marketing](/marketing/) · [Automations](/automations/)
+[Payments](/payments/) · [Products](/products/) · [Offers](/offers/) ·
+[Invoices](/invoices/) · [Funnels](/funnels/) · [Entitlements](/entitlements/) ·
+[LeadHub](/leadhub/) · [Marketing](/marketing/) · [Automations](/automations/)
 
 ::: tip This page is a question, not an offer
 The chain runs in production on one site and has done for months. It has never
@@ -39,6 +39,13 @@ neither has a §312k cancellation button on your own site.
 
 Checked against the code, not the roadmap:
 
+- **The thing being sold exists in one place.** [Payments](/payments/) prices it,
+  [Products](/products/) is the thing itself, [Offers](/offers/) presents it and
+  [Entitlements](/entitlements/) opens it. Before Products that middle piece
+  lived wherever each site invented it, and on one of them it got invented twice
+  under two names that then drifted. A product is a name, a handle, a list price
+  and what a paid copy opens; it delivers nothing, because the course player is
+  not an addon's business.
 - **Invoice numbering that holds up.** Numbers come from a locked counter row in
   the same transaction as the invoice, never from `MAX()+1`. Gapless and unique
   are both concurrency properties, and both are tested against MySQL rather than
@@ -67,9 +74,9 @@ Checked against the code, not the roadmap:
 - **A customer portal.** Buyers reach their own orders, invoices,
   subscriptions and payment methods over a magic link, with the § 312k
   cancellation button on your site rather than a reseller's.
-- **A revenue screen.** [`statamic-insights`](https://github.com/goldnead/statamic-insights)
-  reports over what the other addons already record, and answers which campaign
-  sold anything. It is not yet documented on this site.
+- **A revenue screen.** [Insights](/insights/) reports over what the other addons
+  already record, and answers which campaign sold anything. It owns no data of
+  its own: every figure is a query living in the addon that owns the table.
 - **0% revenue share.** Nothing phones home to count your orders.
 
 ## What is missing
@@ -87,7 +94,7 @@ question instead of quoting a price.
 Four further gaps — revenue reporting, revenue per campaign, the invoice PDF and
 the customer portal — were on this list when the page went up on 29 August 2026
 and closed within the day, with
-[`statamic-insights`](https://github.com/goldnead/statamic-insights) 1.0.0, the
+[Insights](/insights/) 1.0.0, the
 LeadHub bridge in Payments, Invoices 1.2.1 and Payments 1.14.0. The list above is
 what is left.
 

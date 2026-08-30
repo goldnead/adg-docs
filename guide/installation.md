@@ -132,11 +132,9 @@ person to assign to.
 
 ## Installing from a local checkout
 
-**Twenty-one of the twenty-two packages are on Packagist**, so the normal case needs
+**All twenty-four packages are on Packagist**, so the normal case needs
 nothing but `composer require`, and the sibling packages an addon depends on
-resolve on their own. Entitlements, Lead Magnets and Events are the exception:
-they are untagged and unpublished, and each one's installation page describes
-the path or VCS repository they need instead. None of the packages declares a `repositories` block any more, and
+resolve on their own. None of the packages declares a `repositories` block, and
 you do not need one either.
 
 The exception is development. If you are working against a local checkout of

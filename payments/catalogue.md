@@ -99,6 +99,12 @@ cannot become a five-figure charge.
 
 ## Another addon can contribute products
 
+There are two seams, and they answer different questions. `Catalogue::extend()`
+answers **"what does this one handle cost?"**. `Catalogue::contribute()`, added
+in **1.15.0**, answers **"what is there?"**.
+
+### `extend()` prices one handle
+
 ```php
 use Goldnead\StatamicPayments\Support\Catalogue;
 
@@ -121,7 +127,50 @@ And the amount still never comes from a request. A resolver runs on the server, 
 the whole reason this is a seam rather than a parameter.
 
 [Offers](/offers/price-rule) is built on it: `offer:fruehling-upsell` resolves like any
-other product, and every guard in this addon applies to it unchanged.
+other product, and every guard in this addon applies to it unchanged. An offer contributes
+its own price for a product the catalogue already knows, which is exactly the shape a
+resolver has.
+
+### `contribute()` lists what there is
+
+A resolver is only ever handed one handle, so it can say what something costs and never what
+exists. Anything that has to *fill a list* — a product picker in a Control Panel form, most
+obviously — could therefore see only the handles in the config file. That is the gap
+`contribute()` closes:
+
+```php
+use Goldnead\StatamicPayments\Support\Catalogue;
+
+Catalogue::contribute(fn (): array => Product::query()
+    ->where('active', true)
+    ->orderBy('name')
+    ->get()
+    ->mapWithKeys(fn (Product $product) => [$product->handle => $product->toCatalogueEntry()])
+    ->all());
+```
+
+`Catalogue::all()` merges what the contributors list with the configured catalogue, and
+**config still wins on a collision**, exactly as it does for a resolver.
+
+**A contributor must also `extend()`.** Listing and pricing stay separate on purpose, so
+that `find()` remains a config lookup plus a handful of cheap resolvers and never walks a
+database because somebody asked about a handle that does not exist. The cost of that split
+is this rule: an addon that contributes a handle it cannot resolve puts a line in the picker
+that cannot be bought. A contributed entry is validated on the way in for that reason, where
+a configured one is not.
+
+A contributor that calls `Catalogue::all()` itself is not consulted a second time. The guard
+exists because it is a reasonable thing to write — a contributor skipping handles that are
+already taken would naturally ask what is there — and without it that call would recurse
+for ever.
+
+[Products](/products/catalogue) is the larger case, and it registers on both seams: a
+resolver that prices one handle from the table, and a contributor that lists the table.
+Because the two questions arrive from different places, they are scoped differently. The
+resolver is reached by a browser and by a provider webhook hours after the sale, and a
+webhook has no brand, so it does not ask for one. The contributor only ever answers a
+screen, so it is scoped to the current brand and fails closed: in multi-brand mode with no
+brand current, an unscoped list would offer another tenant's catalogue for sale.
 
 ## What the catalogue is not
 
@@ -129,6 +178,7 @@ It is not a product collection, not a fieldtype, and not something an editor man
 Control Panel. It is configuration, and that is deliberate: a price that can be edited by
 whoever can log in is a price that can be edited by whoever can log in.
 
-If you want editable pricing with words, images and a place to appear, that is what
-[Offers](/offers/) is — a table, still on the server, that feeds this catalogue through the
-seam above.
+If you want the things you sell managed in the Control Panel, that is what
+[Products](/products/) is: a table, still on the server, that feeds this catalogue through
+both seams above. If you want editable pricing with words, images and a place to appear on
+top of that, that is [Offers](/offers/).

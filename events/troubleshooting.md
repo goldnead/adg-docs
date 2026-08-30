@@ -2,11 +2,6 @@
 
 <AddonHeader />
 
-## `composer require goldnead/statamic-events` cannot find the package
-
-It is not on Packagist and has no tag. Install from a checkout with a path or VCS repository. See
-[Installation](/events/installation).
-
 ## The ICS link in the Control Panel returns 404
 
 The Control Panel prints an `ics_url` for **every** date, including dates of private and draft

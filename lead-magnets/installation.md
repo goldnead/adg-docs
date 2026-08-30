@@ -4,43 +4,28 @@
 
 <Requirements php="8.2+" statamic="6.0+" laravel="12.40+ / 13.x" database="MySQL or SQLite" queue="Optional" />
 
-::: danger `composer require goldnead/statamic-lead-magnets` does not work today
-The package has **no git tag and is not on Packagist**. There is no version to resolve.
-:::
-
-## From a checkout, and what it costs you
+## Requiring it
 
 ```bash
-git clone git@github.com:goldnead/statamic-lead-magnets.git ../statamic-lead-magnets
-```
-
-```json
-{
-  "repositories": [
-    { "type": "path", "url": "../statamic-lead-magnets" }
-  ]
-}
-```
-
-```bash
-composer require goldnead/statamic-lead-magnets:@dev
+composer require goldnead/statamic-lead-magnets
 php artisan migrate
 ```
 
+The package is tagged and on Packagist, so nothing else is needed: no `repositories` block and
+no `@dev` constraint.
+
 ::: warning The Control Panel bundle is not in the repository
-Unlike the other addons in the suite, this one does **not** commit its built assets. They are
+Unlike most addons in the suite, this one does **not** commit its built assets. They are
 attached to each GitHub release as `dist.tar.gz` and fetched at install time by
 `pixelfear/composer-dist-plugin`, which reads `extra.download-dist`.
 
-There is no release, so there is no `dist.tar.gz`, so a checkout install has **no Control Panel
-assets**. Build them yourself:
+Two installs therefore end up with **no Control Panel assets and no error**: one from a path
+repository pointing at a checkout, and one from a tag whose release workflow did not succeed,
+because neither has a `dist.tar.gz` to fetch. Build them yourself:
 
 ```bash
 cd ../statamic-lead-magnets && npm install && npm run build
 ```
-
-This is also true of a tag published without the release workflow succeeding: that installs with
-no CP assets and no error.
 :::
 
 ## What comes with it

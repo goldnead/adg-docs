@@ -2,11 +2,6 @@
 
 <AddonHeader />
 
-## `composer require goldnead/statamic-entitlements` cannot find the package
-
-It is not on Packagist and has no tag. Install from a checkout with a path or VCS repository. See
-[Installation](/entitlements/installation).
-
 ## `EntitlementGranted` never fires for a scheduled grant
 
 The announcement pass is not running. The package registers **no** scheduled task, unlike most of

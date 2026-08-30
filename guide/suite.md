@@ -1,24 +1,20 @@
 # The suite
 
-Twenty-two packages, six layers. Every arrow below is a Composer dependency;
+Twenty-four packages, six layers. Every arrow below is a Composer dependency;
 anything not drawn is optional and detected at runtime with `class_exists`,
 which is why you can install any addon without the rest.
 
-::: warning One of the twenty-two is unpublished
-`invoices` is built, documented and tagged (v1.1.0), but its repository is
-private and it is not on Packagist, so `composer require` will not resolve it.
-Everything said about it below describes that tag. The other twenty-one are
-tagged and published, `entitlements`, `lead-magnets` and `events` among them.
-:::
+All twenty-four are tagged and published on Packagist, so `composer require`
+resolves any of them and pulls in whatever it depends on.
 
 ```
 Foundation ──────────────────────────────────────────────────────────
 
-  brand-context          required by 11: webhook-manager, automations,
+  brand-context          required by 12: webhook-manager, automations,
                                          leadhub, marketing, activity,
                                          notifications, suppression,
                                          preference-center, entitlements,
-                                         lead-magnets, events
+                                         lead-magnets, events, invoices
 
   identity-contracts     required by 4:  activity, notifications,
                                          preference-center, entitlements
@@ -26,26 +22,32 @@ Foundation ───────────────────────
   suppression            required by 2:  marketing, notifications
                          (and itself requires brand-context)
 
+  flow-canvas            required by 2:  automations, funnels
+                         (the editor, consumed twice)
+
 Between the domain addons ───────────────────────────────────────────
 
-  marketing  ──requires──▶  leadhub
+  marketing     ──requires──▶  leadhub
+  lead-magnets  ──requires──▶  entitlements
 
 Commerce ────────────────────────────────────────────────────────────
 
-  payments               required by 3:  offers, invoices, funnels
+  payments               required by 4:  products, offers, invoices, funnels
 
+  products   ──requires──▶  payments
   offers     ──requires──▶  payments
   invoices   ──requires──▶  payments
   funnels    ──requires──▶  payments, offers, flow-canvas
 
-  flow-canvas            the editor, consumed twice: funnels requires it,
-                         automations uses the same code
+  insights               requires nothing at all: every figure on its
+                         screens is registered at runtime by the addon
+                         that owns the table behind it
 
 Standalone ──────────────────────────────────────────────────────────
 
   webhook-manager · automations · activity · notifications ·
   email-templates · preference-center · entitlements ·
-  lead-magnets · events · toc
+  events · toc · booking · consent
 
   — none of these requires another domain addon.
 ```
@@ -67,7 +69,7 @@ are worth naming, because they look like dependencies and are not:
 `notifications` rather than an optional extra: both ask the gate before they
 queue mail, and a gate that might not be there would be no gate at all.
 
-## The twenty-two
+## The twenty-four
 
 ### Foundation
 
@@ -137,14 +139,14 @@ in an email footer. It has no Control Panel screen and no Antlers tags. From
 Marketing 1.9.0 it owns the full preference page outright; Marketing keeps only
 the one-click unsubscribe.
 
-**[Lead Magnets](/lead-magnets/)** &nbsp;·&nbsp; `goldnead/statamic-lead-magnets` &nbsp;·&nbsp; *unreleased*
+**[Lead Magnets](/lead-magnets/)** &nbsp;·&nbsp; `goldnead/statamic-lead-magnets`
 
 Confirm-first resource delivery: a visitor asks for a file, confirms the
 address, and receives a signed, time-boxed, capped and audited download link. A
 repeated confirmation activates exactly once, because activation is a
-conditional `UPDATE` rather than a check in PHP. It carries its own grant state
-rather than building on Entitlements, which did not exist when it was written;
-that deviation is documented rather than buried.
+conditional `UPDATE` rather than a check in PHP. How its grants relate to
+[Entitlements](/entitlements/) is written down rather than buried; see
+[Grant state](/lead-magnets/grant-state).
 
 **[Email Templates](/email-templates/)** &nbsp;·&nbsp; `goldnead/statamic-email-templates`
 
@@ -161,6 +163,25 @@ fulfilment that runs exactly once, subscriptions, payment plans and trials. One
 rule carries the rest: the amount is looked up in the catalogue and never comes
 from a request. Mollie rather than Stripe because SEPA, iDEAL and Bancontact are
 what a European buyer reaches for, and there is no monthly floor.
+
+**[Products](/products/)** &nbsp;·&nbsp; `goldnead/statamic-products`
+
+The thing that is sold. Payments knows what something costs, Offers knows how it
+is presented, Entitlements knows that somebody may reach it — and between those
+three the thing itself existed nowhere, so every site invented it again. A
+table, a screen under **Utilities → Products**, and two seams onto the payment
+catalogue. It delivers nothing on purpose: a product says that a course exists,
+what it costs and what a paid copy opens, and what the course *shows* stays the
+website's business.
+
+**[Insights](/insights/)** &nbsp;·&nbsp; `goldnead/statamic-insights`
+
+The reporting layer for the family. Other addons contribute the figures; this
+one owns the period, the comparison against the period before, the chart, the
+splits and the two screens. It owns no data at all: every number is a query
+living in the addon that owns the table, which is why a figure here agrees with
+the listing it came from. The coupling is optional in both directions and named
+in neither package's `require`.
 
 **[Offers](/offers/)** &nbsp;·&nbsp; `goldnead/statamic-offers`
 
@@ -200,7 +221,7 @@ preferences stored only as deviations, in-app and mail delivery, and digests
 with a real window and a record of the send, so an unread item is not mailed
 again every week.
 
-**[Entitlements](/entitlements/)** &nbsp;·&nbsp; `goldnead/statamic-entitlements` &nbsp;·&nbsp; *unreleased*
+**[Entitlements](/entitlements/)** &nbsp;·&nbsp; `goldnead/statamic-entitlements`
 
 Who may access what. One table of grants with a polymorphic subject, one state
 machine of six states of which two are read off the clock rather than stored,
@@ -224,7 +245,7 @@ product: it is here for the developer building on it.
 
 ### Content tooling
 
-**[Events](/events/)** &nbsp;·&nbsp; `goldnead/statamic-events` &nbsp;·&nbsp; *unreleased*
+**[Events](/events/)** &nbsp;·&nbsp; `goldnead/statamic-events`
 
 A domain for dated things. One event carries the description and any number of
 occurrences carry the dates, so a cancelled date stays a row and a subscriber's
@@ -265,6 +286,8 @@ nothing.
 | Lead Magnets | LeadHub | A confirmed request becomes a contact, with the resource's tags written onto it |
 | Lead Magnets | Marketing | The confirmed address is subscribed to the list the resource names |
 | Lead Magnets or Entitlements or Events | Activity | Their domain events recorded as facts on the ledger |
+| Products | Offers | The product picker in the offer form lists what the products table holds, brand-scoped, instead of only the config file's handles |
+| Anything with figures to report | Insights | The addon's group appears on the Metrics screen, with the period, the chart and the splits supplied by Insights |
 
 Detection is one-way and passive: the addon that *offers* the integration checks
 whether the other is present. Nothing needs to be enabled on the other side.
