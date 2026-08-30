@@ -76,7 +76,8 @@ A seeded playground with the whole suite installed runs at
 `mira@nordlicht.beispiel` and the password `demo-local-password`, or browse
 the four public brand sites under `/chorwerkstatt`, `/halbmond`, `/lindhorst`
 and `/sonderzeichen`. The demo resets itself every night, so nothing you
-change sticks.
+change sticks. [What to look at, and what is broken on
+purpose](/guide/demo).
 
 ## Install what you need
 

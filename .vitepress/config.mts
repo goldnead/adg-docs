@@ -152,6 +152,7 @@ export default defineConfig({
             { text: 'The suite', link: '/guide/suite' },
             { text: 'The commerce suite', link: '/guide/commerce' },
             { text: 'Installation', link: '/guide/installation' },
+            { text: 'The demo playground', link: '/guide/demo' },
             { text: 'Choosing an addon', link: '/guide/choosing' },
             { text: 'Compatibility', link: '/guide/compatibility' },
           ],
