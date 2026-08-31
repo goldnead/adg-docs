@@ -13,10 +13,14 @@
  *
  *   node scripts/render-art.mjs identity-contracts suppression
  *   node scripts/render-art.mjs --all
+ *   node scripts/render-art.mjs --all --marketplace
+ *   node scripts/render-art.mjs --all --thumbs
  *   node scripts/render-art.mjs suite
  *
  * Writes `art/cover.png` (1200x630) and `art/icon.png` (512x512) next to the
- * sources it finds. Missing sources are reported, not fabricated.
+ * sources it finds, plus `art/marketplace/01-cover.png` (1280x800) and
+ * `art/marketplace/thumbnail.png` (600x600) with `--marketplace`. Missing
+ * sources are reported, not fabricated.
  *
  * `suite` is the exception: it renders this repo's own `art/suite-cover.html`
  * to `public/art/suite-cover.png`, the share image for every page that does not
@@ -48,6 +52,18 @@ const all = process.argv.includes('--all')
 /** Also render the Marketplace product image. See MARKETPLACE_CSS. */
 const MARKETPLACE = process.argv.includes('--marketplace')
 
+/**
+ * Render ONLY the 600x600 Marketplace thumbnail and leave everything else
+ * alone.
+ *
+ * A mode of its own rather than a second flag on `--marketplace`, because the
+ * thumbnail requirement arrived (2026-08-31) after twenty-four addons already
+ * had their cover and icon. A full re-render to obtain one new file would
+ * rewrite forty-eight PNGs across twenty-four repositories, and a diff that
+ * large is one nobody reads.
+ */
+const THUMBS_ONLY = process.argv.includes('--thumbs')
+
 const slugs = all
   ? documented.map((a) => a.slug)
   : requested.length
@@ -69,6 +85,22 @@ const exists = async (p) => {
   } catch {
     return false
   }
+}
+
+/**
+ * Webhook Manager names its icon `logo.svg`. `sync-art.mjs` has known that
+ * since it was written; this script did not, so `--thumbs` skipped the one
+ * addon in the Marketplace staging that needed a thumbnail most. Same list,
+ * same order, in both places.
+ */
+const ICON_FILENAMES = ['icon.svg', 'logo.svg']
+
+const findIcon = async (art) => {
+  for (const name of ICON_FILENAMES) {
+    const p = resolve(art, name)
+    if (await exists(p)) return p
+  }
+  return null
 }
 
 /**
@@ -98,12 +130,25 @@ const MARKETPLACE_CSS = `
  * the two can never drift. The SVG is inlined into a bare page at its own size
  * with a transparent background.
  */
-const iconPage = (svg) => `<!doctype html>
+const iconPage = (svg, size = 512) => `<!doctype html>
 <html><head><meta charset="utf-8"><style>
   * { margin: 0; padding: 0; }
-  html, body { width: 512px; height: 512px; background: transparent; }
-  svg { display: block; width: 512px; height: 512px; }
+  html, body { width: ${size}px; height: ${size}px; background: transparent; }
+  svg { display: block; width: ${size}px; height: ${size}px; }
 </style></head><body>${svg}</body></html>`
+
+/**
+ * The Marketplace thumbnail is 600x600 and square, so it is the icon and
+ * nothing else: a name set inside a square that renders at card size is
+ * unreadable, and a screenshot does not survive being cropped to 1:1.
+ *
+ * Rendered from the same `icon.svg` at a different size rather than upscaled
+ * from `icon.png`, which is 512 and would soften. The corners stay transparent
+ * because that is how this icon appears everywhere else in the system — on the
+ * docs cards and in every page header — and a shopfront that looks like the
+ * documentation is the point.
+ */
+const THUMB_SIZE = 600
 
 const browser = await chromium.launch({ channel: 'chrome' })
 let rendered = 0
@@ -111,6 +156,8 @@ const skipped = []
 
 for (const slug of slugs) {
   if (slug === 'suite') {
+    // The suite share image is 1200x630 and has no icon, so it has no thumbnail.
+    if (THUMBS_ONLY) continue
     const source = resolve(DOCS, 'art', 'suite-cover.html')
     if (!(await exists(source))) {
       skipped.push('suite: no art/suite-cover.html')
@@ -135,7 +182,9 @@ for (const slug of slugs) {
 
   // Cover: 1200x630 from the HTML template.
   const coverHtml = resolve(art, 'cover.html')
-  if (await exists(coverHtml)) {
+  if (THUMBS_ONLY) {
+    // nothing to do here: the thumbnail comes from the icon, not the cover.
+  } else if (await exists(coverHtml)) {
     const page = await browser.newPage({
       viewport: { width: 1200, height: 630 },
       deviceScaleFactor: 1,
@@ -165,24 +214,44 @@ for (const slug of slugs) {
   }
 
   // Icon: 512x512 from the SVG, transparent background.
-  const iconSvg = resolve(art, 'icon.svg')
-  if (await exists(iconSvg)) {
-    const page = await browser.newPage({
-      viewport: { width: 512, height: 512 },
-      deviceScaleFactor: 1,
-    })
-    await page.setContent(iconPage(await readFile(iconSvg, 'utf8')), {
-      waitUntil: 'networkidle',
-    })
-    await page.screenshot({
-      path: resolve(art, 'icon.png'),
-      omitBackground: true,
-    })
-    await page.close()
-    rendered++
-    console.log(`  icon    ${slug}  →  art/icon.png   (512×512)`)
+  const iconSvg = await findIcon(art)
+  if (iconSvg) {
+    const svg = await readFile(iconSvg, 'utf8')
+
+    if (!THUMBS_ONLY) {
+      const page = await browser.newPage({
+        viewport: { width: 512, height: 512 },
+        deviceScaleFactor: 1,
+      })
+      // Write the PNG beside its own SVG: Webhook Manager's pair is
+      // logo.svg/logo.png, and an icon.png dropped next to it would be a
+      // second, unreferenced file.
+      const iconPng = iconSvg.replace(/\.svg$/, '.png')
+      await page.setContent(iconPage(svg), { waitUntil: 'networkidle' })
+      await page.screenshot({ path: iconPng, omitBackground: true })
+      await page.close()
+      rendered++
+      console.log(`  icon    ${slug}  →  ${iconPng.split('/art/')[1]}   (512×512)`)
+    }
+
+    if (THUMBS_ONLY || MARKETPLACE) {
+      const thumb = await browser.newPage({
+        viewport: { width: THUMB_SIZE, height: THUMB_SIZE },
+        deviceScaleFactor: 1,
+      })
+      await thumb.setContent(iconPage(svg, THUMB_SIZE), { waitUntil: 'networkidle' })
+      await thumb.screenshot({
+        path: resolve(art, 'marketplace', 'thumbnail.png'),
+        omitBackground: true,
+      })
+      await thumb.close()
+      rendered++
+      console.log(
+        `  thumb   ${slug}  →  art/marketplace/thumbnail.png  (${THUMB_SIZE}×${THUMB_SIZE})`,
+      )
+    }
   } else {
-    skipped.push(`${slug}: no art/icon.svg`)
+    skipped.push(`${slug}: no art/icon.svg or art/logo.svg`)
   }
 }
 
