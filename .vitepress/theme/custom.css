@@ -248,6 +248,77 @@
   color: var(--vp-c-warning-1);
 }
 
+/* ---------- Maturity ---------- */
+
+/* Twenty-four cards that all looked equally finished were the misleading part
+   of the hub page. The badge sits on the card because that is where a reader
+   picks which addon to open, and the same three words repeat in the page
+   header, so a reader arriving from a search result gets the same warning. */
+.gn-maturity {
+  display: inline-flex;
+  align-items: center;
+  flex: none;
+  margin-left: auto;
+  padding: 0.05rem 0.5rem;
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 999px;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  white-space: nowrap;
+  color: var(--vp-c-text-3);
+}
+
+.gn-maturity--proven,
+.gn-chip--maturity-proven {
+  border-color: transparent;
+  background: var(--vp-c-green-soft);
+  color: var(--vp-c-green-1);
+}
+
+.gn-maturity--new,
+.gn-chip--maturity-new {
+  border-color: transparent;
+  background: var(--vp-c-yellow-soft);
+  color: var(--vp-c-yellow-1);
+}
+
+.gn-maturity--experimental,
+.gn-chip--maturity-experimental {
+  border-color: transparent;
+  background: var(--vp-c-red-soft);
+  color: var(--vp-c-red-1);
+}
+
+/* The header chip is a link to the explanation. VitePress underlines links
+   inside .vp-doc, and an underlined pill reads as a broken chip. */
+.vp-doc .gn-addon-header a.gn-chip,
+.gn-addon-header a.gn-chip {
+  text-decoration: none;
+}
+
+/* One word cannot carry "no test suite of its own". The sentence can, and it
+   sits above the first line of documentation on the addon's front door. */
+.gn-maturity-note {
+  margin: 0.875rem 0 0;
+  padding: 0.75rem 1rem;
+  border-left: 3px solid var(--vp-c-divider);
+  border-radius: 0 8px 8px 0;
+  background: var(--vp-c-bg-soft);
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: var(--vp-c-text-2);
+}
+
+/* The rule carries the level's colour, so the note reads as the same statement
+   as the chip a line above it rather than as a second, unrelated warning. */
+.gn-maturity-note--new {
+  border-left-color: var(--vp-c-yellow-1);
+}
+
+.gn-maturity-note--experimental {
+  border-left-color: var(--vp-c-red-1);
+}
+
 /* ---------- Requirements block ---------- */
 
 .gn-req {

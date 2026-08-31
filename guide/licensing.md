@@ -3,6 +3,11 @@
 Two licensing models are in play across the suite, and which one applies depends
 on the addon.
 
+This page is about what an addon costs. It says nothing about how finished it is,
+and the two do not line up — some MIT packages are proven, some commercial ones
+shipped weeks ago. For that, see [how far along each addon
+is](/guide/maturity).
+
 ## Per addon
 
 <LicenceTable />

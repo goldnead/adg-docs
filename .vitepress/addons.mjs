@@ -32,6 +32,80 @@ export const LAYERS = {
   content: 'Content tooling',
 }
 
+/**
+ * How far along each addon is.
+ *
+ * The suite reads finished. It is not: twenty-four packages went public inside
+ * five weeks, sixteen of them are declared commercial, and exactly one can be
+ * bought. A reader deciding whether to put one of these on a client site has no
+ * way to tell a package that has run several brands for months from one that
+ * has never been installed anywhere. That difference is the single most useful
+ * thing this site can tell them, so it is stated on every card and every page.
+ *
+ * Kept as one map rather than a field per entry on purpose: the whole picture
+ * has to be readable on one screen, or it drifts the first time it is wrong.
+ */
+export const MATURITY = {
+  proven: {
+    label: 'Proven',
+    short: 'Running on live sites for months.',
+  },
+  new: {
+    label: 'New',
+    short:
+      'In production, but only weeks old. Expect rough edges and fast-moving releases.',
+  },
+  experimental: {
+    label: 'Experimental',
+    short: 'Not proven on a production site. Read the note before you depend on it.',
+  },
+}
+
+/** Slug → level. */
+export const MATURITY_BY_SLUG = {
+  // Proven — months of production use across several brands.
+  leadhub: 'proven',
+  marketing: 'proven',
+  automations: 'proven',
+  'webhook-manager': 'proven',
+  'brand-context': 'proven',
+  activity: 'proven',
+  notifications: 'proven',
+  'preference-center': 'proven',
+  'email-templates': 'proven',
+  toc: 'proven',
+  'lead-magnets': 'proven',
+
+  // New — installed and working, but shipped in August 2026.
+  payments: 'new',
+  offers: 'new',
+  invoices: 'new',
+  funnels: 'new',
+  products: 'new',
+  entitlements: 'new',
+  suppression: 'new',
+  'identity-contracts': 'new',
+  consent: 'new',
+  insights: 'new',
+
+  // Experimental — see the notes.
+  booking: 'experimental',
+  'flow-canvas': 'experimental',
+  events: 'experimental',
+}
+
+/** The exceptions a one-word level would misrepresent. */
+export const MATURITY_NOTES = {
+  booking:
+    'Tagged and on Packagist, but installed on no site yet. Nothing here has been exercised by a real booking.',
+  'flow-canvas':
+    'Carries no test suite and no CI of its own, although Automations and Funnels both build on it and are covered. Treat a change here as unverified until those two have been run against it.',
+  events:
+    'Installed, but not yet driving a live event. The publishing side is exercised; attendance and reminders are not.',
+}
+
+export const maturityOf = (slug) => MATURITY_BY_SLUG[slug] ?? null
+
 export const addons = [
   {
     slug: 'brand-context',

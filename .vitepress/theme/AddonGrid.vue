@@ -1,6 +1,6 @@
 <script setup>
 import { withBase } from 'vitepress'
-import { addonsByLayer } from '../addons.mjs'
+import { addonsByLayer, MATURITY, maturityOf } from '../addons.mjs'
 import { ART, iconPath } from '../art.generated.mjs'
 
 const LAYER_NOTES = {
@@ -27,6 +27,14 @@ const accent = (slug) => ({
  * rather than to a broken image.
  */
 const hasArt = (slug) => Boolean(ART[slug])
+
+/**
+ * The card is where somebody decides which addon to open, so it is where the
+ * level has to be. Twenty-four cards that all look equally finished is the
+ * misleading part of this page, not the wording of any one tagline.
+ */
+const maturity = (slug) => MATURITY[maturityOf(slug)] ?? null
+const level = (slug) => maturityOf(slug)
 </script>
 
 <template>
@@ -59,6 +67,13 @@ const hasArt = (slug) => Boolean(ART[slug])
               addon.icon
             }}</span>
             <span class="gn-card__name">{{ addon.name }}</span>
+            <span
+              v-if="maturity(addon.slug)"
+              class="gn-maturity"
+              :class="`gn-maturity--${level(addon.slug)}`"
+              :title="maturity(addon.slug).short"
+              >{{ maturity(addon.slug).label }}</span
+            >
           </div>
           <p class="gn-card__tagline">{{ addon.tagline }}</p>
           <code class="gn-card__pkg">{{ addon.package }}</code>

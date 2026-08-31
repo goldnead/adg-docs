@@ -134,6 +134,7 @@ export default defineConfig({
         text: 'Reference',
         items: [
           { text: 'Suite overview', link: '/guide/suite' },
+          { text: 'How far along each addon is', link: '/guide/maturity' },
           { text: 'The commerce suite', link: '/guide/commerce' },
           { text: 'Compatibility matrix', link: '/guide/compatibility' },
           { text: 'Choosing an addon', link: '/guide/choosing' },
@@ -150,6 +151,7 @@ export default defineConfig({
           items: [
             { text: 'Introduction', link: '/guide/' },
             { text: 'The suite', link: '/guide/suite' },
+            { text: 'Maturity: what is proven', link: '/guide/maturity' },
             { text: 'The commerce suite', link: '/guide/commerce' },
             { text: 'Installation', link: '/guide/installation' },
             { text: 'The demo playground', link: '/guide/demo' },

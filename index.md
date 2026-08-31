@@ -66,6 +66,14 @@ features:
     linkText: Boundaries
 ---
 
+::: warning This suite is work in progress
+Twenty-four packages went public inside five weeks, and only some of them have
+been proven in production. Every card below carries its level: **Proven** has run
+on live sites for months, **New** is in production but only weeks old, and
+**Experimental** has never been installed anywhere. Read [how far along each
+addon is](/guide/maturity) before you put one on a client site.
+:::
+
 <AddonGrid />
 
 ## Try it before you install

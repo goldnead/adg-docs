@@ -1,7 +1,14 @@
 <script setup>
 import { computed } from 'vue'
 import { useData, withBase } from 'vitepress'
-import { entryBySlug, STATAMIC_DEFAULT, PHP_DEFAULT } from '../addons.mjs'
+import {
+  entryBySlug,
+  MATURITY,
+  MATURITY_NOTES,
+  maturityOf,
+  STATAMIC_DEFAULT,
+  PHP_DEFAULT,
+} from '../addons.mjs'
 import { ART, coverPath, iconPath } from '../art.generated.mjs'
 
 const props = defineProps({
@@ -43,6 +50,22 @@ const hasArt = computed(() => Boolean(addon.value && ART[addon.value.slug]))
 const isOverview = computed(
   () => page.value.relativePath === `${addon.value?.slug}/index.md`,
 )
+
+/**
+ * How far along this addon is. A tool is not part of the suite and carries no
+ * level, so the chip disappears rather than claiming one.
+ */
+const level = computed(() => (addon.value ? maturityOf(addon.value.slug) : null))
+const maturity = computed(() => (level.value ? MATURITY[level.value] : null))
+
+/**
+ * The chip fits three words. Anything an installer actually has to weigh —
+ * "no tests of its own", "no real booking has ever run through it" — needs a
+ * sentence, and a sentence belongs on the front door, not on page nine.
+ */
+const maturityNote = computed(() =>
+  addon.value && isOverview.value ? MATURITY_NOTES[addon.value.slug] : null,
+)
 </script>
 
 <template>
@@ -77,7 +100,20 @@ const isOverview = computed(
         <span class="gn-chip">{{ addon.php ?? PHP_DEFAULT }}</span>
       </template>
       <span class="gn-chip">{{ addon.license }} licence</span>
+      <a
+        v-if="maturity"
+        class="gn-chip"
+        :class="`gn-chip--maturity-${level}`"
+        :href="withBase('/guide/maturity')"
+        :title="maturity.short"
+        >{{ maturity.label }}</a
+      >
       <span v-if="addon.unreleased" class="gn-chip gn-chip--unreleased">Unreleased</span>
     </div>
+
+    <p v-if="maturityNote" class="gn-maturity-note" :class="`gn-maturity-note--${level}`">
+      <strong>{{ maturity.label }}.</strong> {{ maturityNote }}
+      <a :href="withBase('/guide/maturity')">What the levels mean</a>
+    </p>
   </template>
 </template>
