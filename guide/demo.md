@@ -43,6 +43,11 @@ shows the other's. See [Brands & multi-tenancy](/guide/brands) for what that
 means on an ordinary install (short answer: nothing, until a second brand
 exists).
 
+The Products list hides its Referenz column by default, because on a catalogue
+of downloads the pointer is an id nobody reads. The demo is exactly the site
+where it earns its place: switch it on with the column picker and the Termin
+row shows which event it sells (`cw-wochenende` → Probenwochenende Nordchöre).
+
 ## Try a purchase
 
 The checkout runs against Mollie's test environment. Pay with the test card:
