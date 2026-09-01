@@ -186,6 +186,36 @@ that you can test without HTTP.
 
 For most projects that is the better answer.
 
+## Embedding deliveries in another addon
+
+A payment or offer screen can show the webhook deliveries recorded about that object
+without importing anything from this package. Webhook Manager registers a global Vue
+component, `webhook-deliveries-for-subject`, on Control Panel boot:
+
+```vue
+<webhook-deliveries-for-subject
+    v-if="hasWebhookLog"
+    subject-type="payment"
+    :subject-id="payment.id"
+    :limit="10"
+/>
+```
+
+```js
+const hasWebhookLog = Statamic.$components.has('webhook-deliveries-for-subject');
+```
+
+The guard keeps your page working when Webhook Manager is not installed. The component
+fetches from the CP's `deliveries/for-subject` endpoint, so the viewer's
+`view webhook deliveries` permission and brand scope apply unchanged; replay goes through
+the same route as the delivery listing. Optional props: `url` (defaults to the CP root
+plus `/webhook-manager/deliveries/for-subject`) and `listing-url` for the "all deliveries"
+link.
+
+There is no Blade partial. The Statamic 6 Control Panel has no Blade pages left, so the
+component is the only embed. How the subject is resolved and configured is in
+[Deliveries on the object](/webhook-manager/deliveries#deliveries-on-the-object).
+
 ## Reference implementation
 
 This addon is the pattern the rest of the suite copies. If you are building your own

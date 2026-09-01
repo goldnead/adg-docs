@@ -124,6 +124,48 @@ php please webhook-manager:replay-failed
 Bulk-replays failures from the last N hours, which is the practical answer to "the
 destination was down overnight".
 
+## Deliveries on the object
+
+A delivery records what was sent and where. It also records **what it was about**: `subject_type` and `subject_id` on every row, indexed together, so "every
+attempt for payment 77" is one lookup instead of a search through request bodies.
+
+The subject is resolved once, when the snapshot is written, in this order:
+
+1. The payload names it outright with `subject_type` and `subject_id`.
+2. A key configured for a type is present in the payload (`payment_id`, `payment.id`).
+3. The trigger handle matches a configured pattern (`payments.*`) and the event carries
+   a source reference, else a top-level `id` in the payload.
+4. The event's own source type and reference. This is how the built-in entry, user,
+   asset and form-submission triggers get a subject with no configuration.
+
+The map lives in `config/webhook-manager.php`:
+
+```php
+'subjects' => [
+    'payment' => ['keys' => ['payment_id', 'payment.id'], 'triggers' => ['payment.*', 'payments.*']],
+    'offer'   => ['keys' => ['offer_id', 'offer.id'],     'triggers' => ['offer.*', 'offers.*']],
+    'funnel'  => ['keys' => ['funnel_id', 'funnel.id'],   'triggers' => ['funnel.*', 'funnels.*']],
+    'contact' => ['keys' => ['contact_id', 'contact.id'], 'triggers' => ['contact.*', 'contacts.*', 'leadhub.*']],
+],
+```
+
+Add your own types there. Labels come from `webhook-manager::messages.subject_types.<type>`
+when a translation exists and fall back to the capitalised handle.
+
+In the Control Panel the delivery listing has a subject filter above the table and a
+**Subject** column; the detail screen shows the subject next to the trigger and links back
+to the filtered listing. From PHP, read the log through the facade:
+
+```php
+use Goldnead\WebhookManager\Facades\WebhookLog;
+
+WebhookLog::forSubject('payment', $payment->id);       // newest first, default limit 50
+WebhookLog::countForSubject('payment', $payment->id);
+```
+
+To show the same log on another addon's page, see
+[Embedding deliveries in another addon](/webhook-manager/extending#embedding-deliveries-in-another-addon).
+
 ## Alerting and the circuit breaker
 
 ```php
