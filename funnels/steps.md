@@ -65,6 +65,19 @@ The step that asks who this is. It carries one extra field:
 | Field | Type | What it does |
 | --- | --- | --- |
 | `form` | form picker | A Statamic form. Handed to the template as `funnel:form`. |
+| `billing` | select | What the invoice needs: `minimal` (email only), `name`, `full` (name and address, required above 250 €), or `offer` — the fields the next offer step asks for, from the field library in `statamic-offers`. |
+| `newsletter` | select | `hidden`, or `optional`: an unticked box under the email field. There is no pre-ticked option. |
+| `newsletter_label` | text | The sentence beside the box. Recorded on the visit with the tick. |
+
+**Purchase and newsletter are two facts.** The address becomes a contact; only the ticked box
+is consent, and only that is handed to LeadHub as consent. A purchase tags the contact
+`kunde` and grants nothing else.
+
+**Fields from the offer.** With `billing: offer` the step searches the graph forward for the
+next offer step, asks it which checkout fields it wants (`Offer::checkoutFields()`) and takes
+labels, types, options and `required` from `Offers::fieldLibrary()`. The values land in
+`visit.meta['billing']` under their own keys. Without the library, or without an offer
+behind the step, the step asks for the email only and says so in the log.
 
 This addon never grew a form system of its own. A site already has forms, with fields,
 validation and notifications; a funnel that grew its own would be a second, worse copy of
@@ -145,6 +158,21 @@ visitor — does not start a second payment. The step remembers which payment it
 and either waits for it or moves on if it has already been paid. A **failed** payment is
 not remembered: they got nothing, so they may try again.
 
+## Account
+
+The page after the purchase: the visit's email read-only, a name, a password (min. 8,
+repeated). Creates the Statamic user or updates the one with that address — never a
+duplicate — logs them in and carries on. *Later* carries on without an account.
+
+| Field | Type | What it does |
+| --- | --- | --- |
+| `optional` | select | Whether *Later* is offered. Default yes: a mandatory account is an abandoned checkout after the checkout. |
+| `login_after` | select | Whether the visitor is logged in once the account exists. Default yes. |
+
+The address is the visit's, never the form's. A browser that never reached the step gets a
+403 like on every other step; a visit without an address gets an error, not a guessed
+account. No mail is sent from here — the access mail is the site's.
+
 ## Finish
 
 The end of the walk. Reaching it sets `completed_at`, records `completed` and fires
@@ -160,6 +188,38 @@ it.
 Reaching the end *is* the end. Waiting for a form submit on a page that has no form was a
 real bug: `completed_at` was never set in the ordinary path, `FunnelCompleted` never
 fired, and `{{ funnels:progress }}` sent people back to the thank-you page for ever.
+
+## Mail nodes
+
+A mail is drawn on the canvas but is **not a step**: it hangs off another step's output and
+the visitor never enters it. One rule: **the mail goes out when the visitor takes the output
+it hangs off** — `default` is *continue* on an entry or page and *submitted* on a form,
+`accepted` is *paid* (when the webhook says so), `declined` is *declined*. The Finish step has
+no output; "the walk is complete" is the output that leads to it, and that is where a
+completion mail goes.
+
+| Field | Type | What it does |
+| --- | --- | --- |
+| `template` | select | A published `et_templates` entry from `statamic-email-templates`. |
+| `delay_amount`, `delay_unit` | integer, select | A queue delay in minutes, hours or days. The site's queue has to run. |
+| `recipient` | select | `visitor` (the address from the form step) or `fixed`. |
+| `recipient_address` | text | For `fixed`: an internal inbox, for instance. |
+| `subject_override` | text | Empty uses the template's subject. Placeholders work here too. |
+
+Placeholders come from the walk: `{{ visitor.name }}`, `{{ visitor.email }}`,
+`{{ contact.salutation }}`, `{{ funnel.title }}`, `{{ funnel.continue_url }}`,
+`{{ step.label }}` and, after a paid purchase, `{{ order.total }}`, `{{ order.reference }}`,
+`{{ order.lines }}`. `sender.*`, `date` and `unsubscribe_url` are the same as in every other
+template of the family.
+
+**Once per visit and node**, enforced by a unique index on `funnel_mail_deliveries`. Every mail
+leaves a row: triggered, delivered, or failed with a reason (no template, no recipient yet,
+templates addon missing). The editor shows the three numbers on the node, and the preview's
+stepper lists the mail right behind its step and shows the rendered mail with sample data.
+
+The delay is Laravel's own `dispatch()->delay()`, not the automations engine: one queue in
+the house, no second scheduler, and a funnel with a mail on it works without
+`statamic-automations`. A multi-step sequence over days remains an automation.
 
 ## Disabled steps
 

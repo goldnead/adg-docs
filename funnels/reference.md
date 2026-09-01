@@ -11,6 +11,7 @@
 | GET | `{prefix}/{funnel}` | `statamic-funnels.entry` | The entry step, under the funnel's own URL |
 | GET | `{prefix}/{funnel}/{slug}` | `statamic-funnels.step` | Every other step |
 | GET | `{prefix}/{funnel}/_preview/{nodeKey}` | `statamic-funnels.preview` | Needs a pass. Throttled to 60/min. |
+| GET | `{prefix}/{funnel}/_preview-mail/{nodeKey}` | `statamic-funnels.preview-mail` | The rendered mail of a mail node, with sample data. Same pass, same throttle. |
 | POST | `{prefix}/{funnel}/{nodeKey}/advance` | `statamic-funnels.advance` | Moving on. Keeps CSRF. Throttled to 30/min. |
 
 The preview route sits **above** the `{slug}` route on purpose: `_preview` would otherwise
@@ -55,13 +56,18 @@ Under Statamic's utility routes, all behind `access funnels utility`.
 | Form | `capture` | `page` | `default` (*submitted*) | |
 | Page | `page` | `page` | `default` | |
 | Offer | `offer` | `offer` | `accepted`, `declined` | |
+| Account | `account` | `page` | `default` | After the purchase: name and password for the visit's address. |
 | Finish | `finish` | `finish` | none | |
+| Mail | `mail` | `mail` | none | **Not a page.** Hangs off another step's output and fires when that output is taken. Never entered, no slug, not counted. |
 
-Shared fields on all five: `entry`, `template`, `headline`, `body`, `split_share`,
+Shared fields on all page steps: `entry`, `template`, `headline`, `body`, `split_share`,
 `variant_entry`, `variant_headline`, `variant_body`.
 
-Own fields: `form` on Form; `offer`, `countdown`, `countdown_until`, `countdown_hours` on
-Offer; `redirect` on Finish.
+Own fields: `form`, `billing` (`minimal`, `name`, `full`, `offer`), `newsletter` (`hidden`,
+`optional`), `newsletter_label` on Form; `offer`, `countdown`, `countdown_until`,
+`countdown_hours` on Offer; `optional`, `login_after` on Account; `redirect` on Finish;
+`template`, `delay_amount`, `delay_unit`, `recipient`, `recipient_address`,
+`subject_override` on Mail.
 
 ## Events
 
@@ -78,8 +84,9 @@ use Goldnead\StatamicFunnels\Events\FunnelCompleted;
 | `FunnelFormSubmitted` | `$visit`, `$step`, `$values` | A form step is left. Dispatched **before** moving on. |
 | `FunnelOfferAccepted` | `$visit`, `$step`, `$payment` | The payment is **paid**, not when the button was clicked |
 | `FunnelCompleted` | `$visit` | The walk ended: a Finish step, or an output with nothing beyond it |
+| `FunnelOfferDeclined` | `$visit`, `$step` | An offer was declined. Declining is an answer, and now it has an event. |
 
-All four are plain `Dispatchable` classes with readonly public properties. None is
+All five are plain `Dispatchable` classes with readonly public properties. None is
 queued, and none is broadcast.
 
 `FunnelStepEntered` is the seam an automation hangs off: "send the reminder when somebody
@@ -90,7 +97,9 @@ reaches the offer and does not buy" is an automation, not a funnel feature.
 | Listener | Listens for | |
 | --- | --- | --- |
 | `AdvanceOnPayment` | `PaymentPaid` | Records `accepted` and moves the walk on. Guards against redelivery: a provider redelivers by design, and a funnel that advanced per delivery would march somebody through three steps for one purchase. |
-| `HandContactToLeadHub` | `FunnelFormSubmitted` | The optional LeadHub bridge. A no-op unless the addon is installed **and** `integrations.leadhub` is on. |
+| `HandContactToLeadHub` | `FunnelFormSubmitted` | The optional LeadHub bridge. A no-op unless the addon is installed **and** `integrations.leadhub` is on. Creates the contact **without** consent; only a ticked newsletter box hands consent over, through LeadHub's `ContactResolver`. |
+| `TagBuyerInLeadHub` | `FunnelOfferAccepted` | Tags the contact `kunde`. Same switch. Having bought is not having agreed to mail. |
+| `QueueFunnelMails` | `FunnelOfferAccepted` | Queues the mail nodes on the offer's `accepted` output. `default` and `declined` are queued from `FunnelWalk::advance()` when the output is taken. |
 
 ## In Automations
 
@@ -160,11 +169,13 @@ every keystroke, and a token is a file on disk holding a full copy of the graph.
 | `funnel_edges` | `funnel_id`, `from_node_key`, `from_output`, `to_node_key`. Unique on all four. |
 | `funnel_visits` | `funnel_id`, `token`, `current_node_key`, `email`, `name`, `payment_id`, `completed_at`, `meta`. Unique on funnel + token. |
 | `funnel_step_events` | `visit_id`, `node_key`, `event`, `payload` |
+| `funnel_mail_deliveries` | `visit_id`, `funnel_id`, `node_key`, `template`, `to`, `brand_id`, `queued_at`, `sent_at`, `failed_at`, `error`. Unique on visit + node: one mail per visit and node, enforced by the index. |
 
 `funnel_visits.meta` is where the per-visitor state lives that has nowhere else to go:
 `countdowns` (a rolling deadline's end time per step), `variants` (which split version they
-were given per step), `payments` (which payment each offer step started) and
-`pending_step`.
+were given per step), `payments` (which payment each offer step started), `pending_step`,
+`billing` (the billing details from the form step, keys one to one) and `newsletter`
+(`opted_in`, `at`, `text` — the tick, when, and the sentence it was ticked next to).
 
 Deleting a funnel cascades to its steps, edges, visits and their events.
 
