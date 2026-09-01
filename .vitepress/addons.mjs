@@ -402,6 +402,7 @@ export const addons = [
       { text: 'Refunds', link: 'refunds' },
       { text: 'Abandoned checkouts', link: 'abandoned' },
       { text: 'Tax facts and retention', link: 'tax-and-retention' },
+      { text: 'Consent, withdrawal and cancellation', link: 'recht' },
     ],
   },
   {
