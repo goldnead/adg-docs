@@ -33,6 +33,26 @@ engine is worse than none.
   alt="The Coupons listing with percentage and fixed-amount codes, validity windows and redemption counts"
   caption="Codes people type to pay less, with the window and the number of redemptions each one has left." />
 
+## Many codes at once
+
+**Generate codes**, the second action on the screen, makes up to 100 codes in one go: an
+optional prefix (up to 12 characters), a random part of 6 to 12 characters, one use per code
+unless you say otherwise, and the same discount, window and offer list a single coupon has. A
+name pattern with `{n}` numbers them.
+
+The random part comes from an alphabet without `0`/`O`/`1`/`I`/`l`. Codes are read off a slide
+and typed on a phone, and a code that an attentive person can mistype is a support ticket.
+
+**All or none.** The batch is one transaction. A code that collides with an existing one is
+tried again; ten misses on one slot abort the whole batch with an error, because a sheet handed
+to a partner that says a hundred and holds ninety-three is the one outcome nobody can act on.
+
+The dates are in the application's timezone, which the form names next to the fields.
+
+```bash
+php artisan offers:coupons:generate --count=50 --prefix=CHOR- --percent=15 --until=2027-03-31
+```
+
 ## Live, or not
 
 A coupon applies when all of these hold:
