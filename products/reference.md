@@ -71,10 +71,29 @@ and logs why. See [In the payment catalogue](/products/catalogue).
 | --- | --- | --- |
 | **Utilities → Products** | `access products utility` | list, create, edit, delete |
 
-Routes, all under the utility: `GET /` (listing), `POST /` (store), `PATCH {product}`
-(update), `DELETE {product}` (destroy).
+Routes, all under the utility: `GET /` (listing), `POST /` (store), `GET {product}`
+(the product screen), `PATCH {product}` (update), `DELETE {product}` (destroy).
 
 No bulk actions and no filters are registered.
+
+### The product screen
+
+`GET {product}` — reached from **Offers and buyers** in a row's actions and from the edit
+stack — shows the product's facts and, below them, what the rest of the family knows:
+
+| Section | Reads | Present when |
+| --- | --- | --- |
+| **Offers** | `offers` where `product` is the handle or `products` contains it | `statamic-offers` is installed and migrated |
+| **Buyers** | `payment_items` ⋈ `payments`, `status = paid`, newest `paid_at` first, at most 50 | the `payments` table exists |
+
+A section is absent, not empty, when its sibling is missing: `null` is "cannot know", `[]`
+is "nobody". An offer without a price of its own shows the list price with a **List price**
+badge; a buyer whose payment carries a refund keeps the row with a **Refunded** badge, because
+they did buy. The buttons jump to the siblings' listings pre-filtered (`?search=`), since
+neither has a detail page, and disappear when the sibling's utility route is not registered.
+
+The probe behind both is `Support\Siblings::installed()`, class name plus table, with
+`pretend()` for suites that build the table by hand.
 
 ### Columns
 

@@ -30,8 +30,10 @@ grant separately.
 | `cp_route('insights.revenue')` | The curated revenue screen. `?period=` and `?currency=` are read from the query string. |
 | `cp_route('insights.metrics')` | Every registered metric, grouped by contributor. |
 | `cp_route('insights.metrics.show', $handle)` | One metric: its chart, its comparison and any splits it offers. |
+| `cp_route('insights.reports')` | Every registered report, available or not, grouped by heading. |
+| `cp_route('insights.reports.show', $handle)` | One report as a table. `?period=` is read when the report uses a period; an unavailable report answers 200 with the package it needs, not 404. |
 
-All three are registered unconditionally, because a nav item resolves its target through
+All five are registered unconditionally, because a nav item resolves its target through
 `cp_route()` while the navigation is built, on every Control Panel page. A conditionally
 registered route behind an unconditional nav item takes the whole panel down with a
 `RouteNotFoundException`.
@@ -46,6 +48,11 @@ Insights::registerMetric(ActiveMembers::class, 'memberships.active');
 Insights::metricHandles();          // every registered handle
 Insights::metric('payments.orders'); // one metric, or null
 Insights::metrics();                // handle => Metric, everything registered
+
+Insights::registerReport(RevenueByMonth::class, 'payments.revenue_by_month');
+Insights::reportHandles();
+Insights::report('payments.revenue_by_month');
+Insights::reports();                // handle => Report, available or not
 ```
 
 Registration takes a class name, an instance or a closure, and is keyed by handle: the same
@@ -71,6 +78,28 @@ the way it is, is [Contributing a metric](/insights/contributing-a-metric).
 | `Support\MetricQuery` | What is being asked: a period, a bucket, free-form filters |
 | `Support\Period` | `fromPreset()`, `between()`, `previous()`, `days()`, `toExclusive()`, `isOpenEnded()` |
 | `Support\Unit` | `COUNT`, `CURRENCY`, `PERCENT`, `DURATION` |
+| `Contracts\Report` | A table: handle, label, description, group, `available()`, `requires()`, `usesPeriod()`, `columns()`, `rows()` |
+| `Support\TableReport` | Optional base class for a report over one table: window, month bucket, brand narrowing, `percent()` |
+| `Support\Neighbours` | Whether `payments`, `offers` or `entitlements` is installed and migrated; `pretend()` for tests |
+
+## Reports
+
+Six ship with the addon, registered from its own provider. Every one reads a sibling's
+tables directly and is guarded by `Neighbours`: class existence and table existence, or
+the report says what it would need.
+
+| Handle | Reads | Rows | Period |
+| --- | --- | --- | --- |
+| `payments.revenue_by_month` | `payments` | month × currency: gross, payments, average order | yes, on `paid_at` |
+| `payments.revenue_by_product` | `payment_items` ⋈ `payments` | product × currency: sold, orders, gross | yes, on `paid_at` |
+| `payments.by_country` | `payments` | country × currency: payments, gross; no country is its own row | yes, on `paid_at` |
+| `payments.abandonment` | `payments` | month opened: paid, open + expired, rate over those rows | yes, on `created_at` |
+| `offers.upsells` | `offers`, plus `payment_items` when payments is there | bump or post-purchase offer: shown, accepted, conversion, revenue | revenue only; the counters are lifetime |
+| `entitlements.access_by_product` | `entitlements` | access slug: active, in grace, expired; revoked in none | no — a snapshot |
+
+Column units are `count`, `currency`, `percent`, `text`, `code`, `month` and `date`. A
+currency cell reads the row's own `currency`, which is why two currencies are two rows and
+never one sum. `null` in a cell prints as a dash: a rate over nothing has no answer.
 
 ```php
 use Goldnead\StatamicInsights\Support\{MetricQuery, Period};

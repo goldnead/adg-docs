@@ -14,20 +14,26 @@ table.
   alt="The Metrics screen: figures grouped by contributing addon, each tile showing a number, its change against the previous period and a sentence explaining what it counts"
   caption="One group per contributing addon, sorted by heading so that installing one never reshuffles the others." />
 
-## Two screens
+## Three screens
 
 **Revenue** is the curated one: the report you open with a question in mind, laid out to
 answer it. **Metrics** lists everything anybody registered, grouped by contributor, each
-with a detail view carrying its chart and any splits it offers.
+with a detail view carrying its chart and any splits it offers. **Reports** are tables,
+for the questions a single number cannot answer.
 
-The difference is editorial, not technical. Both are assembled from the same registered
-metrics, and a figure contributed tomorrow appears on the second one without a line of this
-addon changing.
+The difference between the first two is editorial, not technical. Both are assembled from
+the same registered metrics, and a figure contributed tomorrow appears on the second one
+without a line of this addon changing.
 
 | | |
 | --- | --- |
 | [Revenue](/insights/reading-the-numbers) | Net revenue, paid, orders, average order, over time, by campaign, by product |
 | [Metrics](/insights/what-the-family-reports) | All fifty-eight, in fourteen groups |
+| [Reports](/insights/reference#reports) | Six tables shipped with the addon: revenue by month and by product, payments by country, cart abandonment, order bumps and post-purchase offers, active access by product |
+
+Reports are the one place this addon reads a sibling's table itself, and it says so: each
+of the six names the package it reads and stays on the list with that name when the
+package is missing, rather than disappearing.
 
 <Figure
   src="insights-revenue"
