@@ -31,6 +31,44 @@ read it.
 Timeline entries are deduplicated by `dedupe_key`, which is unique **per brand**. That is
 what makes ingestion idempotent: a producer may be as noisy as it likes.
 
+## One page per person
+
+The contact screen merges this log with what the sibling addons know about the same person, and
+puts five numbers above it: first contact, last contact, purchases, lifetime value per currency,
+active access.
+
+| Source | Adds | Matched on |
+| --- | --- | --- |
+| Payments | purchases with line items, pending and failed payments, refunds | `LOWER(TRIM(email))` |
+| Entitlements | access granted, expired, revoked — with the state that is true now | subject `('email', address)` or the contact record |
+| Booking | appointments, dated by the appointment | `LOWER(TRIM(email))` |
+| Consent | consent decisions | the `consent_id` the contact carries in `metadata_json` or `custom_fields` |
+
+Each reader lives inside LeadHub and only runs when its addon is installed; nothing is required.
+A missing neighbour is a missing source, not an error. Switch one off under
+`leadhub.timeline.sources`, cap the list with `leadhub.timeline.limit`.
+
+::: tip A purchase appears once
+Payments' bridge already writes `payments.purchase_completed` into this log. While the payments
+reader runs, those bridge events are hidden; when it does not, they stay, because they are then the
+only record.
+:::
+
+Consent records carry **no address** by design — the only identifier is the random id the browser
+holds. A contact without that id has no consent timeline, and that is correct.
+
+### Grant access
+
+With Entitlements installed, **Actions → Grant access** picks a product, takes a note and writes
+through the entitlements facade: source `manual`, reference `leadhub:<contact uuid>`, note and user
+in `meta`. The product list is Payments' catalogue when Payments is installed, otherwise the slugs
+Entitlements has already granted. Its own permission, `grant leadhub access`: without it the route
+answers 403, with it but without Entitlements 404. The click lands on this log as
+`access_granted`.
+
+A host can add a feed of its own with `LeadHub::registerTimelineSource()` — see
+[Extending](/leadhub/extending).
+
 ## What the sibling addons write
 
 LeadHub requires nobody, and that direction does not change here: the siblings write
