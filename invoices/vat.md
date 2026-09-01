@@ -205,6 +205,15 @@ A domestic consumer, a third-country consumer and a business abroad are untouche
 keys; the business keeps its own warning. An `eu_threshold_mode` the class does not know
 throws, like an unknown key would.
 
+### Where the notes go
+
+Every note the rules attach to a result reaches three places, none of them the document:
+the log (`Log::warning('invoices: tax note', …)` with the payment id, the product and the
+note), the invoice row under `meta.tax_notes` (a list of `product` and `note`, copied onto
+the credit note), and `invoices:pending`, which lists them per payment under its table
+with and without `--write`. `InvoiceWriter::taxNotesFor($payment)` gives the same list
+without writing anything.
+
 ::: warning This is a reading of the law, not tax advice
 The rule above is how the addon interprets § 3a Abs. 5, § 19 and § 19a UStG. It has not been
 confirmed by a tax adviser. If you sell to consumers in other member states under § 19, have
