@@ -38,7 +38,7 @@ terms array, see below). See [In a template](/offers/templates).
 | | `effectiveCompareAtCent()` | hand-set `compare_at_cent`, else the catalogue price when a percentage applies, else `null` |
 | | `compareAt()` · `compareAtLocal()` | the effective compare-at price |
 | | `currency()` · `isSellable()` | `isSellable()` also checks the time window and the remaining quantity |
-| | `isWithinWindow()` · `remainingQuantity()` | `null` remaining = no limit; `0` = sold out |
+| | `isWithinWindow()` · `remainingQuantity()` | `null` remaining = no limit; `0` = sold out. A soft limit: checked at checkout start, counted when paid; open checkouts hold a unit for an hour, but two simultaneous starts on the last unit can both pay — keep a reserve where that matters |
 | | `accessWindow()` | `['starts_at' => 'Y-m-d'\|null, 'days' => int\|null]` or `null` |
 | | `checkoutFields()` | the offer's picks, only keys the library still knows |
 | | `withdrawalTerms()` | `['days', 'text', 'waiver_text', 'checkbox_required', 'b2b_text', 'version']`; `version` is 12 characters of `sha1(days\|text\|waiver_text)` |
@@ -52,7 +52,7 @@ terms array, see below). See [In a template](/offers/templates).
 | | `claim()` | conditional `UPDATE`; `false` when it was exhausted in between |
 
 | `Support\CouponBatch` | `generate(array $options)` | up to 100 coupons in one transaction; throws `RuntimeException` after ten collisions on one slot, and then nothing was written |
-| `Support\OfferSales` | `sold($offer)` · `revenueCent($offer)` · `revenueByCurrency($offer)` | read from paid `payment_items`; `null` when the payment tables are missing |
+| `Support\OfferSales` | `sold($offer)` · `revenueCent($offer)` · `revenueByCurrency($offer)` | `sold()` is paid units plus unpaid checkouts younger than `RESERVATION_MINUTES` (60); revenue is net of the line's `discount_cent` and its share of `refunded_cent`; `null` when the payment tables are missing |
 | `Offers` (static, `Goldnead\StatamicOffers\Offers`) | `fieldLibrary()` · `fieldKeys()` | the checkout field library from the config, normalised: `key => ['key', 'label', 'type', 'required', 'options', 'rules']` |
 
 There is no Laravel facade. `Offers` is a plain static class on purpose: siblings call it behind
@@ -136,7 +136,7 @@ A second primary action on the Coupons screen, **Generate codes**, posts to
 | `available_from` · `available_until` | nullable date-times in the app timezone; `until` after `from` when there is one |
 | `access_starts_at` · `access_days` | nullable date · nullable integer 1–65535 |
 | `checkout_fields.*` | a key in `config('statamic-offers.checkout_fields')`; stored in library order, empty as `null` |
-| `withdrawal_days` | nullable integer 0–365 |
+| `withdrawal_days` | nullable integer 1–365 |
 | `withdrawal_text` · `withdrawal_b2b_text` | nullable, max 20000 |
 | `withdrawal_waiver_text` | nullable, max 2000 |
 | `withdrawal_checkbox_required` | boolean; **omitted means `true`** |
