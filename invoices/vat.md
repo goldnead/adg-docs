@@ -175,6 +175,42 @@ One case it flags rather than resolves: a **cross-border B2B** sale while the sc
 § 19 is a domestic rule and does not obviously override the place-of-supply shift. The result
 carries a note saying to have a tax adviser confirm it.
 
+### A consumer in another member state
+
+```php
+'small_business' => [
+    'enabled' => true,
+    'eu_threshold_mode' => 'below',   // or 'above'
+    'eu_scheme' => false,             // § 19a UStG
+],
+```
+
+§ 19 is a domestic rule, and for a consumer in another EU country the place of supply is not
+domestic: a digital supply is taxed where the consumer sits (§ 3a Abs. 5 UStG), goods move
+there too (§ 3c UStG) — once the seller's EU-wide B2C turnover passes **€10,000 a year**
+(§ 3a Abs. 5 Satz 3, § 3c Abs. 4 UStG). Above that line the German exemption only reaches the
+other country through the **EU small business scheme** (§ 19a UStG, since 2025, the "EX"
+number). Without it, that country's VAT is due, via OSS.
+
+Neither fact is computed, for the same reason the OSS threshold is a switch: both are about a
+year, not about one line.
+
+| `eu_threshold_mode` | `eu_scheme` | Result |
+| --- | --- | --- |
+| `below` (default) | any | 0 % with the § 19 note, as before. No warning |
+| `above` | `false` | 0 % with the § 19 note **and a warning in `notes`**: VAT is probably due in the buyer's country |
+| `above` | `true` | 0 % with the § 19a note (`texts.small_business_eu`), place of supply set to the buyer's country |
+
+A domestic consumer, a third-country consumer and a business abroad are untouched by the two
+keys; the business keeps its own warning. An `eu_threshold_mode` the class does not know
+throws, like an unknown key would.
+
+::: warning This is a reading of the law, not tax advice
+The rule above is how the addon interprets § 3a Abs. 5, § 19 and § 19a UStG. It has not been
+confirmed by a tax adviser. If you sell to consumers in other member states under § 19, have
+yours confirm which side of the threshold you are on and whether the EU scheme applies.
+:::
+
 ## OSS
 
 ```php

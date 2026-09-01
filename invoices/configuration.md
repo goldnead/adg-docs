@@ -108,6 +108,8 @@ default is exactly what this class exists not to fall back on.
 | Key | |
 | --- | --- |
 | `small_business` | § 19 UStG. Suspends everything below it: no tax is shown on anything, and the reason goes on the invoice |
+| `small_business.eu_threshold_mode` | `'below'` (default) or `'above'` the €10,000 EU-wide B2C threshold. Above it, a consumer in another member state gets a warning on the result unless `eu_scheme` is on. See [VAT](/invoices/vat#a-consumer-in-another-member-state) |
+| `small_business.eu_scheme` | `true` if you take part in the EU small business scheme, § 19a UStG. Such lines then carry the § 19a note instead of § 19 |
 | `merchant_country` | Where the seller sits. Decides what counts as domestic, EU and export |
 | `merchant_vat_id` | Needed on the document for reverse charge, § 14a UStG |
 | `prices_include_tax` | **Are the amounts on your products gross or net?** Global, as in Cargo |
