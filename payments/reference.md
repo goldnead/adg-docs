@@ -8,8 +8,9 @@
 | --- | --- |
 | `payments:sweep-abandoned` | Announce checkouts left unpaid past the waiting period, once each. Needs `abandoned.enabled`. |
 | `payments:prune-unpaid [--dry-run]` | Delete checkouts that were started and never paid. Needs `prune_unpaid_after_days` above `0`. |
+| `payments:prune-legal-drafts [--days=7] [--dry-run]` | Delete withdrawal and cancellation declarations that were begun and never confirmed. Confirmed ones are never touched. |
 
-Two, and that is the complete list. **Neither is scheduled for you** — register them in
+That is the complete list. **None is scheduled for you** — register them in
 `routes/console.php` yourself.
 
 ## Classes you call
@@ -30,6 +31,9 @@ gateway swappable and the whole surface testable without the network.
 | `Support\Refunds` | `record($payment, $amountCent, $reference = null)` | `bool` |
 | `Support\Fulfilment` | `handle($providerId)` | the `Payment`, or `null`. What the webhook route calls. |
 | `Support\Abandonment` | `sweep()` | how many were announced |
+| `Support\Checkout` | `resume($payment, $returnUrl = null)` | a new `CheckoutResult` with the same lines, or `null` |
+| `Support\PaymentMethods` | `configured()` · `canHoldMandate($methods)` · `chargesAutomatically($method)` | see [Payment methods](/payments/payment-methods) |
+| `Facades\PaymentLog` | `mail($payment, $kind, $to, $subject = null, $status = 'sent', $meta = [], $reference = null)` · `note()` · `record()` · `for()` | the [communication log](/payments/communications); the one facade in the package |
 | `Support\Catalogue` | `find($handle)` · `all()` | the product array, or `null` |
 | | `Catalogue::extend($resolver)` (static) | `void` |
 
@@ -159,6 +163,7 @@ only on an agreement that is still live, authorised by `access subscriptions uti
 | `email` · `name` | as the buyer typed them; never overwritten from the provider's account |
 | `country` · `country_source` | ISO 3166-1 alpha-2, frozen at checkout. **1.9.0** |
 | `paid_at` · `fulfilled_at` · `failed_notified_at` · `abandoned_notified_at` | timestamps, not booleans: "when" answers "whether" and one more question besides |
+| `recovered_at` | a reminded checkout that was paid after all, itself or through a restarted one |
 | `customer_reference` | the stored mandate, or null |
 | `parent_payment_id` | which order a follow-up grew out of |
 | `subscription_id` | which agreement this payment is a cycle of |

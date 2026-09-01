@@ -401,6 +401,8 @@ export const addons = [
       { text: 'Subscriptions, plans and trials', link: 'subscriptions' },
       { text: 'Refunds', link: 'refunds' },
       { text: 'Abandoned checkouts', link: 'abandoned' },
+      { text: 'Payment methods', link: 'payment-methods' },
+      { text: 'The detail page and the communication log', link: 'communications' },
       { text: 'Tax facts and retention', link: 'tax-and-retention' },
       { text: 'Consent, withdrawal and cancellation', link: 'recht' },
     ],

@@ -93,6 +93,86 @@ php artisan payments:sweep-abandoned
 Announces every checkout past the cut-off and reports how many. Safe to run repeatedly —
 the claim is what makes it safe.
 
+## The reminder mail
+
+Once the consent question is answered, the addon can send the reminder itself instead of
+leaving it to a sequence:
+
+```php
+'abandoned' => [
+    'enabled' => true,
+    'after_minutes' => 60,
+    'mail' => [
+        'enabled' => true,
+        'template' => 'warenkorb-erinnerung',   // an email-templates slug, or null
+        'subject' => null,                       // null: the built-in subject
+        'resume_url' => null,                    // null: a signed link that restarts the checkout
+        'resume_days' => 14,
+    ],
+],
+```
+
+One mail per announced checkout, to the address on it, from the listener
+`SendAbandonedCheckoutMail` on `CheckoutAbandoned`. Its own switch, deliberately: announcing
+an abandoned checkout and mailing the person are two decisions.
+
+### The suppression list
+
+With [Suppression](/suppression/) installed, the address is asked first
+(`SuppressionGate::isSuppressed($email, $brandId)`). A suppressed address gets no mail and a
+note (`abandoned_suppressed`) in the payment's [communication log](/payments/communications)
+instead. A list that does not answer counts as suppressed — one mail too many to somebody who
+opted out is the dearer mistake.
+
+Without that addon there is no list to ask. Put your own in front, or leave this off.
+
+### The template
+
+With [Email Templates](/email-templates/) installed and `template` naming an existing slug,
+that template goes out exactly as its preview shows, with these variables:
+
+| Variable | |
+| --- | --- |
+| `{{ buyer.email }}` · `{{ buyer.name }}` | the address on the checkout, and the name if there was one |
+| `{{ order.lines }}` | an HTML list of the lines: quantity, name, amount |
+| `{{ order.total }}` · `{{ order.currency }}` | what the checkout would charge |
+| `{{ order.id }}` · `{{ order.product }}` | the payment id and the primary handle |
+| `{{ resume_url }}` | where the button goes, see below |
+
+The template's own subject wins over `subject`. Without the addon, or with a slug that
+resolves to nothing, a plain built-in mail goes out — German and English, no images,
+publishable under `views/vendor/statamic-payments/abandoned/mail` and worded in
+`lang/vendor/statamic-payments/{de,en}/abandoned.php`. Either way the line lands in the
+communication log as `abandoned`, `sent` or `failed`.
+
+### Where the button goes
+
+The provider's original checkout URL expires within minutes for cards, so a reminder cannot
+point back at it. `resume_url` left `null` builds a **signed, expiring link**
+(`/!/statamic-payments/weiter/{id}`, valid `resume_days`) that runs `Checkout::resume()`: the
+same lines in the same order, the same buyer, origin, discount and the recorded consent, as a
+**new** payment whose `meta.resumed_from` points back at the reminded one. Following the link
+redirects to Mollie; nothing is charged by following it. A payment that was paid meanwhile, or
+whose lines no longer resolve, answers with a one-sentence page (HTTP 410) instead of a 404.
+
+Your own URL may carry `{payment}`: `'resume_url' => '/kasse/weiter?zahlung={payment}'`.
+
+::: tip The consent travels with the restart
+`consent_at` and `consent_text` are copied onto the resumed payment: the same person declared
+them for the same goods on the same order, and the restart changes the payment, not the
+declaration. A legal decision taken on 02.09.2026 and recorded for review, not legal advice.
+:::
+
+### Recovered revenue
+
+When a reminded payment is paid after all — itself, or through the restarted checkout —
+`payments.recovered_at` is set on the **reminded** row. `abandoned_notified_at` is still
+cleared as before, so nothing that read it changes; `recovered_at` is what a report sums.
+
+```php
+Payment::whereNotNull('recovered_at')->sum('amount_cent');
+```
+
 ## Not the same as pruning
 
 `payments:sweep-abandoned` **announces**; `payments:prune-unpaid` **deletes**. The second
