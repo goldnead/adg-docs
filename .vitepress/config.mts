@@ -182,6 +182,13 @@ export default defineConfig({
             { text: 'Glossary', link: '/guide/glossary' },
           ],
         },
+        {
+          text: 'Verkauf in Deutschland',
+          items: [
+            { text: 'AVV-Baustein (Entwurf)', link: '/guide/avv-baustein' },
+            { text: 'Pflichtangaben (Entwurf)', link: '/guide/pflichtangaben' },
+          ],
+        },
       ],
       ...Object.fromEntries(addons.map((a) => [`/${a.slug}/`, addonSidebar(a)])),
       ...Object.fromEntries(tools.map((t) => [`/${t.slug}/`, toolSidebar(t)])),
