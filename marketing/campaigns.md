@@ -87,9 +87,23 @@ carries `sandbox` without `allow-scripts` or `allow-same-origin`. Images and inl
 handed back explicitly, because a preview without them is not a preview; scripts never are. A
 template containing a `<script>` will therefore look right and do nothing.
 
+## A/B test on the subject line
+
+Fill in *Subject variant B* and the campaign is a split test: each recipient is assigned to A or B
+once, when the send starts, and keeps that variant. The report breaks every figure down per
+variant. Nothing picks a winner.
+
+**A/B test share** (`ab_share`) is the share of the audience the test runs on, in percent. `0` —
+the default — is the plain half-and-half split of the whole audience. `10` to `50` means "test on
+this share first, then send the winner to the rest". The winner send is not built yet: the value is
+stored and validated (0, or 10 to 50, only together with a variant subject) so a campaign written
+today carries the answer, and until then a campaign with a share sends exactly like one without.
+The field says so.
+
 ## Scheduling
 
-Set a send time and the campaign goes out when it arrives.
+Set a send time and the campaign goes out when it arrives. The time is read in the application's
+timezone (`config('app.timezone')`); the editor names it under the field.
 
 ```bash
 php artisan marketing:send-scheduled     # registered to run every minute
@@ -295,3 +309,6 @@ With [Automations](/automations/) installed, `marketing.campaign_sent` becomes a
 An automation action that sends a campaign to a list is not a transactional email. Filter it hard,
 and remember that consent comes from the list — an automation cannot grant it.
 :::
+
+A mail series started by an event — after a purchase, after a tag — is a [sequence](./sequences):
+its own screen under Marketing, which writes the automation for you.
