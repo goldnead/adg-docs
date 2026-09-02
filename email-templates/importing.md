@@ -93,9 +93,15 @@ centralised step:
 ```php
 use Goldnead\EmailTemplates\Support\MergeVariables;
 
-$subject = MergeVariables::apply($template->subject, $data);
+// The body is HTML: values are escaped on the way in.
 $body = MergeVariables::apply($template->body, $data);
+
+// The subject is not HTML: ask for raw output, or the reader sees `&amp;`.
+$subject = MergeVariables::apply($template->subject, $data, escape: false);
 ```
+
+See [Merge variables → What arrives escaped](/email-templates/merge-variables#what-arrives-escaped)
+for which keys stay raw.
 
 Use `MergeVariables::apply()` rather than your own `str_replace`. It is the same call Live Preview makes,
 which is what guarantees the preview and the send agree — and a second implementation would be a second

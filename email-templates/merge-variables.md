@@ -47,6 +47,31 @@ code never provides it. Only use variables the consumer documents, and check a r
 only the preview, where the sample data is generous.
 :::
 
+## What arrives escaped
+
+**Every value is HTML-escaped when it is substituted into the body**, so a first name containing
+`<script>` reaches the inbox as text rather than as markup. A merge value is recipient data, and the
+mail carrying it usually goes to an address nobody has verified.
+
+Two exceptions, both named rather than implicit:
+
+| Exception | What it covers |
+| --- | --- |
+| `MergeVariables::RAW_VARIABLES` | Keys inserted raw. Today: `unsubscribe_url` — an address the package builds, used as an `href`. |
+| `apply($text, $data, escape: false)` | Turns escaping off for the whole call. For output that is **not** HTML: the subject line and a plain-text part, where an escaped `&` would show the reader `&amp;`. |
+
+Handing a template ready-made markup — an order table, a list of lines — therefore means escaping its
+parts yourself and having the key added to `RAW_VARIABLES`. Until it is named there, the markup arrives
+as text.
+
+`{{ countdown_image }}` emits an `<img>` of its own. It is resolved **after** the escaping pass and
+escapes its own attributes, so its markup is never double-escaped.
+
+::: warning Before 2.3.0
+Values were inserted verbatim. If your sending code escaped them before passing them in, remove that —
+otherwise `&` becomes `&amp;amp;` in the body.
+:::
+
 ## `{{ contact.salutation }}`
 
 Worth using instead of building a greeting by hand.

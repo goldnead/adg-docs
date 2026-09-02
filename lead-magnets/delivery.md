@@ -164,6 +164,11 @@ confirm_url        confirmation mail only
 download_url       delivery mail only
 ```
 
+Values are **HTML-escaped** when the bridge puts them into the body — `email` is whatever a
+visitor typed into the form, and this mail goes to an address nobody has confirmed yet. The two
+links are the exceptions, named in `EmailTemplatesBridge::RAW_VARIABLES`, because both sit in an
+`href` and carry a query string. The subject line is not HTML and is filled unescaped.
+
 The bridge falls back to the Blade view for an empty slug, a missing template **and** a template
 whose body is empty, so a half-finished template in the Control Panel does not send an empty mail.
 
