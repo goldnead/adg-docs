@@ -44,8 +44,8 @@ graph — but a run that is asleep in `delay_2` wakes up on a node that still ex
 what a sleeping run gets next; it does not lose the run.
 
 ::: warning Removing steps ends the runs waiting on them, and you are asked first
-The keys past the new last step are gone with it, and so is a `delay_n` whose gap you set back to
-zero. A run asleep on one of those has nothing left to wake up on.
+The keys past the new last step are gone with it, and a run asleep on one of them has nothing left
+to wake up on.
 
 The editor refuses that save and says how many people it affects: *3 people are waiting on steps
 this save removes.* Take the steps back, or confirm. Nothing is written until you do — not the
@@ -54,9 +54,15 @@ steps, not the graph.
 On a confirmed save those runs are **ended right there**: the wake-up call is cancelled and the run
 is closed as `cancelled`, with *the sequence "…" was shortened and the step this run was waiting
 for no longer exists* on it. That happens at the moment you decide, rather than days later as a
-failed run in a log nobody on the marketing side reads. Everybody whose next step still exists is
+failed run in a log nobody on the marketing side reads. In the automation's Activity they show up
+under *Ausgestiegen*, not under *Fehlgeschlagen*. Everybody whose next step still exists is
 unaffected.
 :::
+
+**Setting a gap to zero is not removing a step.** It drops that step's `delay_n` while its `mail_n`
+stays, so nobody loses a mail — they lose a wait, which is what you asked for. Anyone asleep in
+that gap is moved to just in front of the mail and gets it on the next run of the scheduler. No
+question, no cancellation. Only a step that actually disappears raises the warning above.
 
 ### The subject stands on the node
 
@@ -84,6 +90,19 @@ record of what went to whom. An editor who wants the automation gone deletes it 
 A sequence can be written and is kept. The list and the editor show *Automations not installed —
 the sequence does not run*, and nothing is sent. Install `goldnead/statamic-automations`, save the
 sequence once, and the automation is written.
+
+## Sequences need the `database` storage driver
+
+Automations can keep its flows either in the database or in files
+(`STATAMIC_AUTOMATIONS_STORAGE`). **Sequences only work on `database`.** Everything on this page
+rests on reading the engine back: the automation row a sequence points at for its state badge, and
+the scheduled jobs that say who is waiting where. With `flat_file` there is no row to point at and
+no way to ask who is waiting, so the state would read *not linked* forever and the shrink warning
+above would report zero people every single time — the silent stop it exists to prevent.
+
+Rather than half-work, a sequence on `flat_file` says so: *Automations stores its flows as files —
+the sequence does not run*. The sequence is still saved, nothing is written into the engine, and
+nobody is enrolled. Switch to `STATAMIC_AUTOMATIONS_STORAGE=database` and save the sequence once.
 
 ## Broadcasts
 
