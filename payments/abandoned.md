@@ -149,18 +149,31 @@ communication log as `abandoned`, `sent` or `failed`.
 
 The provider's original checkout URL expires within minutes for cards, so a reminder cannot
 point back at it. `resume_url` left `null` builds a **signed, expiring link**
-(`/!/statamic-payments/weiter/{id}`, valid `resume_days`) that runs `Checkout::resume()`: the
-same lines in the same order, the same buyer, origin, discount and the recorded consent, as a
-**new** payment whose `meta.resumed_from` points back at the reminded one. Following the link
-redirects to Mollie; nothing is charged by following it. A payment that was paid meanwhile, or
+(`/!/statamic-payments/weiter/{id}`, valid `resume_days`) to an **order page** in the portal
+layout: the lines in order, the total, the withdrawal note (linking `withdrawal.policy_url` if
+set), the § 356 (5) consent box with the wording from `meta.withdrawal` — a string or
+`['text' => …]` — or, failing that, `messages.order_consent`, and one button reading
+„Zahlungspflichtig bestellen".
+
+**Opening the link creates nothing.** § 312j (3) BGB wants a button pressed for *this* order
+with the essential details directly above it, and a mail client that prefetches links must not
+place one. The button is a signed POST (valid for an hour, CSRF from the `web` group) that
+runs `Checkout::resume()`: the same lines, buyer, origin and discount as a **new** payment
+whose `meta.resumed_from` points back at the reminded one, stamped with the original's brand.
+The consent is **fresh**: `consent_at = now()` and the wording that was on the screen, written
+only if the box was ticked — nothing is copied from the abandoned row, and without the box the
+right of withdrawal simply stands. The response redirects to Mollie; nothing is charged before
+that page.
+
+A second press within an hour — a reload, a second tab — reuses the checkout that already
+exists instead of leaving a third open payment behind. A payment that was paid meanwhile, or
 whose lines no longer resolve, answers with a one-sentence page (HTTP 410) instead of a 404.
 
 Your own URL may carry `{payment}`: `'resume_url' => '/kasse/weiter?zahlung={payment}'`.
 
-::: tip The consent travels with the restart
-`consent_at` and `consent_text` are copied onto the resumed payment: the same person declared
-them for the same goods on the same order, and the restart changes the payment, not the
-declaration. A legal decision taken on 02.09.2026 and recorded for review, not legal advice.
+::: tip A legal decision, recorded for review
+Button page rather than a one-click link, fresh consent rather than a copied one: decided on
+02.09.2026, not legal advice.
 :::
 
 ### Recovered revenue
