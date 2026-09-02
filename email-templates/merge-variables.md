@@ -73,6 +73,87 @@ Note that Marketing campaign **bodies** are Antlers and use `{{ unsubscribe_url 
 while this addon's templates use it as a merge variable. Same name, two mechanisms, and both resolve to
 the recipient's tokenised link. See [Marketing → Campaigns](/marketing/campaigns#composing).
 
+## `{{ countdown }}` — how long is left
+
+Launch mails want to say how long until the course opens or registration closes. One tag,
+substituted by the same pass as every other variable, so Live Preview and the real send agree:
+
+```
+{{ countdown until="2026-10-01 18:00" }}
+```
+
+renders, at the moment the mail is rendered, as
+
+```
+noch 3 Tage, 4 Stunden (01.10.2026, 18:00 Uhr)
+```
+
+| Parameter | Effect |
+| --- | --- |
+| `until` | Required. A date Carbon can parse, read in `app.timezone` (a value with its own offset is converted). Or a variable: `until="{{ event.starts_at }}"` and `until="event.starts_at"` both resolve against the same data as every other tag |
+| `format` | `both` (default), `relative` — "noch 3 Tage, 4 Stunden" — or `absolute` — "01.10.2026, 18:00 Uhr" |
+| `expired` | The relative text once the moment has passed. Default "vorbei" (de) / "over" (en) |
+
+The relative text names the two largest non-zero units — days and hours, hours and minutes, or
+minutes alone — and says "noch weniger als eine Minute" below that. Singular and plural follow the
+count; the language follows the app locale (German and English ship).
+
+An email is rendered once and then it is paper. The number is right when the mail is sent and the
+absolute date next to it stays right forever; a recipient reading it three days later sees "sent
+when there were 3 days left", which is what happened. That is the honest version of a countdown,
+it works in every client, and it is the one to use unless someone insists on a moving picture.
+
+A tag whose `until` cannot be resolved — an unknown variable, an unparseable date — is left
+standing, for the same reason unknown tags are: the author should see it in the preview, not the
+recipient in the inbox.
+
+::: tip Put the event date in `preview.sample_data`
+If your templates use `until="{{ event.starts_at }}"`, add an `event.starts_at` to
+[`preview.sample_data`](/email-templates/configuration#preview-sample-data) so Live Preview has
+something to count down to. Without it the tag stays visible in the preview — correct, but not what
+you opened the preview to check.
+:::
+
+## `{{ countdown_image }}` — the moving picture
+
+```
+{{ countdown_image until="2026-10-01 18:00" width="480" label="Bis zum Kursstart" }}
+```
+
+renders an `<img>` whose `src` is a **signed URL** on the addon's action route,
+`GET /!/statamic-email-templates/countdown.png?until=…&signature=…`. Each time a mail client fetches
+it, GD draws "dd : hh : mm" as a seven-segment display for that moment, with the label underneath.
+After the moment has passed the picture reads `00 : 00 : 00` with the expired text. The response is
+cacheable for 60 seconds, which is the resolution the picture has.
+
+| Parameter | Effect |
+| --- | --- |
+| `until` | As above, including variables |
+| `width` | Pixels, 200–1200, default 600. Height is 30 % of the width |
+| `bg`, `fg` | Background and digit colour as hex (`#000`, `ffcc00`). Defaults white on near-black |
+| `label` | Caption under the digits. Default "Tage : Stunden : Minuten" / "days : hours : minutes" |
+| `expired` | Caption once the moment has passed. Default "vorbei" / "over" |
+| `alt` | The image's alt text. Default "Countdown bis 01.10.2026, 18:00 Uhr" |
+
+The signature has no expiry: a mail is opened whenever it is opened. An unsigned or altered URL is a
+403. The route runs under `throttle:60,1`. Rendering needs `ext-gd`; without it, or with
+`email-templates.countdown.image` set to `false`, the route answers 404 and writes a warning to the
+log — better the operator reads it there than hears it from recipients with broken image icons.
+
+::: warning What mail clients actually do with it
+- **Gmail** fetches every image through its proxy on every open, so the picture is current each
+  time. Each open is also a request to your server; the 60 s cache and the rate limit are what keeps
+  a large send from becoming a load test.
+- **Apple Mail Privacy Protection** fetches every image **once, in advance**, from Apple's servers,
+  at a moment of Apple's choosing — often within minutes of delivery. The recipient then sees that
+  cached frame for good: a countdown that is wrong by however long ago Apple looked.
+- **Outlook desktop** blocks remote images until the reader allows them; until then the alt text
+  is all there is.
+
+None of this touches the text tag. That is why it comes first, and why the image is for the customer
+who has read this box and still wants it.
+:::
+
 ## Adding your own
 
 The variable set is whatever the **consumer** supplies at send time. This addon substitutes; it does not

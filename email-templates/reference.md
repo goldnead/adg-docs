@@ -83,6 +83,29 @@ Documented sample set:
 The real variable set is whatever the **consumer** supplies at send time. This addon substitutes; it does
 not define.
 
+### Tags with parameters
+
+Resolved by `Support\FunctionTags` in a second pass after the plain tags, so a parameter may itself be a
+variable. Full description in [Merge variables → Countdown](/email-templates/merge-variables#countdown-how-long-is-left).
+
+| Tag | Parameters | Output |
+| --- | --- | --- |
+| `{{ countdown until="…" }}` | `until` (date or variable), `format` (`both`/`relative`/`absolute`), `expired` | "noch 3 Tage, 4 Stunden (01.10.2026, 18:00 Uhr)" at render time, in `app.timezone` and the app locale |
+| `{{ countdown_image until="…" }}` | `until`, `width` (200–1200), `bg`, `fg`, `label`, `expired`, `alt` | `<img>` on the signed countdown route below |
+
+Classes: `Support\Countdown` (the arithmetic and wording), `Support\CountdownImage` (URL and GD drawing).
+
+## Countdown image route
+
+| | |
+| --- | --- |
+| Route | `GET /!/statamic-email-templates/countdown.png` |
+| Name | `statamic.email-templates.countdown-image` (`CountdownImage::ROUTE`) |
+| Query | `until` (ISO 8601), `w`, `bg`, `fg`, `label`, `expired`, `signature` |
+| Middleware | `throttle:60,1`, `signed` — 403 without a valid signature; signatures do not expire |
+| Response | `image/png`, `Cache-Control: public, max-age=60`; `00 : 00 : 00` plus the expired caption once passed |
+| Requires | `ext-gd`. Without it, or with `countdown.image => false`: 404 and a `Log::warning` |
+
 ## Collection
 
 | | |
@@ -189,6 +212,7 @@ $this->app->tag([MySource::class], 'email-templates.sources');
 | `default_layout` | `null` | Used when an entry names no layout of its own |
 | `branded_layout` | `null` | The final fallback in the layout chain. Not brand-aware; the name is historic. |
 | `preview.sample_data` | see above | Data Live Preview substitutes |
+| `countdown.image` | `true` | `false` switches the countdown PNG route off (404 + log). The text tag is unaffected. |
 
 Published with `--tag=email-templates-config`; that is the addon's only publish tag. No
 environment variables.

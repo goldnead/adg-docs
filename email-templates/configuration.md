@@ -133,6 +133,23 @@ cases, because that is what breaks a fixed-width table in Outlook. Consider putt
 sample data permanently.
 :::
 
+## `countdown.image`
+
+```php
+'countdown' => [
+    'image' => true,
+],
+```
+
+Whether the addon serves the PNG behind
+[`{{ countdown_image }}`](/email-templates/merge-variables#countdown-image-the-moving-picture) from
+`GET /!/statamic-email-templates/countdown.png`. With `false` — or without `ext-gd` on the server —
+the route answers 404 and writes a warning to the log. The text tag `{{ countdown }}` needs nothing
+from here and keeps working either way.
+
+Switch it off when you do not want a public, image-rendering endpoint at all, signed and rate-limited
+as it is. Nothing else in the addon depends on it.
+
 ## What is not configurable
 
 - **The collection handle.** `et_templates`.
