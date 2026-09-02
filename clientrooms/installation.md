@@ -4,6 +4,13 @@
 
 <Requirements laravel="12.x / 13.x" database="MySQL or SQLite — required, the tables are the addon" />
 
+::: danger Not on Packagist yet
+`goldnead/statamic-clientrooms` is at 0.1.0 and has not been published. The block below is
+what the installation will be; today `composer require` finds nothing, and a `repositories`
+entry does not help either, because the repository is private. Nothing here has run on a live
+site. See [how far along each addon is](/guide/maturity).
+:::
+
 ```bash
 composer require goldnead/statamic-clientrooms
 php artisan migrate
@@ -31,7 +38,9 @@ php please vendor:publish --tag=statamic-clientrooms-migrations
 
 **`clientrooms:install`** creates the asset container the documents go into. A container is
 Statamic content, not schema, which is why it is not part of the migration. The command is
-safe to run twice.
+safe to run twice. On a multi-brand install it creates one container per brand,
+`<container>-<brandId>`, and the first upload for a brand creates a missing one anyway — see
+[Documents](/clientrooms/concepts#documents) for why the split matters for permissions.
 
 **The config** is optional. Without it the defaults below apply.
 
@@ -44,6 +53,11 @@ safe to run twice.
 // client documents should not have one.
 'container' => env('CLIENTROOMS_CONTAINER', 'clientrooms'),
 'disk' => env('CLIENTROOMS_DISK', 'local'),
+
+// What may be uploaded, checked at the endpoint and again in attach().
+// An empty list accepts everything.
+'allowed_extensions' => ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx',
+                         'png', 'jpg', 'jpeg', 'mp3', 'mp4', 'zip'],
 
 // Which paid product opens a room (needs statamic-payments).
 // Kinds are `type` values from statamic-products; `sessions` is a package of

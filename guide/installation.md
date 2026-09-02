@@ -132,10 +132,16 @@ person to assign to.
 
 ## Installing from a local checkout
 
-**All twenty-four packages are on Packagist**, so the normal case needs
-nothing but `composer require`, and the sibling packages an addon depends on
-resolve on their own. None of the packages declares a `repositories` block, and
-you do not need one either.
+**Twenty-four of the twenty-six packages are on Packagist**, so the normal case
+needs nothing but `composer require`, and the sibling packages an addon depends
+on resolve on their own. None of the packages declares a `repositories` block,
+and you do not need one either.
+
+The two exceptions are [Client Rooms](/clientrooms/installation) and
+[Assessments](/assessments/installation). Both are tagged at 0.1.0, neither is
+published, and their repositories are private, so `composer require` finds
+nothing and a `repositories` entry does not help either. Their installation pages
+say what the install will be.
 
 The exception is development. If you are working against a local checkout of
 one of the packages, add a path or VCS repository to your own `composer.json`:

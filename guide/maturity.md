@@ -1,9 +1,10 @@
 # Maturity
 
-**This suite is work in progress.** Twenty-four packages went public inside five
-weeks. They are tagged, they are on Packagist, they have documentation, and the
-documentation reads finished. That last part is misleading, so this page says
-plainly what is behind each package.
+**This suite is work in progress.** Twenty-six packages, twenty-four of them
+public inside five weeks. They are tagged, all but Client Rooms and Assessments
+are on Packagist, they have documentation, and the documentation reads finished.
+That last part is misleading, so this page says plainly what is behind each
+package.
 
 None of them is abandoned and none of them is a toy. But there is a real
 difference between an addon that has run four brands in production since spring
@@ -54,7 +55,8 @@ second place to update and therefore no second place to forget.
 
 - Read the addon's own changelog first. A **New** addon's minor releases move
   fast, and some of them change behaviour.
-- Pin to a tag, not to `dev-main`. Every package is tagged and on Packagist.
+- Pin to a tag, not to `dev-main`. Every package is tagged; every one except
+  Client Rooms and Assessments is also on Packagist.
 - Do not install an **Experimental** addon on a site you cannot roll back.
 - Tell us. Nothing here has a phone-home and no addon counts your contacts,
   deliveries or runs, which also means we have no idea who is running what. If
@@ -65,6 +67,6 @@ second place to update and therefore no second place to forget.
 
 A level says how far along an addon is. It says nothing about whether it costs
 money, and the two do not line up: some MIT packages are proven, and some
-commercial ones are new. Sixteen packages are commercial and exactly one of them
+commercial ones are new. Eighteen packages are commercial and exactly one of them
 can be bought today. That is a separate problem with a separate page:
 [Licensing](/guide/licensing).

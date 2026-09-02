@@ -5,7 +5,7 @@ description: Nine packages that turn a Statamic site into its own checkout, invo
 
 # The commerce suite
 
-Nine of the twenty-four packages form one chain: **someone buys, and everything
+Nine of the twenty-six packages form one chain: **someone buys, and everything
 that has to happen afterwards happens.** Payment, licence-free invoice numbering
 under German law, access granted, follow-up sent, all on the site you already
 run.

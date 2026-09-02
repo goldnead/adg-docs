@@ -61,10 +61,30 @@ Every file is a Statamic asset in one container (`clientrooms` by default), in t
 `room-<id>/`. The row in `client_room_files` remembers container and path — not the asset
 id, which changes when a file is moved.
 
+Only the extensions in `allowed_extensions` are accepted — pdf, the Office formats, png,
+jpg, mp3, mp4 and zip by default, up to 50 MB. The list is checked twice, at the upload
+endpoint and again in `ClientRooms::attach()`, so a file that arrives through code is held
+to the same rule as one dragged onto the screen. An empty list accepts everything.
+
+**On a multi-brand install every brand gets its own container**, `<container>-<brandId>` —
+`clientrooms-2` for brand 2. `clientrooms:install` creates them, and so does the first
+upload for a brand whose container is missing. This is not tidiness: a container is the unit
+Statamic grants asset permissions on, so `view clientrooms-2 assets` and
+`upload clientrooms-2 assets` and nothing else shows a brand's staff their own clients'
+files in the Assets section and no one else's. The room screens do not go through those
+permissions at all; they are guarded by `view client rooms` / `edit client rooms` plus the
+brand scope.
+
 Each file has a `visible_to_client` switch. The client's link is a signed URL to
 `/!/statamic-clientrooms/files/{id}`, valid for `download_ttl_minutes`, produced fresh every
 time the page renders. The route checks the signature, then that the file is still visible
 and the room still open. The storage path never leaves the server.
+
+::: warning A download link is a bearer link
+For as long as it is valid, that URL works for whoever holds it — there is no second check
+against the signed-in user. Keep the page that renders it behind your login, and do not put
+the link into a mail.
+:::
 
 ## Two kinds of notes
 

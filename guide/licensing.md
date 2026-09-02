@@ -81,18 +81,21 @@ members:
 
 ## Buying
 
-**All twenty-four packages are on Packagist**, commercial ones
-included, and every one of them installs with a bare `composer require`.
+**Twenty-four of the twenty-six packages are on Packagist**, commercial ones
+included, and every one of those installs with a bare `composer require`. Client
+Rooms and Assessments are not published yet; see
+[Client Rooms → Installation](/clientrooms/installation) and
+[Assessments → Installation](/assessments/installation).
 
-Being on Packagist is not the same as being free. **Sixteen are commercial** and
+Being on Packagist is not the same as being free. **Eighteen are commercial** and
 **eight are MIT**; the table above is the authoritative list. The commercial ones
 resolve as ordinary Composer packages but are licensed rather than sold.
 
-::: warning Only one of the sixteen can actually be bought today
+::: warning Only one of the eighteen can actually be bought today
 [Table of Contents](/toc/) has a Statamic Marketplace listing. The other
-fifteen commercial packages are declared `proprietary` in their
-`composer.json` and resolve from Packagist like any other package,
-but **no listing exists for any of them yet**, so there is currently no way to buy a licence for one.
+seventeen commercial packages are declared `proprietary` in their
+`composer.json`, and the fifteen of them on Packagist resolve like any other
+package, but **no listing exists for any of them yet**, so there is currently no way to buy a licence for one.
 
 If you are running one of them on a production site, that is not a licence
 breach you need to fix today — it is a listing that does not exist yet. Get in

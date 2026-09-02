@@ -11,10 +11,12 @@
 | Database | MySQL 8+, SQLite |
 
 **Laravel 11 is not supported by any package in the suite.** Every one of them
-requires `^12.0|^13.0` or narrower, and Brand Context — a dependency of twelve
-of the twenty-four — requires `^12.40|^13.0`, which sets the real floor for most
-installs. Table of Contents is the exception that declares no Laravel
-constraint at all and takes whatever its Statamic version takes.
+requires `^12.0|^13.0` or narrower, or inherits that floor from `statamic/cms
+^6.0`, and Brand Context — a dependency of thirteen of the twenty-six — requires
+`^12.40|^13.0`, which sets the real floor for most installs. Assessments declares
+that same `^12.40|^13.0` itself, on top of depending on Brand Context. Ten
+packages, Client Rooms and Table of Contents among them, declare no Laravel
+constraint of their own and take whatever the rest of the install takes.
 
 Statamic 5 is not supported by the suite. LeadHub's v0.3 Control Panel rewrite moved
 to Inertia + Vue 3, which is Statamic 6 only; pin to `^0.2.x` if you are stuck on
@@ -70,7 +72,7 @@ for you:
 | `statamic-funnels` | `statamic-flow-canvas` | The same editor, the second consumer. |
 | `statamic-products` | `statamic-payments` | A product is read through the payment catalogue, and contributing to it needs `^1.15`. |
 | `statamic-lead-magnets` | `statamic-entitlements` | The grant behind a confirmed download is an entitlement. |
-| twelve of the twenty-four | `statamic-brand-context` | See [Multi-brand](#multi-brand) below. |
+| thirteen of the twenty-six | `statamic-brand-context` | See [Multi-brand](#multi-brand) below. |
 
 Everything beyond that is a `suggest` plus a runtime `class_exists` check. The
 version constraints that matter when both are installed:
@@ -114,11 +116,17 @@ install that had LeadHub. Always resolve the root first.
 | Entitlements | yes, `resources/dist/build/` | yes |
 | Events | yes, `resources/dist/build/` | yes |
 | Insights | yes, `resources/dist/build/` | yes |
+| Assessments | yes, `dist/build/` | yes |
+| Client Rooms | yes, `dist/build/` | yes |
 | others | no CP JavaScript of their own | no |
 
 Brand Context is easy to overlook in that list: it is mostly an invisible
 foundation package, but it does ship an Inertia CP page for brand membership
 and therefore a compiled bundle of its own.
+
+Assessments and Client Rooms build to `dist/` rather than `resources/dist/`.
+Either is fine: the path is the addon's `$vite.publicDirectory`, and Statamic
+reads whichever the service provider declares.
 
 Two Statamic 6 specifics worth knowing if you fork one of these:
 
@@ -129,12 +137,16 @@ Two Statamic 6 specifics worth knowing if you fork one of these:
 
 ## Multi-brand
 
-Brand Context is a dependency of twelve packages: Webhook Manager, Automations,
+Brand Context is a dependency of thirteen packages: Webhook Manager, Automations,
 LeadHub, Marketing, Activity, Notifications, Suppression, Preference Center,
-Entitlements, Lead Magnets, Events and Invoices. All twelve are brand-aware, and
-all twelve behave identically on a single-brand install. There is no partial
-support to check for: if an addon depends on `brand-context`, its records carry
-`brand_id` from their first migration.
+Entitlements, Lead Magnets, Assessments, Events and Invoices. All thirteen are
+brand-aware, and all thirteen behave identically on a single-brand install. There
+is no partial support to check for: if an addon depends on `brand-context`, its
+records carry `brand_id` from their first migration.
+
+Client Rooms only suggests it. Its rooms carry `brand_id` from the first
+migration as well, but the column stays `0` until Brand Context is installed,
+which is how a room is brand-aware without the package being required.
 
 Table of Contents, Identity Contracts and Email Templates are not brand-scoped,
 because none of them persists anything that could belong to a brand.

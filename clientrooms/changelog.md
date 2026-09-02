@@ -35,6 +35,11 @@ First cut. One lasting room per coaching client.
   tasks, last activity, brand), detail page with tasks, documents, timeline, owner, notes for the team
   and notes for the client. Permissions `view client rooms` and `edit client rooms`. German and
   English, dark mode.
-- Antlers tag `{{ client_room }}` for the signed-in user, plus `{{ client_room:exists }}`, and a
+- Antlers tag `&#123;&#123; client_room }}` for the signed-in user, plus `&#123;&#123; client_room:exists }}`, and a
   starter view `statamic-clientrooms::room`. Internal notes never reach the template.
 - Events `ClientRoomOpened` (with `reopened`), `ClientRoomClosed`, `ClientRoomTaskCompleted`.
+- One asset container per brand on a multi-brand install (`clientrooms-<brandId>`), created by
+  `clientrooms:install` and at the first upload; `allowed_extensions` checked at the endpoint and in
+  `attach()`; the tag hands every free-text value over HTML-escaped; the owner picker lists staff
+  only; a lost insert race picks up the winner's row; a room without a contact link looks it up once
+  when its timeline renders.

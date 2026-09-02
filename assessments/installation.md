@@ -2,7 +2,15 @@
 
 <AddonHeader />
 
-<Requirements database="MySQL or SQLite" />
+<Requirements laravel="12.40+ / 13.x" database="MySQL or SQLite" />
+
+::: danger Not on Packagist yet
+`goldnead/statamic-assessments` is at 0.1.0 and has not been published. The block below is
+what the installation will be; today `composer require` finds nothing — it fails on the root
+package, before the Brand Context constraint below ever matters — and a `repositories` entry
+does not help either, because the repository is private. See [how far along each addon
+is](/guide/maturity).
+:::
 
 ```bash
 composer require goldnead/statamic-assessments

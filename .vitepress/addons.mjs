@@ -36,8 +36,9 @@ export const LAYERS = {
  * How far along each addon is.
  *
  * The suite reads finished. It is not: twenty-four packages went public inside
- * five weeks, sixteen of them are declared commercial, and exactly one can be
- * bought. A reader deciding whether to put one of these on a client site has no
+ * five weeks and two more were built on 2 September 2026, eighteen of the
+ * twenty-six are declared commercial, and exactly one can be bought. A reader
+ * deciding whether to put one of these on a client site has no
  * way to tell a package that has run several brands for months from one that
  * has never been installed anywhere. That difference is the single most useful
  * thing this site can tell them, so it is stated on every card and every page.
@@ -87,10 +88,10 @@ export const MATURITY_BY_SLUG = {
   'identity-contracts': 'new',
   consent: 'new',
   insights: 'new',
-  clientrooms: 'new',
 
   // Experimental — see the notes.
   assessments: 'experimental',
+  clientrooms: 'experimental',
   booking: 'experimental',
   'flow-canvas': 'experimental',
   events: 'experimental',
@@ -99,9 +100,11 @@ export const MATURITY_BY_SLUG = {
 /** The exceptions a one-word level would misrepresent. */
 export const MATURITY_NOTES = {
   assessments:
-    'Built on 2 September 2026 and exercised only in the playground. Nothing here has been answered by a real visitor yet.',
+    'Built on 2 September 2026 and exercised only in the playground. Nothing here has been answered by a real visitor yet, and the package is not on Packagist, so the install below does not resolve from a stock composer.json.',
   booking:
     'Tagged and on Packagist, but installed on no site yet. Nothing here has been exercised by a real booking.',
+  clientrooms:
+    'Built on 2 September 2026 and installed on no site yet. Not on Packagist either, so the install below does not resolve from a stock composer.json.',
   'flow-canvas':
     'Carries no test suite and no CI of its own, although Automations and Funnels both build on it and are covered. Treat a change here as unverified until those two have been run against it.',
   events:

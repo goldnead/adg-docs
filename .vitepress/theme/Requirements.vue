@@ -3,8 +3,9 @@ defineProps({
   php: { type: String, default: '8.2+' },
   statamic: { type: String, default: '6.0+' },
   // Laravel 11 is supported by no package in the suite: every one of them
-  // requires ^12.0|^13.0 or narrower. Brand Context, a dependency of eight of
-  // the twelve, requires ^12.40|^13.0.
+  // requires ^12.0|^13.0 or narrower, or inherits that floor from statamic/cms.
+  // Brand Context, a dependency of thirteen of the twenty-six, requires
+  // ^12.40|^13.0, and Assessments declares that same range itself.
   laravel: { type: String, default: '12.x / 13.x' },
   // PostgreSQL is deliberately absent: it is untested, so it is not promised.
   database: { type: String, default: 'MySQL or SQLite' },

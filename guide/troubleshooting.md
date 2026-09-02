@@ -128,8 +128,12 @@ fresh, which produces a half-correct segment. See
 
 A `composer.json` referencing `../statamic-*` cannot resolve on any machine
 without those sibling directories, including every Docker build. Remove the
-`repositories` block and let the package resolve from Packagist, where all
-twenty-four are published. A path repository is a development convenience only.
+`repositories` block and let the package resolve from Packagist, where
+twenty-four of the twenty-six are published. A path repository is a development
+convenience only. Client Rooms and Assessments are the two that are not on
+Packagist: their Git remotes are private, so a VCS repository entry resolves them
+only for a machine that holds credentials for those repositories, and for nobody
+else at all.
 
 For private VCS repositories, `preferred-install: source` avoids needing a token
 for the dist zipball, and `COMPOSER_AUTH` must be set **as an environment

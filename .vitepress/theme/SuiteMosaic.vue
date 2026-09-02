@@ -1,6 +1,6 @@
 <script setup>
 /**
- * The suite's twelve icons as the home hero image.
+ * Every addon icon that has been drawn, as the home hero image.
  *
  * Decorative: every addon it shows is named, linked and described in the
  * AddonGrid a screen further down, so it is hidden from assistive technology

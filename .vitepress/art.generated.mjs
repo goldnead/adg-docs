@@ -61,6 +61,12 @@ export const ART = {
     "light": "#bb5b00",
     "dark": "#d97706"
   },
+  "assessments": {
+    "from": "#44B234",
+    "to": "#246619",
+    "light": "#058900",
+    "dark": "#44b234"
+  },
   "email-templates": {
     "from": "#F43F5E",
     "to": "#EC4899",
@@ -138,6 +144,12 @@ export const ART = {
     "to": "#0E7490",
     "light": "#00809a",
     "dark": "#22d3ee"
+  },
+  "clientrooms": {
+    "from": "#A855F7",
+    "to": "#6B21A8",
+    "light": "#9c47e9",
+    "dark": "#ab58fb"
   },
   "consent": {
     "from": "#22C55E",

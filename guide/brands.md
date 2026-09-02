@@ -1,6 +1,6 @@
 # Brands & multi-tenancy
 
-Twelve of the addons depend on `goldnead/statamic-brand-context`. On an ordinary
+Thirteen of the addons depend on `goldnead/statamic-brand-context`. On an ordinary
 install you will not notice: one brand exists, every record is stamped with it,
 the global scope is a no-op and no switcher appears anywhere in the Control
 Panel.

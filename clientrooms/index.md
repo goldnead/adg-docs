@@ -73,3 +73,9 @@ php please clientrooms:install
 Then **Tools → Clients → Open room**, type an address, add a task, upload a file. Put
 `{{ partial:statamic-clientrooms::room }}` on a page behind your login and sign in with
 that address.
+
+## Next
+
+- [Installation](/clientrooms/installation) — the three steps, the config, the permissions
+- [What a room is](/clientrooms/concepts) — the key, the timeline, the documents, the two kinds of notes
+- [Reference](/clientrooms/reference) — facade, events, tag, routes, tables, config keys

@@ -7,10 +7,10 @@ hero:
   name: Statamic Addons
   text: One suite, one set of docs
   tagline: >
-    Twenty-four packages for Statamic 6: a CRM, email marketing, a visual automation
+    Twenty-six packages for Statamic 6: a CRM, email marketing, a visual automation
     builder, a webhook layer, checkout with products, offers and invoices, an
     activity ledger, notifications, a subscriber preference centre, entitlements,
-    gated resources, events and content tooling.
+    gated resources, assessments, client rooms, events and content tooling.
     Built to be installed one at a time and to compose when you install the next one.
   # The hero's image block only renders when `image` is set, and the theme's
   # `home-hero-image` slot replaces what goes inside it with <SuiteMosaic />.
@@ -67,8 +67,8 @@ features:
 ---
 
 ::: warning This suite is work in progress
-Twenty-four packages went public inside five weeks, and only some of them have
-been proven in production. Every card below carries its level: **Proven** has run
+Twenty-six packages, twenty-four of them public inside five weeks, and only some
+of them have been proven in production. Every card below carries its level: **Proven** has run
 on live sites for months, **New** is in production but only weeks old, and
 **Experimental** has never been installed anywhere. Read [how far along each
 addon is](/guide/maturity) before you put one on a client site.
@@ -89,9 +89,12 @@ purpose](/guide/demo).
 
 ## Install what you need
 
-Each addon installs on its own. Every package is on Packagist, so a bare
-`composer require` resolves it and pulls in the foundation packages it needs.
-Those foundation packages are inert until you configure them.
+Each addon installs on its own. Twenty-four of the twenty-six are on Packagist,
+so a bare `composer require` resolves them and pulls in the foundation packages
+they need. Those foundation packages are inert until you configure them.
+[Client Rooms](/clientrooms/installation) and
+[Assessments](/assessments/installation) are not published yet, and their
+repositories are private, so there is no way to install them today.
 
 ```bash
 # The CRM, on its own

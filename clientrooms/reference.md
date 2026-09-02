@@ -56,6 +56,12 @@ or a closed room: the block parses once with `no_results`.
 `{{ client_room:exists }}` — `true` when the signed-in user has an open room. Use it inside
 a condition: `{{ if {client_room:exists} }} … {{ /if }}`.
 
+**Every free-text value arrives HTML-escaped**: `name`, `owner_name`, `notes_for_client`,
+the task and file titles, `filename`. Print them as they are. For line breaks in the notes
+use `| nl2br`. If your own template escapes a second time, turn its escaping off with
+`sanitize:0` — not `sanitize:false`, which Antlers reads as a non-empty string and which
+therefore double-encodes the entities.
+
 The starter view is `statamic-clientrooms::room`
 (`resources/views/room.antlers.html`), publishable with `--tag=statamic-clientrooms-views`.
 
@@ -147,8 +153,9 @@ Rows carry `id`, `name`, `has_name`, `email`, `status`, `status_label`, `is_open
 
 | Key | Default | |
 | --- | --- | --- |
-| `container` | `clientrooms` | Asset container handle |
+| `container` | `clientrooms` | Asset container handle. On a multi-brand install each brand gets its own, `<container>-<brandId>` |
 | `disk` | `local` | Disk the container is created on |
+| `allowed_extensions` | `pdf`, `doc`, `docx`, `xls`, `xlsx`, `ppt`, `pptx`, `png`, `jpg`, `jpeg`, `mp3`, `mp4`, `zip` | What may be uploaded. An empty list accepts everything |
 | `open_on_product_types` | `['sessions']` | Product kinds that open a room |
 | `open_on_products` | `[]` | Product handles that open a room |
 | `default_owner` | `null` | User id or address for automatically opened rooms |

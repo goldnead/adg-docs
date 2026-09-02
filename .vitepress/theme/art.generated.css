@@ -195,6 +195,27 @@ html.dark[data-addon='lead-magnets'] {
   --vp-c-brand-soft: rgba(217, 119, 6, 0.16);
 }
 
+html[data-addon='assessments'] {
+  --gn-accent-from: #44B234;
+  --gn-accent-to: #246619;
+  --vp-c-brand-1: #058900;
+  --vp-c-brand-2: #007400;
+  --vp-c-brand-3: #44B234;
+  --vp-c-brand-soft: rgba(68, 178, 52, 0.16);
+  --vp-button-brand-bg: #44B234;
+  --vp-button-brand-hover-bg: #246619;
+  --vp-button-brand-active-bg: #246619;
+  --vp-button-brand-text: #1a1a1a;
+  --vp-button-brand-hover-text: #ffffff;
+}
+
+html.dark[data-addon='assessments'] {
+  --vp-c-brand-1: #44b234;
+  --vp-c-brand-2: #5cc94d;
+  --vp-c-brand-3: #246619;
+  --vp-c-brand-soft: rgba(68, 178, 52, 0.16);
+}
+
 html[data-addon='email-templates'] {
   --gn-accent-from: #F43F5E;
   --gn-accent-to: #EC4899;
@@ -466,6 +487,27 @@ html.dark[data-addon='booking'] {
   --vp-c-brand-2: #4aeaff;
   --vp-c-brand-3: #0E7490;
   --vp-c-brand-soft: rgba(34, 211, 238, 0.16);
+}
+
+html[data-addon='clientrooms'] {
+  --gn-accent-from: #A855F7;
+  --gn-accent-to: #6B21A8;
+  --vp-c-brand-1: #9c47e9;
+  --vp-c-brand-2: #872cd1;
+  --vp-c-brand-3: #A855F7;
+  --vp-c-brand-soft: rgba(168, 85, 247, 0.16);
+  --vp-button-brand-bg: #A855F7;
+  --vp-button-brand-hover-bg: #6B21A8;
+  --vp-button-brand-active-bg: #6B21A8;
+  --vp-button-brand-text: #1a1a1a;
+  --vp-button-brand-hover-text: #ffffff;
+}
+
+html.dark[data-addon='clientrooms'] {
+  --vp-c-brand-1: #ab58fb;
+  --vp-c-brand-2: #c170ff;
+  --vp-c-brand-3: #6B21A8;
+  --vp-c-brand-soft: rgba(171, 88, 251, 0.16);
 }
 
 html[data-addon='consent'] {

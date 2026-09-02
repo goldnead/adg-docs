@@ -1,20 +1,24 @@
 # The suite
 
-Twenty-four packages, six layers. Every arrow below is a Composer dependency;
+Twenty-six packages, six layers. Every arrow below is a Composer dependency;
 anything not drawn is optional and detected at runtime with `class_exists`,
 which is why you can install any addon without the rest.
 
-All twenty-four are tagged and published on Packagist, so `composer require`
-resolves any of them and pulls in whatever it depends on.
+All twenty-six are tagged, and twenty-four of them are published on Packagist, so
+`composer require` resolves any of those and pulls in whatever it depends on.
+Client Rooms and Assessments are not published yet; see
+[Client Rooms → Installation](/clientrooms/installation) and
+[Assessments → Installation](/assessments/installation).
 
 ```
 Foundation ──────────────────────────────────────────────────────────
 
-  brand-context          required by 12: webhook-manager, automations,
+  brand-context          required by 13: webhook-manager, automations,
                                          leadhub, marketing, activity,
                                          notifications, suppression,
                                          preference-center, entitlements,
-                                         lead-magnets, events, invoices
+                                         lead-magnets, assessments, events,
+                                         invoices
 
   identity-contracts     required by 4:  activity, notifications,
                                          preference-center, entitlements
@@ -47,7 +51,7 @@ Standalone ───────────────────────
 
   webhook-manager · automations · activity · notifications ·
   email-templates · preference-center · entitlements ·
-  events · toc · booking · consent
+  assessments · events · toc · booking · clientrooms · consent
 
   — none of these requires another domain addon.
 ```
@@ -69,7 +73,7 @@ are worth naming, because they look like dependencies and are not:
 `notifications` rather than an optional extra: both ask the gate before they
 queue mail, and a gate that might not be there would be no gate at all.
 
-## The twenty-four
+## The twenty-six
 
 ### Foundation
 
@@ -147,6 +151,16 @@ repeated confirmation activates exactly once, because activation is a
 conditional `UPDATE` rather than a check in PHP. How its grants relate to
 [Entitlements](/entitlements/) is written down rather than buried; see
 [Grant state](/lead-magnets/grant-state).
+
+**[Assessments](/assessments/)** &nbsp;·&nbsp; `goldnead/statamic-assessments`
+
+A questionnaire with points per answer and result levels by score. The visitor
+answers, leaves an address and sees the result at once; that result becomes a
+contact event in LeadHub and a trigger in Automations, which is the part a quiz
+is actually for. The editor refuses levels that overlap, leave a gap, or fail to
+cover every achievable score, so nobody can reach a score with no result behind
+it. It requires Brand Context and nothing else; LeadHub and Automations are
+detected when installed.
 
 **[Email Templates](/email-templates/)** &nbsp;·&nbsp; `goldnead/statamic-email-templates`
 
@@ -236,6 +250,18 @@ deliberately builds no calendar — availability, time zones, reschedules and
 reminders are a solved problem, and solving them again badly is the usual way a
 booking feature goes wrong. An endpoint without a secret refuses every request.
 
+**[Client Rooms](/clientrooms/)** &nbsp;·&nbsp; `goldnead/statamic-clientrooms`
+
+One lasting room per coaching client: tasks, shared documents, the timeline and
+two kinds of note, one for the team and one for the client. Entitlements says who
+may open what, Booking says how many sessions are left and LeadHub knows the
+person — none of them holds the relationship itself, and that is what a room is.
+A room is keyed by email address and brand, opened by hand in the Control Panel
+or by the first paid coaching product where Payments is installed, and kept when
+the access runs out. Documents are downloaded through a signed link that expires
+and never shows the storage path. Nothing else in the suite is required: Payments,
+LeadHub, Booking and Brand Context are detected with `class_exists`.
+
 **[Flow Canvas](/flow-canvas/)** &nbsp;·&nbsp; `goldnead/statamic-flow-canvas`
 
 The node-graph editor itself, extracted so that Automations and Funnels cannot
@@ -286,6 +312,10 @@ nothing.
 | Lead Magnets | LeadHub | A confirmed request becomes a contact, with the resource's tags written onto it |
 | Lead Magnets | Marketing | The confirmed address is subscribed to the list the resource names |
 | Lead Magnets or Entitlements or Events | Activity | Their domain events recorded as facts on the ledger |
+| Assessments | LeadHub | A completed assessment becomes a contact, with `assessment.completed` and the result level on its timeline |
+| Assessments | Automations | The trigger `assessments.completed`, filterable by assessment and by result level |
+| Client Rooms | Payments | The first paid coaching product opens that client's room, once |
+| Client Rooms | LeadHub | The room shows the contact's merged LeadHub timeline instead of its own short list |
 | Products | Offers | The product picker in the offer form lists what the products table holds, brand-scoped, instead of only the config file's handles |
 | Anything with figures to report | Insights | The addon's group appears on the Metrics screen, with the period, the chart and the splits supplied by Insights |
 
