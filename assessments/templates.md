@@ -18,8 +18,11 @@ php artisan vendor:publish --tag=assessments-views
 | `layout.antlers.html` | the fallback shell, used only when the site has no [`layout`](/assessments/configuration#layout) |
 | `styles.antlers.html` | the inline stylesheet, included by the first two unless `styles` is off |
 
-Both templates get their variables flat and under `assessment:`. On a site's own page the
-second shape is the one to read, where flat names could collide with the entry's fields.
+Both templates get their variables under `assessment:` — `assessment:questions`,
+`assessment:action`, `assessment:result_label`. Only `title` is also in the cascade, for
+the layout's `<title>`; nothing else goes in flat, so the site's own `url` or `name` inside
+the layout stays untouched. (The [tags](#tags) hand their variables over flat, since they
+run inside a template of your own.)
 
 <Figure
   src="assessments-result"
@@ -34,7 +37,6 @@ second shape is the one to read, where flat names could collide with the entry's
 | `questions` | the list below |
 | `ask_name`, `name_required` | how the name field is asked for |
 | `action` | where the form posts |
-| `visit_token` | put it in a hidden `_visit` field; it becomes the result URL |
 | `preview` | true when an editor is looking at an unpublished assessment |
 | `styles` | whether to include the stylesheet |
 
@@ -54,9 +56,13 @@ does not compare anything itself.
 
 ## The result's variables
 
-`title`, `outro`, `email`, `name`, `score`, `result_key`, `result_label`, `result_text`,
-`token`, `url` (the form), and `answers` — a list of `question`, `type`, `answer` (the chosen labels,
-comma-separated for multiple choice) and `points`.
+`title`, `outro`, `name`, `score`, `result_key`, `result_label`, `result_text`, `token`,
+`url` (the form), and `answers` — a list of `question`, `type`, `answer` (the chosen labels,
+comma-separated for multiple choice) and `points`, as they were at submit time.
+
+Not the email address. The result URL is permanent — its token is 40 random characters
+minted on the server — and gets passed around; whoever opens it sees a result, not whose
+it is.
 
 ## Tags
 
@@ -79,7 +85,6 @@ A tag pair with the form's variables above:
 {{ assessments:form handle="stimm-check" }}
     <form method="POST" action="{{ action }}">
         {{ csrf_field }}
-        <input type="hidden" name="_visit" value="{{ visit_token }}">
 
         {{ questions }}
             <fieldset>

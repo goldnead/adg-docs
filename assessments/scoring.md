@@ -84,6 +84,9 @@ that segment. A JSON client gets the URL in the response body instead of being r
 ## What is stored
 
 Per response: the answers keyed by question id (an option index, a list of indexes, or the
-scale value), the total, and the level key **as they were at the time**. Editing a level's
-text later changes what a returning visitor reads on their result page; editing points or
-ranges does not re-sort anyone. A result somebody was told is a result.
+scale value), a readable snapshot of them (question text, chosen labels, points), the total,
+and the level key **as they were at the time**. Saving the editor updates a question in
+place rather than replacing it, so the ids stay; and should a question be removed or
+rebuilt anyway, the snapshot still reads. Editing a level's text later changes what a
+returning visitor reads on their result page; editing points or ranges does not re-sort
+anyone. A result somebody was told is a result.

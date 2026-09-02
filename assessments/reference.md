@@ -19,9 +19,8 @@ brands.
 
 | Field | Rule |
 | --- | --- |
-| `email` | required, email, max 191 |
+| `email` | required, `email:rfc,strict`, a dot in the domain, max 191 |
 | `name` | required or optional per the assessment; max 191 |
-| `_visit` | optional; 20–64 alphanumerics, becomes the result token |
 | `answers[{id}]` | one per question, all required |
 | — single choice | an integer option index that exists |
 | — multiple choice | a non-empty list of distinct existing indexes |
@@ -29,6 +28,10 @@ brands.
 
 Answers are validated against the questions **as they are now**. An index past the end or
 a value off the scale is a 422, not a zero.
+
+The result token is minted on the server; nothing the client sends becomes part of it. The
+same address may submit as often as it likes — each submit is its own response, result URL
+and event.
 
 ## Control Panel routes
 
@@ -53,7 +56,9 @@ Every write route carries `can:` middleware and the controller checks again.
   caption="The latest 500 on screen; the export streams all of them." />
 
 The export is `;`-separated, UTF-8 with a byte-order mark, one column per question with
-the answer labels: `email; name; date; score; level key; level; question 1; …`.
+the answer labels: `email; name; date; score; level key; level; question 1; …`. A cell
+starting with `=`, `+`, `-`, `@`, a tab or a carriage return is prefixed with `'`, so a
+name typed as `=HYPERLINK(...)` opens as text rather than as a formula.
 
 ## Permissions
 
@@ -87,13 +92,14 @@ See [The public pages and tags](/assessments/templates).
 | --- | --- |
 | `find(string $handle): ?Assessment` | with questions loaded |
 | `create(array $attributes): Assessment` | `handle`, `title`, `intro`, `outro`, `published`, `collect`, `scoring`, `questions` |
-| `update(Assessment, array $attributes): Assessment` | same keys; `questions` replaces all of them when present; `handle` is ignored |
+| `update(Assessment, array $attributes): Assessment` | same keys; a question with its `id` is updated, one without is created, unlisted ones are deleted; `handle` is ignored |
 | `levelProblems(Assessment): list<string>` | the message keys the editor would show |
 | `score(Assessment, array $answers): array` | `['score' => int, 'breakdown' => [question id => points]]` |
-| `submit(Assessment, string $email, ?string $name, array $answers, ?string $visitToken = null): Response` | stores, fires the event |
-| `readableAnswers(Response): list` | `question`, `type`, `answer`, `points` per question |
+| `submit(Assessment, string $email, ?string $name, array $answers): Response` | stores with a snapshot of the readable answers, mints the token, fires the event |
+| `readableAnswers(Response): list` | `question`, `type`, `answer`, `points` per question, from the snapshot |
 
-`create()` and `update()` throw `InvalidArgumentException` for levels that break a rule.
+`create()` and `update()` throw `InvalidArgumentException` for levels that break a rule and
+for a scale that does not end above where it starts.
 
 ## Tables
 
@@ -101,7 +107,7 @@ See [The public pages and tags](/assessments/templates).
 | --- | --- |
 | `assessments` | `brand_id`, `handle` (unique), `title`, `intro`, `outro`, `published`, `collect` json, `scoring` json, `meta` json |
 | `assessment_questions` | `assessment_id`, `position`, `text`, `help`, `type`, `options` json, `min`, `max`, `points_per_step` |
-| `assessment_responses` | `assessment_id`, `brand_id`, `email`, `name`, `answers` json, `score`, `result_key`, `contact_id`, `visit_token` (unique), `created_at` |
+| `assessment_responses` | `assessment_id`, `brand_id`, `email`, `name`, `answers` json, `answers_readable` json, `score`, `result_key`, `contact_id`, `visit_token` (unique), `created_at` |
 
 Deleting an assessment deletes its questions and responses.
 
