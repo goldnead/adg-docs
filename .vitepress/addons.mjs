@@ -87,6 +87,7 @@ export const MATURITY_BY_SLUG = {
   'identity-contracts': 'new',
   consent: 'new',
   insights: 'new',
+  clientrooms: 'new',
 
   // Experimental — see the notes.
   booking: 'experimental',
@@ -505,6 +506,22 @@ export const addons = [
       { text: 'Reacting to a booking', link: 'events' },
       { text: 'What it stores', link: 'storage' },
     ],
+  },
+  {
+    slug: 'clientrooms',
+    name: 'Client Rooms',
+    package: 'goldnead/statamic-clientrooms',
+    license: 'Commercial',
+    layer: 'platform',
+    tagline:
+      'One lasting room per coaching client: tasks, shared documents, the timeline and notes, opened by the first purchase.',
+    icon: '◫',
+    // Configuration is on the installation page; there is not enough of it
+    // for a page of its own. Nothing has gone wrong in the field yet, so
+    // there is no troubleshooting page to write honestly.
+    configuration: false,
+    troubleshooting: false,
+    pages: [{ text: 'What a room is', link: 'concepts' }],
   },
   {
     slug: 'consent',
