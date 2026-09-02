@@ -53,16 +53,33 @@ only the preview, where the sample data is generous.
 `<script>` reaches the inbox as text rather than as markup. A merge value is recipient data, and the
 mail carrying it usually goes to an address nobody has verified.
 
-Two exceptions, both named rather than implicit:
+Three exceptions, all named rather than implicit:
 
 | Exception | What it covers |
 | --- | --- |
-| `MergeVariables::RAW_VARIABLES` | Keys inserted raw. Today: `unsubscribe_url` — an address the package builds, used as an `href`. |
+| `MergeVariables::RAW_VARIABLES` | Keys **this package** supplies and inserts raw. Today: `unsubscribe_url` — an address the package builds, used as an `href`. |
 | `apply($text, $data, escape: false)` | Turns escaping off for the whole call. For output that is **not** HTML: the subject line and a plain-text part, where an escaped `&` would show the reader `&amp;`. |
+| `apply($text, $data, raw: ['order.lines'])` | Keys **you** supply that already carry markup, for this call only. |
 
 Handing a template ready-made markup — an order table, a list of lines — therefore means escaping its
-parts yourself and having the key added to `RAW_VARIABLES`. Until it is named there, the markup arrives
-as text.
+parts yourself and naming your key in `raw`:
+
+```php
+$html = MergeVariables::apply($template->body, $data, raw: ['order.lines']);
+```
+
+Statamic Funnels does exactly this: `order.lines` is built from `e()`-escaped parts joined with
+`<br>`, because a list of lines cannot reach an HTML mail without a separator that is markup — this
+substitution knows only flat scalars and has no loop, and a newline collapses when the mail renders.
+
+Your key does **not** belong in `RAW_VARIABLES`: a name added there is raw for every consumer of this
+package, including the ones that never escaped it.
+
+::: tip Calling from an addon that may meet an older version
+Pass the extra arguments **positionally**, not by name. Against 2.2.x, `apply()` takes two parameters;
+PHP ignores extra positional arguments there (you get the old, unescaped behaviour), while an unknown
+named argument is a fatal in the middle of a send.
+:::
 
 `{{ countdown_image }}` emits an `<img>` of its own. It is resolved **after** the escaping pass and
 escapes its own attributes, so its markup is never double-escaped.
