@@ -90,6 +90,7 @@ export const MATURITY_BY_SLUG = {
   clientrooms: 'new',
 
   // Experimental — see the notes.
+  assessments: 'experimental',
   booking: 'experimental',
   'flow-canvas': 'experimental',
   events: 'experimental',
@@ -97,6 +98,8 @@ export const MATURITY_BY_SLUG = {
 
 /** The exceptions a one-word level would misrepresent. */
 export const MATURITY_NOTES = {
+  assessments:
+    'Built on 2 September 2026 and exercised only in the playground. Nothing here has been answered by a real visitor yet.',
   booking:
     'Tagged and on Packagist, but installed on no site yet. Nothing here has been exercised by a real booking.',
   'flow-canvas':
@@ -278,6 +281,21 @@ export const addons = [
       { text: 'Delivery & downloads', link: 'delivery' },
       { text: 'Bridges', link: 'bridges' },
       { text: 'Extending', link: 'extending' },
+    ],
+  },
+  {
+    slug: 'assessments',
+    name: 'Assessments',
+    package: 'goldnead/statamic-assessments',
+    layer: 'crm',
+    license: 'Commercial',
+    tagline:
+      'A questionnaire with points per answer and result levels by score. The result becomes a contact event and an automation trigger.',
+    icon: '☑',
+    pages: [
+      { text: 'Questions and levels', link: 'scoring' },
+      { text: 'The public pages and tags', link: 'templates' },
+      { text: 'Contact event and trigger', link: 'integrations' },
     ],
   },
   {

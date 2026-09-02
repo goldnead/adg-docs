@@ -42,6 +42,14 @@ const MAP = [
   ['funnels', 'screenshots/02-funnel-graph.png', 'funnels-graph'],
   ['funnels', 'screenshots/03-offer-step.png', 'funnels-offer-step'],
 
+  ['assessments', 'screenshots/01-listing.png', 'assessments-list'],
+  ['assessments', 'screenshots/02-editor.png', 'assessments-editor'],
+  ['assessments', 'screenshots/03-editor-questions.png', 'assessments-questions'],
+  ['assessments', 'screenshots/04-editor-levels.png', 'assessments-levels'],
+  ['assessments', 'screenshots/06-responses.png', 'assessments-responses'],
+  ['assessments', 'screenshots/07-form.png', 'assessments-form'],
+  ['assessments', 'screenshots/09-result.png', 'assessments-result'],
+
   ['payments', 'screenshots/01-payments-listing.png', 'payments-listing'],
   ['payments', 'screenshots/02-payments-dark.png', 'payments-listing-dark'],
   ['payments', 'screenshots/03-payments-unfulfilled.png', 'payments-unfulfilled'],
