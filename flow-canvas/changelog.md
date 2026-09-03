@@ -12,6 +12,23 @@ Release notes for `goldnead/statamic-flow-canvas`, as published with the package
 Cross-version upgrade notes for the whole suite are in
 [Upgrading](/guide/upgrading).
 
+## 1.3.0 — 2026-09-02
+
+- **A node may carry a `thumbnail`.** A URL on the node, and the card draws it as a 16:10 tile the
+  full width of the card, above the title. Where the picture comes from is the host's business —
+  a funnel screenshots its pages; this package only knows how to show one.
+
+  The tile has a fixed height (`LAYOUT.THUMB_HEIGHT`, 150px on a 240px card) and the image loads
+  lazily inside it, so a card is the same size before and after the picture arrives. The layout
+  grows every row by that height as soon as any node on the canvas has a picture, and only then:
+  a graph without thumbnails is laid out exactly as before, and a graph with them does not
+  overlap. The tile's ground is the card's ground in both modes, so a slow image is never a white
+  block on a dark canvas.
+
+- `showThumbnails` on `<Canvas>` (default `true`) lets a host switch the tiles off without
+  stripping the field from its nodes.
+- `computeLayout()` takes an optional `{ rowHeight }`.
+
 ## 1.2.1 — 2026-08-26
 
 ### Removed — die VERSION-Konstante log

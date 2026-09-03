@@ -14,6 +14,47 @@ Cross-version upgrade notes for the whole suite are in
 
 ## 1.9.1 — 2026-09-02
 
+### Fixed — der Ein-Klick-Hinweis fehlte genau beim ersten Käufer
+
+Nach dem Rücksprung vom Bezahldienst rendert der Upsell-Schritt, bevor der Webhook die Zahlung auf
+`paid` gesetzt hat — beim Kauftest am 02.09.2026 lagen zwischen beidem weniger als eine Sekunde. In
+dieser Sekunde hielt `FollowUp::eligible()` die Vorgängerzahlung für unbezahlt, und die Seite sagte
+nichts über die gespeicherte Karte. Erst ein Neuladen brachte den Satz. In der scharfen Fassung
+betrifft das **jeden** ersten Käufer.
+
+Der fehlende Satz ist dabei nicht das Schlimmste: bis zum Klick ist der Webhook da, die Aktion nimmt
+den Ein-Klick-Weg, und abgebucht wird etwas, das die Seite nie angekündigt hat.
+
+`SavedCard` trennt deshalb die zwei Fragen, die es vorher in einer beantwortete. Die **Aktion** fragt
+weiter `FollowUp::eligible()`, `isPaid()` eingeschlossen. Die **Ankündigung** hängt am Mandat:
+`customer_reference` wird vor dem Sprung zum Anbieter geschrieben, im selben Block, der
+`sequenceType: first` setzt — beim Rücksprung steht die Spalte also, ganz ohne Rückfrage beim
+Anbieter. Fehlen in dieser Sekunde noch die vier Ziffern, greift `saved_card_unnamed`.
+
+Die verbleibende Fehlerrichtung ist die harmlose: angekündigt, beim Klick immer noch nicht bezahlt,
+also normale Kasse statt Ein-Klick. Eine Unbequemlichkeit, keine Abbuchung. Aus einer gescheiterten,
+abgelaufenen oder abgebrochenen Zahlung wird gar nichts angekündigt.
+
+### Fixed — „von deiner  •••• 9996"
+
+Der genannte Kartensatz hing allein an den vier Ziffern. Nennt der Anbieter die Ziffern, aber nicht
+die Marke — bei Wallet-Zahlungen der Normalfall —, entstand eine Lücke mitten im Satz. Jetzt drei
+Fälle: Marke und Ziffern, nur Ziffern (neuer Schlüssel `saved_card_digits`), keins von beidem. Gesagt
+wird es in allen dreien, nur mit weniger Details.
+
+### Fixed — `payment_items.offer` beim Upsell
+
+Der Ein-Klick-Weg übergibt jetzt `offer_handles` an `FollowUp::accept()`, so wie der Kassenweg es
+über den Katalog bekommt. Ohne das blieb die Spalte genau bei der Upsell-Zeile leer, und der
+Upsell-Bericht in `statamic-insights` ordnete den Umsatz keinem Angebot zu.
+
+**Die Abhängigkeit steigt deshalb auf `goldnead/statamic-payments: ^1.17.1`.** Das ist kein Komfort,
+sondern Pflicht. `PaymentDetails::ALLOWED` kennt `offer_handles` erst ab 1.17.0, und
+`FollowUp::accept()` ruft `PaymentDetails::from()` als erste Zeile — gegen 1.16 endete der
+Ein-Klick-Kauf damit in einer ungefangenen `InvalidArgumentException` auf einer öffentlichen
+POST-Route. Gegen 1.17.0 wird der Schlüssel zwar angenommen, aber nicht geschrieben; die Spalte
+bliebe still leer. Erst 1.17.1 tut beides.
+
 ### Fixed — was der Besucher eintippt, kam roh im HTML der Mail an
 
 `statamic-email-templates` setzte bis 2.2.x jeden Wert unverändert ein, und dieses Addon gab ihm

@@ -12,6 +12,68 @@ Release notes for `goldnead/statamic-offers`, as published with the package.
 Cross-version upgrade notes for the whole suite are in
 [Upgrading](/guide/upgrading).
 
+## 1.6.0 — 2026-09-02
+
+Sieben Befunde aus dem Suite-Register vom 01.09.2026. Fünf additive Migrationen an `offers`, alle
+mit `hasColumn`-Schutz; bestehende Zeilen bleiben, wie sie sind.
+
+### Widerruf als Objekt am Angebot (P·3)
+
+`withdrawal_days`, `withdrawal_text`, `withdrawal_waiver_text`, `withdrawal_checkbox_required`,
+`withdrawal_b2b_text`, `withdrawal_pdf`. Leer heißt: der Standard aus
+`config('statamic-offers.withdrawal')`, Platzhalter aus `config('statamic-offers.seller')`.
+`Offer::withdrawalTerms()` liefert das Array samt `version` (12 Zeichen SHA-1 über Frist, Text und
+Einwilligungssatz). Der Wortlaut, dem der Käufer zustimmt, wird vom Funnel an der Zahlung
+eingefroren; hier steht nur, was heute gilt. Der mitgelieferte Text ist ein **Entwurf, anwaltlich
+zu prüfen**. `withdrawal_pdf` ist nur ein Flag, der Anhang ist noch nicht umgesetzt.
+
+### Feld-Bibliothek auf zwei Ebenen (S·6)
+
+`config('statamic-offers.checkout_fields')` ist die Bibliothek, `checkout_fields` am Angebot die
+Auswahl. `Offers::fieldLibrary()` (statisch, `Goldnead\StatamicOffers\Offers`) und
+`Offer::checkoutFields()`. Unbekannte Schlüssel weist das Formular ab.
+
+### Zugangsbeginn und -dauer (K·5)
+
+`access_starts_at`, `access_days`, `Offer::accessWindow()`. Geht als `meta['access']` an die
+Zahlung; die Zugänge schreibt `statamic-entitlements`.
+
+### Prozentrabatt (K·6)
+
+`discount_percent` (1–99). `effectiveAmountCent()` und `effectiveCompareAtCent()`; `amountCent()`
+delegiert. Eigener Preis und Prozent zusammen werden abgelehnt. Katalog-Resolver, Basket, Tag und
+Listing lesen die effektiven Werte.
+
+### Mengen- und Zeitlimit (K·7)
+
+`quantity_limit`, `available_from`, `available_until`. Verkauft = bezahlte `payment_items` mit dem
+Kaufhandle des Angebots, jedes Mal frisch gezählt; dazu zählen offene Checkouts jünger als eine
+Stunde als reserviert (`OfferSales::RESERVATION_MINUTES`), damit das Fenster zwischen Start und
+Bezahlung praktisch zu ist. Das Limit bleibt weich, keine Reservierung im Datenbanksinn.
+`remainingQuantity()`, `isWithinWindow()`; `isSellable()` berücksichtigt beides. Spalte
+**Verfügbar** im Listing.
+
+### Massen-Gutscheincodes (K·12)
+
+Zweite Handlung **Codes erzeugen** auf dem Gutschein-Screen und `php artisan
+offers:coupons:generate`. Bis zu 100 Codes in einer Transaktion, Alphabet ohne 0/O/1/I/l, Retry je
+Code, Abbruch nach zehn Kollisionen statt Teilmenge. Zeitzone steht am Formular.
+
+### Upsell-Übersicht (K·15)
+
+Filter **Ort** am Angebots-Listing und Spalte **Umsatz**: netto, also bezahlte Zeilen in der
+Angebotswährung abzüglich des Gutscheinanteils der Zeile (`payment_items.discount_cent`) und ihres
+Anteils an Erstattungen (`payments.refunded_cent`, anteilig am Zahlungsbetrag). Fehlt ohne
+Zahlungstabellen; auf `statamic-payments` vor 1.8 ohne die beiden Spalten bleibt sie brutto, mit
+Hinweis im Log.
+
+## 1.5.0 — 2026-09-01
+
+Nachgetragen: die Fassung 1.5.0 ging ohne Eintrag raus. Sie brachte die **Kaufbestätigung als
+Feld am Angebot** (`confirmation_mode` Standard / eigene Vorlage / keine, `confirmation_template`
+aus `et_templates`, nur veröffentlichte Vorlagen wählbar) und den Kasten **„Wo dieses Angebot
+verwendet wird"** (Funnels und Automationen, `OfferUsage`) im Bearbeiten-Formular.
+
 ## 1.4.0
 
 ### Neu: ein Angebot darf ein Bündel sein

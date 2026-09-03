@@ -12,7 +12,135 @@ Release notes for `goldnead/statamic-email-templates`, as published with the pac
 Cross-version upgrade notes for the whole suite are in
 [Upgrading](/guide/upgrading).
 
+## 2.6.0 — 2026-09-03
+
+> **Wer 2.5.0 installiert hat, hebt direkt auf diese Fassung.** 2.5.0 macht eine
+> Bildadresse kaputt, die eine Merge-Variable enthält (`<img src="&#123;&#123; hero_image }}">`).
+> Siehe unten.
+
+### Relative Links werden absolut, wie Bilder in 2.5.0
+
+`<a href="/kurs">` hat denselben Defekt wie ein relatives Bild: es löst im
+Browser gegen die Website auf und im Postfach gegen nichts. Der Leser klickt und
+landet im Leeren, ohne dass irgendwo ein Fehler steht.
+
+Unangetastet bleiben `mailto:`, `tel:`, alles andere mit Schema, absolute und
+protokollrelative Adressen sowie reine Anker (`#`). Ein `mailto:`, das zu
+`https://deine-seite.de/mailto:…` umgeschrieben wird, ist in jedem Programm ein
+toter Link, und `href="#"` ist ein absichtlicher Nicht-Link.
+
+Das läuft, bevor `statamic-automations` Links für die LeadHub-Klickverfolgung
+umschreibt. Das ist die richtige Reihenfolge: dieser Umschreiber braucht eine
+echte URL.
+
+### Behoben: 2.5.0 zerstörte Adressen mit Merge-Variablen
+
+Das Absolutmachen aus 2.5.0 lief über **jede** Bildadresse, auch über eine, die
+noch eine Merge-Variable enthielt. Die Substitution passiert erst danach, also
+stand zu diesem Zeitpunkt buchstäblich `&#123;&#123; hero_image }}` im `src`. `url()`
+kodiert die geschweiften Klammern zu `%7B%7B`, die spätere Ersetzung findet ihr
+Muster nicht mehr, und der Empfänger bekommt eine Adresse, die nach der Variablen
+benannt ist statt nach dem Bild.
+
+Eine Adresse, die noch ein `&#123;&#123; … }}` trägt, wird jetzt in Ruhe gelassen — Bild
+wie Link. Ein Abmeldelink hat genau diese Form, das ist also der Normalfall und
+kein Sonderfall. Wer eine Variable in einer Adresse benutzt, gibt dort eine
+absolute URL hinein.
+
+## 2.5.0 — 2026-09-03
+
+### Bilder in E-Mail-Vorlagen funktionieren
+
+Ein `<img>` im Text einer Vorlage kam beim Empfänger nicht an. Es ging an zwei
+Stellen unabhängig voneinander verloren: `HtmlToBard` parste HTML mit einem
+tiptap-Schema ohne `image`-Node, also wurde ein Bild beim Import nie zu einem
+Knoten, und `BardHtmlRenderer` rendert einen `image`-Knoten, den er trotzdem
+bekam, als Leerstring. Keine der beiden Stellen meldete etwas. Der Docblock von
+`HtmlToBard` führte „images" ausdrücklich als erhalten auf, weshalb es beim
+Lesen des Codes nicht zu finden war.
+
+Beide Richtungen teilen sich jetzt eine Erweiterungsliste, `TiptapExtensions`.
+Ein Knoten, der dort dazukommt, gilt für Import und Ausgabe zugleich — sie
+können nicht wieder auseinanderlaufen.
+
+Dazu zwei Dinge, ohne die ein Bild in einer Mail nur halb funktioniert:
+
+- **Relative Bildpfade werden absolut.** Ein Statamic-Asset steht als
+  `/assets/flyer.png` im Feld. Das löst im Browser gegen die Website auf und im
+  Postfach gegen nichts — der Empfänger sieht ein kaputtes Bild, ohne dass
+  irgendwo ein Fehler steht. Gilt auch für den Rohtext-Pfad, über den importierte
+  Alt-Vorlagen laufen. Absolute, protokollrelative, `data:`- und `cid:`-Quellen
+  bleiben unangetastet.
+- **Jedes Bild bekommt `max-width:100%;height:auto;border:0;`** als Inline-Style.
+  Ohne `max-width` erzwingt eine 1200px-Kopfgrafik in einem Handy-Client
+  Querscrollen. `border` steht im Style und nicht als `border="0"`, weil
+  tiptap-php ein Attribut mit dem Wert `0` gar nicht ausgeben kann:
+  `HTML::renderAttributes()` schickt das Attribut-Array durch `array_filter()`
+  ohne Callback, und `'0'` ist in PHP falsy.
+
+Die Leer-Body-Absage des Testversands zählt ein Bild jetzt als Inhalt. In 2.4.0
+war sie zufällig richtig, weil ohnehin nichts ankam.
+
+**Tabellen bleiben draußen.** Derselbe Docblock behauptete sie auch, und auch
+das stimmte nicht. Eine Tabelle ist aber kein einzelner Knoten, sondern vier,
+und eine E-Mail-Tabelle will `cellpadding`, `cellspacing` und
+`role="presentation"`, die tiptap nicht ausgibt. Der Docblock sagt das jetzt.
+
+## 2.4.0 — 2026-09-03
+
+### Send a template to a real inbox
+
+New Control Panel action **Send test email**, in the row menu of the listing and
+in the publish form's action menu. It asks for an address (prefilled with the
+logged-in user's) and sends the saved template there.
+
+Until now the only way to see a template in an actual mail client was to trigger
+the real thing — make a purchase, fire an automation. Live Preview shows the mail
+in a browser, and a browser is not a mail client: Outlook lays out with Word,
+Gmail drops the `<style>` block. The split-screen could never answer whether a
+template survives the trip.
+
+The test takes the real send path. `EmailTemplateResolver` gained `forEntry()`,
+which shares its new `decorate()` step with `resolve()`, so preheader injection
+and layout wrapping happen in one place for both the test and the automations
+send node. Merge variables are filled from `preview.sample_data`, the same set
+the Live Preview uses. The From is the address the preview shows.
+
+- Not queued. A queued test would report success from the moment the job was
+  written, and never arrive on a host without a worker.
+- A refusing mailer produces a **red** toast naming the reason, not a green
+  "sent". An exception out of an action's `run()` is toasted green by core, so
+  the failure travels as a server-pushed toast with `message: false` beside it.
+- A template with an empty body is refused with a message saying so, rather than
+  sending a blank mail that looks like a mailer fault.
+- Permitted by `edit et_templates entries`. No new permission — a new one would
+  be off for every existing role, hiding the button from the people who write the
+  templates.
+
+New config key `test_send.subject_prefix` (default `'[Test] '`); set it to an
+empty string to send the subject exactly as a recipient sees it.
+
+`MergeVariables::previewSender()` is now public, so the test send can use the
+same From the preview promises.
+
+### Known gap
+
+An image-only body cannot be sent, and the empty-body refusal is what you get.
+`HtmlToBard` drops `<img>` on import despite its docblock saying it keeps images,
+and `BardHtmlRenderer` renders a ProseMirror `image` node as the empty string.
+Pre-existing, not introduced here, and now covered by a test that fails when it
+is fixed.
+
+> Behoben in 2.5.0, am selben Tag.
+
 ## 2.3.0 — 2026-09-02
+
+> **Wer `goldnead/statamic-funnels` einsetzt, hebt es zusammen mit dieser Fassung auf 1.9.1.**
+> Seit dieser Fassung escaped `MergeVariables::apply()` die eingesetzten Werte. funnels 1.9.0
+> und älter reicht seine Bestellzeilen bereits als fertiges Markup herein und seinen Betreff
+> ohne Schalter; mit 2.3.0 allein stünde in der Mail dann `&amp;lt;br&amp;gt;` statt eines
+> Zeilenumbruchs. 1.9.1 benennt seine eigene Roh-Variable und schickt den Betreff ungeschützt.
+> Die beiden Fassungen gehören in denselben Schritt.
 
 ### Added — Countdown in einer Mail
 

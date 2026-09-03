@@ -12,6 +12,17 @@ Release notes for `goldnead/statamic-brand-context`, as published with the packa
 Cross-version upgrade notes for the whole suite are in
 [Upgrading](/guide/upgrading).
 
+## 1.11.1 — 2026-09-03
+
+### Behoben: Hinweis und Fehler als `Alert`, ruhiger Zeilenknopf
+
+Der Hinweis zur Übergangsregel und das Fehlerbanner lagen als Text auf blankem Grau. Beide sind
+jetzt `Alert`, der Hinweis mit `heading` und `text` getrennt — als ein Absatz gelesen verlor die
+Übergangsregel ihre eigene Zeile.
+
+Der Zeilenknopf war über `:variant` an `danger` gebunden. Rot bleibt dem Bestätigungsdialog
+vorbehalten, so wie Core es hält.
+
 ## 1.11.0 — 2026-08-25
 
 ### Fixed

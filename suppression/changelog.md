@@ -12,7 +12,7 @@ Release notes for `goldnead/statamic-suppression`, as published with the package
 Cross-version upgrade notes for the whole suite are in
 [Upgrading](/guide/upgrading).
 
-## Unreleased
+## 1.2.1 — 2026-09-03
 
 ### Fixed: the last second of a period is inside the "blocked" figure
 

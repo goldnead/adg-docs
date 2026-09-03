@@ -12,6 +12,223 @@ Release notes for `goldnead/statamic-payments`, as published with the package.
 Cross-version upgrade notes for the whole suite are in
 [Upgrading](/guide/upgrading).
 
+## 1.17.1 — 2026-09-02
+
+Drei Befunde aus einem echten Kauftest auf staging (Mollie-Testmodus, Zahlungen 29/30/31).
+
+### `payment_items.offer` beim Nachfassangebot
+
+`FollowUp::accept()` schrieb die Spalte nicht — genau bei der Zeile, für die sie gebaut wurde. Der
+Upsell-Bericht in `statamic-insights` ordnete den Umsatz damit keinem Angebot zu. Jetzt in derselben
+Reihenfolge wie an der Kasse: was der Aufrufer über `PaymentDetails` (`offer_handles`) sagt, sonst
+was der Katalog an das Produkt geheftet hat (`statamic-offers` liefert `offer` mit), sonst `null`.
+Aufrufer, die nichts übergeben, laufen unverändert weiter.
+
+### Kartenangabe: jedes Feld für sich, und nur was belegt ist
+
+`card_last4` und `card_label` hingen aneinander: nannte der Anbieter die Kartenmarke ohne Nummer,
+ging die Marke verloren; nannte er die Nummer ohne Marke, wurde eine bereits eingetragene Marke mit
+`null` überschrieben. Auf der Seite eines Nachfassangebots stand dann entweder nichts oder etwas,
+das aus zwei Antworten zusammengesetzt war. Jetzt wird jedes Feld einzeln geschrieben, nur aus einer
+Antwort, die es belegt, und nur solange es leer ist — eingefroren bleibt eingefroren.
+
+Zum Feldfund selbst: Mollie nennt im Testmodus für eine Folgeabbuchung eine andere Kartennummer als
+für die Erstzahlung (6787 statt 9996, beide als „Mastercard", obwohl mit einer VISA-Testkarte
+bezahlt wurde). Das Addon gibt wieder, was der Anbieter für **diese** Zahlung sagt; die Abweichung
+kommt aus Mollies Testdaten, nicht von hier.
+
+### Kommunikationsprotokoll
+
+Die zwei Mails an den Händler — Widerruf gemeldet (`withdrawal_notice`), Kündigung gemeldet
+(`cancellation_notice`) — wurden verschickt, aber nicht eingetragen. Jetzt stehen sie im Protokoll,
+mit Empfänger und Vorgangskennung.
+
+Deutlicher gesagt, im README und im Leerzustand des Panels: **das Protokoll ist ein Protokoll, kein
+Mithörer.** Bei einem gewöhnlichen Kauf verschickt dieses Paket keine einzige Mail — Kaufbestätigung,
+Zugangsdaten und Willkommensgruß kommen von der Seite, und die muss sie mit `PaymentLog::mail(…)`
+selbst eintragen. Ein leeres Panel nach einem Kauf ist deshalb kein Defekt, sondern ein fehlender
+Aufruf. `statamic-invoices` trägt seine Rechnungs-Mail nur ein, wenn eine hinausging; mit
+`INVOICES_DELIVER=false` steht dort korrekt nichts.
+
+## 1.17.0 — 2026-09-02
+
+### Zahlungs-Detailseite mit Kommunikationsprotokoll
+
+Utilities → Zahlungen → Klick auf eine Zeile (oder „Details" im Zeilenmenü) öffnet
+`cp/utilities/payments/{id}`: Kopf mit Betrag, Status und Zeitpunkten; Panels für Positionen (Art,
+Menge, Einzelpreis, Angebot), Käufer (E-Mail, Name, Land, Anschrift aus `meta.address`, USt-IdNr. aus
+`meta.vat_id`), Einwilligung nach § 356 Abs. 5 BGB (Zeitpunkt, Wortlaut, Fassung der Belehrung),
+Zugangsfenster (`meta.access`), Herkunft (UTM, Verweis, Einstiegsseite), Zahlungsmittel, Erstattungen,
+Verknüpfungen (Erstbestellung, Nachfassangebote, Abo, Rechnung, Widerrufe, Kündigungen) und
+**Kommunikation**. Ist `statamic-webhook-manager` installiert, ein Panel „Webhook-Zustellungen"
+(`WebhookLog::forSubject('payment', id)`). Dasselbe Recht wie das Listing; auf Mehrmarken-Installationen
+mit gesetzter Marke ist eine fremde Zahlung eine 404. Register S·8.
+
+Neu: Tabelle `payment_communications` und die Fassade `PaymentLog` — `PaymentLog::mail($payment,
+'invoice', $to, $subject)`, `::note()`, `::record()`, `::for()`. Ein Fehler beim Schreiben wird geloggt
+und bricht nie einen Kaufpfad. Das Addon trägt selbst ein: Portal-Link (an der jüngsten Bestellung der
+Adresse), Eingangsbestätigung Widerruf (bei zugeordneter Zahlung), Eingangsbestätigung Kündigung und
+Kündigungsbestätigung aus dem Portal (an der jüngsten Zahlung des Abos), Abbruch-Erinnerung.
+`statamic-invoices` trägt seine Rechnungs-Mail ein. Ereignis `PaymentCommunicationLogged`.
+
+### Warenkorbabbruch-Mail
+
+`abandoned.mail.enabled` schickt je angekündigtem Checkout eine Erinnerung an die Adresse darauf —
+nicht, wenn `statamic-suppression` die Adresse führt (dann eine Notiz im Protokoll). `template` nimmt
+einen email-templates-Slug mit den Variablen `buyer.email`, `buyer.name`, `order.lines`,
+`order.total`, `order.currency`, `resume_url`; ohne Vorlage geht eine eingebaute, veröffentlichbare
+Blade-Mail (de/en). `resume_url` ist ein signierter Link (`abandoned.mail.resume_days`, Vorgabe 14)
+auf eine Bestellseite im Portal-Layout: Positionen, Gesamtpreis, Widerrufshinweis, Haken nach § 356
+Abs. 5 mit dem Wortlaut aus `meta.withdrawal` (sonst `messages.order_consent`) und die Schaltfläche
+„Zahlungspflichtig bestellen" (§ 312j Abs. 3). Der GET legt nichts an; erst der signierte POST startet
+über `Checkout::resume()` denselben Warenkorb als neue Zahlung — gleiche Positionen, Käufer, Herkunft,
+Rabatt und Marke, `meta.resumed_from` zeigt zurück, die Zustimmung ist frisch (jetzt, gezeigter
+Wortlaut, nur mit Haken) und wird nie kopiert. Ein zweiter Klick binnen einer Stunde findet die offene
+Kasse wieder. Oder eine eigene Adresse mit `{payment}`. Neue Spalte `payments.recovered_at`: gesetzt,
+wenn eine erinnerte Zahlung doch bezahlt wird, auch über den neu gestarteten Checkout. Register K·8.
+
+### Zahlungsarten
+
+`methods` (Liste von Mollie-Kennungen oder `STATAMIC_PAYMENTS_METHODS` mit Kommas) geht als `method`
+in die Mollie-Anfrage; ohne Angabe kein Schlüssel. Der Käufer wird nur dann zum Merken angemeldet
+(`customerId`, `sequenceType: first`), wenn mindestens eine der Methoden ein Mandat hinterlassen kann.
+`Support\PaymentMethods` hält die zwei Listen, das README die Tabelle. Register K·18.
+
+### Nachzügler
+
+- `EntitlementsBridge::grantFor()` gibt `meta.access` (`starts_at`, `days`, aus `Offer::accessWindow()`)
+  als `startsAt`/`expiresAt` an `Entitlements::grant()` weiter. Register K·5.
+- `payment_items.offer`: das Angebot, über das eine Position verkauft wurde — aus
+  `PaymentDetails::offer_handles` (Produkt-Handle → Angebots-Handle) oder aus dem `offer`-Schlüssel,
+  den der Katalog an die Zeile heftet; sonst null.
+- `payments:prune-legal-drafts` löscht unbestätigte Widerrufs- und Kündigungserklärungen nach sieben
+  Tagen (`--days`, `--dry-run`).
+- Kein `email:filter` mehr im Addon; die Formulare nutzen `EmailAddress::rule()` (war schon so).
+
+### Widerrufsbutton nach § 356a BGB
+
+Seit 19.06.2026 Pflicht, bis hierher nicht vorhanden. Neu: ein öffentlicher, zweistufiger Weg
+ohne Login unter `!/statamic-payments/widerruf` (Config `withdrawal.prefix`). Schritt 1 nimmt
+Name, E-Mail, Bestellkennung, Kontaktmittel und Nachricht; Schritt 2 zeigt die Angaben und die
+Schaltfläche „Widerruf bestätigen"; danach geht sofort die Eingangsbestätigung mit Kennung
+(`W-` plus acht Zeichen ohne 0/O/1/I), Datum, Uhrzeit und Zeitzone an den Verbraucher und eine
+Meldung an `withdrawal.notify` (sonst `portal.from`, sonst `mail.from`). Schritt 3 zeigt Kennung
+und Zeit, sonst nichts, und bleibt für jeden mit der Kennung lesbar; Schritt 2 nur für den
+Browser, der erklärt hat. Idempotent: ein zweiter Klick ist ein Widerruf, eine Mail, eine Zeit.
+
+Tabelle `payment_withdrawals`. Die Zuordnung zur Zahlung passiert nach der Bestätigung,
+serverseitig, nur bei eindeutigem Treffer (Adresse plus unsere Id oder die des Anbieters);
+das Formular verrät nie, ob eine Bestellung existiert. Eine Zustimmung nach § 356 Abs. 5 am
+Treffer wird dem Händler als `right_expired_hint` mitgegeben, nicht dem Verbraucher vorgehalten;
+ebenso, ob die Erklärung nach `withdrawal.days` (Vorgabe 14) einging.
+
+Footer: `&#123;&#123; payments:withdrawal_url }}`, `Legal\Links::withdrawal()`, Beschriftung aus
+`withdrawal.button` („Vertrag widerrufen"). Control Panel: Utility „Widerrufe" mit Zuordnung,
+Hinweisen, Filter offen/erledigt und der Action „Als erledigt markieren" (Notiz); Rechte
+`access withdrawals utility` und `handle payment withdrawals`.
+
+Rechtliche Entscheidungen dieser Fassung, von Adrian zu prüfen, keine Rechtsberatung: ohne
+Login; kein Bestandsorakel; unzugeordnet ist zulässig und wird gemeldet; erloschenes Recht ist
+Hinweis, keine Ablehnung; IP nur als gesalzener Hash; Musterbelehrung bleibt Host-Sache
+(`withdrawal.policy_url`). Das Lese-Recht ist core's Utility-Recht, nicht ein zweites
+`view payment withdrawals` — ein Schalter je Tür.
+
+### Kündigungsbutton nach § 312k BGB, ohne Login
+
+Der Portal-Weg (`/konto/kuendigen` → Magic-Link) bleibt als Komfortweg. Neu daneben, in
+derselben Mechanik wie der Widerruf: `!/statamic-payments/kuendigung` (Config
+`cancellation.prefix`), Schaltfläche „Verträge hier kündigen", Bestätigungsseite mit Art der
+Kündigung (ordentlich/außerordentlich, letztere mit Pflicht-Grund), Identifikation und
+gewünschtem Zeitpunkt unter „jetzt kündigen", danach Bestätigung per Mail und auf der Seite mit
+Datum, Uhrzeit und genanntem Zeitpunkt. Tabelle `payment_cancellations`.
+
+Ein eindeutig zugeordnetes **laufendes** Abo wird sofort über `Subscriptions::cancel()` beim
+Anbieter gekündigt (Anbieter zuerst, Zeile danach; `provider_cancelled_at`). Mehrdeutig, nicht
+laufend oder vom Anbieter verweigert: nichts am Abo geändert, Händler gemeldet, Verbraucher
+bekommt die Eingangsbestätigung trotzdem. Footer: `&#123;&#123; payments:cancellation_url }}`. Control
+Panel: Utility „Kündigungen", Rechte `access cancellations utility` und
+`handle payment cancellations`.
+
+Rechtliche Entscheidung dieser Fassung, von Adrian zu prüfen: ein genannter Zeitpunkt in der
+Zukunft hält die Kündigung beim Anbieter nicht auf — gekündigt wird die nächste Abbuchung, der
+Zeitpunkt steht in Zeile und Meldung. Keine Rechtsberatung.
+
+Nach Kritik (02.09.2026) geändert: Beim Anbieter gekündigt wird nur, was über die
+**Anbieter-Kennung** getroffen wurde; ein Treffer über unsere laufende Nummer wird zugeordnet,
+aber nicht gekündigt, und der Händler bekommt „über Kundennummer zugeordnet, bitte prüfen"
+(die Nummer ist erratbar, die Kennung nicht). `OfferController` schreibt einen eingereichten
+`consent_text` nur, wenn er `messages.order_consent` (de/en) oder einem Eintrag in
+`consent.accepted_texts` entspricht — sonst Server-Wortlaut plus `Log::warning('consent text
+mismatch')`. Dazu: benannte Limiter `statamic-payments.withdrawal` / `.cancellation` statt
+anonymem `throttle:`, `legal.timezone` für die Zeit auf Belegen, der Grund einer
+außerordentlichen Kündigung steht in der Bestätigungsmail, eine abgelaufene Session führt
+zurück aufs Formular statt auf eine 404, `MerchantAddress` warnt im Log beim Rückfall auf
+`mail.from`, und die Kündigungsliste blendet „Art" und „Gewünscht zum" per Vorgabe aus.
+
+Nebenbei: `Tags\Offer` heißt jetzt `Tags\Payments` (Handle unverändert `payments`), und
+`Portal\EmailAddress::rule()` ist die Adressprüfung als Validierungsregel — `email:filter`
+hätte jede Adresse mit Umlaut abgelehnt.
+
+### Die Einwilligung wird festgehalten statt verworfen (§ 356 Abs. 5 BGB)
+
+`payments` bekommt zwei Spalten, `consent_at` und `consent_text`. Bis hierher wurde
+`confirmed => accepted` geprüft und dann vergessen; der Kommentar im Code nannte das „the
+record", es gab keines. Jetzt gehen Zeitpunkt und der **vollständige Wortlaut**, der neben dem
+Haken stand, mit dem ersten INSERT in die Zeile — über `PaymentDetails`, wie `country`. Der Text
+selbst und keine Versionsnummer, weil der Wortlaut sich ändert und „hat zugestimmt" ohne die
+Fassung nichts belegt.
+
+Beide Spalten sind unveränderlich: ein späteres Umschreiben oder Löschen wirft eine
+`LogicException`. Von null auf einen Wert geht es genau einmal. Bestandszeilen bleiben null.
+
+`OfferController` schreibt die Zustimmung an die Folgezahlung (Wortlaut aus dem versteckten
+Feld `consent_text`, sonst der neue Sprachstring `messages.order_consent`); `FollowUp::accept()`
+erbt sie **nicht** von der Erstbestellung.
+
+Rechtliche Entscheidungen dieser Fassung, von Adrian zu prüfen, keine Rechtsberatung:
+beide Angaben oder keine; Zeitpunkt nie in der Zukunft; Wortlaut nicht leer und höchstens
+4000 Zeichen, abgelehnt statt gekürzt; jeder Kauf trägt seine eigene Zustimmung; der Zeitpunkt
+ist der Eingang des Formulars beim Server, nicht der Klick im Browser. Wer das Addon ohne
+`statamic-funnels` einsetzt, baut Bestellzusammenfassung, Schaltfläche und Einwilligungstext
+selbst und übergibt `consent_at`/`consent_text` — das Addon rendert keine Kasse.
+
+## 1.16.0 — 2026-08-31
+
+### Ein Mandat gehört dem Menschen, nicht dem Gerät
+
+`FollowUp::eligible()` nimmt jetzt zusätzlich die Adresse des Käufers, der gerade vor dem
+Bildschirm sitzt, und lehnt ab, wenn sie nicht zu der Zahlung passt, gegen die abgebucht werden
+soll. Dasselbe gilt für `accept()`, das die Adresse als fünftes Argument entgegennimmt und an die
+Prüfung weiterreicht. Wer nichts übergibt, bekommt das bisherige Verhalten — es gibt Aufrufer, die
+ihren Käufer aus einer signierten Sitzung kennen und keine Adresse zur Hand haben.
+
+Der Anlass war ein reproduzierter Fall in `statamic-funnels`: dort hing die Frage „wer ist das"
+an einem Besuchs-Cookie mit dreißig Tagen Laufzeit. Wer als Zweiter am selben Rechner durch
+denselben Funnel ging, bekam kein Kartenformular mehr. Mollie buchte per gespeichertem Mandat
+`sequenceType: recurring` auf den Kunden des ersten Kaufs ab, und Zugang wie Rechnung liefen auf
+dessen Adresse — die frisch eingegebene wurde von `FollowUp` schlicht überschrieben. Auf einem
+Familienrechner, im Büro oder in einer Bibliothek ist das kein Randfall.
+
+Diese Fassung entfernt die Möglichkeit nicht, sie verlangt nur einen Beleg. Steht an einer der
+beiden Seiten keine Adresse, gibt es nichts zu widersprechen, und es bleibt bei den übrigen
+Bedingungen.
+
+### Woran der Käufer seine Karte wiedererkennt
+
+Neue Spalten `payments.card_last4` und `payments.card_label`, gefüllt aus dem, was der Anbieter
+bei der Zahlung ohnehin mitliefert (`RemotePayment::$cardLast4` / `$cardLabel`). Gebraucht werden
+sie auf der Seite eines Nachfassangebots: die darf nicht abbuchen, ohne vorher zu sagen, womit —
+§ 312j Abs. 3 BGB verlangt die wesentlichen Angaben unmittelbar über dem Knopf, die Zahlungsart
+eingeschlossen. Zu holen sind sie nur im Moment der Zahlung; später kostet es einen
+Anbieter-Aufruf beim Rendern einer Seite.
+
+Vier Ziffern und ein Name wie „Mastercard" sind keine Kartennummer und fallen nicht unter PCI-DSS.
+Mehr wird nicht gespeichert. Bestandszeilen bleiben null, und jede Seite muss das aushalten.
+
+### Migration
+
+`2026_08_31_220000_add_card_hint_to_payments_table` — zwei nullbare Spalten auf `payments`.
+
 ## 1.15.0 — 2026-08-30
 
 ### Neu: `Brands::readerId()` — die fehlende Hälfte von `Brands::only()`

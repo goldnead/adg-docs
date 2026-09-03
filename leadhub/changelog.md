@@ -12,6 +12,78 @@ Release notes for `goldnead/statamic-leadhub`, as published with the package.
 Cross-version upgrade notes for the whole suite are in
 [Upgrading](/guide/upgrading).
 
+## 2.10.0 — 2026-09-03
+
+### Behoben: die Oberfläche sagt jetzt, wenn sie nichts tut
+
+Adrians Durchgang durch die Kontaktansicht und die Folgeseiten. Die Befunde waren fast alle
+dieselbe Sorte: etwas rendert, sieht fast richtig aus und sagt nicht, dass es nicht tut, was es
+soll.
+
+- **Die Bearbeiten-Aktion bei Custom Fields wurde nie gerendert.** Sie saß in einem
+  `#actions`-Slot, den `Listing` nicht hat, und Vue verwirft einen unbekannten Slot wortlos.
+- **Der Kontakt-Picker zeigte nie seinen Platzhalter.** Er band `''` statt `null`, und ein leerer
+  String gilt der CP-Combobox als getroffene Auswahl.
+- **13 Icon-Namen, die es in Statamic nicht gibt** (`user`, `add`, `check`, `tags`, `tasks`,
+  `archive`, `list`, `chart-pie` …). Ein unbekannter Name rendert einen leeren Kasten; neben einer
+  Überschrift liest sich das als falscher Einzug.
+- **Kopfaktionen in Coreform:** `…`-Menü zuerst, Primäraktion zuletzt, Löschen als
+  `DropdownItem variant="destructive"` statt rotem Knopf. `danger` gehört in den
+  Bestätigungsdialog, sonst nirgends.
+- **Status-Badges als Pille mit Farbe.** `color="default" size="sm"` ist optisch exakt ein kaputter
+  Knopf: dieselben Klassen wie `Button variant="default"`, nur mit 3px-Ecke.
+- **Rohe Spaltenwerte** (`open`, `won`, `note_added`) durch Beschriftungen ersetzt. Die Zeitleiste
+  fällt nie mehr auf den Ereignis-Schlüssel zurück.
+- Follow-ups und Firmenkontakte sind `Listing` statt Kartenlisten.
+
+### Neu: verknüpfen, filtern, von außen ansprechbar
+
+- **Firmen lassen sich vom Kontakt aus verknüpfen und trennen.** Der Pivot existiert seit 1.0, das
+  Control Panel konnte nie hineinschreiben.
+- **Tags, Custom Fields und Scoring werden in einem `Stack` bearbeitet** statt in Inline-Formularen
+  über der Tabelle — dieselbe Fläche, die die Filter des Listings benutzen.
+- **Aktive Filter sind sichtbar:** ein Chip je Filter mit `x` zum Löschen. Vorher zeigte ein
+  Dashboard-Link drei von neunzehn Kontakten und sah kaputt aus.
+- **Der Panel-Vertrag kennt eine Auswahl-Aktion**, damit ein Nachbar-Addon „auf eine Liste setzen"
+  anbieten kann, ohne dass LeadHub weiß, was eine Liste ist.
+
+## 2.9.0 — 2026-09-02
+
+### Neu: eine Seite je Mensch
+
+Die Kontaktseite zeigt jetzt oben fünf Kopfzahlen (erster Kontakt, letzter Kontakt, Käufe,
+Lebenszeitwert je Währung, aktive Zugänge) und darunter **eine** Zeitleiste, in der LeadHubs
+eigene Ereignisse mit dem stehen, was die Nachbar-Addons über dieselbe Person wissen: Käufe,
+offene und fehlgeschlagene Zahlungen und Erstattungen aus `statamic-payments`, erteilte,
+abgelaufene und entzogene Zugänge aus `statamic-entitlements`, Termine aus `statamic-booking`,
+Einwilligungen aus `statamic-consent` (nur, wenn der Kontakt eine `consent_id` trägt; die
+Einwilligungsdatensätze kennen absichtlich keine Adresse). Jeder Eintrag hat Zeitpunkt, Art,
+einen Satz, ein Zustandsbadge und, wo das Nachbar-Addon eine Ansicht hat, einen Link dorthin.
+
+**Die Leser liegen in LeadHub, nicht in den Nachbarn.** Ein `TimelineSource`-Contract, je Nachbar
+eine Klasse unter `src/Integrations/Timeline/`, Nachbar per String-Klassenname und `class_exists`
+erkannt — LeadHub setzt weiterhin nichts voraus. Ein fehlender Nachbar heißt: seine Quelle
+fehlt, mehr nicht. Ein Leser, der wirft, wird protokolliert und ausgelassen, die Seite steht.
+Zuordnung über `LOWER(TRIM(email))`, weil die Demo-Daten `doppelt@` und `DOPPELT@` als zwei
+Zeilen führen und beide zur selben Person gehören (SQLite faltet dabei nur ASCII, siehe README).
+Zahlungen werden auf die Marke des Kontakts plus `brand_id = 0` eingegrenzt, wie es Payments'
+eigene Kennzahl hält. Läuft der Zahlungs-Leser, werden die `payments.*`-Ereignisse der
+Payments-Bridge in `leadhub_events` ausgeblendet, damit ein Kauf einmal erscheint; läuft er
+nicht, bleiben sie. Ein Leser, der beim Lesen wirft, steht auf der Seite als „Quelle X konnte
+nicht gelesen werden" statt als grüner Chip über einer Lücke.
+
+Neu dazu die Handlung **„Zugang freischalten“** in den Aktionen, nur mit installiertem
+entitlements: Produkt wählen, Notiz, ein Schreibvorgang über die Entitlements-Fassade
+(Quelle `manual`, Referenz `leadhub:<uuid>`, Notiz und Nutzer in `meta`). Eigene Berechtigung
+`grant leadhub access`; ohne sie 403, mit ihr ohne entitlements 404. Der Klick steht als
+`access_granted` auf der LeadHub-Zeitleiste — nur, wenn wirklich etwas Neues geöffnet wurde:
+hatte die Person den Zugang schon, sagt die Meldung das und es entsteht kein Ereignis; ist der
+Zugang entzogen, wird der Klick abgelehnt und auf „Wiederherstellen" in Entitlements verwiesen,
+denn die Fassade lässt einen entzogenen Zugang absichtlich entzogen.
+
+Konfiguration: `leadhub.timeline.sources.*` schaltet einzelne Leser ab, `leadhub.timeline.limit`
+begrenzt die Liste. Fassade: `LeadHub::registerTimelineSource()` für eigene Quellen.
+
 ## 2.8.0 — 2026-08-29
 
 ### Neu: die Zahlen dieses Addons erscheinen in Insights

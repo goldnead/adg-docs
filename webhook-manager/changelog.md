@@ -12,6 +12,54 @@ Release notes for `goldnead/statamic-webhook-manager`, as published with the pac
 Cross-version upgrade notes for the whole suite are in
 [Upgrading](/guide/upgrading).
 
+## 2.6.0 — 2026-09-03
+
+### Geändert: `PATCH /cp/webhook-manager/settings` antwortet mit einem Redirect
+
+Vorher kam JSON zurück. Mit dem Redirect bekommt das Speichern Fortschrittsbalken, Toast und
+Zurück-Knopf, und die Diagnose-Ansicht zeigt nicht mehr den Stand vor dem Speichern. Einziger
+bekannter Konsument ist die Settings-Seite selbst — wer die Route extern gescriptet hat und JSON
+erwartet, merkt es.
+
+### Behoben: vier Dinge, die rendern und nichts tun
+
+- **`TabTrigger :label` — das Prop heißt `text`/`name`.** Die Tab-Leiste blieb leer, **Body und
+  Preview waren dadurch unerreichbar.** Vue reicht ein unbekanntes Prop als HTML-Attribut durch,
+  also warnt nichts.
+- **`Alert variant="danger"` und achtmal `variant="info"`.** `Alert` kennt nur
+  `default`/`warning`/`error`/`success`; Fehlschläge und Hinweise erschienen neutral.
+- **`:message="…"` statt `:text="…"` an zwei Bannern.** Eine geglückte und eine gescheiterte
+  Vorschau sahen identisch aus, nämlich nach nichts.
+- **`CommandPaletteItem @click` statt `:action`, `Panel collapsible`, `DropdownItem danger`** —
+  alle drei sind keine Props.
+
+Dazu: vier rote Kopfknöpfe ins `…`-Menü, zehn Panels bekamen ihre `Card`, und die Inbound-Liste
+zeigt Klartext statt `bearer` und `static_header` (neuer Test).
+
+Sieben `axios`-Aufrufe bleiben absichtlich: sie holen JSON für eine Anzeige auf derselben Seite
+und wechseln sie nicht.
+
+## 2.5.0 — 2026-09-02
+
+### Neu: Zustellungen am Objekt
+
+Jede Zustellung weiß jetzt, um welches Objekt es ging. Zwei neue Spalten auf
+`webhook_deliveries`, `subject_type` und `subject_id`, werden beim Schreiben des Snapshots
+einmal aufgelöst: aus einem expliziten Paar im Payload, aus konfigurierten Schlüsseln wie
+`payment_id`, aus dem Trigger-Muster (`payments.*`) mit der Quellreferenz, oder zuletzt aus
+Quelltyp und Referenz des Events selbst. Die eingebauten Trigger für Einträge, Benutzer,
+Dateien und Formulareingänge bekommen damit ohne Konfiguration ein Objekt. Die Zuordnung
+steht in `config/webhook-manager.php` unter `subjects` und lässt sich um eigene Typen ergänzen.
+
+Lesbar ist das Protokoll von drei Seiten. Für PHP gibt es die Fassade `WebhookLog` mit
+`forSubject()`, `countForSubject()` und `subjectTypes()`. Im Control Panel hat die
+Zustellungsliste einen Objektfilter über der Tabelle, eine Spalte „Objekt“ und die
+Detailansicht zeigt das Objekt neben dem Trigger. Für andere Addons gibt es die global
+registrierte Vue-Komponente `webhook-deliveries-for-subject`, die über den neuen Endpunkt
+`deliveries/for-subject` liest; Berechtigung und Brand-Scope gelten dort unverändert.
+
+Die Migration ist wiederholbar: jeder Schritt prüft vorher, ob Spalte und Index schon da sind.
+
 ## 2.4.0 — 2026-08-29
 
 ### Neu: die Zahlen dieses Addons erscheinen in Insights
