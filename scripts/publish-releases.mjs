@@ -181,6 +181,8 @@ for (const entry of targets) {
 
   const missing = []
   const untagged = []
+  /** Newest tagged version in the changelog, whether or not it has a release. */
+  let newestTag = null
 
   for (const { version, body } of releases) {
     const tag = tagFor(version, tags)
@@ -188,6 +190,7 @@ for (const entry of targets) {
       untagged.push(version)
       continue
     }
+    newestTag ??= tag
     if (already.has(tag)) {
       skipped++
       continue
@@ -221,6 +224,7 @@ for (const entry of targets) {
   if (!APPLY) continue
 
   // Oldest first, so the newest release ends up flagged "Latest".
+  let createdHere = 0
   for (const { tag, version, body } of [...missing].reverse()) {
     try {
       await run(
@@ -229,9 +233,30 @@ for (const entry of targets) {
         { cwd },
       )
       created++
+      createdHere++
       console.log(`      created ${tag}`)
     } catch (e) {
       notes.push(`${entry.slug} ${tag}: ${(e.stderr || e.message).trim().split('\n')[0]}`)
+    }
+  }
+
+  // "Oldest first" is only half the story, and the half that is not true when
+  // this runs as a backfill. GitHub hands the "Latest" badge to whichever
+  // release was **created** last, not to the highest version — so filling in
+  // v2.1.0…v2.14.0 behind an already-published v2.14.1 leaves the badge on
+  // v2.14.0 and the real newest release unmarked. That happened on 2026-09-04
+  // to six of the eight Marketplace repos in one run.
+  //
+  // Setting it explicitly is cheap and is a no-op when the badge is already
+  // right, so it runs after every repo that got anything.
+  if (createdHere && newestTag) {
+    try {
+      await run('gh', ['release', 'edit', newestTag, '--latest'], { cwd })
+      console.log(`      latest → ${newestTag}`)
+    } catch (e) {
+      notes.push(
+        `${entry.slug}: could not flag ${newestTag} as latest: ${(e.stderr || e.message).trim().split('\n')[0]}`,
+      )
     }
   }
 }
