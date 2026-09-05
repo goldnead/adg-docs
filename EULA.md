@@ -1,9 +1,12 @@
-**Version 0.1, draft of 5 September 2026. Not yet approved and not in force.**
+**Version 1.0, approved 5 September 2026. In force for licences bought on or after that date.**
 
 ## Parties
 
 **Licensor:** Adrian Goldner, Keplerstraße 25, 60318 Frankfurt am Main, Germany.
-VAT identification number: [to be filled in].
+Tax number: 014 822 04373, Finanzamt Frankfurt am Main.
+VAT identification number: applied for, not yet issued. **Until it is, we do not sell to
+businesses in other EU member states**, because a reverse-charge invoice needs both parties'
+numbers (§ 14a Abs. 1 UStG). Sales within Germany and outside the EU are unaffected.
 Contact: [info@adriangoldner.com](mailto:info@adriangoldner.com).
 
 **Licensee:** the business that buys a licence.
@@ -221,7 +224,10 @@ agency year is priced at our rate on the day you buy it.
 
 - German customers: we are a small business under § 19 UStG.
 - Businesses in another EU member state: reverse charge. You account for the tax yourself and
-  give us a valid VAT identification number.
+  give us a valid VAT identification number. **Not available today:** our own VAT identification
+  number is applied for and not yet issued, and without it the invoice would be incomplete under
+  § 14a Abs. 1 UStG. Until it arrives we do not sell to businesses in other EU member states,
+  and this paragraph goes away once it does.
 - Businesses outside the EU: the supply is not taxable in Germany.
 
 Any tax due in your own country is yours to handle.
