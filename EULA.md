@@ -51,6 +51,12 @@ automatically and there is nothing to cancel.
 
 ## 2. What the licence grants
 
+**Running the Suite on a production domain requires a licence, even though nothing in the code
+checks for one.** Every package is public on Packagist and installs without a key, so you can
+build with it, test it and evaluate it freely. The moment a site goes live, it needs a licence.
+That is the whole of the enforcement, and it rests on you rather than on a lock: see section 5
+for why we built it that way.
+
 We grant you a non-exclusive, worldwide right to:
 
 - install and run the Suite on the production domains your licence covers;
@@ -67,7 +73,9 @@ The right runs for your term. For the versions you installed during that term it
 afterwards, as section 4 describes.
 
 **The Suite is licensed, not sold.** We keep every right we do not grant here, including
-copyright in the code. If a package in Schedule A ships editions, your licence covers its paid
+copyright in the code, **except for contributions written by other people, whose authors keep
+the copyright in what they wrote.** Table of Contents carries such contributions from the years
+when it was MIT-licensed, and versions of it released under MIT stay available under MIT. If a package in Schedule A ships editions, your licence covers its paid
 edition; Statamic may still show the alert described in section 5 for that package.
 
 ## 3. What the licence does not allow
@@ -180,8 +188,10 @@ Our liability is limited as follows:
   whose fulfilment makes proper performance possible at all and on whose fulfilment you may
   routinely rely), and then only for damage that was foreseeable and typical for this kind of
   agreement.
-- **Capped**, in that case, at what you paid us in the twelve months before the damage
-  occurred.
+- **Capped**, in that case, at the greater of what you paid us in the twelve months before the
+  damage occurred and the price of the licence you hold. A site licence is a one-off purchase,
+  so a cap tied only to the last twelve months would fall to zero in the second year; it does
+  not.
 - **Excluded otherwise**, in particular for loss of profit, for loss of data where you had no
   working backup, and for consequential damage.
 
@@ -235,7 +245,9 @@ written consent, which we will not unreasonably withhold.
 
 We may change these terms for new purchases. **A change never applies backwards to a licence
 you already hold.** The version of this document current on the day you bought governs your
-licence, and we keep every version available.
+licence. Every version of this document carries a version number and a date in its first line,
+and we keep each one we have published. Ask us for the version that governs your licence and we
+will send it to you.
 
 We may also add a package to Schedule A or discontinue one, for new purchases. **Neither
 changes a licence already sold.** If we discontinue a package during your term, you keep the
