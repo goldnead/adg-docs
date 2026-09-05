@@ -155,6 +155,7 @@ export default defineConfig({
             { text: 'Introduction', link: '/guide/' },
             { text: 'The suite', link: '/guide/suite' },
             { text: 'Maturity: what is proven', link: '/guide/maturity' },
+            { text: 'How this is built', link: '/guide/how-this-is-built' },
             { text: 'The commerce suite', link: '/guide/commerce' },
             { text: 'Installation', link: '/guide/installation' },
             { text: 'The demo playground', link: '/guide/demo' },

@@ -5,7 +5,7 @@ description: Welche Pflichtangaben beim Verkauf digitaler Produkte in Deutschlan
 # Pflichtangaben beim Verkauf in Deutschland (Entwurf)
 
 ::: danger ENTWURF vom 01.09.2026
-Von Claude verfasst, von Adrian noch nicht geprüft. Kein Rechtsrat. Die Spalte „Suite" beruht auf einem Durchgang durch den Quellcode aller Addons am 01.09.2026 und nennt nur, was dort steht. Paragraphen mit dem Zusatz „prüfen" sind ungesichert.
+**Dieser Text ist ein Entwurf und anwaltlich nicht geprüft. Er ist kein Rechtsrat.** Die Spalte „Suite" beruht auf einem Durchgang durch den Quellcode aller Addons am 01.09.2026 und nennt nur, was dort steht. Paragraphen mit dem Zusatz „prüfen" sind ungesichert. Wie diese Dokumentation entsteht, steht unter [How this is built](/guide/how-this-is-built).
 :::
 
 Diese Handreichung ist für Betreiber, die mit [Payments](/payments/), [Funnels](/funnels/), [Invoices](/invoices/), [Marketing](/marketing/) und [Consent](/consent/) digitale Produkte an Kunden in Deutschland verkaufen: Kurse, Downloads, Mitgliedschaften, Abos. Sie sagt für jede Pflicht, woher sie kommt, was die Addons davon abnehmen und was bei dir bleibt. Die Suite ist Werkzeug, nicht Rechtsabteilung: sie liefert Wortlaute, Felder und Belege dort, wo das Gesetz einen bestimmten Wortlaut oder Beleg verlangt, und sie schreibt weder Impressum noch Datenschutzerklärung noch Widerrufsbelehrung für dich.

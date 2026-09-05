@@ -5,7 +5,7 @@ description: "Der Lizenzvertrag für die Addon-Suite als Paket: drei Stufen, was
 # Suite EULA (Entwurf)
 
 ::: danger ENTWURF vom 05.09.2026
-Von Claude verfasst, von Adrian noch nicht freigegeben. Kein Rechtsrat. Solange dieser
+**Dieser Text ist ein Entwurf und noch nicht freigegeben. Er ist kein Rechtsrat.** Solange dieser
 Kasten hier steht, ist der Text kein gültiger Vertrag und darf nicht als solcher verwendet
 werden. Freigabe läuft über `STATE/approvals/approval-suite-eula-freigeben.md` in GoldnerOS.
 :::

@@ -5,7 +5,7 @@ description: Wann Käufer der Suite einen Auftragsverarbeitungsvertrag brauchen,
 # AVV-Baustein (Entwurf)
 
 ::: danger ENTWURF vom 01.09.2026
-Von Claude verfasst, von Adrian noch nicht geprüft. Kein Rechtsrat. Stellen, die mit „prüfen" markiert sind, sind offen und gehören vor einer Nutzung zu einer Rechtsanwältin oder einem Rechtsanwalt.
+**Dieser Text ist ein Entwurf und anwaltlich nicht geprüft. Er ist kein Rechtsrat.** Stellen, die mit „prüfen" markiert sind, sind offen und gehören vor einer Nutzung zu einer Rechtsanwältin oder einem Rechtsanwalt. Wie diese Dokumentation entsteht, steht unter [How this is built](/guide/how-this-is-built).
 :::
 
 Diese Seite ist auf Deutsch, weil sie sich an Betreiber richtet, die mit der Suite in Deutschland verkaufen und dabei deutschem und europäischem Datenschutzrecht unterliegen. Der Rest der Dokumentation ist auf Englisch.
