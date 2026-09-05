@@ -35,7 +35,10 @@ export default defineConfig({
   lastUpdated: true,
 
   // Repo docs, not site pages.
-  srcExclude: ['README.md', 'deploy/**', 'scripts/**'],
+  // `EULA.md` is the authoritative licence text and ships with the suite
+  // installation rather than as a page of its own. `/guide/suite-eula`
+  // includes it, so it appears on the site exactly once.
+  srcExclude: ['README.md', 'EULA.md', 'deploy/**', 'scripts/**'],
   // Strict by default: a broken internal link fails the build. Set
   // DOCS_ALLOW_DEAD_LINKS=1 while drafting a section whose targets do not exist yet.
   ignoreDeadLinks: process.env.DOCS_ALLOW_DEAD_LINKS === '1',
@@ -185,6 +188,7 @@ export default defineConfig({
         {
           text: 'Verkauf in Deutschland',
           items: [
+            { text: 'Suite EULA (Entwurf)', link: '/guide/suite-eula' },
             { text: 'AVV-Baustein (Entwurf)', link: '/guide/avv-baustein' },
             { text: 'Pflichtangaben (Entwurf)', link: '/guide/pflichtangaben' },
           ],
