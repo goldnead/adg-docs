@@ -2,7 +2,7 @@
 
 ## Parties
 
-**Licensor:** Adrian Goldner, [street and number to be filled in], Frankfurt am Main, Germany.
+**Licensor:** Adrian Goldner, Keplerstraße 25, 60318 Frankfurt am Main, Germany.
 VAT identification number: [to be filled in].
 Contact: [info@adriangoldner.com](mailto:info@adriangoldner.com).
 
@@ -56,6 +56,12 @@ We grant you a non-exclusive, worldwide right to:
 - install and run the Suite on the production domains your licence covers;
 - modify the code for your own use, including for a client site you build and operate;
 - keep and run copies for development, staging, backup and archiving.
+
+**Issues and pull requests are welcome.** Every package in Schedule A has its source on
+GitHub with issues open, and you do not need a licence to file one. If you send us a pull
+request, you grant us a non-exclusive, worldwide, perpetual and irrevocable right to use,
+modify and distribute what you sent as part of the package, under the package's own licence.
+You keep the copyright in your contribution. We are not obliged to merge anything.
 
 The right runs for your term. For the versions you installed during that term it keeps running
 afterwards, as section 4 describes.
@@ -135,7 +141,13 @@ address and the invoice PDF, and your records keep it as long as they keep the i
 that has a Marketplace listing when no Marketplace licence is present for it. The package keeps
 working. The wording differs on a development domain, but the alert still appears. Of the
 packages in Schedule A, only Table of Contents has a listing today. **A Suite licence is not a
-Statamic Marketplace licence.** If you need one, write to us.
+Statamic Marketplace licence**, because the Marketplace is Statamic's and we cannot grant you
+a licence in their system by selling you ours.
+
+**You do not have to buy that listing separately.** Table of Contents is our own package, so
+we issue you a Marketplace licence for it at no extra cost, and the alert goes away. Ask us
+for it and we will send it. If a further package in Schedule A is listed on the Marketplace
+later, the same applies to it.
 
 Brand Context is an MIT package and not part of this agreement. It offers an optional
 `license_check` callable that a product built on these packages can use to gate its own
@@ -187,6 +199,11 @@ we receive payment.**
 **A licence is not refundable**, apart from a claim under the statutory warranty rights in
 section 7 and the consumer case under Scope above.
 
+**Buying a package on its own first does not reduce the price of the Suite.** Some packages in
+Schedule A are sold individually on the Statamic Marketplace. If you bought one there and later
+buy a Suite licence, the Suite costs its full price. The two purchases are separate, and we
+credit nothing from one against the other.
+
 The prices in section 1 are those current on the version date of this document. A renewal or an
 agency year is priced at our rate on the day you buy it.
 
@@ -206,8 +223,10 @@ production domain, tell us in writing and the licence moves with it. **A transfe
 a licence. One production domain stays covered.**
 
 The same applies when you hand a site over to the client who will run it, with one difference
-under an agency licence: there we issue that client a site licence at our rate on the day, or
-move an existing one. Section 4 covers sites that are still live when an agency term ends.
+under an agency licence: there the client needs a licence of their own to keep receiving
+updates, and **that licence is a purchase, not something the agency licence includes.** We
+issue it at our rate on the day, or move an existing one. Section 4 covers sites that are still
+live when an agency term ends.
 
 Apart from these cases you may not transfer this agreement or any licence under it without our
 written consent, which we will not unreasonably withhold.
