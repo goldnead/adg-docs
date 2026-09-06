@@ -217,7 +217,7 @@ export default defineConfig({
 
     footer: {
       message:
-        'Built by <a href="https://gldnr.studio">gldnr.studio</a>. Statamic is a trademark of Wilderborn.',
+        'Built by <a href="https://adriangoldner.dev">adriangoldner.dev</a>. Statamic is a trademark of Wilderborn.',
       copyright: `© ${new Date().getFullYear()} Adrian Goldner`,
     },
 
