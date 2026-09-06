@@ -4,9 +4,13 @@ description: "Der Lizenzvertrag für die Addon-Suite als Paket: drei Stufen, was
 
 # Suite EULA
 
-::: info VERSION 1.0, FREIGEGEBEN AM 05.09.2026
+::: info VERSION 1.1, FREIGEGEBEN AM 06.09.2026
 Dieser Text gilt für Lizenzen, die ab diesem Tag gekauft werden. Er ist kein Rechtsrat, und er
 ist anwaltlich nicht geprüft.
+
+Jede Fassung ist nachlesbar: die Datei liegt als `EULA.md` im **öffentlichen** Repo
+[goldnead/adg-docs](https://github.com/goldnead/adg-docs). Welcher Wortlaut an welchem Tag
+galt, lässt sich damit ohne Nachfrage belegen.
 
 **Eine Lücke benennt er selbst:** die USt-IdNr. ist beantragt und noch nicht erteilt. Bis sie da
 ist, wird nicht an Unternehmen in anderen EU-Mitgliedstaaten verkauft — eine

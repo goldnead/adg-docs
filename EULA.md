@@ -1,4 +1,8 @@
-**Version 1.0, approved 5 September 2026. In force for licences bought on or after that date.**
+**Version 1.1, approved 6 September 2026. In force for licences bought on or after that date.**
+Version 1.0 of 5 September 2026 was the first approved text; no licence was sold under it. The
+only change in 1.1 is in section 10, and it takes something away from us rather than from you:
+the repository holding this file is now public, so which wording was in force on a given day is
+verifiable without asking us.
 
 ## Parties
 
@@ -252,8 +256,10 @@ written consent, which we will not unreasonably withhold.
 We may change these terms for new purchases. **A change never applies backwards to a licence
 you already hold.** The version of this document current on the day you bought governs your
 licence. Every version of this document carries a version number and a date in its first line,
-and we keep each one we have published. Ask us for the version that governs your licence and we
-will send it to you.
+and **you do not have to take our word for which one that was.** This file lives at
+[github.com/goldnead/adg-docs](https://github.com/goldnead/adg-docs) as `EULA.md`, in a public
+Git history: the wording in force on any given day is a matter of record, and you can read it
+without asking us. Ask anyway if you prefer, and we will send it.
 
 We may also add a package to Schedule A or discontinue one, for new purchases. **Neither
 changes a licence already sold.** If we discontinue a package during your term, you keep the
