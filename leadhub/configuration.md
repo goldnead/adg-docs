@@ -14,17 +14,25 @@ first if a value in the file does not match what the addon is doing.
 
 ## Settings in the Control Panel
 
-**2.3.0.** Under **LeadHub → Settings**, with the `manage leadhub settings` permission, 28
+Under **Settings → Addon Settings**, with the `manage leadhub settings` permission, 28
 fields are editable: submission handling, payload redaction, all feature flags, the export
 target and queue threshold, the scoring fallbacks, the click-tracking dedupe window and the
 notification switches.
 
-Before 2.3.0 that screen printed `config/leadhub.php` and told you to go and edit a file on
-the server.
+::: warning Moved in 2.11.0
+The screen used to live at **LeadHub → Settings**, with its own table `leadhub_settings`. It is
+now one section on the shared screen every addon in the suite registers with, provided by
+`goldnead/statamic-brand-context` 1.12 or newer — see
+[Addon settings](/brand-context/settings). The old URL redirects, the permission name is
+unchanged, and an upgrade migration carries your stored values across. Nothing to do by hand
+beyond `php artisan migrate`.
+
+`leadhub_settings` is left in place for one minor version so a rollback keeps its values.
+:::
 
 ### Only the difference is stored
 
-One row per changed key in the `leadhub_settings` table, applied over the config at boot.
+One row per changed key in the `brand_settings` table, applied over the config at boot.
 
 Three consequences worth having in mind:
 
@@ -33,12 +41,13 @@ Three consequences worth having in mind:
   can still move that default and have it apply.
 - **An install that never opens the screen is indistinguishable from one on an earlier
   release.** Nothing is written until something is changed.
-- **The table is not brand-scoped.** These are properties of the installation.
+- **The values are brand-scoped** since 2.11.0, unlike the table they replaced. On a
+  single-brand install nothing changes; on a multi-brand one each brand carries its own set,
+  and the switcher in the header decides which you are editing.
 
 The form, the validation and the boot-time override all read one definition
-(`src/Support/Settings.php`). The values are applied in the addon's `bootAddon()`, not in a
-Control Panel middleware, so a queue worker that comes up later — an export, the digest —
-sees the same values.
+(`src/Support/Settings.php`). The overrides are applied once every provider has booted, so a
+queue worker that comes up later — an export, the digest — sees the same values.
 
 ### What is editable
 
@@ -74,11 +83,11 @@ printed the same way.
 
 ### On the flat driver the screen is read-only
 
-`leadhub_settings` is a database table, and a flat-driver install is not asked to run
-migrations. Rather than answering a save with a SQL error, the screen disables every control,
-hides the save button and says why: the table does not exist, and `php artisan migrate` will
-create it. On a non-eloquent driver that command creates **only this one table** and nothing
-else.
+`brand_settings` is a database table, and a flat-driver install is not asked to run
+migrations. Rather than answering a save with a SQL error, the screen hides the save button and
+says why: the table does not exist, and `php artisan migrate` will create it. On a
+non-eloquent driver that command creates only the tables `goldnead/statamic-brand-context`
+ships, and nothing of LeadHub's own.
 
 Until then the values shown are what `config/leadhub.php` says.
 

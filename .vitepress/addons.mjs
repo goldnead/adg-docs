@@ -127,6 +127,7 @@ export const addons = [
       { text: 'Concepts', link: 'concepts' },
       { text: 'Scoping models', link: 'scoping' },
       { text: 'Brand members', link: 'members' },
+      { text: 'Addon settings', link: 'settings' },
       { text: 'Public routes', link: 'public-routes' },
       { text: 'Extension points', link: 'extending' },
     ],

@@ -209,10 +209,12 @@ An empty rule set matches **nobody**. `SegmentService::MAX_DEPTH = 1`.
 `leadhub_pipelines`, `leadhub_stages`, `leadhub_stage_transitions`,
 `leadhub_scoring_rules` and `leadhub_sync_logs` when those modules are on.
 
-`leadhub_settings` is the exception to the driver rule: it holds the Control Panel's
-[settings overrides](/leadhub/configuration#settings-in-the-control-panel), one row per
-changed key, and it is the **only** table a flat-driver install is offered — `php artisan
-migrate` there creates it and nothing else. It is not brand-scoped.
+`leadhub_settings` held the Control Panel's setting overrides until 2.11.0. They now live in
+`brand_settings`, provided by `goldnead/statamic-brand-context` — see
+[settings overrides](/leadhub/configuration#settings-in-the-control-panel) and
+[Addon settings](/brand-context/settings). `php artisan migrate` carries the rows across and
+leaves the old table in place for one minor version, so a rollback keeps its values. Unlike
+its predecessor, `brand_settings` **is** brand-scoped.
 
 `leadhub_stage_transitions` is one row per stage change, with the note that says why, and it
 is what the [deal screen](/leadhub/pipelines#the-deal-screen) reads.

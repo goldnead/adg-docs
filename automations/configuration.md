@@ -8,8 +8,21 @@ php artisan vendor:publish --tag=statamic-automations-config
 
 ## Editing settings in the Control Panel
 
-Since 2.3.0 part of this file is editable from **Automations → Settings**, behind
-`manage automation settings`. What the screen offers:
+Part of this file is editable from **Settings → Addon Settings**, behind
+`manage automation settings`.
+
+::: warning Moved in 2.16.0
+The screen used to live at **Automations → Settings**, with its own table
+`automation_settings`. It is now one section on the shared screen every addon in the suite
+registers with, provided by `goldnead/statamic-brand-context` 1.12 or newer — see
+[Addon settings](/brand-context/settings). The old URL redirects, the permission name is
+unchanged, and an upgrade migration carries your stored values across. Nothing to do by hand
+beyond `php artisan migrate`.
+
+`automation_settings` is left in place for one minor version so a rollback keeps its values.
+:::
+
+What the screen offers:
 
 | Group | Keys |
 | --- | --- |
@@ -18,7 +31,7 @@ Since 2.3.0 part of this file is editable from **Automations → Settings**, beh
 | Test mode | all five `test_mode.*` switches |
 | Payload redaction | `security.redact_keys` |
 
-**Only the difference from the file is stored** — one row in `automation_settings` per key somebody
+**Only the difference from the file is stored** — one row in `brand_settings` per key somebody
 actually changed. Everything else keeps following `config/automations.php`, so upgrading the package
 still moves the defaults, and a site that never opens this screen behaves exactly like one running a
 release from before the screen existed.
@@ -43,9 +56,13 @@ install without moving them first. Anything read from `env()` — `ai.api_key` a
 to the deployment: a key in the database is a key in the backup instead of in the secret store. And
 `integrations` is not a setting at all, it is a detection.
 
-The table is also **not brand-scoped**, unlike every other one in this addon. These are properties of
-the installation; a queue name per brand would mean a worker draining one brand's jobs and not the
-other's, with nothing anywhere saying so.
+The values **are** brand-scoped since 2.15.0, unlike the table this replaced. On a single-brand
+install — which is nearly all of them — nothing changes: there is one brand and everything lives on
+it. On a multi-brand install each brand carries its own values, and the brand switcher in the
+Control Panel header decides which set you are editing.
+
+Be deliberate with `queue` and `queue_connection` there. Giving two brands different queues means a
+worker draining one and not the other, with nothing anywhere saying so.
 :::
 
 ## Queue

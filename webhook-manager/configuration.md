@@ -15,25 +15,35 @@ for a value on the server.
 
 ## Settings in the Control Panel
 
-**2.2.0.** Under **Settings**, with the `manage webhook settings` permission, 32 fields are
-editable: modules, retry policy, HTTP defaults, inbound limits, signature headers, logging
-and retention. Before 2.2.0 that screen printed the config file and told you to go and edit
-it on the server.
+Under **Settings → Addon Settings**, with the `manage webhook settings` permission, 32 fields
+are editable: modules, retry policy, HTTP defaults, inbound limits, signature headers, logging
+and retention.
 
-There is no read-only version of the screen. It prints the resolved configuration, so being
-allowed to look at it is the same authority as being allowed to change it, and it is gated
-on the one permission.
+::: warning Moved in 2.8.0
+The screen used to be this addon's own, with its own table `webhook_settings`. It is now one
+section on the shared screen every addon in the suite registers with, provided by
+`goldnead/statamic-brand-context` 1.12 or newer — see
+[Addon settings](/brand-context/settings). The old URL redirects, the permission name is
+unchanged, and an upgrade migration carries your stored values across. Nothing to do by hand
+beyond `php artisan migrate`.
+
+`webhook_settings` is left in place for one minor version so a rollback keeps its values.
+
+Moved with it: the deployment-owned values, the resolved config tree with its secrets masked,
+and the storage-driver switch are now on the **Debug** screen. None of the three was a setting.
+:::
 
 ### Only the difference is stored
 
-One row per changed key in the `webhook_settings` table, applied over the config at boot.
+One row per changed key in the `brand_settings` table, applied over the config at boot.
 
 - **A value set back to what the file says deletes its row again.** The shipped defaults keep
   moving with the package instead of being frozen the day somebody first opened the screen.
 - **An install that never opens the screen behaves exactly as before.**
-- **The table is not brand-scoped**, unlike everything else in this addon. A timeout or a
-  feature toggle that differed per brand would mean one queue worker applying different rules
-  depending on whose delivery it happened to pick up.
+- **The values are brand-scoped** since 2.8.0, unlike the table they replaced. Be deliberate
+  about that on a multi-brand install: a timeout or a feature toggle that differs per brand
+  means one queue worker applying different rules depending on whose delivery it happened to
+  pick up.
 
 The screen, the validation and the boot-time override all read one definition
 (`Support\Settings`), which is the point of the rewrite: the read-only version kept its own
