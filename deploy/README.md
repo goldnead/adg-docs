@@ -1,21 +1,32 @@
 # Deployment
 
-`docs.adriangoldner.dev` is a static site built on the Hetzner host and served by the
-existing Caddy container.
+`docs.adriangoldner.dev` is a static site built on the host and served by the existing
+Caddy container.
 
 No new service, no new container, no new runtime. The site is HTML on disk.
+
+> **This repository is public.** Host name, absolute paths, the webhook endpoint and the
+> GitHub webhook id are therefore placeholders below. The real values live in
+> `GoldnerOS/env/server.md` and `GoldnerOS/SYSTEM/DEPLOY-ARCHITECTURE.md`. Set them once
+> before you follow any command here:
+>
+> ```bash
+> HOST=…        # deploy target
+> REPO=…        # checkout on the host
+> WEBROOT=…     # directory Caddy serves
+> ```
 
 ## The chain
 
 ```
 push to main
-  └─ GitHub webhook  →  https://webhook.adriangoldner.com/hooks/deploy-adg-docs
-      └─ wrapper in the adriangoldner-webhook container
+  └─ GitHub webhook  →  the webhook endpoint (see GoldnerOS)
+      └─ wrapper in the webhook container
           └─ deploy/deploy-adg-docs.sh on the host
-              ├─ git reset --hard origin/main   in /opt/adg-docs
+              ├─ git reset --hard origin/main   in $REPO
               ├─ npm ci
               ├─ npm run build                  (strict: dead links fail it)
-              └─ rsync .vitepress/dist/ → /srv/adg-docs/
+              └─ rsync .vitepress/dist/ → $WEBROOT
                   └─ Caddy file_server
 ```
 
@@ -27,16 +38,16 @@ therefore aborts the deploy, which is the intended behaviour.
 
 | | |
 | --- | --- |
-| Host | Hetzner, `157.90.224.18` |
-| Repo | `/opt/adg-docs` |
-| Webroot | `/srv/adg-docs` |
+| Host | `$HOST` |
+| Repo | `$REPO` |
+| Webroot | `$WEBROOT` |
 | Node | host Node 22 (`/usr/bin/node`) |
-| Reverse proxy | `n8n-docker-caddy-caddy-1` |
-| Caddyfile | `/root/n8n-docker-caddy/caddy_config/Caddyfile` |
-| Deploy log | `/var/log/adg-docs-deploy.log` |
-| DNS | Cloudflare zone `adriangoldner.dev`, A record `docs` → `157.90.224.18`, proxied |
-| GitHub webhook | id `658909925`, push events on `main` |
-| Hook definition | `deploy-adg-docs` in `/opt/webhook/hooks.json` |
+| Reverse proxy | the shared Caddy container |
+| Caddyfile | the shared Caddyfile on the host |
+| Deploy log | a log file on the host |
+| DNS | Cloudflare zone `adriangoldner.dev`, A record `docs`, **proxied** |
+| GitHub webhook | push events on `main` |
+| Hook definition | `deploy-adg-docs` in the webhook container's `hooks.json` |
 
 ## First-time setup
 
@@ -107,7 +118,10 @@ Cloudflare, zone `adriangoldner.dev`:
 
 | Type | Name | Content | Proxy |
 | --- | --- | --- | --- |
-| A | `docs` | `157.90.224.18` | proxied |
+| A | `docs` | `$HOST` | proxied |
+
+The record is **proxied**, so the origin address is not public. Keep it that way, and keep
+it out of this repository.
 
 Caddy obtains the certificate on the first request.
 
@@ -121,9 +135,9 @@ Same pattern as the other repos on this host. The hook definition lives in
 and no Node. The other deploys on this host solve it the same way — the container-side
 wrapper does the minimum and the real work happens on the host.
 
-Then add the webhook in GitHub → repo → Settings → Webhooks, pointing at
-`https://webhook.adriangoldner.com/hooks/deploy-adg-docs`, content type
-`application/json`, with the secret from `hooks.json`.
+Then add the webhook in GitHub → repo → Settings → Webhooks, pointing at the deploy
+endpoint (the URL is in `GoldnerOS/env/server.md`), content type `application/json`,
+with the secret from `hooks.json`.
 
 ## Deploying by hand
 
