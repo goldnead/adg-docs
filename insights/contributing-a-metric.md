@@ -342,8 +342,22 @@ and a shared dash tells a reader nothing.
 ## Registering it
 
 From your own service provider, guarded so that PHP never loads your metric classes when
-Insights is absent. This is `statamic-booking`'s, and thirteen of the fourteen contributors
-are the same shape.
+Insights is absent. This is the shape all fourteen contributors share, written out on its own
+rather than copied from one of them: no package's method is exactly this, because each carries
+the part of its own wrapping that the next one does not need.
+
+What they genuinely share is the body: guard on the facade, resolve the root, walk
+`INSIGHTS_METRICS`, and swallow a failure into the log.
+
+**The method's name and return type are not load-bearing.** Nothing reads either. Eleven write
+the body as an anonymous `function (): void` inside `$this->app->booted(...)` and return
+nothing at all; the bool below matters only to the three that retry.
+
+**Where it is called from does matter.** Eleven call it straight out of
+`$this->app->booted()`. Three cannot, and use the retry described further down: Events,
+Entitlements, and Lead Magnets, which nests one `booted()` inside another to the same end.
+Those three return a bool because the retry has to know whether it is done, and they keep the
+flag this page insists on further below.
 
 ```php
 $this->app->booted(fn () => $this->offerMetricsToInsights());
@@ -405,10 +419,12 @@ booted. A registration deferred that way then runs at once — before the thing 
 waiting for — and registers into nothing, silently, which is the worst shape this failure
 could take.
 
-`statamic-events` is the one contributor this bites, because Statamic invokes its
-`bootAddon()` from inside a `Statamic::booted()` callback. Its answer is to attempt
-directly first, then hang the same attempt on both later moments, and to remember on the
-provider whether it has succeeded so the repetition is free:
+Three contributors carry a defence against it. `statamic-events` and
+`statamic-entitlements` use the shape below; `statamic-lead-magnets` nests one `booted()`
+inside another and keeps the same flag. The trigger is the same in each case: Statamic
+invokes an addon's `bootAddon()` from inside a `Statamic::booted()` callback. The answer is
+to attempt directly first, then hang the same attempt on both later moments, and to
+remember on the provider whether it has succeeded so the repetition is free:
 
 ```php
 protected bool $insightsMetricsRegistered = false;

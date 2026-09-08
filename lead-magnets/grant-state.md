@@ -2,156 +2,164 @@
 
 <AddonHeader />
 
-Four states, one row per address per resource per brand, and a deliberate deviation from the
-platform's target architecture. The deviation is on this page rather than in a footnote, because
-a reader who finds it by accident will read it as an oversight.
+One grant row per address per resource per brand, and the state on it lives somewhere else.
+Since 3.0 this package does not decide who has access. It records who asked, mails them, and
+counts the downloads; [Entitlements](/entitlements/) holds the state and answers the question.
 
-## The deviation
+## Where the state went
 
-The platform's target architecture puts grants in `goldnead/statamic-entitlements` and has every
-consumer read them from there. At the time this addon was built **that package did not exist**:
-it was deferred until a second consumer justified designing the shared abstraction.
+Until 3.0 this package owned the four states itself. It had to: `goldnead/statamic-entitlements`
+did not exist, having been deferred until a second consumer justified designing the shared
+abstraction, and this addon was meant to be that consumer. Taking the target architecture
+literally at the time would have meant not building the addon at all.
 
-Taking the target architecture literally would have meant not building this addon at all. So the
-state lives here. The reasoning is recorded in the docblock of `GrantState` itself:
+Entitlements exists now, and **it is a hard Composer requirement of this package**, not one of
+the optional bridges. That is a deliberate difference from the five siblings this
+addon detects with `class_exists()`.
 
-> The platform's target architecture puts entitlements in a package of their own
-> (`goldnead/statamic-entitlements`) and has every consumer read grants from there. That package
-> is deferred: it is waiting for a second consumer before its abstraction is worth designing, and
-> lead-magnets is meant to be that consumer. Taking the target architecture literally would mean
-> not building this addon at all.
+| | Before 3.0 | Now |
+| --- | --- | --- |
+| The states | `GrantState` in this package | `Goldnead\Entitlements\Enums\EntitlementState` |
+| Where the row lives | `lead_magnet_grants.state` | `entitlements.status` |
+| Who may ask | this package only | any package, through `Entitlements::allows()` |
+| The subject | the normalised email string | an entitlements subject reference, `email:<address>` |
+| Activation | a conditional update here | `Entitlements::claimPending()` |
+| The delivery mail | fired by `ResourceConfirmed` | fired by entitlements' `EntitlementGranted` |
 
-### What it costs
+The grant row stayed, as the **delivery record**: the address, the resource, the confirmation
+token and its deadline, the attempt number, the download counter and the audit trail. `entitlement_id` is the link between the two,
+and it is unique. One grant, one entitlement.
 
-**Two grant models.** [Entitlements](/entitlements/) now exists, and it has its own grant table
-with its own state machine. An installation running both has grants in two places, and neither
-knows about the other.
+### Migrating an existing install
 
-**A migration, eventually.** Moving this package onto entitlements means moving rows, both
-idempotency guarantees, the confirmation token and the middleware that derives a brand from it,
-the two meanings of `expires_at`, the download counter and its audit table, and the ceiling rule
-that stops a signed link outliving the access it belongs to.
+```bash
+php artisan lead-magnets:migrate-grants
+```
 
-**The state strings are effectively public API.** `GrantState::ALL` is serialised into the
-Control Panel payload and `state` into every event payload. The README's claim that a swap would
-be "an internal one" is accurate at the naming level and optimistic in practice: the facade
-returns a `Grant`, and `revoke()` and `reinstate()` take one.
+It reads each legacy grant's old state and writes the matching entitlement, and it is
+idempotent: a second run changes nothing. The migration that drops the legacy `state` column
+refuses to run while any grant still has no `entitlement_id`, so the old state cannot be thrown
+away before it has been carried across.
 
-### What it buys
+### What this bought
 
-The addon exists, and it is the second consumer entitlements was waiting for. The alternative,
-building entitlements first, designs the shared abstraction before the second real use case,
-which is the order the platform's own guidance advises against.
+Every line in the "deliberately does not do" table this page used to carry is now done. Another
+package can ask whether an address has access. The subject is a reference rather than a bare
+string, so a grant is no longer restricted to describing a file. Revocation, grace periods and
+expiry are one state machine with one audit trail, shared with payments and subscriptions.
 
-### What it deliberately does not do
-
-The local model is narrower than a shared entitlements package, on purpose:
-
-| Not here | Consequence |
-| --- | --- |
-| No cross-addon read surface | No other package can ask "does this person have access to X" |
-| No polymorphic subject | `resource_id` points only at `lead_magnet_resources`. A grant cannot describe a course, a product or a page |
-| No entitlement type or scope | The resource **is** the entitlement |
-| No contact-first model | The normalised email string is the subject. `contact_id` is opportunistic, written by the LeadHub bridge when it is there |
-| No issuance from outside | Nothing but `GrantService` creates a grant. There is no public `grant()` another package could call |
-
-Each of those is a thing entitlements does and this does not. If you need any of them, you need
-[Entitlements](/entitlements/), and today that means two systems rather than one.
-
-## The four states
+## The states
 
 ```php
-GrantState::PENDING   // 'pending'
-GrantState::ACTIVE    // 'active'
-GrantState::REVOKED   // 'revoked'
-GrantState::EXPIRED   // 'expired'
+EntitlementState::Pending      // 'pending'
+EntitlementState::Active       // 'active'
+EntitlementState::Revoked      // 'revoked'
+EntitlementState::Expired      // 'expired'
 ```
+
+Entitlements defines two further states, `Scheduled` and `GracePeriod`, which this package
+never writes. It reads them, and a grant whose entitlement is in a grace period still
+delivers. A lead magnet has no reason to create either.
 
 ```
 (none)  ──▶ pending    a request for a resource that needs confirmation
 (none)  ──▶ active     a request for a resource that needs none
 pending ──▶ active     the confirmation arrived, exactly once
 pending ──▶ expired    the confirmation window closed
-active  ──▶ expired    the grant's own lifetime ran out
+active  ──▶ expired    the access lifetime ran out
 pending ──▶ revoked    withdrawn in the Control Panel
 active  ──▶ revoked    withdrawn in the Control Panel
 ```
 
 `revoked` is terminal **against the public request path**: asking for the resource again returns
-the revoked grant untouched, and reinstating is a Control Panel action rather than something a
-visitor can trigger.
+the revoked grant untouched. Someone withdrew that access deliberately, and a form submission is
+not the place to overturn it, or anyone who knows the address could undo a moderation decision.
+Reinstating is a Control Panel action. `scheduled` is left alone for the mirror-image reason: an
+operator set a start date, and a request does not move it.
 
-`expired` is terminal for that grant, but a fresh request reopens the same row as `pending`.
+**An expired grant gets a second entitlement rather than a revived one.** The grant row is the
+same one, its `attempt` counter goes up, and the expired entitlement stays as a true record
+of an access period that happened. Entitlements answers over all of a subject's rows as an OR,
+so repeat access is meant to look like a second row.
 
-::: tip `reinstate()` is not in the diagram, and it moves two of those arrows backwards
-An editor may reinstate a revoked or expired grant from the Control Panel. It restores access
-without a second confirmation, and gives a lapsed grant a fresh lifetime. The transition table in
-the source docblock does not list it; the method exists and is tested.
+::: tip `reinstate()` is not in the diagram
+An editor may reinstate a revoked or expired grant from the Control Panel. A revoked one is
+restored; one that was never confirmed is confirmed on the reader's behalf, through the same
+atomic path the link takes; one whose window has meanwhile closed gets a fresh window rather
+than a fresh confirmation.
 :::
 
-## Activation is one statement
+## Activation is two statements, in this order
 
 ```php
-$changed = Grant::query()
-    ->whereKey($grant->getKey())
-    ->where('state', GrantState::PENDING)
-    ->update([
-        'state' => GrantState::ACTIVE,
-        'confirmed_at' => $confirmedAt,
-        'expires_at' => $expiresAt,
-        'token_hash' => null,
-        'updated_at' => $confirmedAt,
-    ]);
+// 1. Write the access window, conditional on the entitlement still being pending.
+$this->openWindow($entitlement, $resource, onlyWhilePending: true);
 
-if ($changed !== 1) {
-    return false;
-}
+// 2. Claim the row. This is the statement that decides the winner.
+return Entitlements::claimPending($entitlement);
 ```
 
-A second caller finds the state already `active`, changes zero rows, gets `false`, and dispatches
-nothing. There is no window between reading and writing, so it holds against a double-clicked
-link, a mail scanner prefetching the URL, a queue retry and two web workers at once.
+The listener that mails the download link builds that link against
+the access window, so the window has to be in place before the claim fires. A link signed
+before its window existed would outlive the access it was issued for.
 
-`ResourceConfirmed` fires only on the call that changed exactly one row. The delivery mail follows
-that event, so it is sent once.
+**Only step 2 decides who won.** Step 1 carries the same `pending` condition, but its
+affected-row count must never be read as the answer: MySQL reports zero changed rows for an
+update that writes a value the column already holds, and the common case here is exactly that,
+a resource with no lifetime writing null over null. Code that read a winner out of that count
+passes on SQLite, which counts matched rows instead, and activates nothing on MySQL.
 
-## `expires_at` means two different things
+A second caller finds the entitlement already active, changes zero rows, gets `false`, and
+dispatches nothing. It holds against a double-clicked link, a mail scanner prefetching the URL,
+a queue retry and two web workers at once.
 
-This is the subtlety worth knowing before you read a row.
+The delivery mail follows entitlements' own `EntitlementGranted`, and only for a transition out
+of `pending`, so it is sent once.
 
-| While the grant is | `expires_at` holds |
-| --- | --- |
-| `pending` | The confirmation window: "you have three days to confirm" |
-| `active` | The access lifetime: "your access lasts a year", or nothing at all |
+## Two deadlines, on two rows
 
-Activation switches the clock. Leaving the confirmation deadline in place would silently expire
-every grant three days after it was confirmed, which is the kind of defect that surfaces weeks
-later as "the download link stopped working".
+Version 1.x kept both in one column and that was a defect: leaving the confirmation deadline in
+place silently expired every grant three days after it was confirmed, which surfaces weeks
+later as "the download link stopped working". They are separate columns now, on separate rows.
 
-The pending window comes from `requests.confirmation_ttl_hours` (default 72). The active lifetime
-comes from the resource's `grant_ttl_days`, then `delivery.grant_ttl_days`, and `null` means the
-access does not expire.
+| Deadline | Where it lives | Comes from |
+| --- | --- | --- |
+| The confirmation window | `lead_magnet_grants.confirm_expires_at` | `requests.confirmation_ttl_hours`, default 72 |
+| The access lifetime | the entitlement's `expires_at` | the resource's `grant_ttl_days`, then `delivery.grant_ttl_days`; `null` means it does not expire |
 
-## Access is decided by the date, not by the state column
+The first belongs to the token, the second to the access. Nothing has to switch one into the
+other any more.
+
+## Nothing has to run for access to end
 
 ```php
 public function hasLapsed(): bool
 {
-    return $this->expires_at !== null && $this->expires_at->isPast();
+    return $this->state() === EntitlementState::Expired;
 }
 
 public function isRedeemable(): bool
 {
-    return $this->isActive() && ! $this->hasLapsed() && ! $this->downloadsExhausted();
+    return $this->state()->grantsAccess() && ! $this->downloadsExhausted();
 }
 ```
 
-`hasLapsed()` reads the timestamp rather than the `state` column, so **no access decision depends
-on the sweep having run**. A grant whose lifetime passed an hour ago refuses immediately, whether
-or not `lead-magnets:sweep` has been near it.
+`state()` asks entitlements, whose resolver reads the clock. In 1.x `state` was a column that
+whoever noticed first wrote, so a row could be past its date and still say `active` until
+something swept it.
 
-The sweep is housekeeping: it moves lapsed rows to `expired` and clears their tokens so the
-Control Panel tells the truth and dead tokens stop resolving. It is not a gate.
+`isRedeemable()` asks `grantsAccess()` rather than comparing against `Active`, so a grace period
+keeps the download working. The list of states that open a door lives on the enum, once.
+
+`lead-magnets:sweep` is all that is left of the old sweep. It clears confirmation tokens whose
+window has closed, so a leaked backup holds fewer usable tokens. It is housekeeping, and no
+access decision waits on it.
+
+::: tip Entitlements has a scheduled command of its own
+`entitlements:announce` is what fires `EntitlementExpired` when the clock passes a date.
+Scheduling it is the host application's job rather than this addon's, because it is shared by
+every consumer of the package.
+:::
 
 `isRedeemable()` is the single question every delivery path asks: the download controller, the
 delivery service, the re-send action and the request path.

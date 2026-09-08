@@ -6,6 +6,8 @@ import {
   MATURITY,
   MATURITY_NOTES,
   maturityOf,
+  SALES,
+  salesOf,
   STATAMIC_DEFAULT,
   PHP_DEFAULT,
 } from '../addons.mjs'
@@ -66,6 +68,35 @@ const maturity = computed(() => (level.value ? MATURITY[level.value] : null))
 const maturityNote = computed(() =>
   addon.value && isOverview.value ? MATURITY_NOTES[addon.value.slug] : null,
 )
+
+/**
+ * How this addon is sold.
+ *
+ * A chip on every page rather than a line on the overview, because the question
+ * it answers arrives wherever the reader arrives. Somebody who lands on
+ * `payments/checkout` from a search result has never seen the overview and has
+ * no reason to guess that the package carries no individual price.
+ *
+ * Not shown for the MIT packages: the licence chip beside it already says MIT,
+ * and a second chip saying the same thing is noise.
+ */
+const sale = computed(() => {
+  const key = addon.value ? salesOf(addon.value.slug) : null
+
+  return key && key !== 'free' ? { key, ...SALES[key] } : null
+})
+
+/**
+ * The sentence under the chips, on the front door only.
+ *
+ * Only where the chip would leave the reader with the wrong plan. "Marketplace"
+ * needs no sentence: the listing is coming, and the licensing page covers the
+ * wait. "Suite only" and "Not sold" both mean there is nothing to wait for, and
+ * that is the thing this site failed to say until now.
+ */
+const saleNote = computed(() =>
+  isOverview.value && sale.value && sale.value.key !== 'marketplace' ? sale.value : null,
+)
 </script>
 
 <template>
@@ -101,6 +132,14 @@ const maturityNote = computed(() =>
       </template>
       <span class="gn-chip">{{ addon.license }} licence</span>
       <a
+        v-if="sale"
+        class="gn-chip"
+        :class="`gn-chip--sale-${sale.key}`"
+        :href="withBase('/guide/licensing')"
+        :title="sale.short"
+        >{{ sale.label }}</a
+      >
+      <a
         v-if="maturity"
         class="gn-chip"
         :class="`gn-chip--maturity-${level}`"
@@ -110,6 +149,11 @@ const maturityNote = computed(() =>
       >
       <span v-if="addon.unreleased" class="gn-chip gn-chip--unreleased">Unreleased</span>
     </div>
+
+    <p v-if="saleNote" class="gn-sale-note">
+      <strong>{{ saleNote.label }}.</strong> {{ saleNote.short }}
+      <a :href="withBase('/guide/licensing')">How the packages are licensed</a>
+    </p>
 
     <p v-if="maturityNote" class="gn-maturity-note" :class="`gn-maturity-note--${level}`">
       <strong>{{ maturity.label }}.</strong> {{ maturityNote }}

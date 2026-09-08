@@ -24,55 +24,56 @@ Double opt-in is switchable per resource. A resource that needs no confirmation 
 immediately and the first two steps collapse into one.
 
 The property that matters is at the second step: **a confirmation that arrives four times
-activates once**. That is not a check in PHP, it is one conditional statement in the database:
+activates once**. It is one conditional statement in the database, and since 3.0 it lives in
+[Entitlements](/entitlements/):
 
 ```php
-$changed = Grant::query()
-    ->whereKey($grant->getKey())
-    ->where('state', GrantState::PENDING)
+$won = Entitlement::query()
+    ->whereKey($entitlement->getKey())
+    ->where('status', EntitlementState::Pending->value)
     ->update([
-        'state' => GrantState::ACTIVE,
-        'confirmed_at' => $confirmedAt,
-        'expires_at' => $expiresAt,
-        'token_hash' => null,
-        'updated_at' => $confirmedAt,
-    ]);
-
-if ($changed !== 1) {
-    return false;
-}
+        'status' => EntitlementState::Active->value,
+        'starts_at' => $now,
+        // revoked_at, revoked_reason, announced_state, updated_at
+    ]) === 1;
 ```
 
 It holds against a double-clicked link, a mail scanner prefetching the URL, a queue retry and
 two web workers at once, because there is no window between reading the state and writing it.
+Only the caller whose update changed one row proceeds, and it sends the mail.
 
-## It carries its own grant state, and that is a deviation
+Before that claim this package writes the access window, under the same `pending` condition,
+and it deliberately does not read the winner out of that first statement's row count. Why not
+is in [Grant state](/lead-magnets/grant-state#activation-is-two-statements-in-this-order), and
+the short version is that the count means different things on MySQL and on SQLite.
 
-The platform's target architecture puts grants in a package of their own,
-`goldnead/statamic-entitlements`, and has every consumer read them from there. When this addon
-was built, that package did not exist: it was deferred until a second consumer justified
-designing the shared abstraction.
+## Access state lives in Entitlements
 
-So this addon owns `pending`, `active`, `revoked` and `expired` itself.
+Until 3.0 this package owned `pending`, `active`, `revoked` and `expired` itself, because
+`goldnead/statamic-entitlements` did not exist yet. [Grant state](/lead-magnets/grant-state)
+has that history.
+
+**Entitlements is a hard Composer requirement**, not an optional bridge, and it answers every
+access question this package used to answer for itself. A grant row is now the delivery
+record: the address, the resource, the confirmation token, the download counter and the audit
+trail. Whether that address may have the file is one column in another table, read through one
+API.
 
 | | |
 | --- | --- |
-| **The cost** | When entitlements arrives there are two grant models and a migration between them |
-| **The benefit** | The addon exists, and it is exactly the second consumer entitlements was waiting for |
-| **The alternative** | Build entitlements first, which designs the abstraction before the second real use case |
+| **What moved** | The four states, the conditional activation, and every access decision |
+| **What stayed** | The grant row, the token, the download counter, the mails, the Control Panel |
+| **The link** | `lead_magnet_grants.entitlement_id`, unique, one grant to one entitlement |
 
-That is stated here rather than buried, because it is the kind of decision that looks like an
-oversight to the next reader. [Grant state](/lead-magnets/grant-state) has the full account,
-including what the local model deliberately does not do and what a future migration would have
-to move.
+Existing installs are carried across by `php artisan lead-magnets:migrate-grants`, which is
+idempotent, and a second migration refuses to drop the legacy column while any grant is still
+unlinked. [Grant state](/lead-magnets/grant-state) has the full account.
 
-[Entitlements](/entitlements/) has since been built. The bridge between the two has not, and
-this package still does not require it.
+## It runs with none of its optional siblings
 
-## It runs with none of its siblings
-
-Five optional integrations, each detected with `class_exists()` on the one class the bridge
-actually calls, each switchable in config. None is a Composer requirement.
+Two packages are Composer requirements: `goldnead/statamic-entitlements`, for the reason
+above, and `goldnead/statamic-brand-context`. Beyond those, five optional integrations, each
+detected with `class_exists()` on the one class the bridge calls, each switchable in config.
 
 ```
 goldnead/statamic-leadhub          contact and tags on activation
@@ -94,6 +95,7 @@ exists, because none of the five is in `require` or `require-dev`.
 
 | Concern | Owner |
 | --- | --- |
+| Whether this address may have this file, and for how long | [Entitlements](/entitlements/) |
 | Who the contact is, and their timeline | [LeadHub](/leadhub/) |
 | Whether the address may be mailed at all | [Suppression](/suppression/) |
 | Mailing lists and consent to them | [Marketing](/marketing/) |

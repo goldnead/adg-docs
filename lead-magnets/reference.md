@@ -62,33 +62,31 @@ request(Resource $resource, string $email, array $meta = []): Grant
 confirm(string $token): ?Grant
 findGrant(Resource $resource, string $email): ?Grant
 downloadUrl(Grant $grant): string
-revoke(Grant $grant): Grant
+revoke(Grant $grant, string $reason): Grant
 reinstate(Grant $grant): Grant
+entitlementFor(Grant $grant): ?Entitlement
 ```
 
 Resolves `Goldnead\LeadMagnets\LeadMagnetsManager`, which is autowired rather than bound. Nothing
 on it throws.
 
-## `GrantState`
+## State
 
-A final class of string constants, not a PHP enum.
+`GrantState` was removed in 3.0. The states come from
+`Goldnead\Entitlements\Enums\EntitlementState`.
 
 ```php
-GrantState::PENDING      // 'pending'
-GrantState::ACTIVE       // 'active'
-GrantState::REVOKED      // 'revoked'
-GrantState::EXPIRED      // 'expired'
-
-GrantState::ALL          // the four, in that order
-GrantState::DELIVERABLE  // [ACTIVE]
-GrantState::isKnown(string $state): bool
+$grant->state(): EntitlementState      // Pending, Active, Revoked, Expired, and the two it never writes
+$grant->stateValue(): string           // the same, as the string that goes into a payload
+$grant->isActive(): bool
+$grant->isPending(): bool
+$grant->hasLapsed(): bool              // state() === Expired
+$grant->isRedeemable(): bool           // state()->grantsAccess() and downloads left
+$grant->confirmationLapsed(): bool     // the token's own window, not the access
+Grant::query()->inState(EntitlementState $state)
 ```
 
-`ALL` is serialised into the Control Panel payload, and `state` into every event payload, so the
-four strings are effectively public API.
-
-`DELIVERABLE` is declared and read by nothing. The real deliverability gate is
-`Grant::isRedeemable()`.
+`isRedeemable()` gates delivery. See [Grant state](/lead-magnets/grant-state).
 
 ## Services
 
@@ -97,9 +95,9 @@ Services\GrantService
     request(Resource $resource, string $email, array $meta = []): Grant
     findByToken(string $token): ?Grant            // any state, or null
     activate(Grant $grant): bool                  // true only for the call that won
-    revoke(Grant $grant): Grant                   // no event
+    revoke(Grant $grant, string $reason): bool    // no event of this package's own
     reinstate(Grant $grant): Grant                // no event, no re-confirmation
-    sweepExpired(): int                           // no event
+    sweepExpiredTokens(): int                     // confirmation tokens only
     recordDownload(Grant $grant, array $context = []): Download
 
 Services\DeliveryService
@@ -164,9 +162,12 @@ downloads(): HasMany
 
 isActive(): bool
 isPending(): bool
-hasLapsed(): bool             // reads expires_at, not the state column
+hasLapsed(): bool             // state() === Expired
 downloadsExhausted(): bool
-isRedeemable(): bool          // isActive() && ! hasLapsed() && ! downloadsExhausted()
+isRedeemable(): bool          // state()->grantsAccess() && ! downloadsExhausted()
+confirmedAt(): ?CarbonImmutable
+revokedAt(): ?CarbonImmutable
+accessEndsAt(): ?CarbonImmutable
 ```
 
 Scopes `active()` and `pending()` exist and are called by nothing in the package.
@@ -247,15 +248,23 @@ Composite index `(brand_id, published)`.
 | `resource_id` | `unsignedBigInteger`, indexed | no | |
 | `email` | `string(191)` | no | |
 | `contact_id` | `string(64)`, indexed | yes | |
-| `state` | `string(16)`, indexed | no | `'pending'` |
+| `entitlement_id` | `unsignedBigInteger`, unique | yes | |
+| `attempt` | `unsignedInteger` | no | `1` |
 | `token_hash` | `string(64)`, unique | yes | |
-| `requested_at`, `confirmed_at`, `delivered_at`, `revoked_at`, `expires_at` | `timestamp` | yes | |
+| `requested_at`, `confirm_expires_at`, `delivered_at` | `timestamp` | yes | |
 | `download_count` | `unsignedInteger` | no | `0` |
 | `meta` | `json` | yes | |
 | `created_at`, `updated_at` | `timestamps` | yes | |
 
 Unique `(brand_id, resource_id, email)`. `token_hash` is unique across all brands, which is what
-lets the confirm route derive a brand from it.
+lets the confirm route derive a brand from it. `entitlement_id` is unique too: one grant, one
+entitlement.
+
+`state`, `confirmed_at`, `revoked_at` and `expires_at` were dropped in 3.0. The first three are
+answered by the entitlement now (`state()`, `confirmedAt()`, `revokedAt()`), and `expires_at`
+split in two: the token's deadline stayed here as `confirm_expires_at`, and the access lifetime
+belongs to the entitlement. The migration that drops them refuses to run while any grant is
+still unlinked.
 
 ### `lead_magnet_downloads`
 

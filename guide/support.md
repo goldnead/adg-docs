@@ -5,9 +5,26 @@
 | What | Where |
 | --- | --- |
 | A bug in an addon | that addon's GitHub repository, under [github.com/goldnead](https://github.com/goldnead) |
-| A commercial-licence question | the [Statamic Marketplace](https://statamic.com/addons) listing |
+| A licence question, commercial or Suite | [info@adriangoldner.com](mailto:info@adriangoldner.com) |
 | A mistake or a gap on this site | [the docs repository](https://github.com/goldnead/adg-docs) — every page has a *Suggest a change* link at the bottom |
 | Anything else | [info@adriangoldner.com](mailto:info@adriangoldner.com) |
+
+Licence questions used to be routed to a package's Statamic Marketplace listing
+on this page. Only [Table of Contents](/toc/) has one, so for seventeen of the
+eighteen commercial packages that was an address with nothing behind it. Email
+is the whole of it now, for every package and for the Suite.
+
+## What a licence buys, and what it does not
+
+**A licence buys software and updates. It does not buy support.** That is
+section 6 of the [Suite EULA](/guide/suite-eula) word for word. The EULA governs
+the Suite; the same applies to an individual package licence as a matter of
+policy rather than of that contract. Write with a question and it gets answered,
+but nothing is promised: no response time, no fix date, no service level
+agreement at any price.
+
+You get the issue tracker of every package, this site, and an address that a
+person reads. Reports are worked by severity, not by who filed them.
 
 ## What to include in a bug report
 

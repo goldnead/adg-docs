@@ -15,8 +15,9 @@ request(Resource $resource, string $email, array $meta = []): Grant
 confirm(string $token): ?Grant
 findGrant(Resource $resource, string $email): ?Grant
 downloadUrl(Grant $grant): string
-revoke(Grant $grant): Grant
+revoke(Grant $grant, string $reason): Grant
 reinstate(Grant $grant): Grant
+entitlementFor(Grant $grant): ?Entitlement
 ```
 
 Semver-locked from the first release, and deliberately small: request, confirm, deliver, look up.
@@ -91,6 +92,7 @@ Event::listen(ResourceDownloaded::class, function (ResourceDownloaded $event) {
     'email' => …,
     'contact_id' => …,
     'state' => …,
+    'entitlement_id' => …,
     'download_count' => …,
     'brand_id' => …,
     'resource' => ['id' => …, 'handle' => …, 'title' => …, 'delivery_type' => …],
@@ -162,9 +164,9 @@ $grants = app(GrantService::class);
 $grants->request($resource, $email, $meta);   // Grant
 $grants->findByToken($token);                 // ?Grant, in any state
 $grants->activate($grant);                    // bool: true only for the call that won
-$grants->revoke($grant);                      // Grant
+$grants->revoke($grant, $reason);             // bool
 $grants->reinstate($grant);                   // Grant
-$grants->sweepExpired();                      // int, rows marked expired
+$grants->sweepExpiredTokens();                // int, confirmation tokens cleared
 $grants->recordDownload($grant, $context);    // Download
 ```
 
@@ -181,9 +183,7 @@ what turns a lapsed pending grant into "show the lapsed page, do not activate".
 
 - **No Antlers tags**, and no plan for any. The form is three fields and a route.
 - **No interfaces.** The package declares none. The seams are `protected` methods.
-- **No grant issuance from outside.** Nothing but `GrantService` creates a grant, and there is no
-  public `grant()` another package could call. That is one of the things
-  [Entitlements](/entitlements/) does and this does not.
+- **No grant issuance from outside.** Nothing but `GrantService` creates a grant row, and there
+  is no public `grant()` another package could call. The entitlement behind it is
+  ordinary, though, and anything may ask [Entitlements](/entitlements/) about it.
 - **No fieldtypes and no widgets.**
-- **No `entitlements` bridge.** It is named in prose and in the `GrantState` docblock, and it
-  exists nowhere in code. See [Grant state](/lead-magnets/grant-state#the-deviation).

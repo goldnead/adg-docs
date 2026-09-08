@@ -48,19 +48,20 @@ collision.
 
 ## Grants
 
-One row per `(brand_id, resource_id, email)`. It holds the state, the hashed confirmation token,
-five timestamps, the download counter, an opportunistic contact id and a `meta` JSON column.
+One row per `(brand_id, resource_id, email)`. It holds the hashed confirmation token and its
+deadline, the link to the entitlement that carries the state, the attempt counter, the download
+counter, an opportunistic contact id and a `meta` JSON column.
 
 ```php
 $grant->isActive();
 $grant->isPending();
-$grant->hasLapsed();            // expires_at is in the past
+$grant->hasLapsed();            // the entitlement is expired
 $grant->downloadsExhausted();   // download_count >= the resource's cap
-$grant->isRedeemable();         // active, not lapsed, not exhausted
+$grant->isRedeemable();         // the state opens a door, and downloads are left
 ```
 
-`isRedeemable()` is the single question every delivery path asks. The four states and the two
-meanings of `expires_at` are on [Grant state](/lead-magnets/grant-state).
+`isRedeemable()` is the single question every delivery path asks. The states and the two
+deadlines are on [Grant state](/lead-magnets/grant-state).
 
 The address is normalised before it is stored and before it is looked up: trimmed, and both sides
 of the **last** `@` lowercased. Dots and `+tags` are deliberately preserved, because they are the

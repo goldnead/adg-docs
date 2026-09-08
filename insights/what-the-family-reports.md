@@ -6,6 +6,12 @@ Fourteen addons register **fifty-eight figures** between them. This page lists a
 them: the handle, what the screen calls it, how it is formatted, and what it actually
 counts.
 
+Each contributor keeps its metrics in an `INSIGHTS_METRICS` constant on its service provider,
+one class to one handle, and that constant is the only way a figure reaches the registry.
+Counting the entries across the fourteen providers gives fifty-eight, and those are the handles
+below. Insights itself registers no metrics. It owns the period, the chart, the screens and six
+reports of its own.
+
 Nothing here is computed by Insights. Every row is a query living in the addon that owns
 the table. The last column paraphrases what each metric says about itself on screen; where
 the wording matters, the tile's own sentence is the one to trust.

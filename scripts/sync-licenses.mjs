@@ -42,8 +42,130 @@ const label = (spdx) => {
   return spdx === 'MIT' ? 'MIT' : 'Commercial'
 }
 
-const { addons, tools } = await import(REGISTRY)
+const { addons, tools, SALES, salesOf } = await import(REGISTRY)
 const entries = [...addons, ...(tools ?? [])]
+
+/**
+ * The second half of the same honesty problem.
+ *
+ * `license` is checked against each package's composer.json. `sales` has no
+ * composer.json to check against, but it does have a source: **Schedule A of
+ * the EULA**, which is the contract a buyer actually signs. So it is read from
+ * there, package name by package name, rather than trusted.
+ *
+ * The first version of this check only compared MIT against `free` and then
+ * printed "26 sales entries consistent". That line claimed a check it had not
+ * made: moving `consent` from `suite-only` to `marketplace` passed green, and
+ * the site would then have told buyers to wait for a listing that is not
+ * coming. That is the exact failure this whole field exists to remove.
+ *
+ * Checked here rather than in the component because a component that throws
+ * fails the build with a stack trace from inside Vue. This says which slug.
+ */
+const salesProblems = []
+
+/**
+ * Schedule A, as four groups of Composer names.
+ *
+ * The schedule is markdown: three tables under bold headings, then a sentence
+ * for the two packages that are not sold at all. Composer names are the only
+ * thing read out of it, because they are the one identifier the contract and
+ * the registry share.
+ *
+ * A schedule that cannot be found is an error, never an empty pass. The whole
+ * point is that silence here used to look like agreement.
+ *
+ * @returns {Map<string, string>} composer name → sales key
+ */
+async function scheduleA() {
+  const eula = await readFile(resolve(HERE, '../EULA.md'), 'utf8')
+  const start = eula.indexOf('## Schedule A')
+
+  if (start === -1) {
+    throw new Error('EULA.md has no "## Schedule A" heading. Sales entries cannot be verified.')
+  }
+
+  const heading = (text) => {
+    if (/marketplace/i.test(text)) return 'marketplace'
+    if (/only in the suite/i.test(text)) return 'suite-only'
+    if (/mit/i.test(text)) return 'free'
+    if (/not currently sold/i.test(text)) return 'not-sold'
+
+    return null
+  }
+
+  const expected = new Map()
+  let current = null
+
+  for (const line of eula.slice(start).split('\n')) {
+    const bold = line.match(/^\*\*(.+?)\*\*\s*$/)
+
+    if (bold) {
+      current = heading(bold[1])
+      continue
+    }
+
+    if (current === null) continue
+
+    for (const [, name] of line.matchAll(/`(goldnead\/[a-z0-9-]+)`/g)) {
+      expected.set(name, current)
+    }
+  }
+
+  if (expected.size === 0) {
+    throw new Error('Schedule A named no packages. The parser and the schedule have drifted apart.')
+  }
+
+  return expected
+}
+
+const schedule = await scheduleA()
+
+for (const addon of addons) {
+  if (! addon.package) continue
+
+  const contract = schedule.get(addon.package)
+  const sale = salesOf(addon.slug)
+
+  if (contract === undefined) {
+    salesProblems.push(`${addon.slug.padEnd(24)} is in the registry but not in Schedule A of EULA.md`)
+    continue
+  }
+
+  if (contract !== sale) {
+    salesProblems.push(
+      `${addon.slug.padEnd(24)} sells as "${sale}", Schedule A puts it under "${contract}"`,
+    )
+  }
+}
+
+for (const [name] of schedule) {
+  if (! addons.some((a) => a.package === name)) {
+    salesProblems.push(`${name.padEnd(24)} is in Schedule A but not in the registry`)
+  }
+}
+
+for (const addon of addons) {
+  const sale = salesOf(addon.slug)
+
+  if (sale === null) {
+    salesProblems.push(`${addon.slug.padEnd(24)} has no entry in SALES_BY_SLUG`)
+    continue
+  }
+
+  if (!SALES[sale]) {
+    salesProblems.push(`${addon.slug.padEnd(24)} sells as "${sale}", which SALES does not define`)
+    continue
+  }
+
+  const shouldBeFree = addon.license === 'MIT'
+
+  if (shouldBeFree !== (sale === 'free')) {
+    salesProblems.push(
+      `${addon.slug.padEnd(24)} is ${addon.license} but sells as "${sale}"`,
+    )
+  }
+}
 
 const problems = []
 const missing = []
@@ -81,15 +203,25 @@ for (const u of unreadable) console.error(`  ! ${u.slug.padEnd(24)} composer.jso
 
 const checked = entries.filter((e) => e.package).length - missing.length - unreadable.length
 
-if (!problems.length && !unreadable.length) {
+for (const p of salesProblems) console.error(`  ✗ ${p}`)
+
+if (!problems.length && !unreadable.length && !salesProblems.length) {
   // Say "incomplete" rather than "✓" when something was skipped: whoever reads
   // the output rather than the exit code must not read a tick as all-clear.
   if (missing.length) {
     console.warn(`… ${checked} licences match composer.json, ${missing.length} not verified`)
     process.exit(1)
   }
-  console.log(`✓ ${checked} licences match composer.json`)
+  console.log(`✓ ${checked} licences match composer.json, ${addons.length} sales entries match Schedule A`)
   process.exit(0)
+}
+
+// `--fix` rewrites licences from composer.json. It deliberately does not touch
+// the sales field: there is no file to take the answer from, only the EULA, and
+// a script that guessed one would be the hand-maintained value this whole
+// mechanism exists to remove.
+if (salesProblems.length) {
+  console.error(`\n${salesProblems.length} sales problem(s). Fix SALES_BY_SLUG in .vitepress/addons.mjs against Schedule A of EULA.md, or fix the schedule.`)
 }
 
 for (const p of problems) {

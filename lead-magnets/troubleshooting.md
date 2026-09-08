@@ -21,9 +21,9 @@ Four causes, and they are indistinguishable from outside on purpose:
 
 | Cause | How to check |
 | --- | --- |
-| Already confirmed | `token_hash` is null and `confirmed_at` is set. This is the common one |
+| Already confirmed | `token_hash` is null and the entitlement is active. This is the common one |
 | The grant was revoked | `revoke()` clears the token too |
-| The sweep cleared it | An expired grant loses its token |
+| The sweep cleared it | A grant whose confirmation window closed loses its token |
 | Genuinely unknown, or another brand's token | Nothing in `lead_magnet_grants` matches the hash |
 
 A second click on a working link is the first row. The token is consumed on activation, so by the
@@ -62,19 +62,19 @@ edited, the expiry was pushed out, the signature was edited, or the URL was neve
 **The controller**, after the signature verified: the grant is not redeemable.
 
 ```php
-isRedeemable() === isActive() && ! hasLapsed() && ! downloadsExhausted()
+isRedeemable() === state()->grantsAccess() && ! downloadsExhausted()
 ```
 
 So a **revoked** grant holds links that verify perfectly and still refuse. That is the intended
 behaviour: the signature proves the link was issued, not that the access still stands.
 
-Check, in order: `state`, `expires_at`, and `download_count` against the resource's
-`max_downloads`.
+Check, in order: the entitlement's state, its `expires_at`, and `download_count` against the
+resource's `max_downloads`.
 
 ## The download link expired much sooner than `link_ttl`
 
-A signed link is capped by the grant's own `expires_at`. A seven-day link on a grant that expires
-tomorrow is a one-day link.
+A signed link is capped by `accessEndsAt()`, which is the entitlement's `expires_at` or, during a
+grace period, its `grace_until`. A seven-day link on access that ends tomorrow is a one-day link.
 
 That cap is deliberate: a link may never outlive the access it belongs to.
 
@@ -116,15 +116,9 @@ The database enforces it, so the second brand gets a query exception.
 
 ## The Control Panel says a grant is active but the download refuses
 
-The sweep has not run. `hasLapsed()` reads `expires_at` directly, so **access is already refused**;
-the `state` column is what is stale.
-
-```bash
-php artisan lead-magnets:sweep
-```
-
-Check that a scheduler is running. Nothing breaks without it, but the Control Panel stops telling
-the truth about which grants are live.
+Since 3.0 this cannot be a stale state column: the state is derived from the clock by
+entitlements, and the Control Panel reads the same answer the download gate does. Look at
+`download_count` against the resource's cap instead, and at whether the entitlement was revoked.
 
 ## The honeypot is catching real people
 

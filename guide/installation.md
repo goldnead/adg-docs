@@ -19,20 +19,59 @@ integrations are resolved at boot, not at install time, so installing Webhook
 Manager after LeadHub wires the LeadHub triggers just as installing it before
 would.
 
+The table below covers all twenty-six: which own database tables, and which
+show up in the Control Panel.
+
+::: tip What "ships a CP screen" counts
+A screen of its own: the addon registers a Control Panel route, a utility, or a
+nav entry. A fieldtype, a Bard button or a blueprint extension does not count,
+because none of them gives you a page to open.
+
+Twenty-two of the twenty-six also register a section on the **shared settings
+screen**. That is not a screen of their own, so it reads "no" in the table, but
+you will still find those addons in the Control Panel under Settings. Brand
+Context provides that screen rather than registering a section on it, and
+Identity Contracts, Products and Flow Canvas register nothing at all.
+:::
+
 | Addon | Owns database tables | Ships a CP screen |
 | --- | --- | --- |
-| [Brand Context](/brand-context/installation) | yes (`brands`, `brand_user`) | multi-brand mode only |
+| [Brand Context](/brand-context/installation) | yes (`brands`, `brand_user`, `brand_settings`) | yes, the shared settings screen; the brand switcher only in multi-brand mode |
 | [Identity Contracts](/identity-contracts/installation) | no | no |
-| [Suppression](/suppression/installation) | yes (`suppressions`, `suppression_events`) | no |
-| [Webhook Manager](/webhook-manager/installation) | yes | yes |
-| [Automations](/automations/installation) | yes | yes |
-| [LeadHub](/leadhub/installation) | yes (eloquent driver) | yes |
-| [Marketing](/marketing/installation) | yes (runtime data always) | yes |
+| [Suppression](/suppression/installation) | yes (`suppressions`, `suppression_events`) | no, a settings section only |
+| [Webhook Manager](/webhook-manager/installation) | yes (eight, from `webhook_outbounds` to `webhook_settings`) | yes |
+| [Automations](/automations/installation) | yes (nine, from `automations` to `automation_opt_outs`) | yes |
+| [LeadHub](/leadhub/installation) | yes, twenty-one, but only on the `eloquent` driver; `flat` keeps everything in `content/leadhub/` | yes |
+| [Marketing](/marketing/installation) | yes, nine, whichever driver you pick | yes |
 | [Preference Center](/preference-center/installation) | no | no, four public pages instead |
-| [Email Templates](/email-templates/installation) | no (a Statamic collection) | yes |
-| [Activity](/activity/installation) | yes | yes, read-only |
-| [Notifications](/notifications/installation) | yes | yes, read-only |
-| [Table of Contents](/toc/installation) | no | no |
+| [Lead Magnets](/lead-magnets/installation) | yes (`lead_magnet_resources`, `lead_magnet_grants`, `lead_magnet_downloads`) | yes |
+| [Assessments](/assessments/installation) | yes (`assessments`, `assessment_questions`, `assessment_responses`) | yes |
+| [Email Templates](/email-templates/installation) | yes (`email_template_snapshots`); the templates themselves are entries in a Statamic collection | yes |
+| [Activity](/activity/installation) | yes (`activities`) | yes, read-only |
+| [Notifications](/notifications/installation) | yes (`notification_items`, `notification_preferences`, `notification_digest_runs`) | yes, read-only |
+| [Entitlements](/entitlements/installation) | yes (`entitlements`) | yes |
+| [Events](/events/installation) | yes (`events`, `event_occurrences`) | yes |
+| [Table of Contents](/toc/installation) | no | no, a settings section only |
+| [Payments](/payments/installation) | yes (nine, from `payments` to `payment_chargebacks`) | yes, four utilities |
+| [Products](/products/installation) | yes (`products`) | yes, one utility |
+| [Insights](/insights/installation) | no | yes |
+| [Offers](/offers/installation) | yes (`offers`, `offer_coupons`) | yes, two utilities |
+| [Invoices](/invoices/installation) | yes (`invoices`, `invoice_items`, `invoice_counters`, `invoice_vat_id_checks`) | yes, one utility, under Tools rather than in the suite nav |
+| [Funnels](/funnels/installation) | yes (six, from `funnels` to `funnel_mail_deliveries`) | yes, one utility |
+| [Booking](/booking/installation) | yes (`bookings`) | yes, one utility |
+| [Client Rooms](/clientrooms/installation) | yes (six, from `client_rooms` to `client_room_sessions`) | yes |
+| [Consent](/consent/installation) | yes (`consent_records`) | no, a settings section only |
+| [Flow Canvas](/flow-canvas/installation) | no | no |
+
+No addon in the suite adds a column to another addon's table. Where one needs a
+neighbour's data it reads it through that neighbour's API, so removing one needs
+no migration to undo.
+
+Two rows changed on 7 September 2026 because the old ones were wrong, not just
+stale. Brand Context registers its settings screen whether or not multi-brand is
+on; only the brand switcher is gated. And Email Templates gained a table of its
+own, `email_template_snapshots`, so the old "no, a Statamic collection" now
+answers a different question than the column asks.
 
 ## The foundation packages
 

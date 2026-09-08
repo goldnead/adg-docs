@@ -19,15 +19,17 @@ URL::temporarySignedRoute(
 and the path on disk never leaves the server.
 
 The expiry is the resource's `link_ttl`, then `delivery.link_ttl` (default seven days), with a
-floor of one minute. It is then **capped by the grant's own lifetime**:
+floor of one minute. It is then **capped by the access it belongs to**:
 
 ```php
-if ($grant->expires_at !== null && $grant->expires_at->lt($expiresAt)) {
-    $expiresAt = $grant->expires_at;
+$endsAt = $grant->accessEndsAt();   // the entitlement's expires_at, or grace_until
+
+if ($endsAt !== null && $endsAt->lt($expiresAt)) {
+    $expiresAt = $endsAt;
 }
 ```
 
-A seven-day link on a grant that expires tomorrow is a one-day link. A link may never outlive the
+A seven-day link on access that ends tomorrow is a one-day link. A link may never outlive the
 access it belongs to.
 
 ## Four gates, in order

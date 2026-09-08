@@ -86,10 +86,9 @@ php artisan schedule:work        # locally
 * * * * * cd /path && php artisan schedule:run >> /dev/null 2>&1
 ```
 
-**Without it nothing breaks.** The sweep is housekeeping: it marks lapsed grants `expired` and
-clears their dead tokens. No access decision depends on it, because `hasLapsed()` reads the
-timestamp rather than the state column. What you lose is a Control Panel that tells the truth
-about which grants are still live.
+**Without it nothing breaks.** Since 3.0 the sweep only clears confirmation tokens whose window
+has closed. Access expiry is derived from the clock by entitlements, so there is nothing left to
+mark. What you lose is a database holding token hashes that can no longer be redeemed.
 
 ## Verifying it works
 
@@ -106,7 +105,7 @@ GET   !/lead-magnets/download/{grant}  lead-magnets.download
 ```
 
 Then create a resource in the Control Panel under **Tools → Lead Magnets** and post a request at
-it. `php artisan lead-magnets:sweep` should report zero swept grants.
+it. `php artisan lead-magnets:sweep` should report zero cleared confirmation tokens.
 
 ## Publishing
 

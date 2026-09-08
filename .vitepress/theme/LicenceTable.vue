@@ -1,6 +1,6 @@
 <script setup>
 import { withBase } from 'vitepress'
-import { addons } from '../addons.mjs'
+import { addons, SALES, salesOf } from '../addons.mjs'
 
 /**
  * The licence table, generated from the registry.
@@ -17,7 +17,20 @@ const rows = [...addons].sort((a, b) =>
 const counts = {
   mit: rows.filter((a) => a.license === 'MIT').length,
   commercial: rows.filter((a) => a.license !== 'MIT').length,
+  marketplace: rows.filter((a) => salesOf(a.slug) === 'marketplace').length,
+  suiteOnly: rows.filter((a) => salesOf(a.slug) === 'suite-only').length,
+  notSold: rows.filter((a) => salesOf(a.slug) === 'not-sold').length,
 }
+
+/**
+ * The second column: how it is sold, not what it costs.
+ *
+ * A missing value renders as an em space rather than as an empty cell, so an
+ * addon that was added to the registry without a sales entry is visible on the
+ * page instead of looking like a deliberate blank. `sync-licenses.mjs` refuses
+ * the build for the same case; this is only the belt.
+ */
+const saleOf = (slug) => SALES[salesOf(slug)] ?? null
 </script>
 
 <template>
@@ -26,6 +39,7 @@ const counts = {
       <tr>
         <th>Addon</th>
         <th>Licence</th>
+        <th>How it is sold</th>
       </tr>
     </thead>
     <tbody>
@@ -36,12 +50,21 @@ const counts = {
             {{ addon.license === 'MIT' ? 'MIT' : 'Commercial' }}
           </span>
         </td>
+        <td>
+          <span v-if="saleOf(addon.slug)" class="gn-sale" :title="saleOf(addon.slug).short">
+            {{ saleOf(addon.slug).label }}
+          </span>
+          <span v-else>&emsp;</span>
+        </td>
       </tr>
     </tbody>
   </table>
 
   <p class="gn-licences__count">
-    {{ counts.mit }} MIT, {{ counts.commercial }} commercial.
+    {{ counts.mit }} MIT, {{ counts.commercial }} commercial. Of the commercial ones,
+    {{ counts.marketplace }} are intended for the Statamic Marketplace,
+    {{ counts.suiteOnly }} are licensed only as part of the Suite, and
+    {{ counts.notSold }} are not sold yet.
   </p>
 </template>
 
@@ -71,6 +94,14 @@ const counts = {
 .gn-licence--commercial {
   color: var(--vp-c-brand-1);
   border-color: var(--vp-c-brand-1);
+}
+
+/* Quieter than the licence pill on purpose. "Commercial" is the word a reader
+   must not misread; how it is sold is the follow-up question, not the alarm. */
+.gn-sale {
+  color: var(--vp-c-text-2);
+  font-size: 0.9em;
+  white-space: nowrap;
 }
 
 .gn-licences__count {

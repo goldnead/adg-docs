@@ -113,6 +113,84 @@ export const MATURITY_NOTES = {
 
 export const maturityOf = (slug) => MATURITY_BY_SLUG[slug] ?? null
 
+/**
+ * How each addon can be bought.
+ *
+ * A separate question from the licence, and mixing the two is what made this
+ * page wrong for a fortnight. "Commercial" says a licence is required.
+ * "Suite only" says where that licence comes from, and for eight of the
+ * packages the answer is that it never comes from a Marketplace listing,
+ * because none is planned. Until this field existed the site told the reader
+ * that a listing was merely missing, and a reader who believed it was waiting
+ * for something that is not coming.
+ *
+ * The source is Schedule A of the Suite EULA (`EULA.md`), which names the four
+ * groups. This map mirrors it and must not drift from it: the EULA is the
+ * contract, this is the page about the contract.
+ */
+export const SALES = {
+  marketplace: {
+    label: 'Marketplace',
+    short: 'Intended for individual sale on the Statamic Marketplace.',
+  },
+  'suite-only': {
+    label: 'Suite only',
+    short: 'Licensed only as part of the Suite. No individual price, and no listing planned.',
+  },
+  free: {
+    // Not "MIT". The licence column one cell to the left already says MIT, and
+    // the same word twice in a row reads as a rendering fault rather than as an
+    // answer. This column is asked "how do I buy it", and for these eight the
+    // answer is that there is nothing to buy.
+    label: 'Nothing to buy',
+    short: 'MIT. No licence to buy.',
+  },
+  'not-sold': {
+    label: 'Not sold',
+    short: 'Commercial, but not published and not part of the Suite as sold today.',
+  },
+}
+
+/** Slug → how it is sold. Mirrors Schedule A of the Suite EULA. */
+export const SALES_BY_SLUG = {
+  // Intended for the Statamic Marketplace. Only Table of Contents is listed
+  // there today; for these eight the listing really is just missing.
+  toc: 'marketplace',
+  automations: 'marketplace',
+  leadhub: 'marketplace',
+  'webhook-manager': 'marketplace',
+  marketing: 'marketplace',
+  'lead-magnets': 'marketplace',
+  events: 'marketplace',
+  'email-templates': 'marketplace',
+
+  // Only in the Suite. Nothing is missing here, and nothing is coming.
+  payments: 'suite-only',
+  offers: 'suite-only',
+  invoices: 'suite-only',
+  funnels: 'suite-only',
+  products: 'suite-only',
+  booking: 'suite-only',
+  consent: 'suite-only',
+  insights: 'suite-only',
+
+  // MIT. Nothing to buy.
+  'brand-context': 'free',
+  'identity-contracts': 'free',
+  suppression: 'free',
+  entitlements: 'free',
+  'flow-canvas': 'free',
+  activity: 'free',
+  notifications: 'free',
+  'preference-center': 'free',
+
+  // Commercial, unpublished, and outside the Suite as sold today.
+  clientrooms: 'not-sold',
+  assessments: 'not-sold',
+}
+
+export const salesOf = (slug) => SALES_BY_SLUG[slug] ?? null
+
 export const addons = [
   {
     slug: 'brand-context',

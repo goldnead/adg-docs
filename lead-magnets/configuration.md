@@ -63,14 +63,14 @@ rather than a default nobody thought about: a seven-day link with no cap can be 
 audit trail is what makes that visible afterwards rather than what prevents it. Set a cap on
 anything you would mind seeing on a forum.
 
-`grant_ttl_days` is the **access** lifetime, applied from the moment of confirmation. It is not
-the confirmation window; that is `requests.confirmation_ttl_hours`, and the same column holds
-both at different times. See
-[Grant state](/lead-magnets/grant-state#expires-at-means-two-different-things).
+`grant_ttl_days` is the **access** lifetime, applied from the moment of confirmation, and it
+lands on the entitlement. It is not the confirmation window; that is
+`requests.confirmation_ttl_hours`, and it lands on the grant row. Two deadlines, two rows. See
+[Grant state](/lead-magnets/grant-state#two-deadlines-on-two-rows).
 
 ::: warning A signed link can never outlive the grant it belongs to
-`DownloadLink::for()` caps the signature expiry at `grant.expires_at` whenever the latter is
-earlier. A seven-day link on a grant that expires tomorrow is a one-day link.
+`DownloadLink::for()` caps the signature expiry at `Grant::accessEndsAt()` whenever the latter
+is earlier. A seven-day link on access that ends tomorrow is a one-day link.
 :::
 
 ## `requests`

@@ -9,6 +9,7 @@ import LicenceTable from './LicenceTable.vue'
 import MaturityTable from './MaturityTable.vue'
 import Playground from './Playground.vue'
 import Requirements from './Requirements.vue'
+import SalesGroup from './SalesGroup.vue'
 import SuiteMosaic from './SuiteMosaic.vue'
 
 import './custom.css'
@@ -24,6 +25,7 @@ export default {
     app.component('MaturityTable', MaturityTable)
     app.component('Playground', Playground)
     app.component('Requirements', Requirements)
+    app.component('SalesGroup', SalesGroup)
     app.component('SuiteMosaic', SuiteMosaic)
   },
 } satisfies Theme
