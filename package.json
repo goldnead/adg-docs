@@ -8,7 +8,8 @@
     "dev": "vitepress dev",
     "build": "vitepress build",
     "preview": "vitepress preview",
-    "check:licences": "node scripts/sync-licenses.mjs"
+    "check:licences": "node scripts/sync-licenses.mjs",
+    "check:publish-tags": "node scripts/check-publish-tags.mjs"
   },
   "devDependencies": {
     "playwright": "^1.62.0",

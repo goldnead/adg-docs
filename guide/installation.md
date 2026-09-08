@@ -91,40 +91,72 @@ when your application has an unusual notion of who an actor is.
 
 ## Publishing configuration
 
-Each addon publishes under its own tag. Publishing is optional; the packaged
-defaults are the documented ones.
+Each addon publishes its config under its own tag. Publishing is optional; the
+packaged defaults are the documented ones.
+
+**Twenty-four of the twenty-six have a config file.** Products and Flow Canvas
+ship none, so there is no tag for them and nothing missing.
 
 ```bash
+php artisan vendor:publish --tag=activity-config
+php artisan vendor:publish --tag=assessments-config
 php artisan vendor:publish --tag=brand-context-config
+php artisan vendor:publish --tag=email-templates-config
+php artisan vendor:publish --tag=entitlements-config
+php artisan vendor:publish --tag=events-config
 php artisan vendor:publish --tag=identity-contracts-config
-php artisan vendor:publish --tag=suppression-config
-php artisan vendor:publish --tag=webhook-manager-config
-php artisan vendor:publish --tag=statamic-automations-config
+php artisan vendor:publish --tag=invoices-config
+php artisan vendor:publish --tag=lead-magnets-config
 php artisan vendor:publish --tag=leadhub-config
 php artisan vendor:publish --tag=marketing-config
-php artisan vendor:publish --tag=email-templates-config
-php artisan vendor:publish --tag=preference-center-config
-php artisan vendor:publish --tag=activity-config
 php artisan vendor:publish --tag=notifications-config
+php artisan vendor:publish --tag=preference-center-config
+php artisan vendor:publish --tag=statamic-automations-config
+php artisan vendor:publish --tag=statamic-booking-config
+php artisan vendor:publish --tag=statamic-clientrooms-config
+php artisan vendor:publish --tag=statamic-consent-config
+php artisan vendor:publish --tag=statamic-funnels-config
+php artisan vendor:publish --tag=statamic-insights-config
+php artisan vendor:publish --tag=statamic-offers-config
+php artisan vendor:publish --tag=statamic-payments-config
 php artisan vendor:publish --tag=statamic-toc-config
+php artisan vendor:publish --tag=suppression-config
+php artisan vendor:publish --tag=webhook-manager-config
 ```
 
-One correction to an older version of this page: **Table of Contents does have
-a config file**, published under `statamic-toc-config`, alongside
-`statamic-toc-views` for its templates. It was previously listed here as having
-none.
+This list is not maintained by hand. `scripts/check-publish-tags.mjs` reads the
+tag each addon actually registers out of its service provider and fails if the
+page and the code disagree; `--list` prints the block above. An earlier version
+of this page named twelve tags, and the tip below it named the wrong number of
+exceptions.
 
-::: tip Where the config tag comes from
-Most of these tags are not registered by the addon at all. Statamic's
-`AddonServiceProvider` publishes `{slug}-config` automatically whenever
-`config/{slug}.php` exists in the package, which is why the tag name always
-tracks the addon slug rather than the package name. Addons whose slug and
-config filename differ — Automations and Email Templates — register theirs
-explicitly instead.
+::: tip Why some tags carry `statamic-` and others do not
+Statamic's `AddonServiceProvider` registers `{slug}-config` for you, but only
+when `config/{slug}.php` exists, with the **slug** deciding the filename it
+looks for. The slug is `extra.statamic.slug` in the package's `composer.json`,
+or the package name after the slash.
+
+An addon loses that automatic tag in three ways, and then registers one itself:
+
+- **Its slug and its config file disagree.** Automations is `statamic-automations`
+  with `config/automations.php`, so its tag is `statamic-automations-config`,
+  after the slug. Email Templates has the same mismatch and registered
+  `email-templates-config`, after the file. Assessments and Identity Contracts
+  are the same case again. There is no rule here to remember, which is why the
+  list is generated.
+- **It sets `protected $config = false`** and takes the publishing into its own
+  hands: Assessments, Booking, Client Rooms, Consent, Funnels, Insights, Offers,
+  Payments and Table of Contents. Named rather than counted, because a count
+  with no names is the kind of number this page keeps getting wrong.
+- **Its provider is not an `AddonServiceProvider` at all.** Brand Context,
+  Identity Contracts, Suppression and Preference Center extend Laravel's plain
+  one, so every tag they have is registered by hand.
 :::
 
-Beyond configuration, several addons publish migrations, views or translations
-under their own tags. Those are listed on each addon's installation page.
+Beyond configuration, addons publish migrations, views, translations and their
+Control Panel assets under further tags. Those are listed on each addon's
+installation page, because which of them you want depends on what you are
+overriding.
 
 ## Queue and scheduler
 
