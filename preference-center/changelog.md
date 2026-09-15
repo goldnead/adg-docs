@@ -12,6 +12,60 @@ Release notes for `goldnead/statamic-preference-center`, as published with the p
 Cross-version upgrade notes for the whole suite are in
 [Upgrading](/guide/upgrading).
 
+## 1.8.0 — 2026-09-07
+
+### Added: 15 values in the Control Panel, without this package getting a screen of its own
+
+This package has no Control Panel of its own, only four public routes. That is exactly why every
+one of its values was out of the operator's reach until now: a link's lifetime, the throttling,
+the sender address, all of it only in `.env`. **Settings → Addon Settings** now carries a section
+for this addon, with five groups:
+
+- **Magic link:** whether it is offered, how long the signed URL is valid, how long the session
+  lasts afterwards, the response-time floor, and whether links also go to unknown addresses. The
+  response-time floor is not a finishing touch: without it the response time betrays who is on
+  the list, because the fast case (address unknown) can be told apart from the slow one (mail
+  queued). “To unknown addresses” stays off, and it should stay that way — switched on, this
+  endpoint is an open mail sender with a few steps in between.
+- **Throttling:** requests and time window per address and per origin. The second counter is the
+  one that stops somebody using this endpoint to mail a list of addresses that is not theirs.
+- **Sender:** address and name for the case where the brand has no sender identity of its own. If
+  it has one, that one wins.
+- **Blocks on the page:** whether the block for notifications, for the suppression list and for
+  sequences is shown.
+- **Audit trail:** whether applied changes are reported to LeadHub.
+
+Only the deviation is stored, everything else keeps following
+`config/preference-center.php`.
+
+Not on the page, and the group descriptions say so: `routes.enabled`, `routes.prefix` and
+`routes.middleware` are read while the routes are being created. The same trap, hidden one level
+down, catches the marketing block: the token route asks at creation time whether the source is
+available, so that switch also decides whether this route exists at all. Offered on the page it
+would make the block disappear at once and still leave the route standing until the next deploy;
+half effective is worse than not at all. The three other sources are asked at request time only
+and are therefore on the page. Also left out: `delivery.mail_headers` and
+`delivery.ignored_query_parameters`, which belong to the protocol with the mail provider, and
+`audit.log_channel`, because the log channels belong to the host and a free-text field over them
+is one typo away from an audit trail that writes into nowhere.
+
+**New permission `manage preference-center settings`.** Nobody holds it at first, and until it is
+assigned to a role the section stays invisible.
+
+**Requires `goldnead/statamic-brand-context` 1.13 or newer.** Older versions carry the page but
+do not apply its values reliably: on an installation with a single brand, the settings of the
+addons that registered last never reached the config, and up to 1.12 a second save of the same
+section deleted the first save's override, without a message. Anyone who set values before this
+update should check afterwards that they are still there.
+
+### Fixed: the lint baseline counted occurrences instead of naming a cause
+
+For contributors only, with no effect on an installation. A baseline entry recorded “18” as the
+number of `env()` calls in `config/preference-center.php`; with the 19th the run went red. A
+baseline that records a count turns red with every addition and is then counted up instead of
+read. The cause is that the rule measures against the application's config path, which does not
+exist in a package; it has a parameter for that, and the baseline entry falls away entirely.
+
 ## 1.7.0 — 2026-08-25
 
 ### Fixed
@@ -31,87 +85,85 @@ Cross-version upgrade notes for the whole suite are in
 
 ## 1.6.3 — 2026-08-23
 
-### Fixed — die Matrix zeichnete Kästchen für Kanäle, die es nicht gibt
+### Fixed — the matrix drew boxes for channels that do not exist
 
-Die Spalten kommen aus der globalen Kanalliste, die Zeilen aus den Arten. Seit
-`goldnead/statamic-notifications` 1.7 kann eine Art sagen, welche Kanäle sie
-überhaupt führt — die Zeile fragte aber nicht danach und zeichnete für jede
-Spalte ein Kästchen.
+The columns come from the global channel list, the rows from the types. Since
+`goldnead/statamic-notifications` 1.7 a type can say which channels it carries
+at all — but the row did not ask and drew a box for every column.
 
-Auf der Produktion sichtbar an `crm.task_assigned`: die Art führt seit
-leadhub 2.5 keinen Digest mehr, in der Tabelle stand die Digest-Spalte
-trotzdem. Anklickbar, gespeichert, und beim Versand ignoriert.
+Visible in production on `crm.task_assigned`: since leadhub 2.5 that type
+carries no digest any more, yet the digest column was still in the table.
+Clickable, saved, and ignored when sending.
 
-Genau die Sorte Bedienelement, die diese Reihe abschaffen sollte: ein
-Kästchen, das aussieht wie eine Wahl und keine ist.
+Exactly the kind of control this series set out to abolish: a box that looks
+like a choice and is none.
 
-Eine Art ohne diesen Kanal bekommt jetzt eine leere Zelle. Wichtig dabei:
-„nicht vorhanden" und „aus" bleiben verschieden — ein ausgeschalteter Kanal
-ist eine Wahl, ein fehlender ist keine.
+A type without that channel now gets an empty cell. Importantly, “not present”
+and “off” stay different — a switched-off channel is a choice, a missing one is
+not.
 
 ## 1.6.2 — 2026-08-23
 
-### Fixed — ein Mensch, eine Einstellung, egal durch welche Tür
+### Fixed — one person, one set of preferences, whichever door they come through
 
-Ein Besuch über den Mail-Link wurde immer als **Kontakt** aufgelöst, auch bei
-jemandem, der ein Konto hat. Das hatte zwei Folgen, und beide sind Fehler:
+A visit through the mail link was always resolved as a **contact**, even for
+somebody who has an account. That had two consequences, and both are defects:
 
-- `notification_preferences` hängt an `(user_id, contact_uuid)`. Wer über den
-  Mail-Link etwas einstellte, schrieb in eine andere Zeile als angemeldet —
-  derselbe Mensch, zwei Einstellungssätze, keiner sah den anderen. Das war
-  schon vor dieser Reihe so und fiel nur niemandem auf.
-- Seit 1.6.1 die Arten nach Zuständigkeit filtert, verschwanden über den
-  Mail-Link zusätzlich alle Einstellungen, die ein Konto voraussetzen.
+- `notification_preferences` hangs on `(user_id, contact_uuid)`. Anyone who set
+  something through the mail link wrote to a different row than when signed in —
+  the same person, two sets of preferences, neither seeing the other. That was
+  already so before this series and simply went unnoticed.
+- Since 1.6.1 filters the types by applicability, every preference that requires
+  an account additionally disappeared over the mail link.
 
-Findet sich zu der Adresse ein Konto, wird der Besuch jetzt als dieses Konto
-aufgelöst — dieselbe Kennung wie beim Anmelden. Mehr darf dabei niemand: der
-Token beweist ohnehin die Verfügung über das Postfach, und
-`canStoreNotificationPreferences()` hing nie am Kontotyp, sondern nur daran,
-ob die Person überhaupt einzuordnen ist.
+If an account is found for that address, the visit is now resolved as that
+account — the same identity as when signing in. Nobody gains more by it: the
+token proves control of the mailbox anyway, and
+`canStoreNotificationPreferences()` never hung on the kind of account, only on
+whether the person can be placed at all.
 
-Gefunden in einem Nutzertest mit einem echten Konto — kein Test hätte das
-treffen können, weil keiner je einen Nutzer anlegte.
+Found in a user test with a real account — no test could have hit it, because
+none of them ever created a user.
 
-### Fixed — die Testsuite hing von früheren Läufen ab
+### Fixed — the test suite depended on earlier runs
 
-`statamic.users.repository` steht in der Suite auf `file`, und der Treiber
-schreibt echte YAML-Dateien. Die Datenbank wird zwischen Tests zurückgesetzt,
-diese Dateien nicht. Solange kein Test Nutzer anlegte, blieb das folgenlos;
-mit dem ersten, der es tut, fielen prompt drei fremde Tests um. `setUp()` räumt
-das Verzeichnis jetzt aus.
+`statamic.users.repository` is set to `file` in the suite, and that driver
+writes real YAML files. The database is reset between tests, those files are
+not. As long as no test created users this had no consequences; with the first
+one that does, three unrelated tests promptly fell over. `setUp()` now clears
+the directory.
 
 ## 1.6.1 — 2026-08-22
 
-### Fixed — der leere Benachrichtigungs-Block stand mit einem falschen Satz da
+### Fixed — the empty notifications block stood there with a wrong sentence
 
-Seit `goldnead/statamic-notifications` 1.7 die Arten nach Zuständigkeit
-filtert, kommt eine leere Liste regelmäßig vor: eine Newsletter-Adresse ohne
-Konto hat schlicht keine Benachrichtigungen einzustellen. Der Block wurde
-trotzdem gezeichnet — mit der Zeile „Diese Installation kennt keine
-Benachrichtigungsarten", die dann doppelt falsch war: die Installation kennt
-sehr wohl welche, und dem Leser hilft der Satz ohnehin nicht.
+Since `goldnead/statamic-notifications` 1.7 filters the types by applicability,
+an empty list occurs regularly: a newsletter address without an account simply
+has no notifications to set. The block was drawn all the same — with the line
+“this installation knows no notification types”, which was then wrong twice
+over: the installation does know some, and the sentence does not help the
+reader either way.
 
-`hasTypes()` verlangt jetzt Zeilen, nicht nur ein vorhandenes Array. Für den
-Menschen davor sind „keine registriert" und „keine für dich" dasselbe: es gibt
-nichts einzustellen, und eine Überschrift ohne Inhalt ist schlimmer als keine.
+`hasTypes()` now demands rows, not merely an array that exists. For the person
+in front of it, “none registered” and “none for you” are the same: there is
+nothing to set, and a heading without content is worse than none.
 
 ## 1.6.0 — 2026-08-22
 
-### Added — laufende Serien verlassen
+### Added — leaving a running sequence
 
-Der vierte Block, und der einzige mit einer Zwischenstufe. Listen sind An/Aus
-für ein ganzes Thema, die Frequenz gilt für alles — eine Serie ist ein
-einzelner Strang, den man verlassen kann, ohne den Rest aufzugeben. Genau das
-ist der Fall, den jemand meint, der eine Willkommensstrecke nicht zu Ende lesen
-will.
+The fourth block, and the only one with a step in between. Lists are on/off for
+a whole topic and the cadence applies to everything — a sequence is a single
+strand that can be left without giving up the rest. That is exactly the case
+somebody means who does not want to read a welcome sequence to the end.
 
-Gezeigt werden laufende Serien (ein Lauf wartet noch auf seinen nächsten
-Schritt) **und bereits verlassene**. Ohne die verlassenen wäre der Block nach
-dem Ausstieg leer und der Weg zurück nirgends zu finden.
+Shown are running sequences (a run still waiting for its next step) **and ones
+already left**. Without those already left, the block would be empty after
+leaving and the way back nowhere to be found.
 
-Wie die drei anderen Quellen über `class_exists` geschützt: ohne
-`goldnead/statamic-automations` gibt es keine Serien und damit keinen Block.
-Abschaltbar über `preference-center.sources.sequences`.
+Guarded through `class_exists` like the three other sources: without
+`goldnead/statamic-automations` there are no sequences and therefore no block.
+Switchable off through `preference-center.sources.sequences`.
 
 ## 1.5.2 — 2026-08-13
 

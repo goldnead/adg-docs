@@ -14,6 +14,74 @@ Cross-version upgrade notes for the whole suite are in
 
 All notable changes to this addon are documented here.
 
+## 1.3.0 — 2026-09-07
+
+### Changed: the metrics are a table, not a card grid
+
+Every metric was a card with a heading, a figure, the change and two or three lines of
+explanation. Five metrics filled a screen that way, and anyone with ten scrolled through
+sections instead of having an overview. On top of that, the Statamic Control Panel has no card
+grid for figures at all: it has widgets on the dashboard and tables everywhere else.
+
+It is now one row per metric in `Listing`, the table that also draws the entries view: metric,
+source, value, change, series. It opens sorted by source, so the grouping by addon survives that
+previously came from one panel each. The explanation sits on the detail page, which already
+existed and which the same click opens as the card did before, period included.
+
+The empty state for "no addon reports a figure" is unchanged.
+
+`MetricReader::overview()` therefore returns the series (`series`) per metric as well — the
+series column needs it, and the detail page had asked the same question before anyway. That
+costs one query per metric on this screen.
+
+### Added: the two settings are in the Control Panel
+
+`default_period` and `currency` were reachable only through `config/statamic-insights.php`. Both
+now sit under *Addon settings* (`/cp/brand-settings`), per brand, through the shared layer from
+`goldnead/statamic-brand-context` — no controller of its own, no page of its own, no table of
+its own. Whatever is not changed there keeps following the config file.
+
+Both values are read at request time in a controller; a key that is read at boot does not belong
+on this page, because the overrides only take effect afterwards.
+
+New permission: `manage insights settings`. Existing permissions are unchanged.
+
+`goldnead/statamic-brand-context` ^1.12 is therefore a real dependency of this addon.
+
+## 1.2.2 — 2026-09-05
+
+### Fixed: a split with tied figures came back in whatever order the driver felt like
+
+`splitByColumn()` sorted by the figure alone. For rows that **tie** that promises nothing, and
+the database decides — differently per driver. The same two rows came back one way on SQLite and
+the other way on MySQL. On screen that is a list which reshuffles for no reason; in a suite it is
+green on the laptop and red on CI, which is where it surfaced (`statamic-events`, 2026-09-05).
+Small counts, fresh installs and quiet weeks produce ties constantly, so the case is not rare.
+
+There is now a second sort key: the column itself. At the cut-off it is more than cosmetic — with
+a tie sitting exactly where `$limit` cuts, it used to depend on the driver **which** row came back
+at all, not merely in what order.
+
+This is the same lesson as 1.2.1 one method over. `bucketExpression()` learned it for series
+back then; the split never had it.
+
+Thirteen addons carry `TableMetric` as a byte-for-byte copy under `tests/Fakes/`. All of them
+have been brought along.
+
+## 1.2.1 — 2026-09-05
+
+### Fixed: series buckets come back in order on MySQL
+
+`TableMetric::bucketed()` grouped by the bucket and never ordered by it. `GROUP BY`
+promises no order; SQLite happens to return the groups sorted, MySQL 8 returns them in the
+order it met the rows. A series built on MySQL could therefore arrive with its days out of
+sequence, and every addon whose metrics extend `TableMetric` inherited that. The query now
+carries an explicit `ORDER BY bucket`; a test inserts the rows newest-first and asserts the
+keys ascend.
+
+Addons that keep a verbatim copy of `TableMetric` in their test suite
+(`tests/Fakes/insights-table-metric.php`) need to copy this version across.
+
 ## 1.2.0 — 2026-09-02
 
 ### Added: Reports, a third screen
@@ -56,14 +124,14 @@ Nothing in the public contract layer changed: `Metric`, `HasBreakdowns`,
 
 ## 1.1.1 — 2026-08-29
 
-Nur Dokumentation, kein Codeunterschied zu 1.1.0. Zwei Dinge, die im Paket
-ausgeliefert werden und in 1.1.0 noch nicht drin waren: der Hinweis oben, dass
-nach dem Wechsel einmal `php artisan cache:clear` laufen muss, und eine Zusage
-in `docs/reading-the-numbers.md`, die das Addon nicht halten kann und deshalb
-zurückgenommen wurde.
+Documentation only, no code difference to 1.1.0. Two things that ship in the
+package and were not yet in 1.1.0: the note at the top that
+`php artisan cache:clear` has to run once after the upgrade, and a promise in
+`docs/reading-the-numbers.md` that the addon cannot keep and that was therefore
+withdrawn.
 
-Eigene Patch-Version, weil 1.1.0 zu diesem Zeitpunkt bereits veröffentlicht war.
-Ein veröffentlichter Tag wird nicht verschoben.
+A patch version of its own, because 1.1.0 had already been published at that
+point. A published tag is not moved.
 
 ## 1.1.0 — 2026-08-29
 

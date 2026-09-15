@@ -12,6 +12,48 @@ Release notes for `goldnead/statamic-consent`, as published with the package.
 Cross-version upgrade notes for the whole suite are in
 [Upgrading](/guide/upgrading).
 
+## 1.8.0
+
+### Added: eight of the banner's values in the Control Panel
+
+**Settings → Addon Settings** now carries a section for this addon, with four groups:
+
+- **Decision:** the consent version (raising it invalidates every stored decision and shows the
+  banner to every visitor again, which is exactly what is due as soon as a non-essential service
+  is added), the validity in days, and whether Global Privacy Control is honoured.
+- **Shipped assets:** whether `&#123;&#123; consent:head }}` outputs the addon's stylesheet and script.
+  Without that script and without one of your own, no banner is shown and no decision is
+  stored.
+- **Proof of consent:** after how many days `php please consent:prune` deletes a record.
+- **Google Consent Mode v2:** whether the signals are reported and how long Google waits for the
+  update.
+
+Only the deviation is stored; everything else keeps following
+`config/statamic-consent.php`.
+
+**Where this ends and the global set begins.** Everything that is content and has to be
+translated — banner and dialog texts, the addresses of the privacy policy and the legal notice
+(Impressum), the lists of services and categories — stays in the `consent` global set. A global
+is the right instrument for localisable content, and two places for the same value would be
+worse than one missing place. The settings page only carries what the global set does not cover.
+
+Not on the page, and the group descriptions say so: `cookie.name` and `cookie.same_site`,
+because a change of name makes every stored decision unfindable without that looking like a
+reset, and because the name goes to `EncryptCookies::except()` as early as `bootAddon()`.
+`record.enabled`, because switching it on needs a migration. `record.rate_limit`, because it is
+read while the route is being registered. And `google_consent_mode.signals`, a mapping of four
+Google signals onto lists of service handles, for which this layer has no type; a text field
+that writes a mapping out and back through an invented separator is a worse editor than none.
+
+**New permission `manage consent settings`.** Nobody holds it at first, and until it is assigned
+to a role the section stays invisible. Existing permissions are unchanged.
+
+**Requires `goldnead/statamic-brand-context` 1.13 or newer.** Older versions show the page but
+do not apply its values reliably: on an installation with a single brand, the settings of the
+addons that registered last never reached the config, and up to 1.12 a second save of the same
+section deleted the first save's override, without a message. Anyone who set values before the
+update should check afterwards that they are still there.
+
 ## 1.7.0
 
 ### Added: this addon's figures appear in Insights

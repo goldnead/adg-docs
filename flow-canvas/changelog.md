@@ -12,6 +12,53 @@ Release notes for `goldnead/statamic-flow-canvas`, as published with the package
 Cross-version upgrade notes for the whole suite are in
 [Upgrading](/guide/upgrading).
 
+## 1.4.1 — 2026-09-07
+
+### Changed: the developer address points to adriangoldner.dev
+
+`extra.statamic.developer-url` in `composer.json` still read gldnr.studio. The sender that the
+Control Panel shows on the addon, and Packagist on the package page, now reads
+adriangoldner.dev, like the other addons in the suite. Nothing changes in the code; anyone who
+does not look at where the addon comes from will notice nothing about this release.
+
+## 1.4.0 — 2026-09-05
+
+- **Levels follow the real card height, not a fixed row.** `computeLayout()` placed every level
+  exactly `ROW_HEIGHT` below the previous one. A card that grows taller than those 200px through
+  its content (four variable pills on a `send_email` are enough) reached into the level below,
+  and the plus button between them half disappeared behind the next card (finding F19 of
+  2026-09-03).
+
+  New: `computeLayout(nodes, edges, { nodeHeights })` takes the measured card heights per
+  `node_key` and gives every level the spacing its tallest card needs; all other levels stay
+  where they were. Without that argument it computes bit-for-bit as before, three nodes still
+  give y = 0, 200, 400. The canvas measures the cards itself and passes the heights through.
+
+- **The package is a Statamic addon, not an anonymous `library`.** `composer.json` now carries
+  `type: statamic-addon`, `extra.statamic` (name, description, slug, URL, developer) and a
+  service provider. The provider is deliberately empty: it publishes nothing and registers
+  nothing, because the hosts compile the canvas into their own bundles. It exists because
+  Statamic only lists a package on the Addons page when `extra.statamic` **and** a provider are
+  present; without it the entry drops out of the manifest without a word. `statamic/cms ^6.0` is
+  now explicitly in `require`, where it was previously only implied by the hosts.
+
+- **A test suite, on two levels.** PHPUnit through `Statamic\Testing\AddonTestCase` checks that
+  the provider boots, what the manifest delivers to the Marketplace card, and that every path
+  the hosts import from `@goldnead/flow-canvas` still exists. Vitest runs directly against the
+  source files in `resources/js/composables` (no build needed): auto-layout, undo/redo with
+  coalescing, output specifications, validation and key-value rows, 43 tests. Every test was held
+  once against a deliberately broken function and turned red doing so. CI runs PHP 8.2 to 8.4
+  against Laravel 12 and 13, plus the JS job, Pint and the studio's addon-lint.
+
+- **`onStaleOutputSpec(handler)`.** When the canvas meets an output specification from a newer
+  contract version, it falls back to a `default` output and reports that once per node type.
+  Previously wired hard to `console.warn`; that stays the default, but a host can now redirect
+  the message (toast, its own logger). The handler receives the text and
+  `{ type, version, supported }`.
+
+- There is still no empty `dist/`, `config/` or Vite setup, and that is now a test as well: the
+  hosts are the place where this canvas becomes a bundle.
+
 ## 1.3.0 — 2026-09-02
 
 - **A node may carry a `thumbnail`.** A URL on the node, and the card draws it as a 16:10 tile the
@@ -31,15 +78,15 @@ Cross-version upgrade notes for the whole suite are in
 
 ## 1.2.1 — 2026-08-26
 
-### Removed — die VERSION-Konstante log
+### Removed — the VERSION constant
 
-Sie stand auf `1.0.0`, ausgeliefert war v1.2.0. Nichts liess sie mitwandern, wenn ein Tag wanderte —
-eine Versionsnummer, die von Hand kopiert werden muss, driftet nicht aus Versehen, sondern von
-selbst. Wer darauf eine Faehigkeitspruefung baute, bekam die falsche Antwort.
+It stood at `1.0.0` while v1.2.0 was shipped. Nothing moved it along when a tag moved — a version
+number that has to be copied by hand does not drift by accident, it drifts on its own. Anyone who
+built a capability check on it got the wrong answer.
 
-Entfernt statt nachgezogen: niemand in der Familie las sie (gegrept), und wofuer diese Klasse
-existiert — „ist das Paket installiert" — beantwortet `class_exists()`, das nicht veralten kann.
-Composer kennt die Version ohnehin, und dort stimmt sie.
+Removed rather than corrected: nobody in the family read it (grepped), and what this class exists
+for — "is the package installed" — is answered by `class_exists()`, which cannot go stale.
+Composer knows the version anyway, and there it is right.
 
 ## 1.2.0 — 2026-08-26
 

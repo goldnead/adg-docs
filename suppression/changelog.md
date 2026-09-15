@@ -12,6 +12,48 @@ Release notes for `goldnead/statamic-suppression`, as published with the package
 Cross-version upgrade notes for the whole suite are in
 [Upgrading](/guide/upgrading).
 
+## 1.3.0 — 2026-09-07
+
+### New: the suppression rules are configurable in the Control Panel
+
+This package has no Control Panel surface of its own and is not meant to have one. But its
+config says of the threshold, in so many words, that the value sits there because it is meant to
+be adjusted as soon as there is something to adjust — and until now that took a deploy. Under
+**Settings → Addon Settings** there is now a section for it, with four groups:
+
+- **Soft bounces:** how many within which window block an address. A lower threshold blocks
+  earlier and catches more mailboxes that were merely full; a longer window collects more
+  bounces and therefore also blocks earlier, even when the threshold stays the same.
+- **Release:** the minimum length of the reason somebody has to give when deliberately lifting a
+  block. The point of the field is that it still means something a year later; one word is a
+  checkbox in the clothing of a text field. 0 means no minimum length.
+- **Scope per reason:** for each of the six reasons separately, whether it blocks the address
+  everywhere or only for the brand that entered it. Reversible without a migration, because the
+  brand is on every row; a change applies to new entries, rows already written keep their scope.
+  Six separate select fields rather than one mapping field, because the reasons live in the code
+  and the operator invents none here. The scope itself is a choice between two values and not
+  free text: a third value would make the check throw an exception on the next block attempt,
+  that is, in the middle of a send rather than in the form.
+- **Insights:** whether the figures are offered to the reporting addon.
+
+Only the deviation is stored, everything else still follows `config/suppression.php`.
+
+Four of these values read their starting value from an environment variable, and that stays so:
+the variable sets the starting value, a value stored here beats it, and "back to default" leads
+to the variable again.
+
+**Nothing is missing from the page.** This package has no key that is read at boot: it registers
+no routes and no navigation, and the Insights switch is not asked until a tile is drawn.
+
+**New permission `manage suppression settings`.** Nobody holds it at first, and until it is
+assigned to a role the section stays invisible. Existing permissions are unchanged.
+
+**Requires `goldnead/statamic-brand-context` 1.13 or later.** Older versions carry the page but
+do not apply its values reliably: on an installation with a single brand the settings of the
+addons registered last did not reach the config at all, and up to 1.12 a second save of the same
+section deleted the first save's override without a message. If you set values before this
+update, check afterwards whether they are still there.
+
 ## 1.2.1 — 2026-09-03
 
 ### Fixed: the last second of a period is inside the "blocked" figure

@@ -16,6 +16,49 @@ All notable changes to this package are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this package
 follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.0] — 2026-09-08
+
+### Fixed
+
+- `/cp/entitlements` answered HTTP 500 on an install whose migrations had never run. It now
+  shows an empty state naming the missing table and what to run, and writes the reason to the
+  log. The JSON branch the listing fetches is covered by the same check.
+- A test pinned the grace period to a fixed calendar date and compared it against `now()`, so it
+  turned red on 08.09.2026 without anything changing. It works in relative dates now, like the
+  rest of the suite.
+
+## [1.3.0] — 2026-09-07
+
+### New: three values in the Control Panel
+
+Under **Settings → Addon Settings** there is a section for this addon, with two groups:
+
+- **Control Panel:** the rows per listing page, and the permitted subject types. If anything is
+  entered for the types, the manual grant form offers only those; empty means free text, and a
+  typo then creates a grant that belongs to nobody and only surfaces once somebody complains.
+- **Neighbouring addons:** whether the four figures are reported to Insights. Off means they do
+  not appear there at all — which is something other than a zero.
+
+Only the deviation is stored, everything else still follows `config/entitlements.php`.
+
+Not on the page, and the group texts say so: `cp.enabled` is read while the routes are
+registered and while the navigation is built. `bridges.activity` is worse than merely late,
+because the bridge remembers in a static property that it has attached; a later "off" does not
+detach the listeners again. `sources` is a mapping from handle to display name and is not a
+whitelist either: a source that is not listed writes and grants just the same, it only shows its
+raw handle. And `manual.source` is the value in the `source` column of every row written by
+hand — changing it separates the new rows from the existing ones without changing anything about
+those.
+
+**New permission `manage entitlements settings`.** Nobody holds it at first, and until it is
+assigned to a role the section stays invisible. The three existing permissions are unchanged.
+
+**Requires `goldnead/statamic-brand-context` 1.13 or later.** Older versions show the page but
+do not apply its values reliably: on an installation with a single brand the settings of the
+addons registered last did not reach the config at all, and up to 1.12 a second save of the same
+section deleted the first save's override without a message. If you set values before the
+update, check afterwards whether they are still there.
+
 ## [1.2.1] — 2026-09-03
 
 ### Fixed: revocation moved into the header menu, and an icon that did not exist

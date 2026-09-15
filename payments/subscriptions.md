@@ -166,6 +166,18 @@ a grant in step by itself. Three rules, each deliberately *not* the obvious thin
 - **Cancelling is not revoking.** Somebody who cancels has paid for the period they are in
   and keeps it to the end. Revoking would take away time they bought, and in the sibling a
   revocation carries a reason precisely because it means "taken away deliberately".
+
+  Where that end lies is read in three steps, and the order matters. The provider's
+  `next_payment_at` is the truth while the agreement runs. A cancellation clears it — nothing
+  will be charged again — so the bridge then asks the subscription itself: **the last paid
+  instalment plus one interval**. Only when nothing was ever charged does the window close at
+  the cancellation, because there is no paid period to leave anyone. A *fully* refunded
+  instalment does not count as paid; a partial refund is a discount, not a withdrawal, and the
+  period stays bought.
+
+  Until 1.24.4 the middle step was missing, and the chain fell straight through to the
+  cancellation date: whoever cancelled lost the month they had just paid for, in the same
+  second. Nothing errored.
 - **A renewal without a date from the provider changes nothing**, and says so in the log. The
   provider knows when it will charge again; a guess here is a grant that ends too early or
   too late, and either way the customer finds out first.

@@ -12,253 +12,973 @@ Release notes for `goldnead/statamic-payments`, as published with the package.
 Cross-version upgrade notes for the whole suite are in
 [Upgrading](/guide/upgrading).
 
+## 1.24.4 — 2026-09-15
+
+### Fixed: cancelling took away the period the buyer had already paid for
+
+The rule has been written down since the bridge existed, in the class header and again in
+`FollowSubscriptionWithEntitlement`: **cancelling is not revoking. Somebody who cancels has paid for
+the period they are in and keeps it to the end.** It was not what happened.
+
+`Subscriptions::cancel()` sets `next_payment_at` to `null` and `ended_at` to now — correctly, nothing
+will be charged again — and only then dispatches `SubscriptionCancelled`. `closeFor()` read
+`next_payment_at ?? ended_at ?? now()`, found the first link of that chain freshly emptied, and
+landed on the cancellation day.
+
+Measured on a real test purchase on 15.09.2026: an instalment plan of 3 × 520 €, first instalment
+paid, cancelled — and the access expired in the same second. The buyer had paid for the running
+month and lost it.
+
+Nothing about it was a mistake in reasoning. It was an ordering, and a test that described a
+cancelled row the running system never produces: it still carried its `next_payment_at`, so the first
+link always answered and the second was never reached.
+
+`closeFor()` now asks `Subscription::paidThroughAt()` when the provider's date is gone. That date is
+derived from what actually arrived — the last paid instalment plus one interval — and survives a
+cancellation, because it is a fact rather than an intention. A **fully** refunded instalment does not
+count; the same line the refund revocation draws. A partial refund is a discount, not a withdrawal,
+and the period stays bought. With nothing ever charged, the window still closes at the cancellation:
+there is no paid period to leave anyone.
+
+### Changed: one interval calculation instead of two
+
+`Subscription::addInterval()` is now the single place that adds an interval to a date, and
+`Subscriptions::afterOneInterval()` delegates to it. Two copies would have been two ways to disagree
+about the end of a month — which is exactly what `addMonthsNoOverflow()` is there to prevent.
+
+## 1.24.3 — 2026-09-09
+
+### Added: `payments:subscription-brand-backfill`
+
+1.24.2 gave a *new* agreement the brand of its catalogue entry. Agreements that already existed kept
+the brand of their first payment — the very answer that fix overruled. A fix that only applies going
+forward leaves the stock wrong, and for an agreement wrong is expensive: the brand hangs on every
+cycle, every invoice and its visibility in the portal, for as long as it runs.
+
+```
+php artisan payments:subscription-brand-backfill          # zeigt nur
+php artisan payments:subscription-brand-backfill --apply  # schreibt
+```
+
+The dry run is the default and prints one row per deviation (agreement, product, brand today, brand
+derived, reason). `--apply` writes each row under its own condition — the brand it was read at — and
+logs one line per change. Agreements whose catalogue entry cannot be resolved, or whose entry names
+something that is not a usable brand id, are **reported and left alone**, and the command then exits
+non-zero: "I have no evidence" is not evidence, and a run that leaves such rows behind must not pass
+for done inside a script.
+
+**A sibling of `payments:brand-backfill`, not an option on it.** That one derives an agreement's
+brand from its *first payment*, which is the rule being overruled here. Two contradicting rules
+inside one fixed point would resolve by pass order.
+
+`Brands::forCatalogueEntry()` keeps its behaviour and its log messages to the word; the decision it
+makes is now `Brands::decideForCatalogueEntry()`, which decides and says nothing. The backfill uses
+that same body rather than a copy — and its dry run therefore cannot log "the new row is made under
+the brand of the offer" about a row it does not touch.
+
+## 1.24.2 — 2026-09-09
+
+### Fixed: an agreement belongs to the brand that sold it, not to its first payment
+
+`Subscriptions::startFromPayment()` wrote `'brand_id' => $payment->brand_id` while the catalogue
+entry sat loaded two lines above it. Same shape as the follow-up charge 1.24.1 fixed, with a much
+longer reach: an upsell stamped wrong is one line, an agreement stamped wrong is every cycle, every
+invoice and its visibility in the portal, for as long as it runs.
+
+The rule is the one 1.24.1 settled and it is now literally the same code, moved to
+`Brands::forCatalogueEntry()` and called from both places. The offer wins; a catalogue entry that
+names no brand keeps the inheritance and says so with `info`; one that names something that is not a
+brand id keeps it too and says so with `warning`; a mismatch is sold under the offer's brand with a
+`warning` naming both. On a single-brand install none of it runs and nothing is logged.
+
+Two copies of a decision about money are the one that later learns something and the one that does
+not, so `FollowUp::brandFor()` is gone rather than duplicated. It was `protected`, so no caller
+outside the package could reach it — a subclass could have overridden it, and such an override is no
+longer followed.
+
+Every one of those log lines now carries `for`, either `follow-up` or `subscription`. The sentence
+is the same for both; the work behind it is not. On a follow-up an operator straightens out a
+funnel, on an agreement they also have to move a running row that every cycle and every invoice
+hangs off.
+
+And a catalogue that no longer knows the thing being sold is its own case, at `warning`, rather than
+passing for "names no brand" at `info`. The callers ask the catalogue a second time (`find(…) ?? []`)
+and an offer can be deleted, deactivated or run out of its window while the webhook is working —
+brand, amount and currency then all fall back to the payment at once, and that is not the everyday
+event the `info` line describes.
+
+No backfill run for existing rows. `payments:brand-backfill` derives a brand rather than choosing
+one, and for an agreement whose first payment was itself stamped wrong there is nothing to derive
+from. Measured on 2026-09-09: in the addon playground 4 of 10 agreements would land on a different
+brand, on `adg-staging` none of 1, because that install has a single brand. Whether those rows get
+moved is a decision, not a migration.
+
+**This needs `statamic-offers` 1.11.2 or `statamic-products` 1.6.1 to change anything.** Older
+versions of both leave `brand_id` out of the catalogue entry, so every sale lands in the inheritance
+branch and behaves exactly as before, plus one `info` line. No constraint was added for it: the
+dependency runs the other way — those packages require this one — and this package must keep working
+on its own.
+
+## 1.24.1 — 2026-09-09
+
+### Fixed: a one-click upsell carried the brand of the payment before it
+
+`FollowUp::accept()` stamped `brand_id` from `$original->brand_id`. As inheritance that is well
+meant — no request runs here, a follow-up is accepted from a background run too, and
+`Brands::stampId()` would answer zero — but it answers the wrong question. Asked is not "whose
+payment was the previous one" but "whose offer is being sold here".
+
+The two answers come apart in two real cases. A payment from before `statamic-funnels` 1.15.2 was
+stamped with the default brand, because a funnel runs under `/f/<handle>` where `SetBrandForSite`
+finds neither host nor path segment — and the visit cookie lasts a month, so every upsell on such a
+payment inherited the wrong brand onward, with invoice series, sender and withdrawal text attached.
+And any funnel whose upsell belongs to a different offer, and therefore a different brand, than its
+first offer.
+
+The charge now takes the brand of the catalogue entry being sold. Where that differs from the
+inherited one, the sale still happens — the buyer pressed the order button, and an operator's
+configuration mistake is not something a buyer should pay for — but it is a `warning` naming both
+brands and the handle. Where the catalogue entry names no brand (a configured product, a seeder, an
+import), the inheritance stands and says so at `info`. Both are skipped on a single-brand install,
+where every brand is zero and a line per order would be noise — asked as `Brands::mode()`, not as
+`multiBrand()`, because the latter also answers false when the sibling refused to say. That refusal
+is the moment a wrong brand is most likely and least reconstructible, so the check runs there too.
+
+`brand_id` reaches this code the same way `interval` and `times` reach the subscription code:
+`Catalogue::find()` keeps whatever else the catalogue declared. An `int` or a string of digits — an
+Eloquent column without a cast hands over the latter — counts; anything else is not a brand id, and
+is inherited past with a warning of its own rather than dressed up as "names no brand". A `(int)`
+cast would have turned a stray array into brand `1`, which on some install is a real tenant.
+
+**This half alone does not fix a live site.** No shipped resolver returns `brand_id` yet, so on
+today's installs every follow-up takes the `info` branch and behaves exactly as before.
+`statamic-offers` and `statamic-products` have to hand the key over before the charge can land on
+the selling brand; that is filed separately. What ships here is the payments side and its proof.
+
+## 1.24.0 — 2026-09-09
+
+### Fixed: the entitlements bridge never asked the host who the buyer is
+
+`EntitlementsBridge` built the subject itself — `SubjectReference('email', …)` — and
+`EntitlementManager::reference()` passes a finished pair straight through. So the host's
+`SubjectResolver` was never asked, on any installation, ever. The docblock in this very method
+already said "a host that wants grants against its own users binds its own `SubjectResolver`,
+which is what that seam is for". The seam existed; nothing reached it.
+
+Measured on adriangoldner.com on 09.09.2026, against the grant of a real test purchase:
+
+```
+found by email: 0
+found by user:  1
+```
+
+Grants there hang off the site's own `User`. `renewFor()` and `closeFor()` were therefore
+**silent no-ops**: the dunning run went through to the end, reported the withdrawal and withdrew
+nothing. **Whoever stopped paying kept their access** — and a subscription's cycle extended
+nothing, so a second grant would pile up instead of the first one moving.
+
+The bridge now hands the resolver the raw address and lets it decide. Answers it, the address
+itself is the subject and `forSubject()` asks the same resolver again with the same value —
+twice the same answer is cheaper than two paths that can drift apart. Throws it (the default
+`MorphSubjectResolver` can do nothing with a string), it stays the `email` pair, exactly as
+before. Hosts without their own resolver see no change at all.
+
+**The reason it looked like the seam did not exist:** the container lookup used a leading
+backslash. `interface_exists()` and `new` forgive that, the service container does not — it
+looks the string up verbatim, finds no binding, and builds a fresh default that cannot handle
+an address. The fallback then always won.
+
+**A note for hosts binding one:** `EntitlementManager` is a singleton with the resolver in its
+constructor. Bind in `register()`, not in `boot()` — a binding set after the manager stands
+changes nothing, and nothing fails; it just keeps finding nothing.
+
+## 1.23.3 — 2026-09-09
+
+### Fixed: a credit note walked straight through the guard from 1.23.1
+
+The check that stops a worthless cycle from being booked asked `amountCent !== 0`. A Stripe invoice
+with a **negative** total — the pro-rated credit note written on a mid-period downgrade — is not
+zero, so it passed. It stands `paid`, because nothing stays open on an invoice that gives money
+back, and it names the agreement. Behind the guard it did exactly the damage 1.23.1 had just
+removed, with the sign reversed: a paid order over the full subscription amount for a period in
+which money went **out**, a second entitlement, and `times_charged` moved on.
+
+The guard now passes only two things: an amount the provider did not state (`null`, inherited as
+before, unchanged for Mollie) and an amount above zero. Zero or less aborts.
+
+`amountCent` remains a veto and is still **not** read as a price. An invoice for a partial period
+continues to book the inherited amount; that is a named follow-up, not part of this release.
+
+### Changed: a zero cycle after the first one is a warning, not a note
+
+The abort is logged, and until now always at `info`. That is right for the trial invoice — it
+arrives on every single signup, and an alarm that always rings gets ignored — but far too quiet for
+the other case the guard deliberately covers: a cycle waived by a 100% coupon or a month suspended.
+
+The consequence there is larger than the comment admitted. Without a payment `recordCycle()` does
+not run, so `refresh()` does not run, so `next_payment_at` stays on the old date. The buyer **loses
+access** and the agreement reads overdue on screen while the provider is perfectly happy.
+
+Anything that is not the first cycle now logs at `warning`, and the message says outright that no
+payment was booked, no access was extended and the payment date was not moved. First cycle is told
+apart by `times_charged`: the column starts at `0` and is only ever incremented by `recordCycle()`.
+`next_payment_at` was rejected for the job — it is set to `nextPaymentAt ?? startsAt` at creation
+and is therefore already in the past on the very first webhook when the provider sent no date. The
+lookup costs nothing on the hot path: it sits behind the veto, so an ordinary cycle never reaches
+it. An agreement this site has no row for counts as not-the-first-cycle and warns.
+
+### Fixed: the docblock over `openCycle()` had drifted off it
+
+1.23.1 inserted `nothingToCharge()` between the old comment block and the function it describes,
+leaving the block orphaned and `openCycle()` undocumented. Moved back, word for word.
+
+## 1.23.2 — 2026-09-09
+
+### Fixed: paying the last instalment took the access away
+
+An instalment purchase over 3 × 520 € creates an agreement with `times = 3`. When the last
+instalment went through, `recordCycle()` set the row to `completed` and fired
+`SubscriptionEnded` — and the listener next to it closed the access. The buyer transferred
+1,560 €, in full, and **lost in that same second** what he had bought.
+
+`SubscriptionEnded` arrives from two directions that mean the opposite of each other, and the
+difference is written on the row:
+
+- **`cancelled`** — the dunning run gave up, nothing was paid. Access runs out at the end of
+  the paid period. Correct, and unchanged.
+- **`completed`** — the plan received its last instalment. All paid. Access stays.
+
+Only the second case was wrong, and only it could be: `closeFor()` touches grants without an
+expiry date and skips the rest. An open-ended grant is exactly what a purchase for keeps hands
+out — the thing itself, paid in instalments. A time-limited subscription hands out its window
+through `access_days` and is extended per cycle by `renewFor()`.
+
+The price of this rule, said out loud: whoever sells a time-limited subscription with an
+open-ended `grants` and relies on the ending to take it back now keeps the access. That is the
+smaller of two wrongs — the other one takes something away from somebody who paid for it.
+
+**Found on a real test purchase on staging, not in the code.** The whole chain had been green
+in the test suite; what nobody had walked was the last instalment.
+
+## 1.23.1 — 2026-09-09
+
+### A trial no longer books a second payment nobody made
+
+Buying a subscription with a trial period produced **two** paid orders and two entitlements for one
+charge. Found on a real Stripe test account, not in a fixture.
+
+Stripe writes an invoice the moment a subscription starts — `billing_reason: subscription_create`,
+`total: 0`, `charge: null` — and marks it `paid`, because nothing stays open on an invoice worth
+nothing. `invoice.paid` therefore arrives in the same second as the checkout that took the money.
+The cycle path then wrote a second payment over the **agreement's** amount, granted the entitlement
+a second time, and moved `times_charged` on. Revenue reports counted money that never came, the
+buyer saw two orders, and the instalment counter ran ahead of the instalments.
+
+The amount was inherited from the agreement and never asked for, because a provider-driven cycle
+has no calling side to carry one. It is asked for now: `RemotePayment` has an `amountCent`, the
+Stripe adapter fills it from the invoice's `total`, and a cycle the provider prices at zero is not
+booked — with a line in the log, not silently.
+
+Two boundaries this was built against, both with tests:
+
+- **Nothing said is not zero.** A response without `total` — an older API version, a trimmed answer,
+  Mollie, which does not set the field at all — leaves `amountCent` at `null` and the amount is
+  inherited exactly as before. Only a number that is really there decides.
+- **`total`, not `amount_paid`.** An invoice settled from a customer's credit balance has
+  `amount_paid: 0` and is a full cycle. What the invoice is worth decides, not the route the money
+  took.
+
+The billing reason is deliberately **not** read: a `subscription_cycle` worth zero — a 100% coupon,
+a month waived — takes the same path. A line over the full amount for a period in which no money
+moved would be wrong in every report, and the amount there is inherited rather than evidenced. The
+price of that: such a period extends no access either, because access is extended against a paid
+payment. That is why the log line exists.
+
+## 1.23.0 — 2026-09-08
+
+Two silent holes closed, both provider-neutral.
+
+### Dunning: a failed cycle is no longer the end of a customer
+
+A cycle of a running agreement that was not paid produced `STATUS_SUSPENDED` mirrored from the
+provider and nothing else — no retry of our own, no letter, no way back. On a subscription product
+that is a lost customer who never finds out they were one.
+
+`SubscriptionCycleFailed` is the new event, the counterpart to `SubscriptionStartFailed` at the
+other end. It opens a configurable sequence — three letters at 3, 7 and 14 days by default, each
+carrying a signed, short-lived link into the customer portal where the card can be replaced.
+
+Three properties it was built for:
+
+- **Each letter goes out once.** The stage is claimed with a conditional `UPDATE` before the mail
+  is built, so two workers on one schedule cannot both write to the same customer. A missed week
+  does not send three letters at once either.
+- **The provider decides when it is over, not the calendar.** Before every letter the payment is
+  asked about at the provider. If the money arrived meanwhile the sequence ends *silently* — a card
+  that failed on Tuesday and worked on Thursday is an ordinary week, and nobody needs to hear about
+  it. A provider that will not answer sends nothing that run rather than writing on a guess.
+- **It ends.** After the last stage plus `grace_days` the agreement is ended and the access goes
+  with it. A sequence that only ever sends leaves a free customer behind for ever.
+
+Suppression still applies — a dunning letter is transactional, and the frequency cap therefore lets
+it through, but somebody who asked never to be written to meant it. Where
+`statamic-brand-context` is installed and configured the letter leaves through that brand's own
+sender.
+
+Off by default. `Schedule::command('payments:dunning')->daily();` — nothing is scheduled for you.
+
+### Chargebacks: a disputed order no longer keeps its access
+
+Chargebacks appeared in this addon only as a word in a comment. A dispute left a paid purchase with
+open access and nothing anywhere to notice it by — the same shape of hole `WithdrawOnRefund` closed
+for refunds, without even the way to see it.
+
+Now both providers feed it: Stripe through `charge.dispute.created`, Mollie through the ordinary
+payment webhook, where the charged-back amount is read back from the provider. Recording is
+idempotent over the provider's own id through a unique index, like refunds.
+
+**Its own state**, `charged_back_at`, and not `refunded_cent`. A refund is a decision somebody here
+made; a chargeback is one made against them, it carries a fee and it may still be won — counting
+them together would make every revenue figure wrong about both. The order stays `paid`: the money
+did move and the thing was delivered.
+
+`PaymentChargedBack` withdraws the access in full. **The invoice is never cancelled** — that says
+the sale did not happen, and it is a human decision.
+
+One limit written down rather than left to be discovered: Mollie announces a chargeback on the
+payment rather than as its own object, so a second, separate Mollie chargeback on the same payment
+is seen as the same one. Stripe has a real per-dispute id and does not have this limit.
+
+### What the review rounds changed, because none of it was cosmetic
+
+- **On Stripe the sequence would never have started.** An invoice whose charge failed stays `open`
+  through Stripe's whole retry window and only becomes uncollectible afterwards, if the account is
+  set up that way — and `open` was excluded as "not a failure". So nothing happened on Stripe: no
+  letter, no log. The signed event type now carries the answer, and it may only make a payment the
+  provider already reports as unpaid count as failed. The test that should have caught this had been
+  written with the one status that works.
+- **A paying customer could still be dunned to cancellation.** Guarding only against a *running*
+  sequence left the *stopped* one open: a redelivery of the old, permanently failed Mollie payment
+  opened a fresh sequence dated later, and the replacement payment then sat before it, invisible.
+- **Postgres answered 500 to every redelivered chargeback.** A failed statement aborts the whole
+  transaction there, so the catch-up query died. The claim insert now sits behind a savepoint.
+- **A dispute on a subscription renewal found no row**, because that row carries the invoice id
+  rather than a session or an intent — and renewals are the population this release is about.
+- Voiding a Stripe invoice no longer starts a dunning sequence: that is a hand in the dashboard, not
+  a failed collection.
+- **A sequence whose letters could not leave never ended at all** — and that was the machinery
+  eating its own purpose. `dueToEnd()` demanded that every stage had actually gone out, so each of
+  the ordinary reasons a letter does not leave (a brand with no verified sender, a provider that
+  will not answer, a pruned cycle row) froze the counter for ever: no letter, no ending, no
+  withdrawal, and a customer whose money never arrived keeping the paid access indefinitely. The
+  deadline is now a question to the calendar alone, and ending without having sent every letter is
+  an `error` in the log naming how many went out.
+- **"The suppression list could not be read" no longer means "is suppressed."** For the abandoned
+  reminder that reading is right — one marketing mail is skipped. Here a cancellation hangs on it: a
+  brief outage ran all three stages without a single letter, ended the agreement, and left a line in
+  the communication log claiming the address had been on the suppression list. Now the letter is
+  withheld, the stage is given back, and the next run tries again.
+- **A chargeback whose event threw lost the withdrawal for ever.** The state is committed before the
+  event so no listener runs inside a transaction — but a listener that threw left `charged_back_at`
+  set, so every redelivery found the work done and never fired again: money back, access open, and
+  after the first delivery not a line anywhere. The state is now rolled back and the throw reaches
+  the caller, so the provider's next delivery completes it.
+- **`payments:prune-unpaid` deleted the cycle a dunning sequence hangs on.** A failed Stripe cycle is
+  written `open` and stays `open`, matching the prune query exactly. It now carries the same guard
+  the abandoned sequence already had.
+- **One broken agreement no longer stops the whole run.** `running()` is ordered by when the sequence
+  opened, so a row that threw stood first again the next day and everything behind it was never
+  written to again. Each agreement is now handled on its own, and the failures are counted.
+- **The run's own report stopped lying.** "1 letter(s) sent" was printed for an agreement with no
+  address and for a suppressed one, and "0 letter(s) sent" looked identical whether nothing was due
+  or the migration had never run. Sequences checked, letters sent, stages counted without a letter,
+  providers that would not answer and letters withheld are now separate numbers.
+
+### What the acceptance round changed
+
+- **A listener that throws no longer costs both the access and the sequence.** `SubscriptionEnded`
+  is what withdraws the access, and it was dispatched *after* the sequence had been cleared and the
+  agreement cancelled. A listener that threw left the access standing and no row anywhere to find
+  it by — `running()` never saw that agreement again. The event now fires inside the same
+  transaction as the claim: either the access goes, or the sequence is still there for the next
+  run. The failure is logged as `critical`.
+- **A failed cycle is no longer swept up as an abandoned checkout.** A failed Stripe cycle is
+  written as `open` and stays `open`, which is exactly the shape `payments:sweep-abandoned` looks
+  for. It is not a cart somebody forgot, it is a card that stopped working — and a "you left
+  something behind" alongside the dunning letters burns the channel at the worst possible moment.
+  `Abandonment` now carries the same guard `payments:prune-unpaid` has, on both the sweep and
+  `announce()`.
+- **`payments:dunning` exits non-zero when a sequence threw**, and the report names how many. In
+  cron the exit code is the only thing that gets read, so a run in which every single row threw was
+  reported as a success.
+- **`grace_days => 0` no longer eats the last letter.** With no grace period the deadline and the
+  last stage fell on the same day, and the run asks about the deadline first: the customer was
+  cancelled having received two of the three letters they were promised. Zero now means "the day
+  after the last letter", not "instead of the last letter".
+- **`dunning.enabled` switched off no longer freezes the running sequences.** They used to stand
+  for ever: no letter, no ending, and `payments:prune-unpaid` would not touch the cycle rows
+  underneath them either. `payments:dunning` now **closes** the running sequences when the switch
+  is off and says how many — the agreements themselves are left exactly as the provider set them,
+  because a switch is not a cancellation, and the cycle rows become prunable again.
+- **A brand-aware mailer that cannot be built is a `warning`, not a `debug` line**, and it names the
+  sender the letters actually went out under. Every letter falls back to the default sender, which
+  on a multi-brand install is the wrong brand's name on a letter about somebody's money — and
+  `debug` is in nobody's channels.
+
+### What the second acceptance round changed
+
+- **Ending a sequence announces one thing once.** `Dunning::end()` ends locally and lets the
+  provider follow, and `Subscriptions::cancel()` then dispatched its own `SubscriptionCancelled` on
+  top of the `SubscriptionEnded` that had already gone out. The two are deliberately different
+  events, so anything hanging a farewell mail or a churn counter off the cancellation got both for
+  one act, and nothing said so. `cancel()` now stays quiet about an agreement that was already
+  ended here.
+- **A cycle for an agreement this site has already ended is logged.** If the provider refuses the
+  cancellation, the row is cancelled here while the provider keeps charging — and every further
+  cycle was dropped in silence. The only trace was one line at the moment the cancellation failed.
+- **The counters reset on every run.** The console keeps one instance per command, so two
+  `Artisan::call('payments:dunning')` in one process counted the first run's rows again — and with
+  the exit code now hanging off them, the second, successful run reported the first one's failure.
+- **Switching the sequence off survives a broken row.** The closing pass now catches per row like
+  the main run, for the same reason: `running()` is ordered, so one throwing row would leave
+  everything behind it frozen — the very state that pass exists to resolve.
+- **The dunning badge is `purple`, not `amber`.** `suspended` is already amber on that screen, and
+  that is exactly the pair that stands together most often, since Mollie sets `suspended` when a
+  charge fails. Two badges of one colour are one badge.
+- The chargeback badge has tests now, in the listing and on the detail screen, and
+  `AbandonedCheckoutTest` runs in the MySQL and Postgres matrix — it carries a JSON path
+  (`meta->cycle_of`) and that is what the matrix is for.
+
+## 1.22.0 — 2026-09-08
+
+The two things 1.21.1 knowingly left open.
+
+### A delayed payment that was refused is now `failed`, not `open` for ever
+
+SEPA, Sofort and the other delayed methods leave the Checkout Session `complete` and the payment
+`unpaid` for days, then either settle or do not. Both outcomes look identical at the session level.
+Stripe announces the difference as an event type (`checkout.session.async_payment_failed`) — and a
+webhook's claim about what happened is exactly what this package refuses to believe.
+
+So the PaymentIntent is read instead, on the object that was fetched anyway:
+`requires_payment_method` **with a `last_payment_error`** on a completed session is a payment that
+was attempted and refused. Without the error it is a buyer who has not paid yet, which stays `open`;
+a `canceled` intent is `canceled`. Nothing an intent says can turn an unpaid session into a paid
+one — `payment_status` already settled that, and there is a test for the direction that must not
+exist.
+
+Left as `open`, a failed direct debit sat in the till for ever: no fulfilment, no `PaymentFailed`
+for a listener to react to, and an order that looked like it was still coming.
+
+### CI proves the claims on MySQL and Postgres, not only SQLite
+
+Two money paths are guarded by a unique index rather than a row lock, because `lockForUpdate()`
+compiles to an empty string on SQLite. That a unique index holds everywhere was an argument, not a
+measurement, while CI only ever ran SQLite.
+
+A new job runs the claim tests again against `mysql:8` and `postgres:16` as services. Not the whole
+suite, and that is measured rather than assumed: testbench migrates and rolls back per test, which
+costs about three seconds on SQLite, twenty on Postgres and two minutes on MySQL for these tests —
+the full suite would be well over twenty minutes on MySQL for a property none of the other tests are
+about. What runs there is what the engine actually decides: both claim tables, the fulfilment claim,
+and the resolution that keeps one provider's ids out of the other's rows.
+
+`tests/TestCase.php` takes the connection from `DB_CONNECTION` and still defaults to in-memory
+SQLite, so nothing changes for a local run. The job runs with `--fail-on-empty-test-suite`, and
+`DatabaseDriverTest` asserts the suite really is on the driver it was told to use — the way a job
+like this fails is by going green having proved nothing.
+
+### Also
+
+A follow-up charge Stripe declined is `failed` too, not `open`. It sat at
+`requires_payment_method` exactly like an intent nobody has paid yet — except that on an
+off-session charge there is no buyer on a page to pay it, so it would have looked like it was still
+going through for ever. And an intent status this package has not met, on a completed session, now
+says so in the log instead of landing on `open` in silence.
+
+## 1.21.1 — 2026-09-08
+
+Two defects in 1.21.0's Stripe endpoint, both found by review rather than by anything failing.
+
+### Fixed: a delivery during a Stripe outage was never redelivered
+
+`Fulfilment::fetch()` catches everything a gateway throws, logs it and carries on with a null.
+That is right for Mollie — an id this account never issued is a stray call, and Mollie redelivers
+on its own schedule whatever the endpoint answers.
+
+On the Stripe path it was fatal. The event id is claimed **before** the work runs, so a timeout, a
+502 or a rate limit produced a quiet `200` with the claim still standing. Stripe then never came
+back — not on a retry, and not from the Resend button, which sends the same `evt_` id into the same
+claim. A buyer paid, one warning landed in the log, and the order was never fulfilled.
+
+A gateway now throws `Support\ProviderUnavailable` when the answer is "ask again later" — a 5xx, a
+429, a connection that never came up. `Fulfilment` lets that one through instead of swallowing it,
+the endpoint releases its claim and answers `503`, and Stripe redelivers. A 404 is still an answer
+and still a quiet `200`.
+
+### Fixed: the only alarm this package has fired on every single sale
+
+`payment_intent.succeeded` was in the README's recommended event list. Stripe sends it alongside
+`checkout.session.completed` for the same purchase — but the row is stamped with the session id, so
+the intent matched nothing and `Fulfilment` logged "webhook for an unknown payment id". That line
+exists for a buyer who paid into thin air. Firing it on every order made it worthless.
+
+A PaymentIntent event is now only acted on when a row actually carries that id, which is the
+follow-up-offer case and nothing else. The README lists the events properly, including the failure
+ones, and says which two are only for sites using follow-up offers.
+
+### Also
+
+- `Refunds::book()` lost the remainder when another refund booked between its read and its write:
+  the claim stood, so the money was never booked and no redelivery could fix it. It now books what
+  still fits.
+- The README's binding example casts the config value, so an unset `STRIPE_KEY` is a clear message
+  rather than a `TypeError`.
+
+## 1.21.0 — 2026-09-08
+
+**A second payment provider, and the resolution that had to come first.** Stripe ships as an
+adapter beside Mollie. Nothing about a Mollie site changes.
+
+### The `provider` column is finally read
+
+It was written on every payment and every agreement from the first version, and read by nothing.
+The container bound `PaymentGateway` once, globally, so whatever arrived was handed to whichever
+provider happened to be bound.
+
+On a site with one provider that is invisible. On a site with two it is the worst failure this
+package can have: a webhook from the second provider asks the first about an id it has never seen,
+the lookup finds no row, and the buyer's order is never fulfilled. **No error, no alarm.**
+
+`Support\Gateways` resolves a handle to an adapter, and a host extends it:
+
+```php
+app(Gateways::class)->register('paypal', fn () => new PayPalGateway);
+```
+
+A handle nobody registered **throws** rather than falling back to the default — a silent fallback
+is the bug, not the cure. `free` (an order the catalogue priced at zero) resolves through the same
+registry to a `FreeGateway` that never reaches a provider.
+
+Read off the row now, not off the binding: which provider is asked about an agreement
+(`Subscriptions::refresh()`, `cancel()`), which one holds a buyer's stored card
+(`FollowUp::accept()`), and which one the customer portal asks whether a card can be changed.
+
+### Stripe
+
+`Gateways\StripeGateway` satisfies `PaymentGateway`, `FollowUpGateway` and `SubscriptionGateway` —
+no fourth contract. Hosted Checkout Sessions, subscriptions with the same six states
+`Subscriptions::refresh()` already mirrored from Mollie, off-session follow-up charges, and refunds
+recorded as an amount with a time.
+
+Built on Laravel's HTTP client rather than `stripe/stripe-php`: no new dependency on sites that
+only ever wanted Mollie, and the tests check the wire format instead of a mocked method call.
+
+**Its own webhook endpoint**, `/!/statamic-payments/webhook/stripe`. Mollie's body is an id and
+needs no signature; Stripe's carries an event type and a refund amount, so it is verified before it
+is parsed (HMAC-SHA256 over `<timestamp>.<raw body>`, `hash_equals`, five-minute tolerance). Stripe
+redelivers until it gets a 2xx, so the event id is claimed with a unique index — an insert, not a
+lookup, because read-then-write loses to two redeliveries milliseconds apart. A delivery whose work
+throws releases the claim so Stripe retries.
+
+Set `STRIPE_KEY` and `STRIPE_WEBHOOK_SECRET`. Without the signing secret the endpoint refuses
+everything, which is the right way round.
+
+### Fixed: two refunds arriving at once could lose one and then book it twice
+
+`Refunds::record()` read the payment, decided whether the reference was already noted and how much
+was still outstanding, and then saved — all outside any lock. With Mollie that never bit: refunds
+are entered by hand in a dashboard, one at a time. Stripe announces two partial refunds as two
+events, which can land in two processes at once.
+
+The second write then went over the first: its amount gone from `refunded_cent`, its reference gone
+from `meta['refunds']`. And because a Stripe refund event carries the charge's **whole** refund
+list, the next delivery saw the lost reference as new and booked it a second time. Nothing failed,
+nothing was logged, and the wrong number reached the annual figures.
+
+A refund reference is now claimed by inserting it into `payment_refunds`, which carries a unique
+index — the same shape as the webhook replay guard, and for the same reason. A row lock would not
+have done: Laravel's `lockForUpdate()` compiles to an empty string on SQLite, and this addon asks
+for "a database", not for one that can lock a row. The amount goes on with a conditional `UPDATE`
+that cannot take back more than came in, and `meta['refunds']` is now derived from the claim rows
+rather than appended to.
+
+Existing references in `meta['refunds']` are still honoured, so a refund booked before this version
+is not booked again after it. Run `php artisan migrate`.
+
+### Fixed: the Control Panel screens answered 500 before the migrations ran
+
+`composer require` puts the payments and subscriptions screens in the navigation; `php artisan
+migrate` puts their tables in the database. Opening either in the gap between the two hit an
+unguarded query. Both now check the table first, say so in the log, and render their empty state.
+
+### Fixed: a yen subscription went out at a hundredth of its price
+
+`Subscription::amount()` still divided by 100 and formatted two decimals, and that string is what
+is handed to the provider when an agreement is created. `Payment::amount()` stopped doing this in
+1.11.0; the agreement did not. Now both go through `Support\Money`.
+
+## 1.20.0 — 2026-09-07
+
+**A payment plan now survives a checkout with a cart — and says on the invoice which instalment
+it is.** Three changes that belong together, because they are the same sale.
+
+### An agreement may start from a cart
+
+`Subscriptions::start()` took exactly one handle. A checkout with order bumps (statamic-funnels)
+could therefore not call it and went to `Checkout::start()` — which knows nothing about plans.
+
+The outcome was a **silent partial payment**: an offer with `interval` (statamic-offers 1.8.0)
+was charged once, access was granted in full, and the missing instalments turned up nowhere. No
+error, no message, no outstanding claim. The catalogue handed out the plan correctly; on this
+path nobody asked it.
+
+`start()` now takes `string|array`. The rhythm is set by the **first** handle, and the following
+charges only debit that handle's amount — a bump next to an instalment option is therefore bought
+once and not again with every instalment. Plus an optional `$discount` as the fifth parameter,
+for the voucher the flow has already calculated; a trial period still takes precedence.
+
+New: `Subscriptions::canStart()`. Whether this installation can start agreements at all
+(provider plus mandate collection), without starting a purchase to find out. A flow that
+**shows** an instalment option has to know that beforehand — finding out inside `start()` as a
+`null` is a dead end in the middle of the checkout.
+
+### Choosing an instalment no longer shows payment methods that cannot do instalments
+
+`Checkout::start()` set `sequenceType: first` and passed the configured method list on unchanged.
+If Klarna or a bank transfer sat next to the card in it, the buyer saw both, picked one of them,
+and the provider refused — after everything had been filled in.
+
+When a mandate is being collected, only the configured methods from
+`PaymentMethods::MANDATE_FIRST` remain. An **empty** configuration stays empty: it means "the
+provider decides", and on a first payment the provider shows only what can leave a mandate anyway.
+Inventing a list here would switch off a payment method the provider enables tomorrow.
+
+### Every invoice says which instalment it is
+
+Three instalments produced three invoices with the same sentence and the same amount three times.
+The main line now carries the addition: "Chorleitungskurs — Rate 1 von 3 (Gesamt 1.560,00 €)", or
+the rhythm instead on an open-ended subscription. **The amount is unaffected** — § 14 UStG wants
+the amount of the service being invoiced, and that is the instalment. The addition only says what
+it belongs to.
+
+Two defects picked up along the way that nobody had seen before:
+
+- **A cycle's line carried the raw handle.** `Fulfilment::openCycle()` wrote
+  `offer:choiraccelerator-raten` as the name, while the first payment took "ChoirAccelerator" from
+  the catalogue. From the second instalment onwards the label on the invoice changed silently.
+  `InvoiceWriter` prints `item.name` unchanged and fetches nothing for a line item that is already
+  there.
+- **`trial_discount` was in neither of the two language files.**
+  `Subscriptions::trialDiscount()` called the key, and the key itself ended up on the payment.
+
+Plus `Money::display()` and `Money::symbol()`: the same amount for a human rather than for the
+wire. `format()` still writes "1560.00" for the provider.
+
+## 1.19.0 — 2026-09-07
+
+**A settings page in the Control Panel.** § 356a BGB (the German withdrawal button) and § 312k
+BGB (the German cancellation button) both require a place to report to, and both allow linking to
+a policy of one's own. Those four values — `withdrawal.notify`, `withdrawal.policy_url`,
+`cancellation.notify`, `cancellation.policy_url` — were only in `.env` so far: required by law
+and out of reach for the operator they belong to. Alongside them: the customer portal, abandoned
+checkouts, consent sentences and the switches to the sibling addons.
+
+The page is not built here. The addon only registers its field list (`Support\Settings`,
+`Goldnead\BrandContext\Contracts\ProvidesSettings`) with the `SettingsRegistry`; screen, form,
+validation, storage, brands and routes come from `statamic-brand-context`. That package stays
+optional (`require-dev`, now `^1.12`) — without it everything runs as before, only without the
+section: the registration sits behind a `class_exists`, and `Support\Settings` is then never
+loaded.
+
+- New permission `manage payments settings`, always registered, even without `brand-context`.
+- **The Mollie key is not on the page** and never will be: it moves money and does not belong in
+  a database backup. Nor does `suite.license_key`.
+- Not on the page, because they are read at boot: `rate_limit`, `portal.prefix`,
+  `portal.middleware`, `portal.request_rate_limit`, `withdrawal.prefix`, `withdrawal.throttle`,
+  `cancellation.prefix`, `cancellation.throttle`. `SettingsManager::apply()` runs from
+  `app->booted()`, `routes/web.php` reads before that — a change there would only arrive after
+  the next deploy.
+- Also not: `webhook_url` (deployment), `products` and `portal.throttle` (nested), `methods` (the
+  config holds a comma-separated string there, not a list) and `portal.min_response_ms` (the
+  floor against a timing oracle).
+
+## 1.18.0 — 2026-09-05
+
+One finding from Adrian's pass on 2026-09-03 (F36), plus a test that no longer started under
+Laravel 13.
+
+### Sales screens in a section of their own in the sidebar
+
+Payments, subscriptions, withdrawals and cancellations are registered as Statamic utilities and
+therefore sat under "Utilities", between the cache, PHP info and search. Now one nav entry each
+points at the same route, in a section named after what one does there. Routes and permissions are
+unchanged; the utility registration stays, because it carries the route, the permission and the
+middleware. The entry under "Utilities" is unhooked for that (`Nav::remove('Tools', 'Utilities',
+…)`). The first attempt, on 2026-09-04, had merely put the new section beside it, and every screen
+appeared twice. Under "Utilities" only Statamic's own five remain: Cache, Email, Licensing, PHP
+Info, Search.
+
+The section name lives in `Cp\SuiteNav::section()`, because Statamic does not translate section
+names: the NavBuilder shows the key it is given, as it is. Two addons with "Sales" and "Shop"
+would produce two half-filled sections side by side. `statamic-offers`, `statamic-funnels` and
+`statamic-products` call that method from their next versions onwards and need this version for
+it.
+
+### Test suite under Laravel 13
+
+`InsightsMetricsTest` declared a helper method `query()` as `protected`. Orchestra Testbench 11,
+the Laravel 13 leg of the matrix, ships a public method of the same name on `TestCase`, and PHP
+aborts while loading the class, before a test runs. The helper is now called `metricQuery()`. Only
+the suite was affected, not the package.
+
 ## 1.17.1 — 2026-09-02
 
-Drei Befunde aus einem echten Kauftest auf staging (Mollie-Testmodus, Zahlungen 29/30/31).
+Three findings from a real purchase test on staging (Mollie test mode, payments 29/30/31).
 
-### `payment_items.offer` beim Nachfassangebot
+### `payment_items.offer` on a follow-up offer
 
-`FollowUp::accept()` schrieb die Spalte nicht — genau bei der Zeile, für die sie gebaut wurde. Der
-Upsell-Bericht in `statamic-insights` ordnete den Umsatz damit keinem Angebot zu. Jetzt in derselben
-Reihenfolge wie an der Kasse: was der Aufrufer über `PaymentDetails` (`offer_handles`) sagt, sonst
-was der Katalog an das Produkt geheftet hat (`statamic-offers` liefert `offer` mit), sonst `null`.
-Aufrufer, die nichts übergeben, laufen unverändert weiter.
+`FollowUp::accept()` did not write the column — on precisely the row it was built for. The upsell
+report in `statamic-insights` therefore attributed that revenue to no offer. Now in the same order
+as at the checkout: what the caller says through `PaymentDetails` (`offer_handles`), otherwise what
+the catalogue attached to the product (`statamic-offers` supplies `offer` with it), otherwise
+`null`. Callers that pass nothing keep running unchanged.
 
-### Kartenangabe: jedes Feld für sich, und nur was belegt ist
+### Card details: each field on its own, and only what is evidenced
 
-`card_last4` und `card_label` hingen aneinander: nannte der Anbieter die Kartenmarke ohne Nummer,
-ging die Marke verloren; nannte er die Nummer ohne Marke, wurde eine bereits eingetragene Marke mit
-`null` überschrieben. Auf der Seite eines Nachfassangebots stand dann entweder nichts oder etwas,
-das aus zwei Antworten zusammengesetzt war. Jetzt wird jedes Feld einzeln geschrieben, nur aus einer
-Antwort, die es belegt, und nur solange es leer ist — eingefroren bleibt eingefroren.
+`card_last4` and `card_label` hung together: if the provider named the card brand without the
+number, the brand was lost; if it named the number without the brand, a brand already recorded was
+overwritten with `null`. On a follow-up offer's page there was then either nothing or something
+assembled from two answers. Each field is now written individually, only from an answer that
+evidences it, and only while it is empty — frozen stays frozen.
 
-Zum Feldfund selbst: Mollie nennt im Testmodus für eine Folgeabbuchung eine andere Kartennummer als
-für die Erstzahlung (6787 statt 9996, beide als „Mastercard", obwohl mit einer VISA-Testkarte
-bezahlt wurde). Das Addon gibt wieder, was der Anbieter für **diese** Zahlung sagt; die Abweichung
-kommt aus Mollies Testdaten, nicht von hier.
+On the field finding itself: in test mode, Mollie names a different card number for a recurring
+charge than for the first payment (6787 instead of 9996, both as "Mastercard", although a VISA
+test card was used). The addon reports what the provider says for **this** payment; the
+discrepancy comes from Mollie's test data, not from here.
 
-### Kommunikationsprotokoll
+### Communication log
 
-Die zwei Mails an den Händler — Widerruf gemeldet (`withdrawal_notice`), Kündigung gemeldet
-(`cancellation_notice`) — wurden verschickt, aber nicht eingetragen. Jetzt stehen sie im Protokoll,
-mit Empfänger und Vorgangskennung.
+The two mails to the merchant — withdrawal reported (`withdrawal_notice`), cancellation reported
+(`cancellation_notice`) — were sent but not recorded. They are now in the log, with the recipient
+and the case reference.
 
-Deutlicher gesagt, im README und im Leerzustand des Panels: **das Protokoll ist ein Protokoll, kein
-Mithörer.** Bei einem gewöhnlichen Kauf verschickt dieses Paket keine einzige Mail — Kaufbestätigung,
-Zugangsdaten und Willkommensgruß kommen von der Seite, und die muss sie mit `PaymentLog::mail(…)`
-selbst eintragen. Ein leeres Panel nach einem Kauf ist deshalb kein Defekt, sondern ein fehlender
-Aufruf. `statamic-invoices` trägt seine Rechnungs-Mail nur ein, wenn eine hinausging; mit
-`INVOICES_DELIVER=false` steht dort korrekt nichts.
+Stated more plainly, in the README and in the panel's empty state: **the log is a log, not a
+listener.** On an ordinary purchase this package sends no mail at all — the purchase confirmation,
+the credentials and the welcome message come from the site, and the site has to record them itself
+with `PaymentLog::mail(…)`. An empty panel after a purchase is therefore not a defect but a
+missing call. `statamic-invoices` only records its invoice mail if one went out; with
+`INVOICES_DELIVER=false` there is correctly nothing there.
 
 ## 1.17.0 — 2026-09-02
 
-### Zahlungs-Detailseite mit Kommunikationsprotokoll
+### Payment detail page with a communication log
 
-Utilities → Zahlungen → Klick auf eine Zeile (oder „Details" im Zeilenmenü) öffnet
-`cp/utilities/payments/{id}`: Kopf mit Betrag, Status und Zeitpunkten; Panels für Positionen (Art,
-Menge, Einzelpreis, Angebot), Käufer (E-Mail, Name, Land, Anschrift aus `meta.address`, USt-IdNr. aus
-`meta.vat_id`), Einwilligung nach § 356 Abs. 5 BGB (Zeitpunkt, Wortlaut, Fassung der Belehrung),
-Zugangsfenster (`meta.access`), Herkunft (UTM, Verweis, Einstiegsseite), Zahlungsmittel, Erstattungen,
-Verknüpfungen (Erstbestellung, Nachfassangebote, Abo, Rechnung, Widerrufe, Kündigungen) und
-**Kommunikation**. Ist `statamic-webhook-manager` installiert, ein Panel „Webhook-Zustellungen"
-(`WebhookLog::forSubject('payment', id)`). Dasselbe Recht wie das Listing; auf Mehrmarken-Installationen
-mit gesetzter Marke ist eine fremde Zahlung eine 404. Register S·8.
+Utilities → Payments → clicking a row (or "Details" in the row menu) opens
+`cp/utilities/payments/{id}`: a header with amount, status and timestamps; panels for line items
+(kind, quantity, unit price, offer), buyer (email, name, country, address from `meta.address`, VAT
+ID from `meta.vat_id`), consent under § 356 Abs. 5 BGB (timestamp, wording, version of the policy),
+access window (`meta.access`), attribution (UTM, referrer, landing page), payment method, refunds,
+links (first order, follow-up offers, subscription, invoice, withdrawals, cancellations) and
+**communication**. If `statamic-webhook-manager` is installed, a "Webhook deliveries" panel
+(`WebhookLog::forSubject('payment', id)`). The same permission as the listing; on multi-brand
+installations with a brand set, another brand's payment is a 404. Register S·8.
 
-Neu: Tabelle `payment_communications` und die Fassade `PaymentLog` — `PaymentLog::mail($payment,
-'invoice', $to, $subject)`, `::note()`, `::record()`, `::for()`. Ein Fehler beim Schreiben wird geloggt
-und bricht nie einen Kaufpfad. Das Addon trägt selbst ein: Portal-Link (an der jüngsten Bestellung der
-Adresse), Eingangsbestätigung Widerruf (bei zugeordneter Zahlung), Eingangsbestätigung Kündigung und
-Kündigungsbestätigung aus dem Portal (an der jüngsten Zahlung des Abos), Abbruch-Erinnerung.
-`statamic-invoices` trägt seine Rechnungs-Mail ein. Ereignis `PaymentCommunicationLogged`.
+New: the table `payment_communications` and the `PaymentLog` facade — `PaymentLog::mail($payment,
+'invoice', $to, $subject)`, `::note()`, `::record()`, `::for()`. A failure while writing is logged
+and never breaks a purchase path. The addon records these itself: the portal link (on the
+address's most recent order), the withdrawal acknowledgement (where a payment could be matched),
+the cancellation acknowledgement and the cancellation confirmation from the portal (on the
+subscription's most recent payment), the abandonment reminder. `statamic-invoices` records its
+invoice mail. Event `PaymentCommunicationLogged`.
 
-### Warenkorbabbruch-Mail
+### Abandoned cart mail
 
-`abandoned.mail.enabled` schickt je angekündigtem Checkout eine Erinnerung an die Adresse darauf —
-nicht, wenn `statamic-suppression` die Adresse führt (dann eine Notiz im Protokoll). `template` nimmt
-einen email-templates-Slug mit den Variablen `buyer.email`, `buyer.name`, `order.lines`,
-`order.total`, `order.currency`, `resume_url`; ohne Vorlage geht eine eingebaute, veröffentlichbare
-Blade-Mail (de/en). `resume_url` ist ein signierter Link (`abandoned.mail.resume_days`, Vorgabe 14)
-auf eine Bestellseite im Portal-Layout: Positionen, Gesamtpreis, Widerrufshinweis, Haken nach § 356
-Abs. 5 mit dem Wortlaut aus `meta.withdrawal` (sonst `messages.order_consent`) und die Schaltfläche
-„Zahlungspflichtig bestellen" (§ 312j Abs. 3). Der GET legt nichts an; erst der signierte POST startet
-über `Checkout::resume()` denselben Warenkorb als neue Zahlung — gleiche Positionen, Käufer, Herkunft,
-Rabatt und Marke, `meta.resumed_from` zeigt zurück, die Zustimmung ist frisch (jetzt, gezeigter
-Wortlaut, nur mit Haken) und wird nie kopiert. Ein zweiter Klick binnen einer Stunde findet die offene
-Kasse wieder. Oder eine eigene Adresse mit `{payment}`. Neue Spalte `payments.recovered_at`: gesetzt,
-wenn eine erinnerte Zahlung doch bezahlt wird, auch über den neu gestarteten Checkout. Register K·8.
+`abandoned.mail.enabled` sends one reminder per announced checkout to the address on it — not if
+`statamic-suppression` lists the address (then a note in the log). `template` takes an
+email-templates slug with the variables `buyer.email`, `buyer.name`, `order.lines`, `order.total`,
+`order.currency`, `resume_url`; without a template a built-in, publishable Blade mail goes out
+(de/en). `resume_url` is a signed link (`abandoned.mail.resume_days`, default 14) to an order page
+in the portal layout: line items, total, withdrawal notice, the § 356 Abs. 5 checkbox with the
+wording from `meta.withdrawal` (otherwise `messages.order_consent`) and the button
+"Zahlungspflichtig bestellen" (the German wording § 312j Abs. 3 prescribes for an order button).
+The GET creates nothing; only the signed POST starts the same cart as a new payment through
+`Checkout::resume()` — same line items, buyer, attribution, discount and brand,
+`meta.resumed_from` points back, the consent is fresh (now, the wording shown, only with the box
+ticked) and is never copied. A second click within an hour finds the open checkout again. Or an
+address of your own with `{payment}`. New column `payments.recovered_at`: set when a payment that
+was reminded is paid after all, including through the restarted checkout. Register K·8.
 
-### Zahlungsarten
+### Payment methods
 
-`methods` (Liste von Mollie-Kennungen oder `STATAMIC_PAYMENTS_METHODS` mit Kommas) geht als `method`
-in die Mollie-Anfrage; ohne Angabe kein Schlüssel. Der Käufer wird nur dann zum Merken angemeldet
-(`customerId`, `sequenceType: first`), wenn mindestens eine der Methoden ein Mandat hinterlassen kann.
-`Support\PaymentMethods` hält die zwei Listen, das README die Tabelle. Register K·18.
+`methods` (a list of Mollie identifiers, or `STATAMIC_PAYMENTS_METHODS` with commas) goes into the
+Mollie request as `method`; with nothing given, no key. The buyer is only registered for
+remembering (`customerId`, `sequenceType: first`) if at least one of the methods can leave a
+mandate. `Support\PaymentMethods` holds the two lists, the README holds the table. Register K·18.
 
-### Nachzügler
+### Stragglers
 
-- `EntitlementsBridge::grantFor()` gibt `meta.access` (`starts_at`, `days`, aus `Offer::accessWindow()`)
-  als `startsAt`/`expiresAt` an `Entitlements::grant()` weiter. Register K·5.
-- `payment_items.offer`: das Angebot, über das eine Position verkauft wurde — aus
-  `PaymentDetails::offer_handles` (Produkt-Handle → Angebots-Handle) oder aus dem `offer`-Schlüssel,
-  den der Katalog an die Zeile heftet; sonst null.
-- `payments:prune-legal-drafts` löscht unbestätigte Widerrufs- und Kündigungserklärungen nach sieben
-  Tagen (`--days`, `--dry-run`).
-- Kein `email:filter` mehr im Addon; die Formulare nutzen `EmailAddress::rule()` (war schon so).
+- `EntitlementsBridge::grantFor()` passes `meta.access` (`starts_at`, `days`, from
+  `Offer::accessWindow()`) on to `Entitlements::grant()` as `startsAt`/`expiresAt`. Register K·5.
+- `payment_items.offer`: the offer a line item was sold through — from
+  `PaymentDetails::offer_handles` (product handle → offer handle) or from the `offer` key the
+  catalogue attaches to the line; otherwise null.
+- `payments:prune-legal-drafts` deletes unconfirmed withdrawal and cancellation declarations after
+  seven days (`--days`, `--dry-run`).
+- No more `email:filter` in the addon; the forms use `EmailAddress::rule()` (they already did).
 
-### Widerrufsbutton nach § 356a BGB
+### Withdrawal button under § 356a BGB
 
-Seit 19.06.2026 Pflicht, bis hierher nicht vorhanden. Neu: ein öffentlicher, zweistufiger Weg
-ohne Login unter `!/statamic-payments/widerruf` (Config `withdrawal.prefix`). Schritt 1 nimmt
-Name, E-Mail, Bestellkennung, Kontaktmittel und Nachricht; Schritt 2 zeigt die Angaben und die
-Schaltfläche „Widerruf bestätigen"; danach geht sofort die Eingangsbestätigung mit Kennung
-(`W-` plus acht Zeichen ohne 0/O/1/I), Datum, Uhrzeit und Zeitzone an den Verbraucher und eine
-Meldung an `withdrawal.notify` (sonst `portal.from`, sonst `mail.from`). Schritt 3 zeigt Kennung
-und Zeit, sonst nichts, und bleibt für jeden mit der Kennung lesbar; Schritt 2 nur für den
-Browser, der erklärt hat. Idempotent: ein zweiter Klick ist ein Widerruf, eine Mail, eine Zeit.
+Mandatory in Germany since 2026-06-19, absent until here. New: a public, two-step path without a
+login under `!/statamic-payments/widerruf` (config `withdrawal.prefix`). Step 1 takes name, email,
+order reference, means of contact and a message; step 2 shows the entries and the "confirm
+withdrawal" button; immediately afterwards the acknowledgement goes to the consumer, carrying a
+reference (`W-` plus eight characters without 0/O/1/I), date, time and timezone, and a
+notification goes to `withdrawal.notify` (otherwise `portal.from`, otherwise `mail.from`). Step 3
+shows the reference and the time, nothing else, and stays readable for anyone holding the
+reference; step 2 only for the browser that declared. Idempotent: a second click is one
+withdrawal, one mail, one timestamp.
 
-Tabelle `payment_withdrawals`. Die Zuordnung zur Zahlung passiert nach der Bestätigung,
-serverseitig, nur bei eindeutigem Treffer (Adresse plus unsere Id oder die des Anbieters);
-das Formular verrät nie, ob eine Bestellung existiert. Eine Zustimmung nach § 356 Abs. 5 am
-Treffer wird dem Händler als `right_expired_hint` mitgegeben, nicht dem Verbraucher vorgehalten;
-ebenso, ob die Erklärung nach `withdrawal.days` (Vorgabe 14) einging.
+Table `payment_withdrawals`. The match to a payment happens after the confirmation, server-side,
+only on an unambiguous hit (address plus our id or the provider's); the form never reveals whether
+an order exists. A consent under § 356 Abs. 5 BGB on the matched payment is passed to the merchant
+as `right_expired_hint`, never held against the consumer; the same goes for whether the
+declaration arrived after `withdrawal.days` (default 14).
 
-Footer: `&#123;&#123; payments:withdrawal_url }}`, `Legal\Links::withdrawal()`, Beschriftung aus
-`withdrawal.button` („Vertrag widerrufen"). Control Panel: Utility „Widerrufe" mit Zuordnung,
-Hinweisen, Filter offen/erledigt und der Action „Als erledigt markieren" (Notiz); Rechte
-`access withdrawals utility` und `handle payment withdrawals`.
+Footer: `&#123;&#123; payments:withdrawal_url }}`, `Legal\Links::withdrawal()`, label from
+`withdrawal.button` ("Vertrag widerrufen"). Control Panel: the "Withdrawals" utility with the
+match, the hints, an open/handled filter and the "mark as handled" action (a note); permissions
+`access withdrawals utility` and `handle payment withdrawals`.
 
-Rechtliche Entscheidungen dieser Fassung, von Adrian zu prüfen, keine Rechtsberatung: ohne
-Login; kein Bestandsorakel; unzugeordnet ist zulässig und wird gemeldet; erloschenes Recht ist
-Hinweis, keine Ablehnung; IP nur als gesalzener Hash; Musterbelehrung bleibt Host-Sache
-(`withdrawal.policy_url`). Das Lese-Recht ist core's Utility-Recht, nicht ein zweites
-`view payment withdrawals` — ein Schalter je Tür.
+Legal decisions in this version, to be reviewed by Adrian, not legal advice: no login; no oracle
+about what exists; unmatched is permitted and is reported; an expired right is a hint, not a
+refusal; the IP only as a salted hash; the model policy stays the host's business
+(`withdrawal.policy_url`). The read permission is core's utility permission, not a second
+`view payment withdrawals` — one switch per door.
 
-### Kündigungsbutton nach § 312k BGB, ohne Login
+### Cancellation button under § 312k BGB, without a login
 
-Der Portal-Weg (`/konto/kuendigen` → Magic-Link) bleibt als Komfortweg. Neu daneben, in
-derselben Mechanik wie der Widerruf: `!/statamic-payments/kuendigung` (Config
-`cancellation.prefix`), Schaltfläche „Verträge hier kündigen", Bestätigungsseite mit Art der
-Kündigung (ordentlich/außerordentlich, letztere mit Pflicht-Grund), Identifikation und
-gewünschtem Zeitpunkt unter „jetzt kündigen", danach Bestätigung per Mail und auf der Seite mit
-Datum, Uhrzeit und genanntem Zeitpunkt. Tabelle `payment_cancellations`.
+The portal path (`/konto/kuendigen` → magic link) remains as the convenient route. New beside it,
+in the same mechanics as the withdrawal: `!/statamic-payments/kuendigung` (config
+`cancellation.prefix`), the button "Verträge hier kündigen" (the German wording § 312k prescribes),
+a confirmation page with the kind of cancellation (ordinary or for cause, the latter with a
+mandatory reason), identification and a desired date under "cancel now", then a confirmation by
+mail and on the page with date, time and the date named. Table `payment_cancellations`.
 
-Ein eindeutig zugeordnetes **laufendes** Abo wird sofort über `Subscriptions::cancel()` beim
-Anbieter gekündigt (Anbieter zuerst, Zeile danach; `provider_cancelled_at`). Mehrdeutig, nicht
-laufend oder vom Anbieter verweigert: nichts am Abo geändert, Händler gemeldet, Verbraucher
-bekommt die Eingangsbestätigung trotzdem. Footer: `&#123;&#123; payments:cancellation_url }}`. Control
-Panel: Utility „Kündigungen", Rechte `access cancellations utility` und
-`handle payment cancellations`.
+An unambiguously matched **running** subscription is cancelled with the provider immediately
+through `Subscriptions::cancel()` (provider first, row afterwards; `provider_cancelled_at`).
+Ambiguous, not running, or refused by the provider: nothing changed on the subscription, the
+merchant notified, and the consumer gets the acknowledgement regardless. Footer:
+`&#123;&#123; payments:cancellation_url }}`. Control Panel: the "Cancellations" utility, permissions
+`access cancellations utility` and `handle payment cancellations`.
 
-Rechtliche Entscheidung dieser Fassung, von Adrian zu prüfen: ein genannter Zeitpunkt in der
-Zukunft hält die Kündigung beim Anbieter nicht auf — gekündigt wird die nächste Abbuchung, der
-Zeitpunkt steht in Zeile und Meldung. Keine Rechtsberatung.
+A legal decision in this version, to be reviewed by Adrian: a date named in the future does not
+hold the cancellation back at the provider — what is cancelled is the next charge, and the date
+appears in the row and in the notification. Not legal advice.
 
-Nach Kritik (02.09.2026) geändert: Beim Anbieter gekündigt wird nur, was über die
-**Anbieter-Kennung** getroffen wurde; ein Treffer über unsere laufende Nummer wird zugeordnet,
-aber nicht gekündigt, und der Händler bekommt „über Kundennummer zugeordnet, bitte prüfen"
-(die Nummer ist erratbar, die Kennung nicht). `OfferController` schreibt einen eingereichten
-`consent_text` nur, wenn er `messages.order_consent` (de/en) oder einem Eintrag in
-`consent.accepted_texts` entspricht — sonst Server-Wortlaut plus `Log::warning('consent text
-mismatch')`. Dazu: benannte Limiter `statamic-payments.withdrawal` / `.cancellation` statt
-anonymem `throttle:`, `legal.timezone` für die Zeit auf Belegen, der Grund einer
-außerordentlichen Kündigung steht in der Bestätigungsmail, eine abgelaufene Session führt
-zurück aufs Formular statt auf eine 404, `MerchantAddress` warnt im Log beim Rückfall auf
-`mail.from`, und die Kündigungsliste blendet „Art" und „Gewünscht zum" per Vorgabe aus.
+Changed after criticism (2026-09-02): only what was matched through the **provider's identifier**
+is cancelled at the provider; a hit through our own sequential number is matched but not
+cancelled, and the merchant is told "matched by customer number, please check" (the number is
+guessable, the identifier is not). `OfferController` only stores a submitted `consent_text` if it
+matches `messages.order_consent` (de/en) or an entry in `consent.accepted_texts` — otherwise the
+server-side wording plus `Log::warning('consent text mismatch')`. On top of that: named limiters
+`statamic-payments.withdrawal` / `.cancellation` instead of an anonymous `throttle:`,
+`legal.timezone` for the time on documents, the reason for a cancellation for cause appears in the
+confirmation mail, an expired session leads back to the form instead of to a 404,
+`MerchantAddress` warns in the log when it falls back to `mail.from`, and the cancellation listing
+hides "kind" and "desired date" by default.
 
-Nebenbei: `Tags\Offer` heißt jetzt `Tags\Payments` (Handle unverändert `payments`), und
-`Portal\EmailAddress::rule()` ist die Adressprüfung als Validierungsregel — `email:filter`
-hätte jede Adresse mit Umlaut abgelehnt.
+In passing: `Tags\Offer` is now `Tags\Payments` (handle unchanged, `payments`), and
+`Portal\EmailAddress::rule()` is the address check as a validation rule — `email:filter` would
+have refused every address containing an umlaut.
 
-### Die Einwilligung wird festgehalten statt verworfen (§ 356 Abs. 5 BGB)
+### The consent is recorded instead of discarded (§ 356 Abs. 5 BGB)
 
-`payments` bekommt zwei Spalten, `consent_at` und `consent_text`. Bis hierher wurde
-`confirmed => accepted` geprüft und dann vergessen; der Kommentar im Code nannte das „the
-record", es gab keines. Jetzt gehen Zeitpunkt und der **vollständige Wortlaut**, der neben dem
-Haken stand, mit dem ersten INSERT in die Zeile — über `PaymentDetails`, wie `country`. Der Text
-selbst und keine Versionsnummer, weil der Wortlaut sich ändert und „hat zugestimmt" ohne die
-Fassung nichts belegt.
+`payments` gets two columns, `consent_at` and `consent_text`. Until here `confirmed => accepted`
+was checked and then forgotten; the comment in the code called that "the record", and there was
+none. Now the timestamp and the **complete wording** that stood next to the checkbox go into the
+row with the first INSERT — through `PaymentDetails`, like `country`. The text itself and not a
+version number, because the wording changes and "consented" evidences nothing without the version.
 
-Beide Spalten sind unveränderlich: ein späteres Umschreiben oder Löschen wirft eine
-`LogicException`. Von null auf einen Wert geht es genau einmal. Bestandszeilen bleiben null.
+Both columns are immutable: rewriting or deleting them later throws a `LogicException`. From null
+to a value happens exactly once. Existing rows stay null.
 
-`OfferController` schreibt die Zustimmung an die Folgezahlung (Wortlaut aus dem versteckten
-Feld `consent_text`, sonst der neue Sprachstring `messages.order_consent`); `FollowUp::accept()`
-erbt sie **nicht** von der Erstbestellung.
+`OfferController` writes the consent onto the follow-up payment (wording from the hidden field
+`consent_text`, otherwise the new language string `messages.order_consent`); `FollowUp::accept()`
+does **not** inherit it from the first order.
 
-Rechtliche Entscheidungen dieser Fassung, von Adrian zu prüfen, keine Rechtsberatung:
-beide Angaben oder keine; Zeitpunkt nie in der Zukunft; Wortlaut nicht leer und höchstens
-4000 Zeichen, abgelehnt statt gekürzt; jeder Kauf trägt seine eigene Zustimmung; der Zeitpunkt
-ist der Eingang des Formulars beim Server, nicht der Klick im Browser. Wer das Addon ohne
-`statamic-funnels` einsetzt, baut Bestellzusammenfassung, Schaltfläche und Einwilligungstext
-selbst und übergibt `consent_at`/`consent_text` — das Addon rendert keine Kasse.
+Legal decisions in this version, to be reviewed by Adrian, not legal advice: both values or
+neither; the timestamp never in the future; the wording not empty and at most 4000 characters,
+refused rather than truncated; every purchase carries its own consent; the timestamp is when the
+form arrived at the server, not the click in the browser. Anyone using the addon without
+`statamic-funnels` builds the order summary, the button and the consent text themselves and passes
+`consent_at`/`consent_text` — the addon renders no checkout.
 
 ## 1.16.0 — 2026-08-31
 
-### Ein Mandat gehört dem Menschen, nicht dem Gerät
+### A mandate belongs to the person, not to the device
 
-`FollowUp::eligible()` nimmt jetzt zusätzlich die Adresse des Käufers, der gerade vor dem
-Bildschirm sitzt, und lehnt ab, wenn sie nicht zu der Zahlung passt, gegen die abgebucht werden
-soll. Dasselbe gilt für `accept()`, das die Adresse als fünftes Argument entgegennimmt und an die
-Prüfung weiterreicht. Wer nichts übergibt, bekommt das bisherige Verhalten — es gibt Aufrufer, die
-ihren Käufer aus einer signierten Sitzung kennen und keine Adresse zur Hand haben.
+`FollowUp::eligible()` now additionally takes the address of the buyer currently in front of the
+screen, and refuses if it does not match the payment that is to be charged against. The same goes
+for `accept()`, which takes the address as a fifth argument and passes it on to the check. Callers
+that pass nothing get the previous behaviour — there are callers that know their buyer from a
+signed session and have no address at hand.
 
-Der Anlass war ein reproduzierter Fall in `statamic-funnels`: dort hing die Frage „wer ist das"
-an einem Besuchs-Cookie mit dreißig Tagen Laufzeit. Wer als Zweiter am selben Rechner durch
-denselben Funnel ging, bekam kein Kartenformular mehr. Mollie buchte per gespeichertem Mandat
-`sequenceType: recurring` auf den Kunden des ersten Kaufs ab, und Zugang wie Rechnung liefen auf
-dessen Adresse — die frisch eingegebene wurde von `FollowUp` schlicht überschrieben. Auf einem
-Familienrechner, im Büro oder in einer Bibliothek ist das kein Randfall.
+The occasion was a reproduced case in `statamic-funnels`: there, the question "who is this" hung
+on a visit cookie with a thirty-day lifetime. Whoever went through the same funnel second on the
+same machine got no card form any more. Mollie charged the first purchase's customer by stored
+mandate with `sequenceType: recurring`, and access and invoice both ran on that person's address —
+the freshly entered one was simply overwritten by `FollowUp`. On a family computer, in an office
+or in a library that is not an edge case.
 
-Diese Fassung entfernt die Möglichkeit nicht, sie verlangt nur einen Beleg. Steht an einer der
-beiden Seiten keine Adresse, gibt es nichts zu widersprechen, und es bleibt bei den übrigen
-Bedingungen.
+This version does not remove the possibility, it only requires evidence. If either side has no
+address, there is nothing to contradict, and the remaining conditions apply as before.
 
-### Woran der Käufer seine Karte wiedererkennt
+### How the buyer recognises their card
 
-Neue Spalten `payments.card_last4` und `payments.card_label`, gefüllt aus dem, was der Anbieter
-bei der Zahlung ohnehin mitliefert (`RemotePayment::$cardLast4` / `$cardLabel`). Gebraucht werden
-sie auf der Seite eines Nachfassangebots: die darf nicht abbuchen, ohne vorher zu sagen, womit —
-§ 312j Abs. 3 BGB verlangt die wesentlichen Angaben unmittelbar über dem Knopf, die Zahlungsart
-eingeschlossen. Zu holen sind sie nur im Moment der Zahlung; später kostet es einen
-Anbieter-Aufruf beim Rendern einer Seite.
+New columns `payments.card_last4` and `payments.card_label`, filled from what the provider supplies
+with the payment anyway (`RemotePayment::$cardLast4` / `$cardLabel`). They are needed on a
+follow-up offer's page: it must not charge without saying what it charges with beforehand —
+§ 312j Abs. 3 BGB requires the essential details directly above the button, the payment method
+included. They can only be obtained at the moment of payment; later it costs a provider call while
+rendering a page.
 
-Vier Ziffern und ein Name wie „Mastercard" sind keine Kartennummer und fallen nicht unter PCI-DSS.
-Mehr wird nicht gespeichert. Bestandszeilen bleiben null, und jede Seite muss das aushalten.
+Four digits and a name such as "Mastercard" are not a card number and do not fall under PCI DSS.
+Nothing more is stored. Existing rows stay null, and every page has to cope with that.
 
 ### Migration
 
-`2026_08_31_220000_add_card_hint_to_payments_table` — zwei nullbare Spalten auf `payments`.
+`2026_08_31_220000_add_card_hint_to_payments_table` — two nullable columns on `payments`.
 
 ## 1.15.0 — 2026-08-30
 
-### Neu: `Brands::readerId()` — die fehlende Hälfte von `Brands::only()`
+### Added: `Brands::readerId()` — the missing half of `Brands::only()`
 
-`only()` nimmt eine nullbare Marken-ID und macht mit jedem Fall das Richtige. Nur musste sich jede
-aufrufende Stelle diese ID selbst besorgen, und die naheliegende falsche Antwort lag direkt daneben:
-`stampId()`. Das beantwortet „auf welche Marke wird diese **neue** Zeile geschrieben" und liefert
-dort, wo keine Marke gesetzt ist, eine **Null**. An `only()` weitergereicht heißt Null nicht „zeig
-nichts", sondern „zeig die Zeilen, die niemand beansprucht hat" — also alles, was ein Webhook oder
-ein Konsolenbefehl angelegt hat.
+`only()` takes a nullable brand id and does the right thing in every case. But every calling site
+had to obtain that id itself, and the obvious wrong answer sat right next to it: `stampId()`. That
+one answers "which brand is this **new** row written to" and returns a **null** wherever no brand
+is set. Passed on to `only()`, null does not mean "show nothing" but "show the rows nobody has
+claimed" — that is, everything a webhook or a console command created.
 
-Eine so geschriebene Liste sieht auf einer Einmarken-Installation richtig aus, sieht auf einer
-Mehrmarken-Installation mit gewählter Marke richtig aus, und zeigt still die herrenlosen Zeilen,
-sobald jemand sie ohne Marke öffnet.
+A listing written that way looks right on a single-brand installation, looks right on a
+multi-brand installation with a brand selected, and silently shows the ownerless rows as soon as
+somebody opens it without a brand.
 
 ```php
-Brands::only($query, Brands::readerId());   // richtig
-Brands::only($query, Brands::stampId());    // die herrenlosen Zeilen
+Brands::only($query, Brands::readerId());   // right
+Brands::only($query, Brands::stampId());    // the ownerless rows
 ```
 
-Null hier, Null dort — zwei verschiedene Fragen, wie der Klassenkommentar schon sagte. Der
-Kommentar allein hat nicht gereicht.
+Null here, null there — two different questions, as the class comment already said. The comment
+alone was not enough.
 
-### Neu: `Catalogue::contribute()` — der Katalog kann jetzt aufzählen
+### Added: `Catalogue::contribute()` — the catalogue can enumerate now
 
-`Catalogue::extend()` beantwortet „was kostet dieser Handle". Es kann nicht beantworten „was gibt
-es überhaupt", weil ein Resolver immer nur einen einzelnen Handle zu sehen bekommt. Jeder
-Bildschirm, der eine Produktliste anbietet, war damit blind für alles, was nicht in der
-Config-Datei steht: die Produktauswahl im Angebotsformular zeigte drei von sechs Produkten und wies
-das Speichern anschließend mit 422 ab, weil die `Rule::in()` aus derselben blinden Liste gebaut war.
+`Catalogue::extend()` answers "what does this handle cost". It cannot answer "what is there at
+all", because a resolver only ever gets to see a single handle. Every screen that offers a product
+list was therefore blind to everything not in the config file: the product picker in the offer
+form showed three of six products and then refused to save with a 422, because the `Rule::in()`
+was built from the same blind list.
 
 ```php
 Catalogue::contribute(fn () => [
@@ -266,58 +986,56 @@ Catalogue::contribute(fn () => [
 ]);
 ```
 
-**Zwei Nähte, nicht eine, und das ist Absicht.** `contribute()` zählt auf, `extend()` bepreist.
-`find()` bleibt damit eine Config-Suche plus ein paar billige Resolver und läuft nie durch eine
-Datenbank, weil jemand nach einem Handle gefragt hat, den es nicht gibt — `find()` erreicht alles,
-was ein Browser schickt. Der Preis dieser Trennung ist eine Regel: **wer beisteuert, muss auch
-auflösen.** Ein Addon, das einen Handle aufzählt, den es nicht bepreisen kann, legt eine
-unverkäufliche Zeile in die Auswahl.
+**Two seams, not one, and that is deliberate.** `contribute()` enumerates, `extend()` prices.
+`find()` therefore stays a config lookup plus a few cheap resolvers and never runs through a
+database because somebody asked for a handle that does not exist — `find()` is reachable by
+anything a browser sends. The price of that separation is a rule: **whoever contributes has to
+resolve as well.** An addon that enumerates a handle it cannot price puts an unsellable row into
+the picker.
 
-**Config gewinnt bei Gleichstand.** Ein Preis in einer Datei steht in der Versionsverwaltung und
-wurde absichtlich hingeschrieben; eine Tabellenzeile darf einen Deploy nicht still überstimmen.
+**Config wins on a tie.** A price in a file is under version control and was written down
+deliberately; a database row must not silently overrule a deploy.
 
-Beigesteuerte Einträge ohne ganzzahligen `amount_cent` >= 0 werden nicht gelistet. Config-Einträge
-werden weiterhin ungeprüft gelistet — sie jetzt zu prüfen hieße, dass der vertippte Preis einer
-laufenden Installation beim Upgrade aus ihrer eigenen Auswahl *verschwindet*, und das liest sich
-wie „nichts zu verkaufen".
+Contributed entries without an integer `amount_cent` >= 0 are not listed. Config entries are still
+listed unchecked — checking them now would mean a running installation's mistyped price
+*disappearing* from its own picker on upgrade, and that reads as "nothing to sell".
 
 ## 1.14.0 — 2026-08-29
 
-### Behoben: Umsatzzahlen zählten jede Marke, und verloren die letzte Sekunde
+### Fixed: revenue figures counted every brand, and lost the last second
 
-Drei Fehler derselben Familie, keiner davon mit einem roten Test.
+Three defects of the same family, none of them with a failing test.
 
-**Die Marke.** `paidInPeriod()` und `refundedInPeriod()` summierten jede Marke, ganz gleich was der
-Markenwähler oben rechts sagte. Ein Test, der eine eigene Zeile gegen zwei fremde stellt, meldet
-gegen den alten Stand 13.000 statt 1.000 Cent. `brandScoped()` ist hier wortgleich zu
-`TableMetric::brandScoped()` abgeschrieben — diese Klasse baut nicht darauf auf, sie ist älter und
-liest zwei Tabellen und einen Join —, denn zwei Schreibweisen einer Regel sind der Weg, auf dem zwei
-Kacheln nebeneinander verschiedene Dinge zählen.
+**The brand.** `paidInPeriod()` and `refundedInPeriod()` summed every brand, no matter what the
+brand picker in the top right said. A test that puts one own row against two foreign ones reports
+13,000 instead of 1,000 cents against the old state. `brandScoped()` here is transcribed word for
+word from `TableMetric::brandScoped()` — this class does not build on it, it is older and reads
+two tables and a join — because two spellings of one rule are the path by which two tiles side by
+side count different things.
 
-**Das Fenster.** Die Obergrenze war einschließend, und eine Bindung formatiert `23:59:59.999999`
-als `Y-m-d H:i:s`. Auf einer Millisekunden-Spalte fiel damit jeder Verkauf der letzten Sekunde
-heraus: auf SQLite immer, auf einfachen MySQL-Zeitstempeln zufällig richtig, in beiden Fällen
-unsichtbar. Jetzt halboffen. Der Test schreibt eine Millisekunde und meldet gegen den alten Stand
-1 statt 2.
+**The window.** The upper bound was inclusive, and a binding formats `23:59:59.999999` as
+`Y-m-d H:i:s`. On a millisecond column that dropped every sale in the last second: on SQLite
+always, on plain MySQL timestamps accidentally correct, invisible in both cases. Half-open now.
+The test writes one millisecond and reports 1 instead of 2 against the old state.
 
-**Der Join.** `productRows()` geht nicht durch `paidInPeriod()`, sondern fängt bei den Positionen an
-und verbindet zurück — genau die Form, die an einem zentral gesetzten Filter vorbeiläuft. Dort steht
-jede Bedingung jetzt ausgeschrieben.
+**The join.** `productRows()` does not go through `paidInPeriod()` but starts at the line items and
+joins back — exactly the shape that slips past a centrally applied filter. Every condition is
+written out there now.
 
-### Neu: sieben Zahlen in Insights
+### Added: seven figures in Insights
 
-Brutto, netto, erstattet, Bestellungen, Käufer, mittlerer Bestellwert und Erstattungsquote, mit
-Aufteilungen nach Kampagne, Quelle, Produkt und Land. `statamic-insights` liest dafür **keine**
-Tabelle dieses Addons mehr — die Rechnerei liegt jetzt auf der Seite des Zauns, der die Daten
-gehören. Die Kopplung ist in beide Richtungen `suggest`, nie `require`.
+Gross, net, refunded, orders, buyers, average order value and refund rate, with splits by campaign,
+source, product and country. `statamic-insights` no longer reads **any** table of this addon for
+that — the arithmetic now sits on the side of the fence that owns the data. The coupling is a
+`suggest` in both directions, never a `require`.
 
 
-### Neu: `grants` darf eine Liste sein
+### Added: `grants` may be a list
 
-Ein Produkt konnte genau einen Zugang vergeben. Für ein Bündel — eine Zeile, ein Preis, drei
-Dinge — reichte das nicht, und `statamic-offers` 1.4 verkauft genau so etwas.
+A product could grant exactly one access. For a bundle — one line, one price, three things — that
+was not enough, and `statamic-offers` 1.4 sells exactly that.
 
-`grants` nimmt jetzt auch eine Liste:
+`grants` now also takes a list:
 
     'fruehlings-buendel' => [
         'name' => 'Frühlings-Bündel',
@@ -325,107 +1043,105 @@ Dinge — reichte das nicht, und `statamic-offers` 1.4 verkauft genau so etwas.
         'grants' => ['noten-fruehling', 'playback-fruehling', 'workshop-mitschnitt'],
     ],
 
-Eine einzelne Zeichenkette bleibt erlaubt und ist unverändert der Normalfall; alte Konfigurationen
-ändern sich nicht. Doppelte Slugs werden einmal vergeben — zwei Zeilen mit derselben Aussage sind
-kein zweiter Zugang.
+A single string stays allowed and is still the ordinary case; old configurations do not change.
+Duplicate slugs are granted once — two rows saying the same thing are not a second access.
 
-Betroffen sind alle vier Wege, an denen ein Zugang hängt: Kauf, Verlängerung, Kündigung und
-Erstattung. Jeder Slug ist ein eigener Versuch, damit der Fehlschlag des zweiten nicht den dritten
-verhindert — und die Zeile im Log nennt den fehlenden Slug statt „das Bündel".
+All four paths an access hangs on are affected: purchase, renewal, cancellation and refund. Each
+slug is an attempt of its own, so that the second one failing does not prevent the third — and the
+line in the log names the missing slug instead of "the bundle".
 
-**Vorher war das ein stiller Totalausfall, kein Teilausfall.** Eine Liste fiel an `is_string()`
-heraus, und `slugFor()` gab `null` zurück: nicht das erste Stück, sondern nichts. Zahlung durch,
-Rechnung geschrieben, kein Zugang, keine Fehlermeldung.
+**Before this it was a silent total failure, not a partial one.** A list fell out at `is_string()`,
+and `slugFor()` returned `null`: not the first item, but nothing. Payment through, invoice written,
+no access, no error message.
 
 
-### Neu: Selbstbedienung für Käufer
+### Added: self-service for buyers
 
-Ein Käufer kann jetzt ohne Konto seine Bestellungen ansehen, seine Rechnung herunterladen, sein
-Abo kündigen und sein Zahlungsmittel wechseln. Der Weg hinein ist ein signierter, ablaufender
-Link an die Adresse, die auf der Bestellung steht — kein Passwort, kein Konto, weil ein Käufer
-eines Notenhefts keins anlegen wollte.
+A buyer can now view their orders, download their invoice, cancel their subscription and change
+their payment method without an account. The way in is a signed, expiring link to the address on
+the order — no password, no account, because somebody buying a book of sheet music never wanted to
+create one.
 
-Die Mechanik ist die von `statamic-preference-center`, übernommen statt neu erfunden: doppelte
-Drosselung, eine Antwort für jeden Ausgang, Antwortzeit auf einen Boden gehalten, Sitzungs-ID beim
-Öffnen erneuert. Dasselbe Aussehen, dieselbe Palette, kein Build-Schritt — die Seite wird aus einem
-Mailprogramm geöffnet und muss beim ersten Byte da sein.
+The mechanics are those of `statamic-preference-center`, taken over instead of reinvented: double
+throttling, one answer for every outcome, response time held to a floor, session id renewed on
+opening. The same look, the same palette, no build step — the page is opened from a mail client
+and has to be there at the first byte.
 
-**§ 312k BGB liefert das Addon mit.** Kündigungsschaltfläche mit eigener URL, Bestätigungsseite,
-die den Vertrag benennt, und danach eine Bestätigung in Textform mit Datum und Uhrzeit — als Mail,
-nicht als grüner Kasten, der beim Neuladen weg ist. **Jeder vorgeschriebene Wortlaut steht in
-`lang/*/portal.php`** und in keiner PHP-Datei; er gehört vor einen Anwalt, und die Vorschrift ist
-schon einmal geändert worden. `--tag=statamic-payments-translations`.
+**§ 312k BGB ships with the addon.** A cancellation button with a URL of its own, a confirmation
+page naming the contract, and after that a confirmation in text form with date and time — as a
+mail, not as a green box that is gone on reload. **Every prescribed wording lives in
+`lang/*/portal.php`** and in no PHP file; it belongs in front of a lawyer, and the rule has been
+amended once already. `--tag=statamic-payments-translations`.
 
-Gekündigt wird über `Subscriptions::cancel()`: der Anbieter wird zuerst gefragt, seine Antwort wird
-geschrieben. Antwortet er nicht — oder nimmt er den Aufruf an und lässt das Abo weiterlaufen —,
-bleibt die Zeile unangetastet und der Käufer bekommt eine ehrliche Meldung statt einer Bestätigung.
+Cancelling runs through `Subscriptions::cancel()`: the provider is asked first, and its answer is
+what gets written. If it does not answer — or accepts the call and lets the subscription keep
+running — the row stays untouched and the buyer gets an honest message instead of a confirmation.
 
-### Neu: `brand_id` auf `payments` und `subscriptions`
+### Added: `brand_id` on `payments` and `subscriptions`
 
-Bisher trug hier nichts eine Marke, und `statamic-invoices` schrieb genau das in eine
-Ausnahme-Klasse: „a brand is not recoverable from the payment either". Für den Kundenbereich ist
-diese Lücke nicht bezahlbar — auf einem Mandanten-Host ist die Marke auf der Bestellung das
-Einzige, was den Link der Marke A von der Bestellung der Marke B fernhält.
+Nothing here carried a brand so far, and `statamic-invoices` wrote exactly that into an exception
+class: "a brand is not recoverable from the payment either". For the customer portal that gap is
+not affordable — on a multi-tenant host the brand on the order is the only thing keeping brand A's
+link away from brand B's order.
 
-Die Naht kennt **drei** Zustände, nicht zwei: „keine Mandanten", „Mandanten, und die aktuelle ist
-bekannt" und „das Geschwister-Addon ist da und hat nicht geantwortet". Ein `bool` fasst die letzten
-beiden zusammen, und ein `catch (Throwable) { return false; }` um `multiBrandEnabled()` hätte einen
-werfenden Lizenz-Rückruf — den der Host selbst schreibt — in „diese Installation hat keine
-Mandanten" verwandelt, also in „kein Filter". Ein defensiver Fang, der nach außen aufmacht, ist
-schlimmer als kein Fang: er erzeugt eine Seite, die funktioniert.
+The seam knows **three** states, not two: "no tenants", "tenants, and the current one is known" and
+"the sibling addon is there and did not answer". A `bool` collapses the last two, and a
+`catch (Throwable) { return false; }` around `multiBrandEnabled()` would have turned a throwing
+licence callback — which the host writes itself — into "this installation has no tenants", that
+is, into "no filter". A defensive catch that opens outwards is worse than no catch: it produces a
+page that works.
 
-`default(0)`, kein Fremdschlüssel, keine harte Abhängigkeit auf `brand-context`: auf jeder
-Ein-Marken-Installation steht überall 0 und nichts ändert sich. Gestempelt wird aus der Marke, in
-der die Zeile entsteht; entsteht sie im Webhook für eine andere Zeile — ein Abo-Zyklus, eine
-Nachfass-Zahlung —, erbt sie deren Marke, statt eine zu raten. Im Mandanten-Betrieb gehört eine
-Zeile auf 0 niemandem und wird niemandem gezeigt.
+`default(0)`, no foreign key, no hard dependency on `brand-context`: on every single-brand
+installation it is 0 everywhere and nothing changes. The stamp comes from the brand the row comes
+into being in; if it comes into being in the webhook for another row — a subscription cycle, a
+follow-up payment — it inherits that row's brand instead of guessing one. In multi-tenant
+operation a row on 0 belongs to nobody and is shown to nobody.
 
-**Der Altbestand wird abgeleitet, nicht geraten.** Die erste Fassung dieser Migration nahm die
-kleinste Marken-Id und schrieb sie auf jede bestehende Zahlung und jedes Abo. Am Demo-Playground
-machte das elf Zahlungen zu „nordlicht", und `invoices:brand-check` fand sieben Rechnungen, die in
-der Reihe einer anderen Marke stehen als die Zahlung, zu der sie gehören. Die Rechnungen hatten
-recht — und seit `statamic-invoices` die Spalte liest, wäre die geratene Antwort ab sofort in neue
-Dokumente weitergereicht worden.
+**The existing data is derived, not guessed.** The first version of this migration took the lowest
+brand id and wrote it onto every existing payment and subscription. On the demo playground that
+made eleven payments belong to "nordlicht", and `invoices:brand-check` found seven invoices sitting
+in a different brand's series than the payment they belong to. The invoices were right — and since
+`statamic-invoices` reads the column, the guessed answer would have been passed on into new
+documents from then on.
 
-Drei Wege, stärkster zuerst: eine Zahlung mit Rechnung bekommt die Marke der Rechnung, ein Abo die
-Marke seiner ersten Zahlung, eine Folgeabbuchung die Marke der Zeile, zu der sie gehört. Gefahren
-bis nichts mehr dazukommt, weil jeder Weg den nächsten speist. Was danach übrig bleibt, steht
-weiter auf `0` und wird ins Log geschrieben; die Standardmarke wird nirgends eingesetzt. Der
-Zugriff auf `invoices` läuft über `Schema::hasTable()` und ist ein Hinweis, keine Voraussetzung:
-das Rechnungs-Addon ist ein `suggest`, und die echte Abhängigkeit läuft andersherum.
+Three paths, strongest first: a payment with an invoice gets the invoice's brand, a subscription
+the brand of its first payment, a recurring charge the brand of the row it belongs to. Run until
+nothing more is added, because each path feeds the next. Whatever is left after that stays on `0`
+and is written to the log; the default brand is not used anywhere. The access to `invoices` runs
+through `Schema::hasTable()` and is a hint, not a requirement: the invoicing addon is a `suggest`,
+and the real dependency runs the other way round.
 
-### Neu: `payments:brand-backfill`
+### Added: `payments:brand-backfill`
 
-Die kaputte Migration ist committet und auf mindestens zwei Installationen schon gelaufen; dort
-läuft sie nie wieder, und die Zeilen stehen auf der falschen Marke statt auf `0`. Dieser Befehl
-fährt **dieselbe** Ableitung (eine Stelle, `Support\BrandBackfill`, nicht zweimal geschrieben) und
-korrigiert eine Zeile nur dann, wenn eine abgeleitete Quelle ihr widerspricht. Eine Zeile, für die
-sich nichts ableiten lässt, bleibt, wie sie ist — auch wenn sie die geratene Marke trägt: fehlender
-Beleg ist kein Beleg. Gezählt und ausgegeben wird beides.
+The broken migration is committed and has already run on at least two installations; there it
+never runs again, and the rows sit on the wrong brand instead of on `0`. This command runs the
+**same** derivation (one place, `Support\BrandBackfill`, not written twice) and only corrects a row
+where a derived source contradicts it. A row for which nothing can be derived stays as it is — even
+if it carries the guessed brand: missing evidence is not evidence. Both are counted and printed.
 
-`--dry-run` zeigt nur. Ohne die Option wird geschrieben, mit einer Zusammenfassung, wie viele
-Zeilen aus welcher Quelle stammen.
+`--dry-run` only shows. Without the option it writes, with a summary of how many rows came from
+which source.
 
-### Neu: eine weiche Naht zur Rechnung
+### Added: a soft seam to the invoice
 
-`Contracts\InvoiceSource` + `Support\Invoices` (Registry, wie `Catalogue`). Ohne
-Rechnungs-Addon zeigt sich die Bestellung ohne Download, statt zu brechen.
-`Integrations\InvoiceBridge` erkennt `goldnead/statamic-invoices` **an der Form, nicht am Typ**:
-eine einzige Zeichenkette nennt dessen Fassade, alles danach ist `method_exists`. Dort wird gerade
-parallel PDF und Zustellung gebaut; eine Brücke gegen die heutigen Klassen wäre eine Wette auf
-unfertige Arbeit.
+`Contracts\InvoiceSource` + `Support\Invoices` (a registry, like `Catalogue`). Without the
+invoicing addon the order shows without a download instead of breaking.
+`Integrations\InvoiceBridge` recognises `goldnead/statamic-invoices` **by shape, not by type**: a
+single string names its facade, everything after that is `method_exists`. PDF and delivery are
+being built there in parallel right now; a bridge against today's classes would be a bet on
+unfinished work.
 
-### Neu: `Contracts\MandateGateway`
+### Added: `Contracts\MandateGateway`
 
-Zahlungsmittel wechseln über den Mandats-Weg des Anbieters. `MollieGateway` implementiert es; der
-Kundenbereich fragt, ob das gebundene Gateway es kann, und nennt Mollie nirgends beim Namen. Auf
-Mollie kostet das den Käufer einen Cent — es gibt dort keine Null-Betrags-Autorisierung —, und der
-Betrag steht über der Schaltfläche statt später auf dem Kontoauszug.
+Changing the payment method through the provider's mandate path. `MollieGateway` implements it; the
+customer portal asks whether the bound gateway can do it and never names Mollie anywhere. On Mollie
+this costs the buyer one cent — there is no zero-amount authorisation there — and the amount is
+stated above the button rather than later on the bank statement.
 
-### Behoben
+### Fixed
 
-- `Payment` kannte die Attributions-Spalten aus 1.13 in seinem `@property`-Block nicht.
-- `Checkout` fragte `request()` mit `?->`, was nie null wird.
+- `Payment` did not know the attribution columns from 1.13 in its `@property` block.
+- `Checkout` asked `request()` with `?->`, which is never null.
 
 ### Added
 
@@ -439,77 +1155,75 @@ Betrag steht über der Schaltfläche statt später auf dem Kontoauszug.
 
 ## 1.13.0
 
-### Neu: eine Naht für Angaben, die dem Paket nichts bedeuten
+### Added: a seam for details the package attaches no meaning to
 
-`FollowUp::accept()`, `Checkout::start()` und `Subscriptions::start()` nehmen jetzt einen
-Parameter `$details` entgegen: `meta`, `country` und `country_source`. Was dort steht, wird in
-dieselbe Transaktion geschrieben wie die Zahlung selbst und steht damit fest, **bevor** der
-Anbieter gerufen wird. Beschrieben in `docs/follow-up-offers.md`.
+`FollowUp::accept()`, `Checkout::start()` and `Subscriptions::start()` now take a `$details`
+parameter: `meta`, `country` and `country_source`. What is passed there is written in the same
+transaction as the payment itself and is therefore settled **before** the provider is called.
+Described in `docs/follow-up-offers.md`.
 
-Was der Aufrufer mitgibt, überschreibt nichts, was das Paket selbst setzt. Betrag, Produkt,
-Status, die Kennungen des Anbieters, die Verbindung zur Eltern-Zahlung: wer sie mitschickt,
-bekommt eine `InvalidArgumentException`, bevor eine Zeile angelegt und bevor Geld bewegt wurde.
-Ein still verworfener Betrag sähe für den Aufrufer aus wie ein gesetzter, und der Unterschied
-fällt dann erst auf dem Kontoauszug auf.
+What the caller passes overwrites nothing the package sets itself. Amount, product, status, the
+provider's identifiers, the link to the parent payment: anyone sending those gets an
+`InvalidArgumentException` before a row is created and before money has moved. An amount discarded
+silently would look to the caller like an amount that was set, and the difference would only show
+up on the bank statement.
 
-### Behoben: die Folge-Zahlung hatte keine Stelle, an der ihre Angaben ankommen konnten
+### Fixed: the follow-up payment had nowhere for its details to land
 
-`FollowUp::accept()` legte eine Zahlung an und rief den Anbieter, ohne dass die aufrufende
-Strecke etwas an diese Zahlung heften konnte. Wer die Anschrift oder einen eigenen Verweis
-brauchte, trug beides **nach** dem Aufruf nach, und das ist ein Rennen gegen den Webhook: meldet
-der Anbieter die Zahlung schneller, als der Aufrufer schreibt, liest der Rechnungsschreiber eine
-Zeile ohne Anschrift.
+`FollowUp::accept()` created a payment and called the provider without the calling flow being able
+to attach anything to that payment. Anyone who needed the address or a reference of their own added
+both **after** the call, and that is a race against the webhook: if the provider reports the
+payment faster than the caller writes, the invoice writer reads a row without an address.
 
-Auffliegen konnte das erst ab 250 EUR. Bis dorthin reicht die Kleinbetragsrechnung nach
-§ 33 UStDV, die ohne Anschrift des Leistungsempfängers auskommt; darüber ist es eine fehlende
-Pflichtangabe auf einem Beleg, der nicht mehr korrigiert, sondern storniert und neu geschrieben
-wird. Ein Folgeangebot ist typischerweise das billige Ding neben der Bestellung, und genau
-deshalb hält die Lücke still, bis jemand ein teures danebenstellt.
+This could only surface from €250 upwards. Below that the Kleinbetragsrechnung under § 33 UStDV
+(the German small-amount invoice) suffices, which does without the recipient's address; above it,
+it is a missing mandatory detail on a document that is no longer corrected but reversed and
+rewritten. A follow-up offer is typically the cheap thing beside the order, and that is exactly why
+the gap keeps quiet until somebody puts an expensive one next to it.
 
-### Behoben: eine Abo-Zahlung ab dem zweiten Zyklus hatte nie eine Anschrift
+### Fixed: a subscription payment from the second cycle on never had an address
 
-Ein Zyklus entsteht im Webhook, weil der Anbieter von sich aus abbucht. Die Zeile wurde
-ausschließlich aus dem Abo gebaut und erbte nichts von der Zahlung, die das Abo begonnen hat.
-Damit fehlte jeder Zyklus-Rechnung die Anschrift, und ein Abo ist die Umsatzart, die die
-250-EUR-Grenze am ehesten reißt. Erschwerend: die Spalte `subscription_id` steht zum Zeitpunkt
-von `PaymentPaid` noch nicht, ein Listener hatte also nicht einmal einen Zeiger, um sie
-nachzuschlagen.
+A cycle comes into being in the webhook, because the provider charges of its own accord. The row
+was built exclusively from the subscription and inherited nothing from the payment that started
+it. Every cycle invoice therefore lacked the address, and a subscription is the kind of revenue
+most likely to break the €250 line. To make it worse: the `subscription_id` column is not yet set
+at the time of `PaymentPaid`, so a listener did not even have a pointer to look it up.
 
-Ein Zyklus erbt jetzt die `meta` der ersten Zahlung, ohne die Schlüssel, die das Paket selbst
-führt, und trägt in `meta['cycle_of']` die Kennungen des Abos und der ersten Zahlung. Das Land
-wird bewusst nicht geerbt: das trägt der Anbieter nach, und sein Beleg wiegt schwerer.
+A cycle now inherits the first payment's `meta`, without the keys the package maintains itself, and
+carries the identifiers of the subscription and the first payment in `meta['cycle_of']`. The
+country is deliberately not inherited: the provider supplies that afterwards, and its evidence
+weighs more.
 
-### Behoben: ein Testzeitraum ohne Betrag wurde nie ein Abo
+### Fixed: a trial period without an amount never became a subscription
 
-`Subscriptions::start()` schrieb `subscription_intent` erst, nachdem `Checkout::start()`
-zurückgekehrt war. Bei einem Testzeitraum, der heute nichts kostet, ist die Zahlung zu diesem
-Zeitpunkt schon erfüllt: der Katalog preist sie mit null, `Checkout::start()` erfüllt sie selbst,
-`PaymentPaid` feuert, `startFromPayment()` sieht nach der Absicht und findet keine. Ergebnis: eine
-bezahlte Bestellung, kein Abo, keine Logzeile, kein Unterschied zu einer gewöhnlichen Einzelzahlung.
+`Subscriptions::start()` only wrote `subscription_intent` after `Checkout::start()` had returned.
+With a trial period that costs nothing today, the payment is already fulfilled at that point: the
+catalogue prices it at zero, `Checkout::start()` fulfils it itself, `PaymentPaid` fires,
+`startFromPayment()` looks for the intent and finds none. Result: a paid order, no subscription, no
+log line, no difference from an ordinary one-off payment.
 
-Die Absicht geht jetzt in den Checkout hinein statt hinterher. Bei einem Testzeitraum ohne Betrag
-bleibt es dabei, dass kein Abo entsteht (ohne Belastung gibt es kein Mandat, und ohne Mandat kein
-Abo), aber es steht jetzt als Fehler im Log statt gar nirgends.
+The intent now goes into the checkout instead of after it. With a trial period without an amount it
+remains the case that no subscription comes into being (no charge means no mandate, and no mandate
+means no subscription), but it is now an error in the log instead of nowhere at all.
 
 ## 1.12.0
 
-### Fixed — wer über ein Angebot kaufte, bekam keinen Zugang
+### Fixed — buying through an offer granted no access
 
-`EntitlementsBridge` las `config('statamic-payments.products')` direkt und ging damit an jedem
-Resolver vorbei, den ein anderes Addon am `Catalogue` angemeldet hat — und `statamic-offers` meldet
-einen an. Jede Bestellung über ein Angebot gewährte deshalb **gar nichts**: Zahlung erfolgreich,
-Geld da, Zugang nie.
+`EntitlementsBridge` read `config('statamic-payments.products')` directly and thereby bypassed every
+resolver another addon has registered with the `Catalogue` — and `statamic-offers` registers one.
+Every order through an offer therefore granted **nothing at all**: payment successful, money there,
+access never.
 
-So still, wie ein Fehler nur sein kann. „Dieses Produkt gewährt nichts" und „dieses Produkt kenne
-ich nicht" kamen beide als dasselbe `null` zurück — kein Fehler, keine Logzeile, kein Unterschied zu
-einem Produkt, das rechtmäßig nichts gewährt.
+As silent as a defect can be. "This product grants nothing" and "I do not know this product" both
+came back as the same `null` — no error, no log line, no difference from a product that legitimately
+grants nothing.
 
-`slugFor()` und `grantLine()` gehen jetzt über den Katalog. Dasselbe galt für `productName()` im
-Control Panel, wo statt eines Namens der rohe Handle `offer:fruehling-upsell` stand.
+`slugFor()` and `grantLine()` now go through the catalogue. The same applied to `productName()` in
+the Control Panel, where the raw handle `offer:fruehling-upsell` stood instead of a name.
 
-Belegt gegen das echte `statamic-entitlements`, nicht gegen eine Attrappe: das letzte Mal, als diese
-Brücke nur gegen einen Doppelgänger geprüft wurde, hatte sie auf keiner einzigen echten Installation
-je funktioniert.
+Evidenced against the real `statamic-entitlements`, not against a stand-in: the last time this
+bridge was only checked against a double, it had never worked on a single real installation.
 
 ## 1.11.0
 

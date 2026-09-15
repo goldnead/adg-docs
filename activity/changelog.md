@@ -12,6 +12,82 @@ Release notes for `goldnead/statamic-activity`, as published with the package.
 Cross-version upgrade notes for the whole suite are in
 [Upgrading](/guide/upgrading).
 
+## 1.4.1 — 2026-09-08
+
+### Fixed: the test bed carried one test's saved settings into the next one on MySQL
+
+Nothing in the shipped addon changed. The suite's own bed did: the shared settings layer writes
+the stored overrides onto the live config from an `app->booted()` callback, and that callback runs
+before `RefreshDatabase` resets the database for the test about to start. On SQLite that is
+invisible, because an in-memory database is new with every connection and the boot never finds a
+row. On MySQL the table still holds what the previous test left there, so the boot read those rows
+and pinned them onto the config, where they stayed after the table was emptied a moment later — a
+test that saves `enabled => false` silenced the recorder in the test after it. The bed now drops
+the cached overrides and re-applies the layer once the database stands.
+
+## 1.4.0 — 2026-09-08
+
+### Changed: a Control Panel page whose table is missing shows an empty state instead of HTTP 500
+
+The addon can be installed without its migrations having run — composer pulls the package in, the
+nav entry appears, and `activities` still does not exist. Both the activity listing and an
+activity's detail screen reached for that table while the page was being built and answered
+HTTP 500. They now check before the first query and render a setup screen that names the missing
+table and says to run `php artisan migrate`. The listing fetches its own rows from the same route;
+that request gets an empty result set, so a tab that was already open shows an honest "nothing
+here" rather than a broken table.
+
+The reason does not disappear with the 500: every guarded page writes to the log why it turned
+somebody away. Otherwise the site would look installed and never record a thing.
+
+## 1.3.0 — 2026-09-07
+
+### New: what gets recorded is configurable in the Control Panel
+
+What this addon writes and how long it keeps it used to be decisions in `config/activity.php`.
+They are the controller's decisions, not the developer's, and without file access and a deploy
+the controller could not reach them. Under **Settings → Addon Settings** there is now a section
+of its own with five groups:
+
+- **Recording:** the main switch.
+- **Request context:** one switch each for UTM parameters, referrer, page URL and device
+  category, plus one that leaves the context out entirely.
+- **Filter before writing:** which keys are dropped from the payload before it is written,
+  which event types are not written at all, and the payload's upper limit in bytes.
+- **Retention:** after how many days a row is deleted and after how many it is anonymised.
+  Both may stay empty, because "keep everything" is a different state from a number.
+- **Control Panel:** the number of rows per page in the listing.
+
+Only what someone has changed is stored. Everything else keeps following `config/activity.php`,
+so a package update still moves the defaults along and an installation that never opens the
+screen behaves no differently from the version before.
+
+Not on the page, and the group texts say so: `producers.marketing`, `producers.leadhub` and
+`cp.enabled` are read at boot, `source` is the label that sits on every row already written,
+`queue.*` belongs to the operation of the machine, and `retention.per_event_type` is a map from
+event type to days, for which the settings layer has no type. A switch that only takes effect
+at the next deploy would be a false statement on screen.
+
+**New permission `manage activity settings`.** Nobody holds it at first: until it is assigned to
+a role the section stays invisible, including for users who may otherwise do everything with
+this addon. Existing permissions are unchanged.
+
+**Requires `goldnead/statamic-brand-context` 1.13 or later.** Older versions do show the page,
+but do not apply its values reliably. On an installation with a single brand, the settings of
+the addons that registered last did not apply at all: after a reload the page showed the saved
+value, `config()` answered with the package default for the rest of the process, and the brand
+switch that would have caught this up never happens in single-brand operation. On top of that,
+up to 1.12 saving the same section a second time deleted the first save's override, without a
+message. If you set values between 06.09. and this update, check on the page after updating
+whether they are still there.
+
+### Fixed: the shipped CP bundle no longer matched core
+
+The committed bundle was from 04.08.2026 and had been built against a Statamic core that did not
+yet export `usePage` from the Inertia module. Since `statamic/cms` v6.27.0 it does, which made
+the shipped file differ from a fresh build. A Composer installation runs without npm and loads
+exactly this file, so it has been rebuilt.
+
 ## 1.2.2 — 2026-08-09
 
 ### Fixed — the sibling constraint excluded the new majors

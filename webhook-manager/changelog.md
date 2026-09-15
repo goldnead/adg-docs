@@ -12,117 +12,296 @@ Release notes for `goldnead/statamic-webhook-manager`, as published with the pac
 Cross-version upgrade notes for the whole suite are in
 [Upgrading](/guide/upgrading).
 
+## 2.9.1 — 2026-09-08
+
+### Fixed: the Insights screen was left out of the setup check in 2.9.0
+
+The ninth screen went unnoticed because it builds its numbers through a stats service rather than
+a repository. It now demands `webhook_deliveries` unconditionally — the delivery history is
+database-backed under every storage driver — and `webhook_outbounds` only under the `eloquent`
+driver, since the range picker and the "top failing" names read the hooks through the repository,
+which is YAML under `flat`.
+
+### Fixed: the MySQL test leg, red since the setup check was written
+
+`SetupGuardTest` reproduced the unmigrated install by dropping the addon's tables. On SQLite that
+is harmless; MySQL commits DDL implicitly, so the drop escaped the `RefreshDatabase` transaction
+and testbench's rollback at the end of the run met a `down()` that cannot alter a table which is
+no longer there — `Table 'webhook_manager_test.webhook_outbounds' doesn't exist`, raised in
+teardown rather than in an assertion. The test now points the default connection at an empty
+in-memory database for the duration of the request instead, which needs no DDL at all and reads
+the same on both engines. Nothing about the guard itself changed.
+
+## 2.9.0 — 2026-09-08
+
+### Changed: the Control Panel screens show an empty state instead of HTTP 500 when tables are missing
+
+An installation that has the package but has never run its migrations answered HTTP 500 on every
+screen of this addon: the nav item is there, the route resolves, and the first query throws
+`no such table: webhook_outbounds` while the page is being built. All eight screens — overview,
+outbound, inbound, rules, templates, deliveries, logs and debug — now check before their first query
+and render a setup page that names the missing tables and says to run `php artisan migrate`.
+
+Which tables a screen demands depends on the active storage driver. Outbound webhooks, inbound
+endpoints, rules and templates live either in the database or in YAML files, so under the `flat`
+driver those four tables are never queried and are not required — demanding them would send a
+perfectly working installation to the setup screen. Deliveries and logs are database-only whatever
+the driver says.
+
+The reason does not vanish with the 500: a guarded page writes to the log why it turned somebody
+away. Otherwise the install would look finished and never work.
+
+## 2.8.2 — 2026-09-07
+
+### Changed: `goldnead/statamic-brand-context` 1.13 or later
+
+The shared settings screen this addon moved onto in 2.8.0 does not work reliably under older
+versions. On an installation with a single brand, the values of the addons that registered last
+were not laid over the config at all — when this was measured in the playground on 07.09.,
+`webhook-manager` was one of them: after a reload the screen showed the saved value, while what
+got read was the package default. Here that affects the retry policy, the delivery time limits
+and the masking in the logs, among others. On top of that, up to 1.12 saving the same section a
+second time deleted the first save's override, without a message, and adding a second field to
+the same section is enough to trigger it.
+
+Nothing changes about the screen, the migration step from 2.8.0 or the `manage webhook settings`
+permission. If you set values between 06.09. and this update, check after updating whether they
+are still there; lost values do not come back on their own.
+
+### Changed: the developer URL points to adriangoldner.dev
+
+`extra.statamic.developer-url` still pointed at gldnr.studio. The publisher the Control Panel
+shows on the addon, and Packagist on the package page, is now adriangoldner.dev, as with the
+other addons in the suite.
+
+## 2.8.1 — 2026-09-06
+
+### Docs: the README still described the old settings screen
+
+Follow-up to 2.8.0. The settings section still named `webhook_settings`, the
+addon's own screen and "Settings → Storage". It now names the shared screen,
+`brand_settings`, the brand scope, the migration step on upgrade, and the debug
+screen as the new place for the deployment values and the storage driver
+switch. Text only, no code.
+
+## 2.8.0 — 2026-09-06
+
+### The settings now live on the suite's shared screen
+
+This addon had a settings screen of its own: a table, a model, a request, a
+controller and a Vue page, together around 900 lines for a mechanism that
+`automations` and `leadhub` had each built once more, independently of it. The
+mechanism now lives once in `goldnead/statamic-brand-context`; what stays here
+is only the field list (`Support\Settings`), which registers with the shared
+registry in `boot()`.
+
+What changes for an operator:
+
+- **One screen for the whole suite.** Every addon is a section on it. The
+  sidebar entry "Webhooks → Settings" still leads there, and
+  `/cp/webhook-manager/settings` redirects — bookmarks stay valid.
+- **Settings are brand-scoped from now on.** On a multi-brand installation two
+  brands used to share one value, because the old table had no brand column.
+- **Existing values move along.** `php artisan migrate` transfers every row
+  from `webhook_settings` to `brand_settings` on the default brand. The old
+  table stays for one minor version, so a rollback loses nothing.
+- **What was not a setting has moved to the debug screen:** the values dictated
+  by the deployment, the resolved config tree with masked secrets, and the
+  switch for the storage driver. For that, the debug screen is now reachable
+  with `manage webhook settings` as well, not only with
+  `use webhook debug tools` — the debug tools themselves stay locked.
+
+### Fixed
+
+- A saved status list silently switched retrying off. A text field returns
+  strings; `RetryPlanner` compared them strictly against a real HTTP status,
+  and `"429"` is never `429`. Two repairs: the planner converts the list to
+  integers when reading it — a hand-edited `config/webhook-manager.php` could
+  trigger this before as well —, and since `brand-context` 1.12.0 the shared
+  layer knows a type per list item, which `settingsGroups()` declares here with
+  `items => 'integer'`. That also makes the list resettable to its package
+  default again; before, it stayed frozen after the first save, and a later
+  release could no longer move it.
+
+## 2.7.0 — 2026-09-05
+
+### The overview shows the webhooks themselves, not just four numbers
+
+It used to hold four tiles and not a single row of the actual webhooks. The
+page now carries the figures as a key/value table and below it the outgoing
+webhooks as a real Statamic listing, with column headers, sorting, multi-select
+and a "…" menu. The delivery listing was unusable — the URL column 60 px wide,
+every row just "…" — and is no longer.
+
+### Fixed: two holes in the action endpoints
+
+- A selection that collapsed to zero records server-side (a stale page, a
+  deleted row, a brand switch) made core run over the global action list of
+  **all** installed addons and ended in HTTP 500 with a stack trace. The
+  endpoint now answers with an empty list, or a 404, before core is asked.
+- An action of the wrong type ran through and reported success — an outgoing
+  webhook could be run as "Resend delivery". `visibleTo()` is only a guard for
+  the interface; when executing, Statamic checks `authorize()` and nothing
+  else. All five CP actions now check the type there, and every endpoint
+  accepts only its own actions.
+
+### The Control Panel speaks German throughout
+
+357 strings sat in the code as global translation keys. Global means a sibling
+addon can redefine them — the delivery detail page was titled "Versand #266"
+because another addon binds `Delivery` to "Versand". Everything now lives under
+`webhook-manager::messages.*`. A test holds the state: it also catches
+`trans_choice`, double quotes, `config/` and calls with a variable key.
+
+### Smaller things
+
+- The error type on the log page had never resolved: the server looked it up in
+  the delivery failure classes, while the column carries log event types. Its
+  own vocabulary with 26 event types; the column is now called "Event".
+- Removed checkbox columns that had no effect at all on four listings.
+- One word per thing: the German interface says "Zustellung", no longer also
+  "Auslieferung".
+
+## 2.6.1 — 2026-09-05
+
+### Fixed: the listing JSON carries its columns
+
+Six listings (inbound, outbound, logs, deliveries, rules, templates) returned a `meta` without
+`columns` in the AJAX response. Statamic's `<Listing>` calls
+`setColumns(response.data.meta.columns)` first; if the key is missing the columns are
+`undefined`, and the next access throws, in the success path of the same promise chain. That was
+caught by the generic `.catch`, which, lacking `e.response`, only toasted "Something went wrong".
+The result was a red error toast with no content on HTTP 200, on a page that visibly worked: the
+table's first fill comes from the Inertia props, where the columns had been all along. Only the
+half nobody looks at was broken (F32/F34).
+
+New test `ListingJsonCarriesColumnsTest` covers all six listings and checks the JSON path, not
+the Inertia path.
+
+### Fixed: the nav section is a key, not a translation
+
+Statamic localises its own sections itself. A pre-translated value is a different key and puts a
+second, identical-looking section next to it; in the German CP two "Werkzeuge" sections stood one
+below the other (part of F36). On top of that, `webhook-manager::nav.section` was defined in no
+language file: `__()` returned the raw key, and that became the section name.
+
+### Fixed: code style on the test stand-in
+
+`tests/Fakes/insights-contracts.php` had been failing `pint --test` since 2.4.0, which kept the
+code style job red. Formatted; the declarations are unchanged, `InsightsContractsMatchTest`
+compares signatures by reflection.
+
 ## 2.6.0 — 2026-09-03
 
-### Geändert: `PATCH /cp/webhook-manager/settings` antwortet mit einem Redirect
+### Changed: `PATCH /cp/webhook-manager/settings` answers with a redirect
 
-Vorher kam JSON zurück. Mit dem Redirect bekommt das Speichern Fortschrittsbalken, Toast und
-Zurück-Knopf, und die Diagnose-Ansicht zeigt nicht mehr den Stand vor dem Speichern. Einziger
-bekannter Konsument ist die Settings-Seite selbst — wer die Route extern gescriptet hat und JSON
-erwartet, merkt es.
+It used to return JSON. With the redirect, saving gets a progress bar, a toast and a back button,
+and the diagnostics view no longer shows the state from before the save. The only known consumer
+is the settings page itself — anyone who has scripted the route externally and expects JSON will
+notice.
 
-### Behoben: vier Dinge, die rendern und nichts tun
+### Fixed: four things that render and do nothing
 
-- **`TabTrigger :label` — das Prop heißt `text`/`name`.** Die Tab-Leiste blieb leer, **Body und
-  Preview waren dadurch unerreichbar.** Vue reicht ein unbekanntes Prop als HTML-Attribut durch,
-  also warnt nichts.
-- **`Alert variant="danger"` und achtmal `variant="info"`.** `Alert` kennt nur
-  `default`/`warning`/`error`/`success`; Fehlschläge und Hinweise erschienen neutral.
-- **`:message="…"` statt `:text="…"` an zwei Bannern.** Eine geglückte und eine gescheiterte
-  Vorschau sahen identisch aus, nämlich nach nichts.
-- **`CommandPaletteItem @click` statt `:action`, `Panel collapsible`, `DropdownItem danger`** —
-  alle drei sind keine Props.
+- **`TabTrigger :label` — the prop is called `text`/`name`.** The tab bar stayed empty, **which
+  made Body and Preview unreachable.** Vue passes an unknown prop through as an HTML attribute,
+  so nothing warns.
+- **`Alert variant="danger"` and eight times `variant="info"`.** `Alert` only knows
+  `default`/`warning`/`error`/`success`; failures and hints appeared neutral.
+- **`:message="…"` instead of `:text="…"` on two banners.** A successful and a failed preview
+  looked identical, namely like nothing.
+- **`CommandPaletteItem @click` instead of `:action`, `Panel collapsible`, `DropdownItem
+  danger`** — none of the three is a prop.
 
-Dazu: vier rote Kopfknöpfe ins `…`-Menü, zehn Panels bekamen ihre `Card`, und die Inbound-Liste
-zeigt Klartext statt `bearer` und `static_header` (neuer Test).
+Plus: four red header buttons moved into the `…` menu, ten panels got their `Card`, and the
+inbound listing shows plain text instead of `bearer` and `static_header` (new test).
 
-Sieben `axios`-Aufrufe bleiben absichtlich: sie holen JSON für eine Anzeige auf derselben Seite
-und wechseln sie nicht.
+Seven `axios` calls stay on purpose: they fetch JSON for a display on the same page and do not
+navigate away from it.
 
 ## 2.5.0 — 2026-09-02
 
-### Neu: Zustellungen am Objekt
+### New: deliveries carry their subject
 
-Jede Zustellung weiß jetzt, um welches Objekt es ging. Zwei neue Spalten auf
-`webhook_deliveries`, `subject_type` und `subject_id`, werden beim Schreiben des Snapshots
-einmal aufgelöst: aus einem expliziten Paar im Payload, aus konfigurierten Schlüsseln wie
-`payment_id`, aus dem Trigger-Muster (`payments.*`) mit der Quellreferenz, oder zuletzt aus
-Quelltyp und Referenz des Events selbst. Die eingebauten Trigger für Einträge, Benutzer,
-Dateien und Formulareingänge bekommen damit ohne Konfiguration ein Objekt. Die Zuordnung
-steht in `config/webhook-manager.php` unter `subjects` und lässt sich um eigene Typen ergänzen.
+Every delivery now knows which subject it was about. Two new columns on `webhook_deliveries`,
+`subject_type` and `subject_id`, are resolved once when the snapshot is written: from an explicit
+pair in the payload, from configured keys such as `payment_id`, from the trigger pattern
+(`payments.*`) together with the source reference, or finally from the event's own source type
+and reference. That gives the built-in triggers for entries, users, assets and form submissions a
+subject without any configuration. The mapping sits in `config/webhook-manager.php` under
+`subjects` and can be extended with your own types.
 
-Lesbar ist das Protokoll von drei Seiten. Für PHP gibt es die Fassade `WebhookLog` mit
-`forSubject()`, `countForSubject()` und `subjectTypes()`. Im Control Panel hat die
-Zustellungsliste einen Objektfilter über der Tabelle, eine Spalte „Objekt“ und die
-Detailansicht zeigt das Objekt neben dem Trigger. Für andere Addons gibt es die global
-registrierte Vue-Komponente `webhook-deliveries-for-subject`, die über den neuen Endpunkt
-`deliveries/for-subject` liest; Berechtigung und Brand-Scope gelten dort unverändert.
+The log can be read from three sides. For PHP there is the `WebhookLog` facade with
+`forSubject()`, `countForSubject()` and `subjectTypes()`. In the Control Panel the delivery
+listing has a subject filter above the table and a "Subject" column, and the detail view shows
+the subject next to the trigger. For other addons there is the globally registered Vue component
+`webhook-deliveries-for-subject`, which reads through the new `deliveries/for-subject` endpoint;
+permission and brand scope apply there unchanged.
 
-Die Migration ist wiederholbar: jeder Schritt prüft vorher, ob Spalte und Index schon da sind.
+The migration is repeatable: every step checks first whether the column and the index are already
+there.
 
 ## 2.4.0 — 2026-08-29
 
-### Neu: die Zahlen dieses Addons erscheinen in Insights
+### New: this addon's figures appear in Insights
 
-`statamic-insights` ist ab 1.1.0 keine Umsatzauswertung mehr, sondern die Auswertungs-Schicht der
-Familie: jedes Addon meldet an, was es zählen kann, und bekommt dafür Zeitraum, Vergleich mit dem
-Vorzeitraum, Diagramm, Aufteilungen und zwei fertige Schirme.
+From 1.1.0 `statamic-insights` is no longer a revenue report but the family's reporting layer:
+every addon registers what it can count and gets the period, the comparison against the period
+before, the chart, the breakdowns and two finished screens in return.
 
-Die Kopplung ist in **beide** Richtungen freiwillig. Ohne Insights fehlt hier nichts; ohne dieses
-Addon fehlt dort nur seine Gruppe. `suggest`, nie `require`.
+The coupling is optional in **both** directions. Without Insights nothing is missing here;
+without this addon only its own group is missing over there. `suggest`, never `require`.
 
-Jede Zahl hält sich an die Hausregeln des Vertrags: **null ist nicht null** (eine Quote ohne Nenner
-hat keine Antwort und zeigt keine 0 %), `available()` entscheidet über die Existenz und nie über die
-Daten, Lücken im Verlauf füllt Insights und nicht die Kennzahl, und ein Filter, den eine Zahl nicht
-versteht, wird ignoriert statt zum Fehler.
+Every figure follows the contract's house rules: **null is not zero** (a rate with no denominator
+has no answer and does not print 0 %), `available()` decides existence and never the data, gaps
+in a series are filled by Insights rather than by the metric, and a filter a metric does not
+understand is ignored rather than fatal.
 
-Vier Zahlen: Zustellungen, Fehlschläge, Erfolgsquote, Wiederholungen.
+Four figures: deliveries, failures, success rate, retries.
 
-**Die Erfolgsquote zählt nur Zustellungen mit einem Urteil.** Eine, die noch in der Warteschlange
-hängt, ist kein Fehlschlag. Der eigene Schirm des Addons liefert dort heute `0,0` — hier ist es
-`null`, und der Unterschied steht in der Beschreibung, statt zwei Zahlen für dieselbe Frage
-nebeneinander zu stellen.
+**The success rate counts only deliveries that have a verdict.** One still sitting in the queue
+is not a failure. The addon's own screen returns `0.0` there today — here it is `null`, and the
+difference is stated in the description instead of putting two numbers for the same question side
+by side.
 
-### Behoben: eine Zahl zählt nur noch die aktive Marke
+### Fixed: a figure now counts the active brand only
 
-Beim Bauen der Anbindung bekam diese Frage in der Familie vier verschiedene Antworten, und auf einem
-Schirm nebeneinander ist das schlimmer als gar keine: eine Kachel zeigte den Umsatz dreier fremder
-Marken, während die daneben korrekt filterte. Die Regel steht jetzt einmal in
-`TableMetric::brandScoped()`, als Abschrift von `BrandScope::apply()`; hier wird nur noch die Spalte
-genannt, und Zahl, Diagramm und jede Aufteilung verengen gemeinsam.
+While the integration was being built, this question got four different answers within the
+family, and side by side on one screen that is worse than none: one tile showed the revenue of
+three foreign brands while the one next to it filtered correctly. The rule now sits once in
+`TableMetric::brandScoped()`, as a transcription of `BrandScope::apply()`; here only the column is
+named, and figure, chart and every breakdown narrow together.
 
-Ist keine Marke gewählt, liest die Kachel **0 und bleibt stehen**. Ein Leser versteht eine Null;
-eine verschwundene Kachel bemerkt er nicht.
+With no brand selected, the tile reads **0 and stays put**. A reader understands a zero; a tile
+that has vanished goes unnoticed.
 
 ## 2.3.0 — 2026-08-24
 
-### Fixed — die Regel-Mail kannte die Marke nicht
+### Fixed — the rule email did not know the brand
 
-Regeln sind markenskaliert (`Storage\BrandSegments`), die Mail, die sie
-verschicken, war es nicht: `SendEmailAction` rief `Mail::raw()` und traf damit
-den prozessweiten Vorgabe-Mailer. Auf einem Host, der mehrere Marken in einem
-Prozess bedient, heißt das: die Regel von Marke A geht über das Relay von
-Marke B raus. Scaleway lehnt das ab, weil die Domain dort nicht verifiziert
-ist — oder es geht durch, unter fremder Identität.
+Rules are brand-scoped (`Storage\BrandSegments`), the email they send was not:
+`SendEmailAction` called `Mail::raw()` and thereby hit the process-wide default
+mailer. On a host serving several brands in one process that means the rule of
+brand A goes out through the relay of brand B. Scaleway rejects that, because
+the domain is not verified there — or it goes through, under a foreign
+identity.
 
-Die Aktion geht jetzt durch `Sending\BrandMailer`, dieselbe Tür wie in
-marketing, notifications, preference-center, automations und leadhub. Der
-Vertrag steht in `statamic-brand-context` ^1.8, hier wird nur der eigene Name
-gebunden.
+The action now goes through `Sending\BrandMailer`, the same door as in
+marketing, notifications, preference-center, automations and leadhub. The
+contract sits in `statamic-brand-context` ^1.8; here only the addon's own name
+is bound.
 
-**Für Ein-Marken-Installationen ändert sich nichts.** Ohne erklärte
-Marken-Identität bleibt die `from`-Angabe der Regel stehen, genau wie bisher.
-Erklärt eine Marke einen Absender, gewinnt die Marke — eine Regel darf keine
-Marke imitieren.
+**Nothing changes for single-brand installations.** Without a declared brand
+identity the rule's `from` stays as it was, exactly as before. If a brand
+declares a sender, the brand wins — a rule must not impersonate a brand.
 
-**Neu:** verweigert die Marken-Identität (etwa weil `from_address` fehlt),
-scheitert die Aktion sichtbar, statt „Email sent" zu melden während nichts das
-Haus verlassen hat.
+**New:** if the brand identity refuses (because `from_address` is missing, for
+instance), the action fails visibly instead of reporting "Email sent" while
+nothing has left the building.
 
-**Unverändert und beabsichtigt:** Störungsmeldungen
-(`SendFailureAlertListener`, `DeliveryFailedNotification`) bleiben beim Host.
-Eine Meldung *über* eine Marke ist keine Meldung *von* ihr — und sie muss
-ankommen, gerade wenn das Relay der Marke das Kaputte ist.
+**Unchanged and intended:** failure alerts (`SendFailureAlertListener`,
+`DeliveryFailedNotification`) stay with the host. An alert *about* a brand is
+not an alert *from* it — and it has to arrive, especially when the brand's
+relay is the broken thing.
 
 
 ## 2.2.0 — 2026-08-15
@@ -160,61 +339,59 @@ The table is not brand-scoped, unlike everything else in this addon. A timeout
 or a feature toggle that differed per brand would mean one queue worker applying
 different rules depending on whose delivery it picked up.
 
-### Fixed — die Alarm-URL stand im Klartext auf dem Schirm
+### Fixed — the alert URL was on screen in plain text
 
-Der Diagnose-Block am Fuß der Seite druckt den aufgelösten Config-Baum, damit
-ein Betreiber sehen kann, was seine Installation tatsächlich geladen hat. Darin
-stand `WEBHOOK_MANAGER_ALERT_SLACK_URL` ungeschwärzt — und diese URL **ist** das
-Passwort: wer sie hat, schreibt in den Kanal. Sie landete damit in
-Bildschirmfotos, in geteilten Bildschirmen und in jedem Frontend-Fehlerbericht.
+The diagnostics block at the foot of the page prints the resolved config tree so
+an operator can see what their installation actually loaded.
+`WEBHOOK_MANAGER_ALERT_SLACK_URL` stood in there unredacted — and that URL **is**
+the password: whoever has it writes into the channel. It ended up in
+screenshots, in shared screens and in every frontend error report.
 
-Geschwärzt wird jetzt serverseitig, nach Schlüsselnamen statt nach Pfad, damit
-ein Schlüssel namens `secret`, der nächstes Jahr dazukommt, ohne Zutun mitgeht.
-Die Schwärzung vererbt sich nach unten: `webhook_urls => [a, b]` ist genauso
-gedeckt wie ein einzelner Wert. Es bleiben die ersten und letzten vier Zeichen
-stehen, genug um zwei Zugangsdaten zu unterscheiden und zu wenig um eine zu
-benutzen. Der Test prüft die **ganze** Antwort, nicht die eine Prop — ein
-Geheimnis, das anderswo wieder auftaucht, ist dasselbe Leck.
+Redaction now happens server-side, by key name instead of by path, so a key
+named `secret` that arrives next year is covered without anyone doing anything.
+The redaction is inherited downwards: `webhook_urls => [a, b]` is covered just
+as a single value is. The first and the last four characters remain, enough to
+tell two credentials apart and too little to use one. The test checks the
+**whole** response, not the one prop — a secret that reappears elsewhere is the
+same leak.
 
-### Fixed — zwei Felder zeigten ihren Übersetzungsschlüssel statt ihres Namens
+### Fixed — two fields showed their translation key instead of their name
 
-`Settings::field()` flacht `retry.retry_on_status` zum Sprachschlüssel
-`retry_retry_on_status` ab, die Sprachdateien hatten ihn ohne das Präfix. Das
-ergibt keinen Rückfall und kein leeres Label: Laravel liefert den Schlüssel
-selbst zurück, also stand `webhook-manager::settings.fields.retry_retry_on_status.label`
-auf dem Schirm, in beiden Sprachen, und die Fehlermeldung dieser Felder las sich
-genauso. 285 grüne Tests haben nie ein Label angesehen; jetzt tut es einer, für
-jede Gruppe, jedes Feld und jede Auswahloption in beiden Sprachen.
+`Settings::field()` flattens `retry.retry_on_status` to the language key
+`retry_retry_on_status`, and the language files had it without the prefix. That
+produces no fallback and no empty label: Laravel returns the key itself, so
+`webhook-manager::settings.fields.retry_retry_on_status.label` stood on screen,
+in both languages, and the error message for these fields read the same way. 285
+green tests had never looked at a label; now one does, for every group, every
+field and every select option in both languages.
 
-### Fixed — `config:cache` fror die Overrides ein
+### Fixed — `config:cache` froze the overrides
 
-`config:cache` bootet die Anwendung vollständig und schreibt danach den
-aufgelösten Config-Baum auf die Platte. Die Overrides landeten mit darin, und
-ein eingebackener Override überlebt die Zeile, aus der er stammt: eine gelöschte
-Einstellung hatte danach bis zum nächsten `config:clear` keinerlei Wirkung.
-Schlimmer noch, der nächste Boot las die eingebackene Datei als „ausgelieferten
-Default" — ein auf den Dateiwert zurückgesetzter Wert galt dann als Abweichung
-und wurde als Zeile gespeichert, statt gelöscht zu werden. Genau die Regel, die
-diese Klasse verspricht, kippte damit dauerhaft.
+`config:cache` boots the application fully and then writes the resolved config
+tree to disk. The overrides ended up in there, and a baked-in override outlives
+the row it came from: a deleted setting had no effect at all afterwards, until
+the next `config:clear`. Worse still, the next boot read the baked-in file as
+the "shipped default" — a value reset to the file value then counted as a
+deviation and was stored as a row instead of being deleted. The very rule this
+class promises was permanently inverted by that.
 
-Während des Cache-Baus wird jetzt nichts angewendet. Die gecachte Datei trägt
-die Dateiwerte, und jeder Prozess legt seine Overrides beim eigenen Boot
-darüber.
+Nothing is applied during the cache build now. The cached file carries the file
+values, and every process lays its overrides over them at its own boot.
 
-### Fixed — kleinere Schärfungen aus der Kritiker-Runde
+### Fixed — smaller sharpenings from the critic round
 
-- Das Schreiben läuft in einer Transaktion. Ein Fehler auf halbem Weg hinterließ
-  einen Satz, den die Antwort danach als Wahrheit zurückmeldete.
-- Der Zweig für einen Nur-Lese-Modus ist weg. Der Controller bricht vorher mit
-  403 ab, also gab es diesen Zustand nie — eine Prop, die einen unerreichbaren
-  Zustand beschreibt, ist ein Ast, den niemand je betritt.
-- `CpValidationVisibilityTest` kennt jetzt auch das größte Formular des Addons.
-  Der Wächter liest sonst literale `'key' =>`-Paare aus einem FormRequest, und
-  dieser baut seine Regeln aus `Settings::fields()` — er saß im toten Winkel des
-  Tests, der genau für diesen Fehler geschrieben wurde.
-- `InboundEndpoint` hat seine Spalten dokumentiert. Damit fallen 22 Einträge aus
-  der phpstan-Baseline, die nur dort standen, weil ein `$guarded = []`-Model für
-  die Analyse keine Eigenschaften hat.
+- The write runs in a transaction. An error halfway through left behind a set of
+  values that the response then reported back as the truth.
+- The branch for a read-only mode is gone. The controller aborts with a 403
+  before that point, so the state never existed — a prop describing an
+  unreachable state is a branch nobody ever walks into.
+- `CpValidationVisibilityTest` now knows the addon's largest form as well. The
+  guard otherwise reads literal `'key' =>` pairs out of a FormRequest, and this
+  one builds its rules from `Settings::fields()` — it sat in the blind spot of
+  the test written for exactly this error.
+- `InboundEndpoint` has its columns documented. That drops 22 entries from the
+  phpstan baseline which were only there because a `$guarded = []` model has no
+  properties for the analyser.
 
 ## 2.1.2 — 2026-08-13
 

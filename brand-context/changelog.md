@@ -12,16 +12,318 @@ Release notes for `goldnead/statamic-brand-context`, as published with the packa
 Cross-version upgrade notes for the whole suite are in
 [Upgrading](/guide/upgrading).
 
+## 1.13.1 — 2026-09-08
+
+### Fixed: an addon that merges its config too late no longer pins every setting for good
+
+**Nothing to do on an installation whose addons are in order. Everything to do on one whose
+addons are not, because until now it could not tell.** The settings layer takes the package
+values of a namespace as its baseline the first time it applies, and that runs from
+`app->booted()`. Statamic calls `bootAddon()` from a *later* `app->booted()` callback of its own.
+An addon that merges its own config there — `mergeConfigFrom` in `bootAddon()` instead of
+`register()` — is not in the config at that moment, and a `??=` froze that emptiness for the rest
+of the process.
+
+What it cost was silent, and worse than a red test: `packagedDefault()` then answers `null` for
+every key of that namespace, no stored value ever equals its packaged default, no row in
+`brand_settings` is ever deleted. Every setting stays pinned to its value and the installation is
+frozen against future package updates, without an error and without a message. Measured on
+2026-09-08 in `statamic-lead-magnets` and `statamic-marketing`; both are repaired at their own
+end.
+
+Two things changed here. An empty config root is no longer memoised, so a later, correct call can
+still set the baseline — for an addon that merges in `register()` nothing changes at all, its
+first call already sees the full root. And the layer says once per namespace and process, at
+warning level with the namespace and the config root, what the caller has to do. Once, not on
+every access: a warning inside a loop is one nobody reads.
+
+A root this layer has already written onto is still never re-read — neither the override written
+while applying nor the file value the store puts back by hand when it deletes a row. A fresh
+snapshot of such a root would record this layer's own write as the packaged default, which is
+exactly the data loss repaired in 1.13.0: pinned is bad, losing the entered value is worse.
+
+Which means an installation that has already lived with the fault does not repair itself in the
+process it is in. A namespace that both found an empty root and had a stored value to write was
+written to in the same breath, so it behaves exactly as before — only now it says so once in the
+log. Repair the addon and restart, and the root is filled before the capture. A namespace with
+nothing stored yet repairs itself in the same process.
+
+### Fixed: the test suite did not isolate its tests under MySQL
+
+Nothing an installation can see, and the reason the release is worth reading anyway: the suite
+that guards all of the above was not measuring what it claimed on the engine most installations
+run on.
+
+The package's own test case created a dummy table in `setUp()` and dropped it again in
+`tearDown()`. Under MySQL, DDL commits implicitly — so each of those two statements ended the
+transaction `RefreshDatabase` had just opened, and the rollback afterwards had nothing left to
+roll back. A single test that stored one settings row left that row in the database, and every
+test after it met it. On SQLite, which rolls DDL back like anything else, the same suite was
+green, which is exactly why this could sit there unseen. The table is now created once with the
+migrations and never dropped between tests, so no test issues DDL inside its own transaction.
+
+One test was reading the wrong signal on top of that: it simulated an installation whose
+migrations never ran by deleting the brands, but left the manager holding the default brand it
+had already resolved — `BrandManager` caches that for the process on purpose, and `forget()`
+clears only the *current* brand. Whether that cache was warm depended on the driver, so the same
+test was green on one and red on the other. It now starts from a manager that has resolved
+nothing, which is what the scenario actually is.
+
+The full suite is green under both drivers: 164 tests on SQLite, 145 on MySQL.
+
+## 1.13.0 — 2026-09-07
+
+**Anyone coming from 1.12.0 reads the first three sections.** In 1.12.0 part of the stored
+settings did not apply, stored values could disappear, and on an installation with an up-to-date
+Statamic 6 the settings layer could not be installed at all.
+
+### Fixed: the settings of addons booted later did not apply
+
+**This affects every installation on 1.12.0 that runs more than a handful of the suite's addons,
+and it cannot be seen from outside.** The operator enters his value, the page shows it after a
+reload, the row stands in `brand_settings` — and `config()` answers with the package default for
+the rest of the process. An invoice then carries the seller details from the package instead of
+the ones that were entered.
+
+The cause lies in the order. `SettingsManager::apply()` runs from `app->booted()` and exactly
+once, so that every addon has had its `boot()` beforehand. Whatever registers after that was not
+present when the values were applied, and nothing makes up for it: `brandChanged()` only bites on
+a brand switch, and in single-brand operation the brand never changes.
+
+Measured on 2026-09-07 in the playground with 22 registered namespaces and
+`BRAND_CONTEXT_MULTI_BRAND=false`: of twelve stored values, seven arrived. The five that did not
+arrive belonged to `automations`, `invoices`, `notifications`, `payments` and `webhook-manager` —
+the addons that registered last. Which ones it hits depends on the provider order of the
+particular installation; that it hits some depends on nothing.
+
+It is fixed in one place: a registration that comes after the first `apply()` applies its own
+values itself (`SettingsRegistry::register()` → `SettingsManager::applyLate()`). Once per late
+addon, not once per boot cycle. The reason for `app->booted()` stays untouched, the first
+`apply()` still waits for every addon's `boot()`. After the repair, twelve of twelve bite in the
+same playground.
+
+The test that covered this area since 1.12.0 called `apply()` a second time itself and thereby
+only showed that a second `apply()` takes the latecomer along. It now reproduces the order of
+real operation and runs without that second `apply()`.
+
+### Fixed: saving the same value a second time deleted the override
+
+**This is silent data loss, and it affects every installation on 1.12.0.** Anyone who changed a
+value on the settings page, saved it, and then saved a second time without touching it again lost
+the override. The row in `brand_settings` was deleted, the interface showed the package default
+again afterwards, and nobody got a message. Two saves one after the other are the normal case,
+not the special one: it is enough to add a second field in the same section.
+
+The cause: only what deviates from the package default is stored, and that comparison value was
+collected on first access. But when saving, the first access was `packagedDefault()` itself, and
+by then the first pass's override had long been lying on the live config. So the value compared
+itself against itself, counted as "equal to the default" and was cleared away. The comparison
+value is now held in `applyNamespace()` before anything is written over it, and therefore comes
+from the package file again.
+
+The deletion stays: a value that is expressly reset to the package default still deletes its row.
+Only the yardstick is the right one again.
+
+**Check after the update:** lost values do not come back on their own. If you set settings between
+09-06 and today, look at the page to see whether they are still there.
+
+### Fixed: on an up-to-date Statamic 6 the layer could not be installed
+
+`inertiajs/inertia-laravel` was pinned to `^2.0`. `statamic/cms` v6.31 allows Inertia 3, and on an
+installation set up that way Composer no longer found a solution. The boundary now stands at
+`^2.0 || ^3.0`, verified against Inertia 3.3.3 and Statamic 6.31.0. Because the settings pages of
+the whole suite hang on this package, **no** addon of the family had a settings page there
+otherwise.
+
+### Fixed: one faulty addon took the whole settings page down with it
+
+The field lists on the page come from foreign code. Up to 1.12.0 an error in a single addon was
+enough to leave the page empty for all the others, and in the playground the installation stood
+still for twenty minutes for eight crews because of it.
+
+- **A faulty registration no longer throws.** It is logged, the addon is skipped, and the failure
+  stands at the top of the page with the class name and the reason. All four paths into foreign
+  code are secured — `register()`, `configPath()`, `permission()` and `groups()` — because they
+  all run from `app->booted()`. Nothing is thrown even with `APP_DEBUG=true`: the playground runs
+  that way, and there that was exactly the failure.
+- **One error boundary per section.** An error while rendering a section stays inside that
+  section, goes to the console and leaves the name of the addon that caused it in that place. How
+  far the boundary reaches is stated in the component: it catches errors from child components,
+  not those from `Settings.vue`'s own render. That has been measured, not claimed.
+- **A `boolean` field with a non-boolean package default** made the whole section unsavable
+  (`preference-center`, `sources.*` stood at `"auto"`). It is now skipped field by field and
+  named, instead of being silently bent to `true`. A third state belongs declared as a `select`.
+- **A select carries a string.** For options that look numeric, `select` returned a different type
+  than the field had declared.
+- **The select's placeholder** now reads `Choose...` with three dots, because that is exactly the
+  string Statamic translates. The version with the ellipsis character stood in English on a German
+  page.
+
+### New: `text` as a fieldtype for multi-line prose
+
+With its 255 limit, `string` carries no legal text. `text` is the same stored type, not a second
+one in storage; exactly two things differ: the input field is a textarea over six rows without
+monospace, and the length limit is 4000 instead of 255, changeable per field with `max`. Anything
+longer than four thousand characters is no longer a settings value but a document.
+
+`statamic-offers` hangs on it: without this type a withdrawal notice (Widerrufsbelehrung) would
+have to go into the `.env`, where nobody maintains it and where it cannot stand per brand, or it
+would be cut off on saving.
+
+### New: `BrandIdentity` — one source for what a brand looks like
+
+Everything a buyer holds after the purchase — confirmation mail, invoice mail, invoice — looked
+like nothing, while the sales page was designed. The obvious repair would have transcribed the
+colours three times; then there are three sources that drift apart. So there is one, and it
+stands in this package: `BrandIdentity` with `paper()`, `ink()`, `muted()`, `accent()`,
+`fontStack()`, `logoPath()`, `logoSvg()` and `name()`.
+
+**No new table.** The values lie in `Brand::$settings['identity']`, the JSON field the model has
+anyway. Order: brand beats config beats default, and an empty value counts as an answer nowhere.
+
+The rules all have the same reason, namely that a mail and an invoice must load nothing when they
+are displayed:
+
+- **The logo is a file path, never a URL.** Mail programs block remote images, a logo over
+  `https://` is an empty box the first time it is opened, and an invoice has to stay readable for
+  ten years. `https://`, `http://`, `//` and `data:` are refused, not passed through. A path into
+  nothing counts as none.
+- **No web font.** DejaVu Sans is on the list because the PHP print engines bring it with them and
+  lose the umlauts without it.
+- **Colours are checked before they go into a `style="…"`.** A typo should not make an invoice
+  unreadable, and an unchecked value inserted there would be a way to write foreign CSS into a
+  mail.
+- **Light, not dark.** An invoice gets printed, and a full-area tint costs toner and legibility
+  there. `paper()` is the ground, `ink()` the type; the brand carries through the logo, the rules
+  and `accent()`.
+
+Two bugs in it were fixed in the same version, both visible only in the picture:
+
+- **The font list broke inside the `<style>` block.** Blade outputs `&#123;&#123; }}` HTML-escaped. In a
+  `style="…"` attribute that is harmless, in a `<style>` block it is not: there it read literally
+  `&quot;Segoe UI&quot;`, CSS took the whole declaration to be invalid and threw it away. The
+  family names now stand unquoted, which CSS permits and which works in both contexts.
+- **The muted tone was not legible on a white ground.** `muted` stood at `#98a5bb`, the tone of
+  the sales page, where it sits on a dark ground. On white it reaches 2.5:1. Now `#5b6880`, the
+  same blue one step deeper, 5.6:1. Calculated, not estimated.
+
+### Fixed: a wordmark somebody wrote down beats the derived brand name
+
+The suite shop's order confirmation carried "Default" instead of "adriangoldner.dev": that is what
+the brand row is called in the database, and its name was inserted as the wordmark — so it beat
+the expressly written `config('brand-context.identity.name')`. The rule that was missing before:
+what somebody has written down wins against what we have derived. `brands.name` is a derivation
+and slips to the end of the chain; `settings.identity.name` on the brand is written down and
+still beats the config.
+
+**Anyone who relied on `brands.name` determining the brand name now sees the value from the
+config.** Whoever wants to keep the name of the database row enters it under
+`settings.identity.name` on the brand.
+
+### Changed: brand affiliation is a field on the user, and the page of its own is gone
+
+Adrian while going through the demo: *"I do not even understand what is being defined there."*
+Rightly so. The screen under **Users → Brand affiliation** always referred to the brand in the
+switcher, therefore showed exactly one button per user and thus looked like a permission switch.
+It was neither the one nor the other: the assignment decides **in which brands somebody is
+offered as the person responsible**, and `brand_user` has been a real n:m table from the start.
+Both are readable from a multi-select field on the user and were not readable on a page that could
+only ever name one brand.
+
+- **New: the field "Brands"** in the Statamic user form. Labelled by effect: *"In which brands
+  does this person appear as the person responsible? Empty = in all."* The second sentence is the
+  transition rule, which previously stood only on the removed page.
+- **The value is not stored on the user.** A Statamic user is not necessarily a database row —
+  under the file driver it is `users/<id>.yaml` — and that is exactly why `brand_user` has no
+  foreign key. The field hangs on four points: `UserBlueprintFound` puts it into the form, a
+  `User::computed()` callback reads it out of `brand_user`, `UserSaving` takes the submitted value
+  back off the user and `UserSaved` writes it as rows. Both drivers are in the test: under the
+  file driver a leak would be a line in the YAML, under the eloquent driver a column that does not
+  exist.
+- **Only from the second brand on.** With exactly one brand, "assigned to the only brand" and
+  "assigned nowhere" say the same thing; a field with one option would be noise on every user
+  form.
+- **Removed:** the page (`resources/js/pages/Users.vue`), its routes (`routes/cp.php`), the
+  `BrandUserController`, the nav item and the permission `manage brand members`. The user form is
+  already secured by Statamic's `edit users`; a second permission on the same form would only have
+  made it unclear which one applies.
+- **Unchanged:** `brand_user`, `BrandMembership`, the `BrandMembers` facade and the transition
+  rule ("a user with no assignment at all counts as a member of every brand"). Only the interface
+  has moved; after an assignment through the field, `statamic-leadhub` sees exactly the same list
+  in its assignee pickers as it did before through the page.
+
+### Fixed: the user store was built one boot phase too early
+
+`User::computed()` resolves the users repository, and under the file driver that is a singleton
+around `Stache::store('users')`. Called in `boot()` — that is, before Statamic has registered that
+store — it kept a `null` store for the whole process, and every `User::all()` after that died in
+the query builder. The registration now lies in `booted()`. The test cases deliberately list our
+own provider **before** Statamic's, because the defect is invisible in the reverse order.
+
+### A small thing
+
+`developer-url` in `composer.json` points at `adriangoldner.dev` instead of `gldnr.studio`, in the
+Statamic CP as on Packagist.
+
+### What is dropped in this version
+
+Collected here so that nobody misses it:
+
+- the permission `manage brand members`,
+- the named CP route `brand-context.users.index` and the remaining routes from `routes/cp.php`,
+- the class `Http\Controllers\Cp\BrandUserController`,
+- the nav item **Users → Brand affiliation**.
+
+Anyone calling one of these places in their own code, `route('brand-context.users.index')` in
+particular, gets an error afterwards. No addon in this family does; this was checked across every
+repository under `projects/statamic-*`.
+
+Unchanged and expressly unaffected: `brand_user`, `BrandMembership`, the `BrandMembers` facade,
+`Contracts\ProvidesSettings` and the transition rule. That is why this is a minor version and not
+a major one: what has gone is interface, not the package's programmatic contract.
+
+## 1.12.0 — 2026-09-06
+
+### New: a shared settings layer for the addon suite
+
+An addon fulfils `Contracts\ProvidesSettings` — four static methods: namespace, config root,
+permission, field list — and registers with `Settings\SettingsRegistry` in its `boot()`.
+Everything else is provided by this package: the screen under *Settings → Addon Settings*, the
+validation, the storage and the brand dimension.
+
+Before this, `automations`, `leadhub` and `webhook-manager` had built the same mechanism three
+times independently, around 3,260 lines in total — and **none of the three tables had a
+`brand_id`**, so on a multi-brand installation two brands shared one setting.
+
+- **`brand_settings`** (`brand_id`, `namespace`, `key`, `value`), one key per row. Not the JSON
+  blob `brands.settings`: with sixteen writers, two simultaneous saves overwrite each other
+  completely, and the loser does not notice. `brands.settings.mail` stays untouched.
+- **Overrides only.** Nothing is stored but what somebody has changed; a value set back to the
+  package default deletes the row. So a package update still moves the defaults.
+- **Fieldtypes** `string`, `integer`, `boolean`, `list` (with `items` for the element type) and
+  `select` (with `options`, in both common notations).
+- **`Facades\BrandSettings`** as the explicit reader. Existing code has to change nothing: the
+  overrides lie on the live config, `config('addon.x')` still answers correctly.
+- **`BrandManager::onBrandChanged()`** — a hook through which something can learn that the current
+  brand has changed. The layer hangs on it to pull the config along.
+- The CP screen and the JS bundle now load in single-brand operation too. The brand switcher stays
+  reserved for multi-brand operation (`brandContextMultiBrand`). The bundle is registered only
+  when its manifest is published — otherwise an update without `vendor:publish` would have
+  answered every CP page with a 500.
+
+**Requirement for the addons:** `automations`, `leadhub` and `webhook-manager` require `^1.12` in
+their coming versions. This version has to be published before them.
+
 ## 1.11.1 — 2026-09-03
 
-### Behoben: Hinweis und Fehler als `Alert`, ruhiger Zeilenknopf
+### Fixed: notice and error as an `Alert`, a quieter row button
 
-Der Hinweis zur Übergangsregel und das Fehlerbanner lagen als Text auf blankem Grau. Beide sind
-jetzt `Alert`, der Hinweis mit `heading` und `text` getrennt — als ein Absatz gelesen verlor die
-Übergangsregel ihre eigene Zeile.
+The notice about the transition rule and the error banner sat as text on bare grey. Both are now
+an `Alert`, the notice with `heading` and `text` separated — read as one paragraph, the transition
+rule lost its own line.
 
-Der Zeilenknopf war über `:variant` an `danger` gebunden. Rot bleibt dem Bestätigungsdialog
-vorbehalten, so wie Core es hält.
+The row button was bound to `danger` through `:variant`. Red stays reserved for the confirm
+dialog, the way core keeps it.
 
 ## 1.11.0 — 2026-08-25
 

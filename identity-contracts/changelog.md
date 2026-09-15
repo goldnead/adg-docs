@@ -12,6 +12,21 @@ Release notes for `goldnead/statamic-identity-contracts`, as published with the 
 Cross-version upgrade notes for the whole suite are in
 [Upgrading](/guide/upgrading).
 
+## 1.2.1 — 2026-09-07
+
+**No code change.** Anyone running 1.2.0 gains nothing from this but an image: the Marketplace
+thumbnail under `art/marketplace/` has been added. The package itself, its contracts and its
+behaviour are byte for byte those of 1.2.0.
+
+For completeness, because the release would otherwise look groundless: the switch of the
+developer address to adriangoldner.dev, which 25 sibling repositories received in this round,
+was entered here and withdrawn again. This package is `type: library`, its service provider
+does not extend Statamic's `AddonServiceProvider`, and `statamic/cms` is listed only under
+`suggest`. It is not a Statamic addon, appears nowhere in the Control Panel, and an
+`extra.statamic` block in it claimed a membership the package explicitly does not want. For the
+same reason it gets no settings page in the Control Panel: that would be a hard Statamic
+dependency and would break the package's promise.
+
 ## 1.2.0 — 2026-08-25
 
 ### Fixed

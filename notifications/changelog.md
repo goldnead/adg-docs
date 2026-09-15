@@ -12,73 +12,118 @@ Release notes for `goldnead/statamic-notifications`, as published with the packa
 Cross-version upgrade notes for the whole suite are in
 [Upgrading](/guide/upgrading).
 
+## 1.9.0 — 2026-09-07
+
+### New: the detail page shows the mail that went out
+
+Until now a notification's detail page said who was sent what — not how it arrived at the
+recipient. Now the mail itself hangs below it, with this row's values inserted.
+
+Not a single line of recipient text is stored in the process. What goes into the shared snapshot
+layer (`email_template_snapshots` in `statamic-email-templates`) is the mail layout with
+`&#123;&#123; title }}`, `&#123;&#123; body }}` and `&#123;&#123; link }}` as placeholders — the template as it stood at the
+time of sending, plus the subject and the sender it was really sent under. Insertion happens only
+when it is viewed, and the result is not stored. That is why this row needs no retention period
+and no deletion concept.
+
+A new column `notification_items.email_template_snapshot_id` points at the version this row
+received. Ten thousand mails of the same kind share one snapshot row; if the layout is changed, a
+new one comes into being and the old one stays.
+
+For rows without a mail — `in_app` and every short-message channel a host registers — nothing is
+recorded, and the page says so. A short message has no layout; its "template" would be nothing but
+the text to one particular person. That text already stands in the row and is shown there.
+
+Without `statamic-email-templates` installed, or with it switched off, the section is absent.
+
+### New: settings in the Control Panel
+
+Five values are changeable per brand under `Addon Settings`: the main switch, the list length, the
+digest's default frequency, the address of the settings page and the realtime signal. Whatever has
+not been touched still follows `config/notifications.php`.
+
+Not on the page: `cp.enabled` and `sources.leadhub` are read at boot and would take effect only at
+the next deploy; `channels` are class names; `realtime.channel_prefix` is part of the contract with
+the client. The group texts say so.
+
+New permission: `manage notifications settings`. Nobody holds it at first, and until it is assigned
+to a role the section stays invisible, even for users who may do everything else in this addon. The
+existing permissions stay unchanged.
+
+**Requires `goldnead/statamic-brand-context` 1.13 or later.** Older versions carry the page but do
+not apply its values reliably. On an installation with a single brand the settings of the addons
+registered last were not laid onto the config at all — when this was measured in the playground on
+09-07, `notifications` was one of them: after a reload the page showed the stored value while what
+was read was the package default. On top of that, up to 1.12 a second save of the same section
+deleted the first save's override without a message. If you set values between 09-06 and this
+update, check after updating whether they are still there.
+
 ## 1.8.0 — 2026-08-29
 
-### Neu: die Zahlen dieses Addons erscheinen in Insights
+### Added: this addon's figures appear in Insights
 
-`statamic-insights` ist ab 1.1.0 keine Umsatzauswertung mehr, sondern die Auswertungs-Schicht der
-Familie: jedes Addon meldet an, was es zählen kann, und bekommt dafür Zeitraum, Vergleich mit dem
-Vorzeitraum, Diagramm, Aufteilungen und zwei fertige Schirme.
+From 1.1.0 `statamic-insights` is no longer a revenue report but the family's reporting layer: an
+addon registers what it can count and gets the period, the comparison against the period before,
+the chart, the breakdowns and two finished screens in return.
 
-Die Kopplung ist in **beide** Richtungen freiwillig. Ohne Insights fehlt hier nichts; ohne dieses
-Addon fehlt dort nur seine Gruppe. `suggest`, nie `require`.
+The coupling is optional in **both** directions. Without Insights nothing here is missing; without
+this addon only its own group is missing over there. `suggest`, never `require`.
 
-Jede Zahl hält sich an die Hausregeln des Vertrags: **null ist nicht null** (eine Quote ohne Nenner
-hat keine Antwort und zeigt keine 0 %), `available()` entscheidet über die Existenz und nie über die
-Daten, Lücken im Verlauf füllt Insights und nicht die Kennzahl, und ein Filter, den eine Zahl nicht
-versteht, wird ignoriert statt zum Fehler.
+Every figure follows the contract's house rules: **null is not zero** (a rate with no denominator
+has no answer and does not print 0 %), `available()` decides existence and never the data, gaps in
+a series are filled by Insights rather than by the metric, and a filter a metric does not
+understand is ignored rather than fatal.
 
-Vier Zahlen: verschickt, gelesen, Leserate, Zusammenfassungen.
+Four figures: sent, read, read rate, digests.
 
-**Die Leserate ist nicht „Gelesen geteilt durch Verschickt".** In der Gelesen-Zahl stecken auch
-ältere Meldungen, die erst in diesem Zeitraum geöffnet wurden; die Rate misst dagegen die Kohorte
-des Zeitraums. Das steht in der Beschreibung, weil die zwei Kacheln nebeneinander sonst wie ein
-Rechenfehler aussehen.
+**The read rate is not "read divided by sent".** The read figure also contains older messages that
+were opened only in this period; the rate, by contrast, measures the period's cohort. That stands
+in the description, because otherwise the two tiles side by side look like an arithmetic error.
 
-Die Zusammenfassungen rechnen auf einer zweiten Tabelle und erben die Marken-Bedingung mit.
+The digests are calculated on a second table and inherit the brand condition with it.
 
-### Behoben: eine Zahl zählt nur noch die aktive Marke
+### Fixed: a figure counts the current brand only
 
-Beim Bauen der Anbindung bekam diese Frage in der Familie vier verschiedene Antworten, und auf einem
-Schirm nebeneinander ist das schlimmer als gar keine: eine Kachel zeigte den Umsatz dreier fremder
-Marken, während die daneben korrekt filterte. Die Regel steht jetzt einmal in
-`TableMetric::brandScoped()`, als Abschrift von `BrandScope::apply()`; hier wird nur noch die Spalte
-genannt, und Zahl, Diagramm und jede Aufteilung verengen gemeinsam.
+While the integration was being built this question got four different answers within the family,
+and side by side on one screen that is worse than none: one tile showed three other brands'
+turnover while its neighbour filtered correctly. The rule now lives once, in
+`TableMetric::brandScoped()`, transcribed from `BrandScope::apply()`; here only the column is
+named, and the figure, the chart and every breakdown narrow together.
 
-Ist keine Marke gewählt, liest die Kachel **0 und bleibt stehen**. Ein Leser versteht eine Null;
-eine verschwundene Kachel bemerkt er nicht.
+With no brand selected the tile reads **0 and stays**. A reader can make sense of a zero; a tile
+that is not there he cannot notice.
 
 ## 1.7.0 — 2026-08-22
 
-### Added — nur zeigen, was für diesen Menschen gelten kann
+### Added — show only what can apply to this person
 
-Eine frisch angemeldete Newsletter-Adresse ohne Community-Konto sah auf der
-Selbstbedienungs-Seite vier Community-Zeilen und eine interne CRM-Zeile, jede
-mit drei Kanälen: **fünfzehn Kästchen, von denen kein einziges je gewirkt
-hätte.** Der Grund war einfach — die Matrix listete jede registrierte Art mal
-jeden konfigurierten Kanal und fragte nie, ob das für den Betrachter überhaupt
-in Frage kommt.
+A freshly subscribed newsletter address with no community account saw four
+community rows and one internal CRM row on the self-service page, each with
+three channels: **fifteen boxes, not one of which would ever have had an
+effect.** The reason was simple — the matrix listed every registered type times
+every configured channel and never asked whether that is a possibility for the
+viewer at all.
 
-Eine Einstellung anzubieten, die nichts bewirken kann, ist schlimmer als keine:
-sie sieht aus wie eine Wahl.
+Offering a setting that can have no effect is worse than offering none: it looks
+like a choice.
 
-Zwei neue Angaben an einer Art, beide freiwillig und beide ohne Wirkung auf
-bestehende Typen:
+Two new statements on a type, both optional and both without effect on existing
+types:
 
-- **`appliesTo(Closure)`** — für wen die Art überhaupt in Frage kommt. Wer
-  nein sagt, sieht sie gar nicht; keine ausgegraute Zeile, keine Erklärung.
-  Eine Zeile, die nicht gelten kann, ist kein Hinweis, sondern Rauschen. Wirft
-  die Prüfung, gilt die Art als nicht anwendbar — im Zweifel verbergen.
-- **`supportedChannels(array)`** — welche Kanäle die Art überhaupt anbieten
-  darf. Der Unterschied zu `defaultChannels()`: dort steht, was voreingestellt
-  an ist, hier was zur Wahl steht.
+- **`appliesTo(Closure)`** — for whom the type is a possibility at all. Whoever
+  says no does not see it at all; no greyed-out row, no explanation. A row that
+  cannot apply is not a hint, it is noise. If the check throws, the type counts
+  as not applicable — when in doubt, hide.
+- **`supportedChannels(array)`** — which channels the type may offer at all. The
+  difference from `defaultChannels()`: there stands what is switched on by
+  default, here what is on the menu.
 
-### Changed — ein nicht unterstützter Kanal ist auch beim Versand zu
+### Changed — an unsupported channel is closed at send time too
 
-`allows()` prüft `supportedChannels` **vor** der `required`-Ausnahme. Sonst
-ließen genau die Arten, die niemand abschalten darf, den einen Weg offen, der
-nicht gemeint war — und es käme Post über einen Kanal, den auf der Seite
-niemand wählen konnte.
+`allows()` checks `supportedChannels` **before** the `required` exception.
+Otherwise exactly those types nobody may switch off would leave open the one
+path that was not meant — and mail would arrive over a channel nobody could pick
+on the page.
 
 ## 1.6.0 — 2026-08-12
 ### Changed
@@ -159,22 +204,21 @@ lines.
 
 ## 1.4.0 — 2026-08-05
 
-### Added — Wegweiser zu den Mail-Regeln in `statamic-automations`
+### Added — a signpost to the mail rules in `statamic-automations`
 
-Transaktionale Mail-Regeln („wenn ein Formular abgeschickt wird, sende die Dankesmail") werden im
-Addon `goldnead/statamic-automations` konfiguriert. Gesucht werden sie zuerst hier, im Addon, das
-Notifications heißt. Deshalb gibt es jetzt einen Nav-Eintrag **Benachrichtigungen → Mail-Regeln**,
-der dorthin zeigt.
+Transactional mail rules ("when a form is submitted, send the thank-you mail") are configured in
+the addon `goldnead/statamic-automations`. People look for them here first, in the addon called
+Notifications. That is why there is now a nav entry **Notifications → Mail rules** pointing there.
 
-Der Eintrag erscheint nur, wenn zwei Bedingungen gelten (`Support\AutomationRules`): das Addon ist
-installiert, **und** die installierte Version hat den Bildschirm auch (er kam mit automations 1.11).
-Ohne die zweite Prüfung bekäme ein älterer Stand einen Nav-Eintrag auf einen 404 — schlechter als
-gar keiner, weil er wie ein kaputtes Feature aussieht statt wie ein fehlendes.
+The entry appears only when two conditions hold (`Support\AutomationRules`): the addon is
+installed, **and** the installed version actually has the screen (it came with automations 1.11).
+Without the second check an older state would get a nav entry onto a 404 — worse than none at all,
+because it looks like a broken feature rather than a missing one.
 
-**Ein Wegweiser, keine zweite Implementierung.** Dieses Addon bekommt keinen eigenen Weg von einem
-Ereignis zu einer Mail. Könnten beide Addons das, hätte „warum kam diese Mail" zwei mögliche
-Antworten und von außen keine Möglichkeit, sie zu unterscheiden. Ein Test hält das fest: er schlägt
-fehl, sobald hier ein Event-Listener auftaucht.
+**A signpost, not a second implementation.** This addon gets no path of its own from an event to a
+mail. If both addons could do it, "why did this mail arrive" would have two possible answers and
+no way to tell them apart from outside. A test holds that in place: it fails as soon as an event
+listener turns up here.
 
 ## 1.3.0 — 2026-08-04
 ### Changed — the two Control Panel screens are Inertia pages with a real build

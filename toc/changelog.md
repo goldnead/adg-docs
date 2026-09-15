@@ -14,6 +14,30 @@ Cross-version upgrade notes for the whole suite are in
 
 All notable changes to `statamic-toc` will be documented in this file.
 
+## 2026-09-07 v2.3.0
+
+### Settings in the Control Panel
+
+The five defaults of the `&#123;&#123; toc }}` tag — field, first level, number of levels, last level and
+flat list — are available under **Settings → Addon Settings** as soon as
+`goldnead/statamic-brand-context` (1.13 or newer) is installed alongside. Until now this was
+only possible through `config/statamic-toc.php`. Every value can still be overridden on the tag
+individually; what is set here is the default for everywhere else. New permission:
+`manage toc settings`; nobody holds it at first, and until it is assigned to a role the section
+stays invisible.
+
+**Why the boundary is at 1.13.** Older versions show the page but do not apply its values
+reliably: on an installation with a single brand, the settings of the addons that registered
+last were never written onto the config — after a reload the page showed the stored value while
+what got read was the package default. On top of that, up to 1.12 a second save of the same
+section deleted the first save's override, without a message. Anyone who set values before this
+update should check afterwards that they are still there.
+
+**No new required dependency.** `statamic-brand-context` requires Statamic 6; this addon still
+runs on Statamic 5 as well. Without that neighbour nothing registers, and everything stays as it
+was. If you want the screen, install it alongside:
+`composer require goldnead/statamic-brand-context`.
+
 ## 2026-08-09 v2.2.0
 
 Housekeeping release. **Nothing that ships changed**: no file under `src/`, `config/` or
@@ -210,11 +234,11 @@ The `mb_convert_encoding(..., 'HTML-ENTITIES', ...)` deprecation notice on PHP 8
 - Support Level-Start
 - Refactor & document code.
 
-## 2021-07-08 v1.03
+## 2021-07-08 v1.0.3
 
 - Fix ToC not displaying in some situations.
 
-## 2021-07-07 v1.02
+## 2021-07-07 v1.0.2
 
 - Added support for HTML-Mode in Bard
 - Minor fixes

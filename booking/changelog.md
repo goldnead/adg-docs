@@ -12,6 +12,77 @@ Release notes for `goldnead/statamic-booking`, as published with the package.
 Cross-version upgrade notes for the whole suite are in
 [Upgrading](/guide/upgrading).
 
+## 1.5.0
+
+### Changed: the bookings screen shows an empty state instead of HTTP 500 when its table is missing
+
+This addon can be installed without its migrations having run — composer pulls the package in, the
+utility registers itself, the nav item appears, and `bookings` still does not exist. The first
+thing the screen did was ask that table a question, so the visitor got HTTP 500 and a stack trace
+for what is really an unfinished setup. The screen now checks before its first query and renders a
+setup page that names the missing table and says to run `php artisan migrate`.
+
+The reason does not vanish with the 500: the guarded page writes to the log why it turned somebody
+away. Otherwise the site would look installed and never work.
+
+## 1.4.0
+
+### New: three operational values in the Control Panel
+
+Under **Settings → Addon Settings** there is a section for this addon, with two groups:
+
+- **Endpoint:** the requests per minute and IP the endpoint accepts, and the permitted age of a
+  signature. The second is the limit below which a delivery still counts: a signature does not
+  say when it was created, and without this limit a recorded delivery stays valid forever.
+  Empty switches the check off and is only defensible for a counterpart that sends no
+  timestamp.
+- **Retention:** after how many days `php please booking:prune` deletes a past booking. A
+  booking carries a name and an address, so this is a data protection decision and not a
+  technical one. Empty means "keep everything".
+
+Only what someone changes is stored; everything else keeps following
+`config/statamic-booking.php`.
+
+Not on the page, and the group texts say so: the endpoints themselves, because each carries a
+secret and a secret in a database row sits in every backup and every export. Likewise the
+signature header, the algorithm and the timestamp header — the protocol contract with Cal.com.
+Change one of them without the other side following, and the endpoint is switched off silently,
+because a rejected signature looks like an attack and not like a typo.
+
+The rate limit is on the page despite a hit in the service provider: the call sits inside the
+closure passed to `RateLimiter::for()`, and that closure runs per request, not at boot. Checked
+on 07.09.2026.
+
+**New permission `manage booking settings`.** Nobody holds it at first, and until it is assigned
+to a role the section stays invisible. Existing permissions are unchanged.
+
+**Requires `goldnead/statamic-brand-context` 1.13 or later.** Older versions show the page but
+do not apply its values reliably: on an installation with a single brand, the settings of the
+addons that registered last never reached the config at all, and up to 1.12 saving the same
+section a second time deleted the first save's override, without a message. If you set values
+before the update, check afterwards that they are still there.
+
+## 1.3.0
+
+### Changed: the Bookings screen leaves Utilities
+
+The screen is registered as a Statamic utility and therefore sat under Utilities, between Cache and
+PHP Info (Adrian, 03.09.2026, F36). It now hangs in the sales section of the sidebar. This addon
+does not depend on `statamic-payments`: when that addon is installed, its `SuiteNav::section()` is
+asked for the shared section name so both land in the same section (Statamic does not translate
+section names, so two spellings would give two half-filled sections); when it is not, the entry
+gets a section of its own.
+
+Route and permission are unchanged. The entry under Utilities is removed with `Nav::remove`,
+because the first attempt on 04.09. only added the new section next to it and the screen appeared
+twice.
+
+### Fixed: code style on a test stand-in
+
+`tests/Fakes/insights-contracts.php` failed `pint --test` since it arrived in 1.2.0, which kept the
+Code style job red. Formatted. The declarations are unchanged, and `InsightsContractsMatchTest`
+compares signatures by reflection, so nothing it checks has moved.
+
 ## 1.2.0
 
 ### Added: this addon's figures appear in Insights
