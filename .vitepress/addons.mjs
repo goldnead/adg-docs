@@ -36,8 +36,8 @@ export const LAYERS = {
  * How far along each addon is.
  *
  * The suite reads finished. It is not: twenty-four packages went public inside
- * five weeks and two more were built on 2 September 2026, eighteen of the
- * twenty-six are declared commercial, and exactly one can be bought. A reader
+ * five weeks and three more came later, nineteen of the twenty-seven are
+ * declared commercial, and exactly one can be bought. A reader
  * deciding whether to put one of these on a client site has no
  * way to tell a package that has run several brands for months from one that
  * has never been installed anywhere. That difference is the single most useful
@@ -88,6 +88,7 @@ export const MATURITY_BY_SLUG = {
   'identity-contracts': 'new',
   consent: 'new',
   insights: 'new',
+  'inline-edit': 'new',
 
   // Experimental — see the notes.
   assessments: 'experimental',
@@ -109,6 +110,8 @@ export const MATURITY_NOTES = {
     'Carries no test suite and no CI of its own, although Automations and Funnels both build on it and are covered. Treat a change here as unverified until those two have been run against it.',
   events:
     'Installed, but not yet driving a live event. The publishing side is exercised; attendance and reminders are not.',
+  'inline-edit':
+    'Built on 19 September 2026 and running on the public demo, but on no client site yet. Not on Packagist either, so the install below does not resolve from a stock composer.json.',
 }
 
 export const maturityOf = (slug) => MATURITY_BY_SLUG[slug] ?? null
@@ -173,6 +176,13 @@ export const SALES_BY_SLUG = {
   booking: 'suite-only',
   consent: 'suite-only',
   insights: 'suite-only',
+
+  // Provisional, and the only entry in this map that is not yet a decision.
+  // `addon-lint.json` in the package records "sold inside the suite" from the
+  // day it was built; Adrian reopened the question on 19 September 2026.
+  // Whatever he settles on, Schedule A of the EULA moves first and this line
+  // follows it, not the other way round.
+  'inline-edit': 'suite-only',
 
   // MIT. Nothing to buy.
   'brand-context': 'free',
@@ -484,6 +494,23 @@ export const addons = [
       { text: 'The toc modifier', link: 'modifier' },
       { text: 'Blueprint setup', link: 'blueprints' },
       { text: 'Recipes', link: 'recipes' },
+    ],
+  },
+  {
+    slug: 'inline-edit',
+    name: 'Inline Edit',
+    package: 'goldnead/statamic-inline-edit',
+    layer: 'content',
+    license: 'Commercial',
+    tagline:
+      'Edit content on the live page. Double-click the text a visitor sees, change it, save. Not a page builder.',
+    icon: '⌶',
+    pages: [
+      { text: 'Marking a field', link: 'marking' },
+      { text: 'What can be edited', link: 'field-types' },
+      { text: 'The rich editor', link: 'rich-editor' },
+      { text: 'Permissions and safety', link: 'permissions' },
+      { text: 'Static caching', link: 'static-caching' },
     ],
   },
   {

@@ -12,7 +12,7 @@
 
 **Laravel 11 is not supported by any package in the suite.** Every one of them
 requires `^12.0|^13.0` or narrower, or inherits that floor from `statamic/cms
-^6.0`, and Brand Context — a dependency of thirteen of the twenty-six — requires
+^6.0`, and Brand Context — a dependency of thirteen of the twenty-seven — requires
 `^12.40|^13.0`, which sets the real floor for most installs. Assessments declares
 that same `^12.40|^13.0` itself, on top of depending on Brand Context. Ten
 packages, Client Rooms and Table of Contents among them, declare no Laravel
@@ -72,7 +72,7 @@ for you:
 | `statamic-funnels` | `statamic-flow-canvas` | The same editor, the second consumer. |
 | `statamic-products` | `statamic-payments` | A product is read through the payment catalogue, and contributing to it needs `^1.15`. |
 | `statamic-lead-magnets` | `statamic-entitlements` | The grant behind a confirmed download is an entitlement. |
-| thirteen of the twenty-six | `statamic-brand-context` | See [Multi-brand](#multi-brand) below. |
+| thirteen of the twenty-seven | `statamic-brand-context` | See [Multi-brand](#multi-brand) below. |
 
 Everything beyond that is a `suggest` plus a runtime `class_exists` check. The
 version constraints that matter when both are installed:

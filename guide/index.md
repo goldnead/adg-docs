@@ -1,8 +1,8 @@
 # Introduction
 
-This site documents twenty-six packages for **Statamic 6**. They are separate
+This site documents twenty-seven packages for **Statamic 6**. They are separate
 Composer packages, released and versioned independently, and each one is useful
-on its own. Twenty-four of them are Statamic addons; Identity Contracts and Flow
+on its own. Twenty-five of them are Statamic addons; Identity Contracts and Flow
 Canvas are plain libraries the addons build on, the first needing Laravel and
 nothing else, the second only PHP. What makes them a suite is that they agree on
 four things: how a brand is scoped, who an actor is, where configuration lives,
@@ -11,10 +11,12 @@ and which addon owns which concern.
 If you only ever install one of them, you can ignore all four. This guide exists
 for the point at which you install the second one.
 
-All twenty-six are tagged, and twenty-four of them are published on Packagist, so
+All twenty-seven are tagged, and twenty-four of them are published on Packagist, so
 a bare `composer require` resolves any of those. Client Rooms and Assessments are
 not published yet, and their repositories are private, so they cannot be
-installed at all today — their installation pages say so plainly.
+installed at all today — their installation pages say so plainly. Inline Edit is
+not on Packagist either, but its repository is public, so it installs from a VCS
+repository.
 
 ## What is here
 
@@ -25,9 +27,9 @@ installed at all today — their installation pages say so plainly.
 | CRM & marketing | [LeadHub](/leadhub/), [Marketing](/marketing/), [Preference Center](/preference-center/), [Lead Magnets](/lead-magnets/), [Assessments](/assessments/), [Email Templates](/email-templates/) | Contacts, consent, campaigns. |
 | Platform | [Activity](/activity/), [Notifications](/notifications/), [Entitlements](/entitlements/), [Booking](/booking/), [Client Rooms](/clientrooms/), [Flow Canvas](/flow-canvas/) | Shared services any domain addon can record into, ask, or build on. |
 | Commerce | [Payments](/payments/), [Products](/products/), [Offers](/offers/), [Invoices](/invoices/), [Funnels](/funnels/), [Insights](/insights/) | Selling on the site you already run: the till, the thing sold, how it is presented, the document and the figures. |
-| Content | [Events](/events/), [Table of Contents](/toc/), [Consent](/consent/) | Dated content, cookie consent, and front-end helpers for editorial work. |
+| Content | [Events](/events/), [Table of Contents](/toc/), [Inline Edit](/inline-edit/), [Consent](/consent/) | Dated content, editing on the live page, cookie consent, and front-end helpers for editorial work. |
 
-A one-page tour of all twenty-six, with the dependency graph, is in
+A one-page tour of all twenty-seven, with the dependency graph, is in
 [The suite](/guide/suite). If you know the problem but not the addon, read
 [Choosing an addon](/guide/choosing).
 

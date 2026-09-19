@@ -12,6 +12,142 @@ Release notes for `goldnead/statamic-marketing`, as published with the package.
 Cross-version upgrade notes for the whole suite are in
 [Upgrading](/guide/upgrading).
 
+## 2.23.3 — 2026-09-19
+
+### Fixed: a campaign with an image could not be saved, and said nothing
+
+With an image in the content, **no button on the campaign editor did anything** — Save, Send
+test, Send now, all silent. No error, no toast, no rejected promise. The editor looked like it
+had saved, and the work was gone on reload.
+
+What actually happened, measured against a staging Control Panel on 19.09.2026:
+
+```
+ohne Bild   $dirty.names() -> []                     Save -> PATCH 303
+mit Bild    $dirty.names() -> ['campaign-content']   Save -> keine Anfrage
+```
+
+A Bard field rewrites `<img src="https://site/assets/logo.png">` to
+`<img src="statamic://asset::assets::logo.png">` the moment the page loads. That rewrite counts
+as a change, so the form is dirty before anyone has typed anything. Statamic's unsaved-changes
+guard hooks Inertia's `before` event and asks, through a **native `confirm()`**, whether you
+really want to leave the page. Answering no — or an automated browser dismissing the dialog —
+cancels the visit, and Inertia returns without firing `start` and without an error. That is the
+whole of the silence.
+
+The guard is right about leaving a page and wrong about this visit: saving *is* the resolution
+of the unsaved changes. Statamic's own publish forms clear the state before they save; this
+screen never touched it.
+
+Lifting the dirty flag is not enough, and the measurement says why: at `inertia:before` the
+store already answers `[]` and the dialog still appears, because Statamic installs its listener
+the first time anything goes dirty and never takes it down. Only `disableWarning()` unsubscribes
+it. Every visit from this screen now goes through one wrapper that does both.
+
+**The trade, stated plainly:** `disableWarning()` cannot be undone — a later `add()` does not
+re-arm it. A successful save answers 303, Inertia follows it, and Statamic arms the guard again
+with the rebuilt page. A *failed* save leaves the page without it, so a plain `beforeunload` is
+installed as a replacement. It catches closing the tab; it does not catch Inertia's in-app
+navigation, because that hook belongs to Statamic. Narrower than the original, and the honest
+limit without a change in Statamic itself.
+
+`resources/js/support/leaveGuard.js`, covered in `tests/js/leave-guard.test.js`.
+
+### Fixed: opening the unsubscribe link no longer unsubscribes
+
+`GET /!/marketing/unsubscribe/{token}` ended the subscription and showed "Unsubscribed". There
+was no question and no button. A single page view did it — measured on staging on 18.09.2026.
+
+Opening a link is not an action. Outlook SafeLinks, the virus scanner on a mail gateway and a
+messenger drawing a link preview all fetch every URL in an incoming message, and every one of
+those fetches unsubscribed a reader who never asked — recorded with a timestamp that looks
+exactly like a real click.
+
+The addon had already decided this question for the other direction: `confirm_requires_post` is
+on by default because a scanned confirmation link used to grant consent nobody had given. The
+argument is the same here, only inverted, so the fix is the same shape. `GET` now renders a page
+with a button; the button posts. `marketing.unsubscribe.requires_post` (env
+`MARKETING_UNSUBSCRIBE_REQUIRES_POST`) turns it off for installs that want the old one-click
+flow and, with it, the scanner problem.
+
+**The RFC 8058 one-click path is untouched**, which is what Google and Yahoo require: a provider
+POSTs and still gets 204 with no page. The two are told apart by a marker the addon's *own* page
+sends (`via=page`), not by the `List-Unsubscribe=One-Click` body the spec prescribes. That is
+deliberate and the safer way round: a provider that does not follow the spec to the letter would
+otherwise be handed an HTML page where it expects 204, and unsubscribing is the one path that may
+not become fussy. Anything without the page's marker is treated as a robot and answered exactly
+as before.
+
+Six existing tests changed from a GET to the button, including two that draw the brand-isolation
+boundary; every assertion they made is still made.
+
+### Said plainly: the per-recipient open counter is a floor where a provider proxies images
+
+Brevo rewrites every image in a campaign onto a cache of its own, the tracking pixel included.
+Measured on 18.09.2026: the second fetch of the proxied pixel came back from that cache
+(`age: 700`, `cache-control: public, max-age=172800`) even though this addon serves the pixel
+with `no-store, no-cache, must-revalidate, max-age=0`. For two days, only the first open per
+recipient reaches the counter.
+
+There is nothing here to fix in code. The pixel already forbids caching and the provider ignores
+it; `delivery.mail_headers` stops link rewriting on the providers that offer a switch, and
+Brevo — as that config already says — offers none, least of all for images.
+
+What was wrong was leaving the reader to guess which figure this touches. It touches **one**: the
+raw `opens` column in the recipients table. The **"Opened" figure in the report header is not
+affected** — `CampaignStats` counts it as `where('opens', '>', 0)->count()`, messages with at
+least one open, which a cache cannot change. So the note sits under that column and nowhere else,
+and a test holds it there: a warning next to a sound figure would only cast doubt on it.
+
+## 2.23.2 — 2026-09-19
+
+Two defects in the `text/plain` part of a campaign, both found by opening the outgoing message
+on a staging site instead of reading the HTML. Neither had ever failed a test, because no test
+had ever asked what the text part contains besides the unsubscribe line.
+
+### Fixed: links in the text part keep their target
+
+`toText()` ran `strip_tags()` over the campaign content, which throws every `href` away. A
+sentence that is a link in the HTML became a dead end in the text: measured on 18.09.2026, a
+campaign's whole text part carried exactly one URL, the unsubscribe one, while the HTML carried
+five. Someone reading the mail as plain text could not follow a single link.
+
+Each link now writes its target next to its text — `im Wissensbereich
+(https://adriangoldner.com/wissen)`. Three cases keep the text alone, because the URL would be
+noise: a link whose text already is the URL, a `mailto:` whose text already is the address, and
+an in-page anchor, which leads nowhere in a text file anyway.
+
+### Fixed: the postal line stands under the text part, too
+
+`ensurePostalLine()` appends the provider identification (§ 5 DDG for German senders) under the
+HTML part. Its docblock claimed the text part was "never affected" because the line came from
+the mailable. It did not: `marketing::mail.text` was never handed one, and on staging not a
+single text part carried an address. `CampaignMail` now resolves the line through
+`PostalLineResolver` and passes it to the view, which prints it under the unsubscribe line.
+
+Nothing is invented: with no `marketing.footer.postal_line` configured, no line is written. An
+addon cannot make up its operator's address, and a made-up one would be worse than none.
+
+Both are covered in `tests/Feature/CampaignTextPartTest.php`.
+
+### Fixed: the eloquent repositories write the brand themselves
+
+`HasBrand` from statamic-brand-context fills `brand_id` in a `creating` hook, and `brand_id` is
+NOT NULL. A muted event dispatcher was therefore not an edge case but a failed insert — and
+muting is ordinary: Laravel's own `WithoutModelEvents` on a seeder does exactly that. A host
+seeding its shipped lists through `DatabaseSeeder` hit
+`NOT NULL constraint failed: marketing_lists.brand_id`, and because the seeder aborted, every
+seeder after it never ran.
+
+All three eloquent repositories — lists, templates and campaigns — had it. They now stamp the
+brand themselves through one shared `StampsTheBrandItself`. The hook stays; it still serves
+every model created outside a repository, and this is simply no longer left to it.
+
+Only on create. An update must never move an existing row to whichever brand happens to be
+current: on a multi-brand host that would hand one brand's campaign to another, which is the one
+thing brand scoping exists to prevent. Both halves are covered in
+`tests/Feature/RepositoriesTest.php`.
+
 ## 2.23.1 — 2026-09-18
 
 Two defects a send test on a staging site turned up on the same afternoon. Both had been there

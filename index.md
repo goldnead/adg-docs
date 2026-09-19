@@ -7,7 +7,7 @@ hero:
   name: Statamic Addons
   text: One suite, one set of docs
   tagline: >
-    Twenty-six packages for Statamic 6: a CRM, email marketing, a visual automation
+    Twenty-seven packages for Statamic 6: a CRM, email marketing, a visual automation
     builder, a webhook layer, checkout with products, offers and invoices, an
     activity ledger, notifications, a subscriber preference centre, entitlements,
     gated resources, assessments, client rooms, events and content tooling.
@@ -67,7 +67,7 @@ features:
 ---
 
 ::: warning This suite is work in progress
-Twenty-six packages, twenty-four of them public inside five weeks, and only some
+Twenty-seven packages, twenty-four of them public inside five weeks, and only some
 of them have been proven in production. Every card below carries its level: **Proven** has run
 on live sites for months, **New** is in production but only weeks old, and
 **Experimental** has never been installed anywhere. Read [how far along each
@@ -89,7 +89,7 @@ purpose](/guide/demo).
 
 ## Install what you need
 
-Each addon installs on its own. Twenty-four of the twenty-six are on Packagist,
+Each addon installs on its own. Twenty-four of the twenty-seven are on Packagist,
 so a bare `composer require` resolves them and pulls in the foundation packages
 they need. Those foundation packages are inert until you configure them.
 [Client Rooms](/clientrooms/installation) and

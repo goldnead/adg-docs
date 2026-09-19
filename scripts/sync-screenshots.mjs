@@ -66,6 +66,14 @@ const MAP = [
   ['booking', 'screenshots/01-bookings-listing.png', 'booking-listing'],
   ['booking', 'screenshots/02-bookings-dark.png', 'booking-listing-dark'],
   ['booking', 'screenshots/03-bookings-filter.png', 'booking-filter'],
+
+  // No dark pair here, and that is not an omission. Every surface this addon
+  // has is somebody else's public page, rendered in their colours.
+  ['inline-edit', 'screenshots/01-editing-on.png', 'inline-edit-editing-on'],
+  ['inline-edit', 'screenshots/02-inline-editor.png', 'inline-edit-editor'],
+  ['inline-edit', 'screenshots/03-control.png', 'inline-edit-control'],
+  ['inline-edit', 'screenshots/04-control-panel.png', 'inline-edit-control-panel'],
+  ['inline-edit', 'screenshots/05-phone.png', 'inline-edit-phone'],
 ]
 
 await mkdir(OUT, { recursive: true })

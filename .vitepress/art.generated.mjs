@@ -103,6 +103,12 @@ export const ART = {
     "light": "#00819e",
     "dark": "#06b6d4"
   },
+  "inline-edit": {
+    "from": "#2F6FE4",
+    "to": "#0B2A6B",
+    "light": "#2f6fe4",
+    "dark": "#3e7ff5"
+  },
   "payments": {
     "from": "#8B5CF6",
     "to": "#4C1D95",

@@ -19,7 +19,7 @@ integrations are resolved at boot, not at install time, so installing Webhook
 Manager after LeadHub wires the LeadHub triggers just as installing it before
 would.
 
-The table below covers all twenty-six: which own database tables, and which
+The table below covers all twenty-seven: which own database tables, and which
 show up in the Control Panel.
 
 ::: tip What "ships a CP screen" counts
@@ -27,7 +27,7 @@ A screen of its own: the addon registers a Control Panel route, a utility, or a
 nav entry. A fieldtype, a Bard button or a blueprint extension does not count,
 because none of them gives you a page to open.
 
-Twenty-two of the twenty-six also register a section on the **shared settings
+Twenty-two of the twenty-seven also register a section on the **shared settings
 screen**. That is not a screen of their own, so it reads "no" in the table, but
 you will still find those addons in the Control Panel under Settings. Brand
 Context provides that screen rather than registering a section on it, and
@@ -52,6 +52,7 @@ Identity Contracts, Products and Flow Canvas register nothing at all.
 | [Entitlements](/entitlements/installation) | yes (`entitlements`) | yes |
 | [Events](/events/installation) | yes (`events`, `event_occurrences`) | yes |
 | [Table of Contents](/toc/installation) | no | no, a settings section only |
+| [Inline Edit](/inline-edit/installation) | no | no |
 | [Payments](/payments/installation) | yes (nine, from `payments` to `payment_chargebacks`) | yes, four utilities |
 | [Products](/products/installation) | yes (`products`) | yes, one utility |
 | [Insights](/insights/installation) | no | yes |
@@ -94,7 +95,7 @@ when your application has an unusual notion of who an actor is.
 Each addon publishes its config under its own tag. Publishing is optional; the
 packaged defaults are the documented ones.
 
-**Twenty-four of the twenty-six have a config file.** Products and Flow Canvas
+**Twenty-five of the twenty-seven have a config file.** Products and Flow Canvas
 ship none, so there is no tag for them and nothing missing.
 
 ```bash
@@ -116,6 +117,7 @@ php artisan vendor:publish --tag=statamic-booking-config
 php artisan vendor:publish --tag=statamic-clientrooms-config
 php artisan vendor:publish --tag=statamic-consent-config
 php artisan vendor:publish --tag=statamic-funnels-config
+php artisan vendor:publish --tag=statamic-inline-edit-config
 php artisan vendor:publish --tag=statamic-insights-config
 php artisan vendor:publish --tag=statamic-offers-config
 php artisan vendor:publish --tag=statamic-payments-config
@@ -203,7 +205,7 @@ person to assign to.
 
 ## Installing from a local checkout
 
-**Twenty-four of the twenty-six packages are on Packagist**, so the normal case
+**Twenty-four of the twenty-seven packages are on Packagist**, so the normal case
 needs nothing but `composer require`, and the sibling packages an addon depends
 on resolve on their own. None of the packages declares a `repositories` block,
 and you do not need one either.

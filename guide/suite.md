@@ -1,14 +1,15 @@
 # The suite
 
-Twenty-six packages, six layers. Every arrow below is a Composer dependency;
+Twenty-seven packages, six layers. Every arrow below is a Composer dependency;
 anything not drawn is optional and detected at runtime with `class_exists`,
 which is why you can install any addon without the rest.
 
-All twenty-six are tagged, and twenty-four of them are published on Packagist, so
+All twenty-seven are tagged, and twenty-four of them are published on Packagist, so
 `composer require` resolves any of those and pulls in whatever it depends on.
-Client Rooms and Assessments are not published yet; see
-[Client Rooms → Installation](/clientrooms/installation) and
-[Assessments → Installation](/assessments/installation).
+Client Rooms, Assessments and Inline Edit are not published yet; see
+[Client Rooms → Installation](/clientrooms/installation),
+[Assessments → Installation](/assessments/installation) and
+[Inline Edit → Installation](/inline-edit/installation).
 
 ```
 Foundation ──────────────────────────────────────────────────────────
@@ -73,7 +74,7 @@ are worth naming, because they look like dependencies and are not:
 `notifications` rather than an optional extra: both ask the gate before they
 queue mail, and a gate that might not be there would be no gate at all.
 
-## The twenty-six
+## The twenty-seven
 
 ### Foundation
 
@@ -286,6 +287,15 @@ Markdown field or any HTML string, and add matching anchor ids to the rendered
 headings. No migrations and no CP screens; it does ship a config file and a
 publishable view. It is also the one addon in the suite that still supports
 Statamic 5 alongside 6.
+
+**[Inline Edit](/inline-edit/)** &nbsp;·&nbsp; `goldnead/statamic-inline-edit`
+
+Editing on the live page: a signed-in editor double-clicks the text a visitor
+sees, changes it and saves. One tag per field, Statamic's own entry policy, and
+byte for byte the same page for everybody else. Markdown opens as a real editor
+in place, built on Tiptap like Bard; anything with a shape, a Bard or an asset,
+opens the real Control Panel in an overlay instead of a worse copy of it. No
+migrations and no CP screens of its own.
 
 **[Consent](/consent/)** &nbsp;·&nbsp; `goldnead/statamic-consent`
 

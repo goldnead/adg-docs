@@ -86,7 +86,7 @@ members:
 
 ## Buying
 
-**Twenty-four of the twenty-six packages are on Packagist**, commercial ones
+**Twenty-four of the twenty-seven packages are on Packagist**, commercial ones
 included, and every one of those installs with a bare `composer require`. Client
 Rooms and Assessments are not published yet; see
 [Client Rooms → Installation](/clientrooms/installation) and
