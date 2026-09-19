@@ -157,7 +157,7 @@ export const SALES = {
 /** Slug → how it is sold. Mirrors Schedule A of the Suite EULA. */
 export const SALES_BY_SLUG = {
   // Intended for the Statamic Marketplace. Only Table of Contents is listed
-  // there today; for these eight the listing really is just missing.
+  // there today; for these nine the listing really is just missing.
   toc: 'marketplace',
   automations: 'marketplace',
   leadhub: 'marketplace',
@@ -166,6 +166,7 @@ export const SALES_BY_SLUG = {
   'lead-magnets': 'marketplace',
   events: 'marketplace',
   'email-templates': 'marketplace',
+  'inline-edit': 'marketplace',
 
   // Only in the Suite. Nothing is missing here, and nothing is coming.
   payments: 'suite-only',
@@ -177,12 +178,6 @@ export const SALES_BY_SLUG = {
   consent: 'suite-only',
   insights: 'suite-only',
 
-  // Provisional, and the only entry in this map that is not yet a decision.
-  // `addon-lint.json` in the package records "sold inside the suite" from the
-  // day it was built; Adrian reopened the question on 19 September 2026.
-  // Whatever he settles on, Schedule A of the EULA moves first and this line
-  // follows it, not the other way round.
-  'inline-edit': 'suite-only',
 
   // MIT. Nothing to buy.
   'brand-context': 'free',

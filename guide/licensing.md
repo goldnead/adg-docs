@@ -92,12 +92,12 @@ Rooms and Assessments are not published yet; see
 [Client Rooms → Installation](/clientrooms/installation) and
 [Assessments → Installation](/assessments/installation).
 
-Being on Packagist is not the same as being free. **Eighteen are commercial** and
+Being on Packagist is not the same as being free. **Nineteen are commercial** and
 **eight are MIT**; the table above is the authoritative list. The commercial ones
 resolve as ordinary Composer packages but are licensed rather than sold.
 
 The commercial packages are sold in three ways, and which one applies decides
-what you should do about a licence. Eight are meant for individual sale on the
+what you should do about a licence. Nine are meant for individual sale on the
 Statamic Marketplace. Eight are licensed only as part of the Suite, with no
 individual listing planned. Client Rooms and Assessments are not sold at all
 yet. The "How it is sold" column above says which is which, for every addon,
@@ -106,8 +106,8 @@ and the same word appears on each addon's own pages.
 The grouping is Schedule A of the [Suite EULA](/guide/suite-eula), the contract
 you buy.
 
-::: warning Seven of the eight are waiting for a listing
-[Table of Contents](/toc/) has a Statamic Marketplace listing. The other seven, <SalesGroup kind="marketplace" except="toc" />, are meant to get one and do not have one yet, so today there is no way to buy a licence for them.
+::: warning Eight of the nine are waiting for a listing
+[Table of Contents](/toc/) has a Statamic Marketplace listing. The other eight, <SalesGroup kind="marketplace" except="toc" />, are meant to get one and do not have one yet, so today there is no way to buy a licence for them.
 
 If you are running one of them on a production site, that is not a licence
 breach you need to fix today. It is a listing that does not exist yet. Get in

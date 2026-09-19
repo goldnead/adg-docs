@@ -19,7 +19,7 @@ Below, "you" means the licensee and "we" means the licensor.
 
 ## Scope, and who may buy
 
-This agreement covers the sixteen commercial packages listed in Schedule A, together the
+This agreement covers the seventeen commercial packages listed in Schedule A, together the
 goldnead Statamic Addon Suite ("the Suite"). The eight MIT-licensed packages named at the end
 of Schedule A are not covered: they are MIT, and nothing here restricts what you do with them.
 
@@ -279,7 +279,7 @@ place of jurisdiction can be agreed.
 
 ## Schedule A: the packages
 
-Sixteen commercial packages. Eight are intended for individual sale on the Statamic
+Seventeen commercial packages. Nine are intended for individual sale on the Statamic
 Marketplace, and only Table of Contents is listed there today. The other eight are sold only as
 part of the Suite.
 
@@ -295,6 +295,7 @@ part of the Suite.
 | Lead Magnets | `goldnead/statamic-lead-magnets` |
 | Events | `goldnead/statamic-events` |
 | Email Templates | `goldnead/statamic-email-templates` |
+| Inline Edit | `goldnead/statamic-inline-edit` |
 
 **Only in the Suite**
 
