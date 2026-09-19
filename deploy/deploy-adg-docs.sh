@@ -44,4 +44,11 @@ mkdir -p "$WEBROOT"
 # --delete removes pages that no longer exist; the trailing slash matters.
 rsync -a --delete "$DIST/" "$WEBROOT/"
 
+log "warm the edge cache"
+# Last, and never fatal. Cloudflare refuses a browser prefetch for an object it
+# does not already hold, so every deploy leaves the new chunks answering an
+# empty 503 to the prefetcher until somebody visits the page. See the head of
+# the script for the measurement.
+bash "$REPO/deploy/warm-cache.sh" 2>&1 | tee -a "$LOG" || log "warm: failed, ignoring"
+
 log "=== deploy ok ($(find "$WEBROOT" -name '*.html' | wc -l) pages) ==="

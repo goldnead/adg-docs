@@ -104,6 +104,14 @@ docker run --rm \
         find /webroot -mindepth 1 -delete
         cp -a .vitepress/dist/. /webroot/
         echo "published $(find /webroot -name "*.html" | wc -l) pages"
+
+        # Last, and never fatal. Cloudflare refuses a browser prefetch for an
+        # object it does not already hold and answers an empty 503, so every
+        # deploy leaves the freshly hashed chunks refusing prefetches until
+        # somebody visits the page. One GET each fixes it. The reasoning and
+        # the measurement are in deploy/warm-cache.sh, which is the same file
+        # the manual deploy runs.
+        ADG_DOCS_WEBROOT=/webroot bash deploy/warm-cache.sh || echo "warm: failed, ignoring"
     ' >> "$LOG" 2>&1
 
 STATUS=$?
