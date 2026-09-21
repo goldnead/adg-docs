@@ -79,8 +79,9 @@ user allowed to edit it, so it is safe to leave in a layout every page uses.
 
 ## control_panel
 
-Whether a field none of the three lists covers opens the entry's control panel form in an
-overlay.
+Whether a field none of the three lists covers opens as a control panel form in a panel over
+the page. On a collection with revisions enabled it is the whole entry form instead, in a
+full-screen overlay; see [What can be edited](/inline-edit/field-types#everything-else).
 
 Switch it off if the control panel cannot be framed from the site's own origin: another
 domain, or a proxy that sends `X-Frame-Options: DENY`. Those fields then render normally and

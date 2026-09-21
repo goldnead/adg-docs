@@ -10,7 +10,7 @@ decided by its fieldtype, in `config/statamic-inline-edit.php`.
 | **text** | `text`, `textarea`, `integer` | The text itself opens. What you type is what the page will show. |
 | **source** | `markdown` | The text becomes a real editor, in place. |
 | **control** | `toggle`, `select`, `date` | A small control opens beside the word. |
-| **cp** | everything else | That entry's control panel form opens in an overlay. |
+| **cp** | everything else | That one field opens as a control panel form, in a panel over the page. |
 
 Only **text** keeps what you typed on the page as you typed it. The other three reload the
 page after saving, because only the server knows what the template will make of the new value.
@@ -71,25 +71,39 @@ A toggle is kept as a real boolean all the way through, not as the string `"true
 
 ## Everything else
 
-Bard, Replicator, assets, Grid, anything else with a shape. Those open the entry's control
-panel form in an overlay on the same page, scrolled to the field that was double-clicked and
-outlining it.
+Bard, Replicator, assets, Grid, anything else with a shape. Double-clicking one of those
+opens a panel over the page holding **that one field** — the real fieldtype, with its real
+metadata, on a control panel route of the addon's own.
 
 <Figure
   src="inline-edit-control-panel"
-  alt="The Statamic control panel inside an overlay on the public page, scrolled to one field, with a Close button in the header"
-  caption="The real control panel in an iframe, not a rebuilt editor." />
+  alt="A card over the public page holding a single Bard field: its label, its instructions, the full Bard toolbar, the text, and Close and Save below it"
+  caption="One field, not the entry form. The page it belongs to stays visible around it." />
 
-**The real control panel in an iframe, deliberately.** Bard alone is an entire editor and an
-asset picker is an entire browser; a second-rate copy of either is worse than one click into
-the real one. Saving there goes through the control panel's own validation, revisions and
-permissions, and the page reloads when the overlay closes.
+**The real fieldtype, deliberately, and only the one.** Bard alone is an entire editor and an
+asset picker is an entire browser; a second-rate copy of either is worse than the real thing.
+So the panel renders the field exactly as the control panel would — the buttons you
+configured, the sets you defined, the asset container you named — and saving runs through the
+blueprint's own validation and permissions. The page reloads when the panel closes.
+
+The panel is as tall as the form, not as tall as the screen: the form measures itself and
+says so. A Bard that grows while you type grows the panel with it, up to the window.
 
 ::: danger Bard cannot be edited in place, and not because it is hard
 The core builds a Bard value without a parent, so a text node inside it does not know its
-entry. That is not a gap to be closed in a later version. The overlay is the answer, not a
+entry. That is not a gap to be closed in a later version. The panel is the answer, not a
 placeholder for a better one.
 :::
+
+### Collections with revisions get the whole form
+
+One exception, and it is deliberate. On a collection with revisions enabled, these fields open
+the **entire** entry form in a full-screen overlay, scrolled to the field that was
+double-clicked — the behaviour every version before 1.4.0 had for everything.
+
+Writing one field past a working copy would publish it straight to the live site, on exactly
+the collections whose point is that somebody approves first. The big form knows how to make a
+working copy. The one-field panel does not, so it does not get the chance.
 
 Switch `control_panel` off if the control panel cannot be framed from the site's own origin.
 Those fields then render normally and are not clickable.
@@ -114,7 +128,7 @@ Three of the four kinds cannot show the result in place, so each says what it ca
 - A **markdown** field is rendered by the server the moment the editor closes, through the
   same fieldtype the page uses. What appears there is what will be there. Nothing is written
   until Save is pressed.
-- The **overlay** is the control panel, which shows its own result.
+- The **panel** is a control panel field, which shows its own result.
 
 ## What is refused
 

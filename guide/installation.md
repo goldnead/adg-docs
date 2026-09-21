@@ -52,7 +52,7 @@ Identity Contracts, Products and Flow Canvas register nothing at all.
 | [Entitlements](/entitlements/installation) | yes (`entitlements`) | yes |
 | [Events](/events/installation) | yes (`events`, `event_occurrences`) | yes |
 | [Table of Contents](/toc/installation) | no | no, a settings section only |
-| [Inline Edit](/inline-edit/installation) | no | no |
+| [Inline Edit](/inline-edit/installation) | no | no nav entry, but a CP bundle that must be published |
 | [Payments](/payments/installation) | yes (nine, from `payments` to `payment_chargebacks`) | yes, four utilities |
 | [Products](/products/installation) | yes (`products`) | yes, one utility |
 | [Insights](/insights/installation) | no | yes |

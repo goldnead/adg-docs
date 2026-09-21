@@ -294,8 +294,9 @@ Editing on the live page: a signed-in editor double-clicks the text a visitor
 sees, changes it and saves. One tag per field, Statamic's own entry policy, and
 byte for byte the same page for everybody else. Markdown opens as a real editor
 in place, built on Tiptap like Bard; anything with a shape, a Bard or an asset,
-opens the real Control Panel in an overlay instead of a worse copy of it. No
-migrations and no CP screens of its own.
+opens as the real Control Panel field in a panel over the page — that one field,
+not the entry form, and not a worse copy of either. No migrations, and no screen
+in the Control Panel navigation.
 
 **[Consent](/consent/)** &nbsp;·&nbsp; `goldnead/statamic-consent`
 

@@ -34,8 +34,10 @@ nothing:
 8. The blueprint's own validation for that one field passes.
 
 Only the fields that were actually sent are validated, not the whole blueprint. A one-field
-save through the control panel's own endpoint would fail on a `required` field somewhere else
-on the form, which is why this addon has a route of its own.
+save through the control panel's own entry endpoint would fail on a `required` field somewhere
+else on the form, which is why this addon has routes of its own — this one for the fields
+edited on the page, and a control panel route for the one-field panel, which checks the same
+way behind the control panel's own session.
 
 ## What never travels
 
@@ -59,7 +61,7 @@ Not silently, and not by doing something almost right instead:
 | The slug | It changes the URL. Every link to the page breaks, including the one the editor is standing on. |
 | `id`, `published`, `blueprint`, `date`, `author`, `parent` | Structural. None of them is the sentence somebody wanted fixed. |
 | A collection with revisions enabled | Somebody chose a review workflow. This addon does not get to skip it. |
-| A fieldtype on no list | Not editable. With `control_panel` on it opens the overlay instead. |
+| A fieldtype on no list | Not editable in place. With `control_panel` on it opens the one-field panel instead. |
 | A handle the page never offered | The request is not trusted because the page said so. |
 | A save from a page older than the entry | See below. |
 
@@ -80,6 +82,11 @@ A collection with revisions enabled is refused with a **422** and a message.
 The alternative would be to write straight past a review workflow somebody deliberately turned
 on. Creating a revision instead of publishing is a reasonable future version; quietly
 bypassing the workflow is not a version of anything.
+
+The one-field panel refuses them too, for the same reason and in two places: the tag does not
+offer the route for such an entry, and the route itself answers **403** if somebody asks
+anyway. Those entries open the whole control panel entry form instead, which knows how to make
+a working copy.
 
 ## The routes
 

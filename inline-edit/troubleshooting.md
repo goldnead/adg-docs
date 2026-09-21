@@ -25,25 +25,48 @@ The script is loading and the stylesheet is not, or the other way round. Both li
 ## A field has no outline, and the others do
 
 Its fieldtype is on none of the three lists, and `control_panel` is off. That is the intended
-outcome, not a fault. Switch `control_panel` on to reach it through the overlay, or add its
-fieldtype to a list if it stores a plain string.
+outcome, not a fault. Switch `control_panel` on to reach it through the one-field panel, or
+add its fieldtype to a list if it stores a plain string.
 
-## The control panel overlay stays empty
+## Every control panel page is a 500, including the login page
+
+The control panel bundle was not published. Statamic loads it through its Vite manifest, and
+a missing manifest throws in the layout every control panel page is rendered in — so it takes
+the whole control panel down, not just this addon's panel. The log says
+`Vite manifest not found at: …/public/vendor/statamic-inline-edit/build/manifest.json`.
+
+```bash
+php artisan vendor:publish --tag=statamic-inline-edit --force
+```
+
+That is the tag named after the addon slug, and it is a different one from
+`statamic-inline-edit-assets`. Both belong in the deploy script; see
+[Installation](/inline-edit/installation#the-four-publish-tags).
+
+## The panel stays empty
 
 The control panel refuses to be framed. Either it is on another domain, or a proxy or a
 security header sends `X-Frame-Options: DENY` or a `frame-ancestors` policy that excludes the
 site's own origin.
 
 Switch `control_panel` off. Those fields then render normally and are not clickable, which is
-honest, where an overlay that never loads is not.
+honest, where a panel that never loads is not.
 
-## The overlay opens but does not scroll to the field
+A second cause, with the same symptom: the person is signed in to the site but has no
+`access cp` permission. The control panel answers with a redirect to its login page, which
+refuses to be framed in turn.
 
-It polls for the field for eight seconds and then stops. The control panel is a Vue app, so
-the iframe's `load` event fires long before the form exists, and a single look finds nothing.
+## The panel opens the whole entry form instead of one field
 
-If it times out, the field is usually inside something that renders later still, a Grid or a
-Replicator set. The form is there; scroll to it.
+The collection has revisions enabled. That is deliberate and not configurable: writing one
+field past a working copy would publish it straight to the live site. See
+[What can be edited](/inline-edit/field-types#collections-with-revisions-get-the-whole-form).
+
+## The panel is the right size but the content is not
+
+The panel takes its height from the form, which reports it after mounting and again whenever
+it grows. If it stays at its fallback height, the form never mounted — look for a JavaScript
+error from the control panel bundle in the frame's console, not in the page's.
 
 ## Saving says "reload the page"
 
@@ -58,7 +81,8 @@ import, a sync, or a second tab.
 A **422**, and it is deliberate. Somebody enabled a review workflow on that collection.
 Editing on the page would write straight past it.
 
-Use the control panel overlay for those entries, where revisions work as they should.
+Double-clicking a Bard or an asset on such an entry opens the whole control panel entry form
+instead, where revisions work as they should.
 
 ## The markdown came back reformatted
 

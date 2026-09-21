@@ -7,15 +7,24 @@
 ```bash
 composer require goldnead/statamic-inline-edit
 php artisan vendor:publish --tag=statamic-inline-edit-assets --force
+php artisan vendor:publish --tag=statamic-inline-edit --force
 ```
 
-**The second line is not optional, and neither is `--force`.** The stylesheet and the script
-are served from `public/vendor/statamic-inline-edit/`, so a stale copy there is an editor
-talking to a newer save route. That fails in a way nobody can reproduce from the repository.
-Put both lines in the deploy script, next to `vendor:publish` for everything else.
+**Neither publish is optional, and neither is `--force`.** The stylesheet and the script are
+served from `public/vendor/statamic-inline-edit/`, so a stale copy there is an editor talking
+to a newer save route. That fails in a way nobody can reproduce from the repository. Put all
+three lines in the deploy script, next to `vendor:publish` for everything else.
 
-There is no migration, no queue, no scheduled task and no control panel entry. The addon adds
-one tag, one middleware and two POST routes.
+::: warning Skipping the second publish breaks the control panel, not just this addon
+The third line publishes the control panel bundle, which Statamic loads through its Vite
+manifest. A missing manifest is a hard error on **every** control panel page, not a missing
+feature on one. It is the same tag as the addon slug, and it is easy to miss because it looks
+like a duplicate of the line above it.
+:::
+
+There is no migration, no queue and no scheduled task, and the addon adds no screen to the
+control panel navigation. It adds one tag, one middleware, two POST routes, and one control
+panel route that only its own panel ever opens.
 
 ## What comes with it
 
@@ -42,11 +51,12 @@ simply not editable, so there is no half-finished state to clean up.
   alt="A public page in edit mode: dashed outlines around the marked fields, an untouched paragraph below them, and a dark bar at the bottom"
   caption="Only marked fields get an outline. The paragraph below belongs to no field and stays out of it." />
 
-## Publishing the other two tags
+## The four publish tags
 
 | Tag | When |
 | --- | --- |
-| `statamic-inline-edit-assets` | Always, and on every deploy with `--force`. |
+| `statamic-inline-edit-assets` | Always, and on every deploy with `--force`. The stylesheet and the scripts for the public page. |
+| `statamic-inline-edit` | Always, and on every deploy with `--force`. The control panel bundle behind the one-field panel. |
 | `statamic-inline-edit-config` | Only to change a default. See [Configuration](/inline-edit/configuration). |
 | `statamic-inline-edit-translations` | Only to reword the bar, the labels or the messages. |
 

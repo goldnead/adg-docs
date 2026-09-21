@@ -22,7 +22,9 @@ Statamic already has addons that go at this, and each one stops somewhere short.
 [Visual Editor](https://statamic.com/addons/mariohamann/statamic-visual-editor) puts the page
 inside the control panel's preview pane, so the editing still happens in the form on the left.
 [Workshop](https://github.com/statamic/workshop) renders an entry form in the front end, which
-is the control panel with different chrome.
+is the control panel with different chrome: you still fill in fields, next to the page rather
+than in it. This addon reaches for a form only where a field has a shape no page can hold, and
+then for that one field alone.
 [Admin Bar](https://statamic.com/addons/el-schneider/admin-bar) and the toolbars like it link
 into the control panel. [Editor API](https://statamic.com/addons/ppcharlier/editor-api) is a
 write API with no interface of its own. Nobody puts the cursor in the text the visitor is reading.
@@ -53,8 +55,8 @@ request, which is also why the addon is safe to leave installed on a site that n
 - **A button in the corner** for a signed-in editor, or `Ctrl/Cmd + Shift + E`. Nothing until
   it is pressed
 - **Four kinds of field**, so the whole page is reachable: text in place, a real control for a
-  toggle or a date, a rich editor for markdown, and the control panel in an overlay for
-  everything else
+  toggle or a date, a rich editor for markdown, and a panel holding one real control panel
+  field for everything else
 - **Tiptap for markdown**, the same engine as Statamic's own Bard, with the markdown shortcuts
   a client already met there
 - **Statamic's own permissions**, not a second set. The core entry policy decides, and every
@@ -71,6 +73,7 @@ request, which is also why the addon is safe to leave installed on a site that n
 ```bash
 composer require goldnead/statamic-inline-edit
 php artisan vendor:publish --tag=statamic-inline-edit-assets --force
+php artisan vendor:publish --tag=statamic-inline-edit --force
 ```
 
 2. Mark one field in a template. This is the whole integration:
@@ -90,8 +93,8 @@ still renders the same string for everybody else.
   the output buffer, and inside Bard a text node does not know its entry. Every comparable tool
   in every CMS marks in the template. See [Marking a field](/inline-edit/marking).
 - **Edit Bard or Replicator in place.** Not a shortcut left for later: the core builds those
-  values without a parent, so the text cannot be traced back. They open in the control panel
-  overlay instead, which is the honest answer rather than a worse editor.
+  values without a parent, so the text cannot be traced back. They open in a panel holding
+  that one control panel field instead, which is the honest answer rather than a worse editor.
 - **Touch the slug.** Changing it changes the URL, and a URL is not a word in a sentence.
 - **Work around a revision workflow.** A collection with revisions enabled is refused with a
   message. Somebody chose that workflow; this addon does not get to skip it.

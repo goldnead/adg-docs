@@ -111,7 +111,7 @@ export const MATURITY_NOTES = {
   events:
     'Installed, but not yet driving a live event. The publishing side is exercised; attendance and reminders are not.',
   'inline-edit':
-    'Built on 19 September 2026 and running on the public demo, but on no client site yet. Not on Packagist either, so the install below does not resolve from a stock composer.json.',
+    'Built on 19 September 2026 and running on the public demo, but on no client site yet. On Packagist since the same day, so the install below resolves.',
 }
 
 export const maturityOf = (slug) => MATURITY_BY_SLUG[slug] ?? null

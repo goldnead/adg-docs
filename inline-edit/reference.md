@@ -65,7 +65,8 @@ earlier. Reading the page is never interrupted.
 
 | | |
 | --- | --- |
-| `statamic-inline-edit-assets` | The stylesheet and the scripts. Required, and with `--force` on every deploy. |
+| `statamic-inline-edit-assets` | The stylesheet and the scripts for the public page. Required, and with `--force` on every deploy. |
+| `statamic-inline-edit` | The control panel bundle. Required, and with `--force` on every deploy. Missing, it takes **every** control panel page down, not just the panel. |
 | `statamic-inline-edit-config` | `config/statamic-inline-edit.php`. |
 | `statamic-inline-edit-translations` | `lang/vendor/statamic-inline-edit`. |
 
@@ -80,6 +81,7 @@ earlier. Reading the page is never interrupted.
 | `inline-edit.js` | 12 KB |
 | `inline-edit.css` | 8 KB |
 | `inline-edit-rich.js` | 179 KB, fetched on first use of a markdown field |
+| `build/assets/cp-*.js` | 3 KB, and only inside the control panel. Vue and the control panel's component library stay with the host. |
 
 Nothing at all for a visitor, and nothing on a page that rendered no markers.
 
@@ -89,9 +91,9 @@ Named, not hidden.
 
 - **Bard and Replicator, inline.** The core builds the values inside a set without a link back
   to their entry, so a paragraph in a Bard is genuinely unaddressable from the page. Marking
-  the whole field opens the control panel instead.
-- **Revisions.** Refused with a message rather than written straight past. The fields are
-  still reachable through the overlay, where revisions work as they should.
+  the whole field opens it as a control panel field instead.
+- **Revisions.** Refused with a message rather than written straight past. Those entries open
+  the whole control panel entry form, where revisions work as they should.
 - **Globals, taxonomy terms and users.** Entries only. All three reach a template as augmented
   values too, but each needs its own way of being found again on save, and rendering a marker
   that cannot be saved is worse than rendering none.
