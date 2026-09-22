@@ -11,10 +11,8 @@ and which addon owns which concern.
 If you only ever install one of them, you can ignore all four. This guide exists
 for the point at which you install the second one.
 
-All twenty-eight are tagged, and twenty-six of them are published on Packagist, so
-a bare `composer require` resolves any of those. Client Rooms and Assessments are
-not published yet, and their repositories are private, so they cannot be
-installed at all today — their installation pages say so plainly.
+All twenty-eight are tagged and published on Packagist, so a bare
+`composer require` resolves any of them.
 
 ## What is here
 

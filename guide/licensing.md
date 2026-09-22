@@ -89,11 +89,8 @@ members:
 
 ## Buying
 
-**Twenty-six of the twenty-eight packages are on Packagist**, commercial ones
-included, and every one of those installs with a bare `composer require`. Client
-Rooms and Assessments are not published yet; see
-[Client Rooms → Installation](/clientrooms/installation) and
-[Assessments → Installation](/assessments/installation).
+**All twenty-eight packages are on Packagist**, commercial ones included, and
+every one installs with a bare `composer require`.
 
 Being on Packagist is not the same as being free. **Twenty are commercial** and
 **eight are MIT**; the table above is the authoritative list. The commercial ones
@@ -101,9 +98,9 @@ resolve as ordinary Composer packages but are licensed rather than sold.
 
 The commercial packages are sold in three ways, and which one applies decides
 what you should do about a licence. Nine are meant for individual sale on the
-Statamic Marketplace. Eight are licensed only as part of the Suite, with no
-individual listing planned. Client Rooms, Assessments and Courses are not sold
-at all yet. The "How it is sold" column above says which is which, for every addon,
+Statamic Marketplace. Nine are licensed only as part of the Suite, with no
+individual listing planned. Client Rooms and Assessments are not sold at all
+yet. The "How it is sold" column above says which is which, for every addon,
 and the same word appears on each addon's own pages.
 
 The grouping is Schedule A of the [Suite EULA](/guide/suite-eula), the contract
@@ -119,19 +116,14 @@ sort it out when the listing goes up. Tags published before the licence changed
 in August 2026 were MIT and stay MIT.
 :::
 
-::: warning Eight are sold only in the Suite
-The eight are <SalesGroup kind="suite-only" />. They carry no individual price and no Marketplace listing, and none is coming. They are licensed as one package at [suite.adriangoldner.dev](https://suite.adriangoldner.dev), under the [Suite EULA](/guide/suite-eula).
+::: warning Nine are sold only in the Suite
+The nine are <SalesGroup kind="suite-only" />. They carry no individual price and no Marketplace listing, and none is coming. They are licensed as one package at [suite.adriangoldner.dev](https://suite.adriangoldner.dev), under the [Suite EULA](/guide/suite-eula).
 
-The box above does not apply to these eight. There is no listing to wait for.
+The box above does not apply to these nine. There is no listing to wait for.
 :::
 
-Client Rooms and Assessments are commercial as well, but neither is published on
-Packagist and neither is part of the Suite as sold today. Their pages say what
-the install will be once that changes.
-
-Courses is commercial too, and in the same position on the sales side: it is not
-named in Schedule A, so it is not part of the Suite as sold today and has no
-listing. Unlike those two it is on Packagist, and `composer require` resolves it.
+Client Rooms and Assessments are commercial as well, and on Packagist, but
+neither is part of the Suite as sold today.
 
 Flow Canvas is MIT from 1.2.0 on, and deliberately: Funnels requires it, so a
 commercial editor behind a commercial addon would have meant two licences for

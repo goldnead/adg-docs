@@ -74,5 +74,6 @@ screen, not an error.
 
 ## Licence
 
-Commercial: `composer.json` says `proprietary`, single edition `pro`. It is not in Schedule A
-of the [Suite EULA](/guide/suite-eula) and not sold today. See [Licensing](/guide/licensing).
+Commercial: `composer.json` says `proprietary`, single edition `pro`. It is sold only as part of
+the Suite (Schedule A of the [Suite EULA](/guide/suite-eula)), at
+[suite.adriangoldner.dev](https://suite.adriangoldner.dev). See [Licensing](/guide/licensing).

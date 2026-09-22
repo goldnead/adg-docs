@@ -4,11 +4,8 @@ Twenty-eight packages, six layers. Every arrow below is a Composer dependency;
 anything not drawn is optional and detected at runtime with `class_exists`,
 which is why you can install any addon without the rest.
 
-All twenty-eight are tagged, and twenty-six of them are published on Packagist, so
-`composer require` resolves any of those and pulls in whatever it depends on.
-Client Rooms and Assessments are not published yet; see
-[Client Rooms → Installation](/clientrooms/installation) and
-[Assessments → Installation](/assessments/installation).
+All twenty-eight are tagged and published on Packagist, so `composer require`
+resolves any of them and pulls in whatever it depends on.
 
 ```
 Foundation ──────────────────────────────────────────────────────────

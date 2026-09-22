@@ -89,12 +89,9 @@ purpose](/guide/demo).
 
 ## Install what you need
 
-Each addon installs on its own. Twenty-six of the twenty-eight are on Packagist,
-so a bare `composer require` resolves them and pulls in the foundation packages
-they need. Those foundation packages are inert until you configure them.
-[Client Rooms](/clientrooms/installation) and
-[Assessments](/assessments/installation) are not published yet, and their
-repositories are private, so there is no way to install them today.
+Each addon installs on its own. All twenty-eight are on Packagist, so a bare
+`composer require` resolves them and pulls in the foundation packages they need.
+Those foundation packages are inert until you configure them.
 
 ```bash
 # The CRM, on its own

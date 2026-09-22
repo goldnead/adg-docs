@@ -102,13 +102,13 @@ export const MATURITY_BY_SLUG = {
 /** The exceptions a one-word level would misrepresent. */
 export const MATURITY_NOTES = {
   assessments:
-    'Built on 2 September 2026 and exercised only in the playground. Nothing here has been answered by a real visitor yet, and the package is not on Packagist, so the install below does not resolve from a stock composer.json.',
+    'Built on 2 September 2026 and exercised only in the playground. Nothing here has been answered by a real visitor yet.',
   booking:
     'Tagged and on Packagist, but installed on no site yet. Nothing here has been exercised by a real booking.',
   clientrooms:
-    'Built on 2 September 2026 and installed on no site yet. Not on Packagist either, so the install below does not resolve from a stock composer.json.',
+    'Built on 2 September 2026 and installed on no site yet.',
   'flow-canvas':
-    'Carries no test suite and no CI of its own, although Automations and Funnels both build on it and are covered. Treat a change here as unverified until those two have been run against it.',
+    'Has its own CI and 52 tests (43 Vitest, 9 PHPUnit), but they cover composables and PHP only: the Vitest setup runs in a node environment with no Vue mount layer, so not one of the shared components is exercised. That gap is not theoretical. On 22 September 2026 a fix to the node library shipped with its styling written as Tailwind utilities that neither host compiles — the hosts scan only their own resources/js, and this package sits in vendor. Every test stayed green. Treat a change to a component here as unverified until both hosts have been rebuilt and the built CSS itself has been grepped for the rules.',
   events:
     'Installed, but not yet driving a live event. The publishing side is exercised; attendance and reminders are not.',
   courses:
@@ -153,7 +153,7 @@ export const SALES = {
   },
   'not-sold': {
     label: 'Not sold',
-    short: 'Commercial, but not published and not part of the Suite as sold today.',
+    short: 'Commercial and on Packagist, but not part of the Suite as sold today.',
   },
 }
 
@@ -180,7 +180,7 @@ export const SALES_BY_SLUG = {
   booking: 'suite-only',
   consent: 'suite-only',
   insights: 'suite-only',
-
+  courses: 'suite-only',
 
   // MIT. Nothing to buy.
   'brand-context': 'free',
@@ -192,12 +192,9 @@ export const SALES_BY_SLUG = {
   notifications: 'free',
   'preference-center': 'free',
 
-  // Commercial, unpublished, and outside the Suite as sold today.
+  // Commercial, on Packagist, and outside the Suite as sold today.
   clientrooms: 'not-sold',
   assessments: 'not-sold',
-  // Not in Schedule A yet, so `sync-licenses.mjs` fails on this line until the
-  // EULA names it. The schedule moves first; this entry follows it.
-  courses: 'not-sold',
 }
 
 export const salesOf = (slug) => SALES_BY_SLUG[slug] ?? null
