@@ -1,8 +1,8 @@
 # Maturity
 
-**This suite is work in progress.** Twenty-eight packages, twenty-four of them
-public inside five weeks. They are tagged, all but Client Rooms and Assessments
-are on Packagist, they have documentation, and the documentation reads finished.
+**This suite is work in progress.** Twenty-nine packages, twenty-four of them
+public inside five weeks. They are tagged, all of them are on Packagist, they
+have documentation, and the documentation reads finished.
 That last part is misleading, so this page says plainly what is behind each
 package.
 

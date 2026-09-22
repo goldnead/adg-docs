@@ -552,6 +552,27 @@ html.dark[data-addon='courses'] {
   --vp-c-brand-soft: rgba(202, 76, 215, 0.16);
 }
 
+html[data-addon='private-media'] {
+  --gn-accent-from: #E0245E;
+  --gn-accent-to: #5B0A26;
+  --vp-c-brand-1: #e0245e;
+  --vp-c-brand-2: #c6004a;
+  --vp-c-brand-3: #E0245E;
+  --vp-c-brand-soft: rgba(224, 36, 94, 0.16);
+  --vp-button-brand-bg: #E0245E;
+  --vp-button-brand-hover-bg: #5B0A26;
+  --vp-button-brand-active-bg: #5B0A26;
+  --vp-button-brand-text: #ffffff;
+  --vp-button-brand-hover-text: #ffffff;
+}
+
+html.dark[data-addon='private-media'] {
+  --vp-c-brand-1: #f23b6c;
+  --vp-c-brand-2: #ff5681;
+  --vp-c-brand-3: #5B0A26;
+  --vp-c-brand-soft: rgba(242, 59, 108, 0.16);
+}
+
 html[data-addon='consent'] {
   --gn-accent-from: #22C55E;
   --gn-accent-to: #15803D;

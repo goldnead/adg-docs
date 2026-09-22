@@ -36,7 +36,7 @@ export const LAYERS = {
  * How far along each addon is.
  *
  * The suite reads finished. It is not: twenty-four packages went public inside
- * five weeks and four more came later, twenty of the twenty-eight are
+ * five weeks and five more came later, twenty of the twenty-nine are
  * declared commercial, and exactly one can be bought. A reader
  * deciding whether to put one of these on a client site has no
  * way to tell a package that has run several brands for months from one that
@@ -97,6 +97,7 @@ export const MATURITY_BY_SLUG = {
   'flow-canvas': 'experimental',
   events: 'experimental',
   courses: 'experimental',
+  'private-media': 'experimental',
 }
 
 /** The exceptions a one-word level would misrepresent. */
@@ -113,6 +114,8 @@ export const MATURITY_NOTES = {
     'Installed, but not yet driving a live event. The publishing side is exercised; attendance and reminders are not.',
   courses:
     'Extracted from adriangoldner.com on 22 September 2026. Exercised in the playground. On that site\'s staging it now serves the member courses in place of the site\'s own copy (addon mode), and a comparison against the old code found no differences, identical pages included. No production site uses it yet. On Packagist at 0.1.1.',
+  'private-media':
+    'Extracted from adriangoldner.com on 22 September 2026. On that site\'s staging branch it is wired in behind a switch whose default is still the site\'s own delivery code. No production site uses it yet. On Packagist at 0.1.0.',
   'inline-edit':
     'Built on 19 September 2026 and running on the public demo, but on no client site yet. On Packagist since the same day, so the install below resolves.',
 }
@@ -124,7 +127,7 @@ export const maturityOf = (slug) => MATURITY_BY_SLUG[slug] ?? null
  *
  * A separate question from the licence, and mixing the two is what made this
  * page wrong for a fortnight. "Commercial" says a licence is required.
- * "Suite only" says where that licence comes from, and for eight of the
+ * "Suite only" says where that licence comes from, and for nine of the
  * packages the answer is that it never comes from a Marketplace listing,
  * because none is planned. Until this field existed the site told the reader
  * that a listing was merely missing, and a reader who believed it was waiting
@@ -146,7 +149,7 @@ export const SALES = {
   free: {
     // Not "MIT". The licence column one cell to the left already says MIT, and
     // the same word twice in a row reads as a rendering fault rather than as an
-    // answer. This column is asked "how do I buy it", and for these eight the
+    // answer. This column is asked "how do I buy it", and for these nine the
     // answer is that there is nothing to buy.
     label: 'Nothing to buy',
     short: 'MIT. No licence to buy.',
@@ -191,6 +194,7 @@ export const SALES_BY_SLUG = {
   activity: 'free',
   notifications: 'free',
   'preference-center': 'free',
+  'private-media': 'free',
 
   // Commercial, on Packagist, and outside the Suite as sold today.
   clientrooms: 'not-sold',
@@ -665,6 +669,23 @@ export const addons = [
       { text: 'Access and entitlements', link: 'access' },
       { text: 'Lesson types and proof', link: 'lesson-types' },
       { text: 'Drip and locks', link: 'locks' },
+    ],
+  },
+  {
+    slug: 'private-media',
+    name: 'Private Media',
+    package: 'goldnead/statamic-private-media',
+    license: 'MIT',
+    layer: 'platform',
+    tagline:
+      'Signed links to private assets, bound to the viewer, streamed with byte ranges or handed to a temporary URL, with an audit trail. Who may open what is asked of Entitlements.',
+    icon: '⊡',
+    pages: [
+      { text: 'Signed links and the tag', link: 'links' },
+      { text: 'Access and entitlements', link: 'access' },
+      { text: 'Audit trail and pruning', link: 'audit' },
+      { text: 'Security notes', link: 'security' },
+      { text: 'Limits and open questions', link: 'limits' },
     ],
   },
   {

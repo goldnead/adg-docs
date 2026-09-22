@@ -53,7 +53,7 @@ The [demo](https://demo.adriangoldner.dev) runs every addon with the Control Pan
 ## 2. Will it still be here
 
 The packages are MIT or proprietary, but all of them are **source-available on GitHub**, and
-the eight foundation packages are MIT outright. If I stop maintaining this tomorrow, you have
+the nine foundation packages are MIT outright. If I stop maintaining this tomorrow, you have
 the code, you have the tests, and your installation keeps running: nothing phones home, and
 nothing switches off when a licence term ends.
 

@@ -75,6 +75,7 @@ wrong:
 | `notifications:send-digests` | nobody, by design | No digest is ever sent |
 | `automations:prune` | nobody | The runs table grows without limit |
 | `webhook-manager:prune` | nobody | The deliveries table grows without limit |
+| `private-media:prune` | nobody | The audit table, with an IP and a user agent per row, grows without limit |
 
 ::: danger Retries need a working `schedule:run`
 `webhook-manager:dispatch-retries` is the command that actually performs a

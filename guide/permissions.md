@@ -117,14 +117,15 @@ solved by removing its equivalent permission.
 
 ### The packages that register no permissions
 
-Email Templates, Table of Contents, Identity Contracts, Suppression and
-Preference Center register none.
+Email Templates, Table of Contents, Identity Contracts, Suppression,
+Preference Center and Private Media register none.
 
 Email Templates uses a native Statamic collection, so the ordinary collection
 permissions apply. Table of Contents has no Control Panel surface at all.
 Identity Contracts and Suppression are libraries with no Control Panel surface.
 Preference Center serves public pages only: its authorisation is the magic-link
-token, not a role.
+token, not a role. Private Media has no Control Panel surface either: its
+authorisation is the signed link and [`MediaAccess`](/private-media/access).
 
 ## Writing a permission check against these addons
 

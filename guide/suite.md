@@ -1,10 +1,10 @@
 # The suite
 
-Twenty-eight packages, six layers. Every arrow below is a Composer dependency;
+Twenty-nine packages, six layers. Every arrow below is a Composer dependency;
 anything not drawn is optional and detected at runtime with `class_exists`,
 which is why you can install any addon without the rest.
 
-All twenty-eight are tagged and published on Packagist, so `composer require`
+All twenty-nine are tagged and published on Packagist, so `composer require`
 resolves any of them and pulls in whatever it depends on.
 
 ```
@@ -49,7 +49,7 @@ Standalone ───────────────────────
   webhook-manager · automations · activity · notifications ·
   email-templates · preference-center · entitlements ·
   assessments · events · toc · booking · clientrooms · courses ·
-  consent
+  private-media · consent
 
   — none of these requires another domain addon.
 ```
@@ -71,7 +71,7 @@ are worth naming, because they look like dependencies and are not:
 `notifications` rather than an optional extra: both ask the gate before they
 queue mail, and a gate that might not be there would be no gate at all.
 
-## The twenty-eight
+## The twenty-nine
 
 ### Foundation
 
@@ -271,6 +271,15 @@ open a course at all is asked of Entitlements; without it every course is
 closed. Three tables, Antlers tags, a form route and one read-only screen,
 Course Progress.
 
+**[Private Media](/private-media/)** &nbsp;·&nbsp; `goldnead/statamic-private-media`
+
+Files in an asset container that only the right user can open. A template asks
+for a link; the link is signed, expires, and works only for the user it was made
+for. The route checks signature, user and access, then streams the file with
+byte ranges or redirects to a temporary URL of the storage provider. Who may
+open what is asked of Entitlements; without it every request is refused. One
+audit table, one tag, one route, no Control Panel screen. MIT, and not sold.
+
 **[Flow Canvas](/flow-canvas/)** &nbsp;·&nbsp; `goldnead/statamic-flow-canvas`
 
 The node-graph editor itself, extracted so that Automations and Funnels cannot
@@ -339,6 +348,7 @@ nothing.
 | Client Rooms | LeadHub | The room shows the contact's merged LeadHub timeline instead of its own short list |
 | Courses | Entitlements | A course opens for whoever holds its product; without Entitlements every course is closed |
 | Courses | Payments | The Course Progress entry sits in the suite's shared nav section instead of under Content |
+| Private Media | Entitlements | A file opens for whoever holds the product named by its resource; without Entitlements every request is refused |
 | Products | Offers | The product picker in the offer form lists what the products table holds, brand-scoped, instead of only the config file's handles |
 | Anything with figures to report | Insights | The addon's group appears on the Metrics screen, with the period, the chart and the splits supplied by Insights |
 

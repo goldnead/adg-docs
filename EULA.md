@@ -20,7 +20,7 @@ Below, "you" means the licensee and "we" means the licensor.
 ## Scope, and who may buy
 
 This agreement covers the eighteen commercial packages listed in Schedule A, together the
-goldnead Statamic Addon Suite ("the Suite"). The eight MIT-licensed packages named at the end
+goldnead Statamic Addon Suite ("the Suite"). The nine MIT-licensed packages named at the end
 of Schedule A are not covered: they are MIT, and nothing here restricts what you do with them.
 
 **We license to businesses only.** By buying a licence you confirm that you buy in the course
@@ -323,6 +323,7 @@ part of the Suite.
 | Activity | `goldnead/statamic-activity` |
 | Notifications | `goldnead/statamic-notifications` |
 | Preference Center | `goldnead/statamic-preference-center` |
+| Private Media | `goldnead/statamic-private-media` |
 
 Use them under the MIT licence in each package.
 

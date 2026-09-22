@@ -28,6 +28,12 @@ where the same data would otherwise appear:
 
 If a bug report needs an IP, it does not come from these tables.
 
+[Private Media](/private-media/) is the exception, and on purpose: its audit
+table exists to show who opened or was refused a private file, and it stores the
+IP address and the user agent (cut at 512 characters) with each row. Rows older
+than 90 days go with `private-media:prune`, once you schedule it. See
+[Audit trail and pruning](/private-media/audit).
+
 ## Redaction on write
 
 Both LeadHub and Activity sanitise before persisting, not after.
@@ -173,6 +179,7 @@ work around: a ledger you can quietly edit is not a ledger.
 | Automations | `automations:prune` | `runs.prune_after_days`, default 30, `null` disables — **not scheduled**; you register it |
 | LeadHub | archive or delete a contact | manual |
 | Notifications | — | no automatic pruning |
+| Private Media | `private-media:prune --days=` | `audit.retention_days`, default 90, **not scheduled**; you register it |
 
 ::: warning Nothing here prunes itself
 Deliveries and run logs are the two tables that grow fastest, and neither

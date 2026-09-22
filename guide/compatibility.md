@@ -12,10 +12,10 @@
 
 **Laravel 11 is not supported by any package in the suite.** Every one of them
 requires `^12.0|^13.0` or narrower, or inherits that floor from `statamic/cms
-^6.0`, and Brand Context — a dependency of thirteen of the twenty-eight — requires
+^6.0`, and Brand Context — a dependency of thirteen of the twenty-nine — requires
 `^12.40|^13.0`, which sets the real floor for most installs. Assessments declares
 that same `^12.40|^13.0` itself, on top of depending on Brand Context, and Courses
-declares it without depending on Brand Context. Ten
+and Private Media declare it without depending on Brand Context. Ten
 packages, Client Rooms and Table of Contents among them, declare no Laravel
 constraint of their own and take whatever the rest of the install takes.
 
@@ -73,7 +73,7 @@ for you:
 | `statamic-funnels` | `statamic-flow-canvas` | The same editor, the second consumer. |
 | `statamic-products` | `statamic-payments` | A product is read through the payment catalogue, and contributing to it needs `^1.15`. |
 | `statamic-lead-magnets` | `statamic-entitlements` | The grant behind a confirmed download is an entitlement. |
-| thirteen of the twenty-eight | `statamic-brand-context` | See [Multi-brand](#multi-brand) below. |
+| thirteen of the twenty-nine | `statamic-brand-context` | See [Multi-brand](#multi-brand) below. |
 
 Everything beyond that is a `suggest` plus a runtime `class_exists` check. The
 version constraints that matter when both are installed:
@@ -155,7 +155,8 @@ because none of them persists anything that could belong to a brand.
 
 Courses is not brand-scoped either, although it persists learner progress: its
 three tables carry no `brand_id`, and it neither requires nor detects Brand
-Context.
+Context. The same holds for Private Media's audit table: a resource slug is
+already unique per site.
 
 This is also why Laravel 11 is out for most of the suite. Brand Context
 requires `laravel/framework ^12.40|^13.0`, and Composer resolves that
