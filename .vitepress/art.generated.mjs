@@ -163,6 +163,12 @@ export const ART = {
     "light": "#a21caf",
     "dark": "#ca4cd7"
   },
+  "certificates": {
+    "from": "#C9A227",
+    "to": "#5E4308",
+    "light": "#936e00",
+    "dark": "#c9a227"
+  },
   "private-media": {
     "from": "#E0245E",
     "to": "#5B0A26",

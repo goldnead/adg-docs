@@ -1,21 +1,21 @@
 # The suite
 
-Twenty-nine packages, six layers. Every arrow below is a Composer dependency;
+Thirty packages, six layers. Every arrow below is a Composer dependency;
 anything not drawn is optional and detected at runtime with `class_exists`,
 which is why you can install any addon without the rest.
 
-All twenty-nine are tagged and published on Packagist, so `composer require`
+All thirty are tagged and published on Packagist, so `composer require`
 resolves any of them and pulls in whatever it depends on.
 
 ```
 Foundation ──────────────────────────────────────────────────────────
 
-  brand-context          required by 13: webhook-manager, automations,
+  brand-context          required by 14: webhook-manager, automations,
                                          leadhub, marketing, activity,
                                          notifications, suppression,
                                          preference-center, entitlements,
                                          lead-magnets, assessments, events,
-                                         invoices
+                                         invoices, certificates
 
   identity-contracts     required by 4:  activity, notifications,
                                          preference-center, entitlements
@@ -30,6 +30,7 @@ Between the domain addons ──────────────────
 
   marketing     ──requires──▶  leadhub
   lead-magnets  ──requires──▶  entitlements
+  certificates  ──requires──▶  courses
 
 Commerce ────────────────────────────────────────────────────────────
 
@@ -71,7 +72,7 @@ are worth naming, because they look like dependencies and are not:
 `notifications` rather than an optional extra: both ask the gate before they
 queue mail, and a gate that might not be there would be no gate at all.
 
-## The twenty-nine
+## The thirty
 
 ### Foundation
 
@@ -271,6 +272,16 @@ open a course at all is asked of Entitlements; without it every course is
 closed. Three tables, Antlers tags, a form route and one read-only screen,
 Course Progress.
 
+**[Certificates](/certificates/)** &nbsp;·&nbsp; `goldnead/statamic-certificates`
+
+A PDF certificate when a learner completes a course in Courses, and a public
+page where anyone holding its code can check that it is genuine and not revoked.
+One certificate per learner and course, decided by a unique index. Name, course,
+issuer and signatory are frozen when it is issued; logo, signature, colour and
+footer are per-brand settings read when the PDF is rendered. dompdf, so no
+Chrome on the server. One table, two tags, two routes and one screen with
+revoke. Commercial, and not sold.
+
 **[Private Media](/private-media/)** &nbsp;·&nbsp; `goldnead/statamic-private-media`
 
 Files in an asset container that only the right user can open. A template asks
@@ -348,6 +359,7 @@ nothing.
 | Client Rooms | LeadHub | The room shows the contact's merged LeadHub timeline instead of its own short list |
 | Courses | Entitlements | A course opens for whoever holds its product; without Entitlements every course is closed |
 | Courses | Payments | The Course Progress entry sits in the suite's shared nav section instead of under Content |
+| Certificates | Payments | The Certificates entry sits in the suite's shared nav section instead of under Content |
 | Private Media | Entitlements | A file opens for whoever holds the product named by its resource; without Entitlements every request is refused |
 | Products | Offers | The product picker in the offer form lists what the products table holds, brand-scoped, instead of only the config file's handles |
 | Anything with figures to report | Insights | The addon's group appears on the Metrics screen, with the period, the chart and the splits supplied by Insights |

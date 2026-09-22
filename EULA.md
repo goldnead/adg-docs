@@ -329,6 +329,6 @@ Use them under the MIT licence in each package.
 
 **Not covered by this agreement, and not currently sold**
 
-Client Rooms (`goldnead/statamic-clientrooms`) and Assessments
-(`goldnead/statamic-assessments`). Both are commercial. Neither is published on Packagist, and
-neither is part of the Suite as sold today.
+Client Rooms (`goldnead/statamic-clientrooms`), Assessments
+(`goldnead/statamic-assessments`) and Certificates (`goldnead/statamic-certificates`). All three
+are commercial. None is published on Packagist, and none is part of the Suite as sold today.

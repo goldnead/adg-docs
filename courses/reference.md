@@ -51,6 +51,10 @@ acknowledgement, `item` for `updateLessonItem()`, and whatever the caller passed
 lesson it completed. The enrollment remembers that `CourseCompleted` was fired, so reopening a
 lesson and completing it again does not fire it twice.
 
+[Certificates](/certificates/) listens to `CourseCompleted` and issues a PDF certificate with a
+public verification page, one per learner and course. A lesson skipped by a test-out counts as
+completed there too. See [Issuing and the snapshot](/certificates/issuing).
+
 ## Routes
 
 | Method | URL | Name | |

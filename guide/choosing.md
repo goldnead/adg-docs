@@ -20,6 +20,7 @@ works, just badly. This page starts from the problem.
 | Give a German buyer a proper invoice | [Invoices](/invoices/) | a receipt email, which is not one |
 | Walk a visitor through pages, a form and an offer | [Funnels](/funnels/) | Automations, which has no notion of a page or of where somebody is standing |
 | Put lessons behind a purchase and track who is where in them | [Courses](/courses/) | a members-only collection, which knows who may see a page but not what they have done |
+| Hand a learner who finished a course a certificate a third party can check | [Certificates](/certificates/) | a PDF made by hand, which nobody can verify and nobody can revoke |
 | Stream a video or hand out a file only to the user who may open it | [Private Media](/private-media/) | an asset container with a public URL, which hands the file to anyone who guesses the path |
 | Record appointments people booked | [Booking](/booking/) | building a calendar, which is a solved problem elsewhere |
 | Ask before setting cookies or loading an embed | [Consent](/consent/) | |

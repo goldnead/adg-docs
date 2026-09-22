@@ -34,6 +34,14 @@ IP address and the user agent (cut at 512 characters) with each row. Rows older
 than 90 days go with `private-media:prune`, once you schedule it. See
 [Audit trail and pruning](/private-media/audit).
 
+[Certificates](/certificates/) publishes a name by design: its verification page
+shows the learner's name, the course and the issue date to anyone holding the
+certificate's code. The name is copied onto the certificate when it is issued and
+does not change when the user is renamed. A user without a name is refused a
+certificate rather than certified under their email address. The page is sent
+with `noindex, nofollow`, and a revoked certificate still shows its name there.
+See [The verification page](/certificates/verify).
+
 ## Redaction on write
 
 Both LeadHub and Activity sanitise before persisting, not after.
@@ -179,6 +187,7 @@ work around: a ledger you can quietly edit is not a ledger.
 | Automations | `automations:prune` | `runs.prune_after_days`, default 30, `null` disables — **not scheduled**; you register it |
 | LeadHub | archive or delete a contact | manual |
 | Notifications | — | no automatic pruning |
+| Certificates | — | none; a certificate is kept, revoked or not |
 | Private Media | `private-media:prune --days=` | `audit.retention_days`, default 90, **not scheduled**; you register it |
 
 ::: warning Nothing here prunes itself

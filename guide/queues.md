@@ -19,6 +19,7 @@ php artisan schedule:work        # or a cron entry calling schedule:run
 | Marketing | campaign sending, per-recipient messages | a campaign send blocks the request that started it |
 | Activity | `recordLater()` only; `record()` is synchronous | fine, but see below |
 | Notifications | mail channel delivery | a mail transport hiccup slows the action that notified |
+| Certificates | the certificate mail, when mail is on; the PDF is rendered when it is built | the PDF is rendered inside the request that completed the last lesson |
 
 Webhook Manager's own documentation puts it plainly: a queue driver other than
 `sync` is strongly recommended. For Automations and Marketing it is closer to

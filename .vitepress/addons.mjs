@@ -36,7 +36,7 @@ export const LAYERS = {
  * How far along each addon is.
  *
  * The suite reads finished. It is not: twenty-four packages went public inside
- * five weeks and five more came later, twenty of the twenty-nine are
+ * five weeks and six more came later, twenty-one of the thirty are
  * declared commercial, and exactly one can be bought. A reader
  * deciding whether to put one of these on a client site has no
  * way to tell a package that has run several brands for months from one that
@@ -98,6 +98,7 @@ export const MATURITY_BY_SLUG = {
   events: 'experimental',
   courses: 'experimental',
   'private-media': 'experimental',
+  certificates: 'experimental',
 }
 
 /** The exceptions a one-word level would misrepresent. */
@@ -116,6 +117,8 @@ export const MATURITY_NOTES = {
     'Extracted from adriangoldner.com on 22 September 2026. Exercised in the playground. On that site\'s staging it now serves the member courses in place of the site\'s own copy (addon mode), and a comparison against the old code found no differences, identical pages included. No production site uses it yet. On Packagist at 0.1.1.',
   'private-media':
     'Extracted from adriangoldner.com on 22 September 2026. On that site\'s staging branch it is wired in behind a switch whose default is still the site\'s own delivery code. No production site uses it yet. On Packagist at 0.1.0.',
+  certificates:
+    'Built on 22 September 2026 on top of Courses and exercised in the playground: issuing, the PDF, the verification page and the Control Panel screen. No production site uses it yet. On Packagist at 0.1.0.',
   'inline-edit':
     'Built on 19 September 2026 and running on the public demo, but on no client site yet. On Packagist since the same day, so the install below resolves.',
 }
@@ -199,6 +202,7 @@ export const SALES_BY_SLUG = {
   // Commercial, on Packagist, and outside the Suite as sold today.
   clientrooms: 'not-sold',
   assessments: 'not-sold',
+  certificates: 'not-sold',
 }
 
 export const salesOf = (slug) => SALES_BY_SLUG[slug] ?? null
@@ -669,6 +673,25 @@ export const addons = [
       { text: 'Access and entitlements', link: 'access' },
       { text: 'Lesson types and proof', link: 'lesson-types' },
       { text: 'Drip and locks', link: 'locks' },
+    ],
+  },
+  {
+    slug: 'certificates',
+    name: 'Certificates',
+    package: 'goldnead/statamic-certificates',
+    license: 'Commercial',
+    layer: 'platform',
+    tagline:
+      'A PDF certificate when a learner completes a course in Courses, a per-brand template, and a public page where anyone holding the code can check it.',
+    icon: '✓',
+    pages: [
+      { text: 'Issuing and the snapshot', link: 'issuing' },
+      { text: 'The PDF and its view', link: 'pdf' },
+      { text: 'The verification page', link: 'verify' },
+      { text: 'Antlers tags', link: 'tags' },
+      { text: 'The Certificates screen', link: 'control-panel' },
+      { text: 'Console and backfill', link: 'console' },
+      { text: 'Limits', link: 'limits' },
     ],
   },
   {
