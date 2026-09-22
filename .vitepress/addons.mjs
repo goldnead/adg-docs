@@ -112,7 +112,7 @@ export const MATURITY_NOTES = {
   events:
     'Installed, but not yet driving a live event. The publishing side is exercised; attendance and reminders are not.',
   courses:
-    'Extracted from adriangoldner.com on 22 September 2026. Exercised in the playground, and on that site\'s staging it runs beside the site\'s own copy, behind a switch. No production site uses it yet. On Packagist at 0.1.0.',
+    'Extracted from adriangoldner.com on 22 September 2026. Exercised in the playground. On that site\'s staging it now serves the member courses in place of the site\'s own copy (`addon` mode), and a comparison against the old code found no differences, identical pages included. No production site uses it yet. On Packagist at 0.1.1.',
   'inline-edit':
     'Built on 19 September 2026 and running on the public demo, but on no client site yet. On Packagist since the same day, so the install below resolves.',
 }

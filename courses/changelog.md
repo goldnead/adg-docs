@@ -12,6 +12,12 @@ Release notes for `goldnead/statamic-courses`, as published with the package.
 Cross-version upgrade notes for the whole suite are in
 [Upgrading](/guide/upgrading).
 
+## 0.1.1 (2026-09-22)
+
+### Changed
+- The help link on the Course Progress screen points to https://docs.adriangoldner.dev/courses/.
+- Icon, cover and Marketplace art.
+
 ## 0.1.0 (2026-09-22)
 
 First release, extracted from adriangoldner.com.
