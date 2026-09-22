@@ -42,11 +42,12 @@ all is asked of [Entitlements](/entitlements/). This package decides what a lear
 ## How it fits
 
 ```
-learner → {{ courses:lessons }} ─ reads ─▶ lesson states + lock map
-        → POST /!/courses/progress ─▶ CourseAccess ─▶ Entitlements::allows(subject, product)
-                                    └▶ lock and type rules ─▶ state written
-                                                              ├─ LessonCompleted
-                                                              └─ CourseCompleted (once)
+learner → {{ courses:lessons }}     reads lesson states + lock map
+        → POST /!/courses/progress
+             ├─ CourseAccess ─▶ Entitlements::allows(subject, product)
+             └─ lock and type rules ─▶ state written
+                                       ├─ LessonCompleted
+                                       └─ CourseCompleted (once)
 ```
 
 **Without Entitlements every course is closed.** That is deliberate: a site that forgot to
