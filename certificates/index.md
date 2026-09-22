@@ -42,16 +42,18 @@ code can check that it is genuine and not revoked.
 ## How it fits
 
 ```
-Courses: CourseCompleted(userId, courseId)
-        → IssueCertificateOnCourseCompleted
-             ├─ refused (no name, course gone) ─▶ CertificateNotIssued, log warning
-             └─ certificates_issued row, snapshot taken
-                  ├─ CertificateIssued
-                  └─ MailCertificate (only when mail is on) ─▶ queued mail with the PDF
+Courses fires CourseCompleted(userId, courseId)
+  → IssueCertificateOnCourseCompleted
+      ├─ refused (no name, course gone)
+      │    → CertificateNotIssued, a warning in the log
+      └─ certificates_issued row, snapshot taken
+           ├─ CertificateIssued
+           └─ MailCertificate, only when mail is on
+                → queued mail with the PDF
 
-learner → {{ certificates }}              download_url, verify_url
-        → GET /certificates/{code}/download   the PDF, owner only
-anyone  → GET /certificates/verify/{code}     valid, revoked or unknown
+learner → {{ certificates }}               download_url, verify_url
+        → GET /certificates/{code}/download  the PDF, owner only
+anyone  → GET /certificates/verify/{code}    valid, revoked or unknown
 ```
 
 **A failure does not break the learner's request.** The listener runs inside the request that

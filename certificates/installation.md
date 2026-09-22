@@ -16,8 +16,11 @@ For courses finished before the addon was installed, run the backfill once. See
 [Console and backfill](/certificates/console).
 
 ```bash
-php artisan certificates:issue --backfill --dry-run   # what would be issued
-php artisan certificates:issue --backfill             # dated at each completion, no mail
+# what would be issued
+php artisan certificates:issue --backfill --dry-run
+
+# dated at each completion, no mail
+php artisan certificates:issue --backfill
 ```
 
 ## What comes with it

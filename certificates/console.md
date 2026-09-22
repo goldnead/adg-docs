@@ -6,7 +6,9 @@ One command, `certificates:issue`, in two modes: one certificate by hand, or eve
 from the completed enrollments in [Courses](/courses/).
 
 ```bash
-php artisan certificates:issue {user} {course} [--force] [--no-mail] [--brand=]
+php artisan certificates:issue {user} {course} \
+    [--force] [--no-mail] [--brand=]
+
 php artisan certificates:issue --backfill [--dry-run] [--mail] [--brand=]
 ```
 
@@ -42,9 +44,14 @@ For courses finished before the addon was installed, or certificates the listene
 issue at the time (a learner without a name, for example):
 
 ```bash
-php artisan certificates:issue --backfill --dry-run   # what would be issued
-php artisan certificates:issue --backfill             # dated at each completion, no mail
-php artisan certificates:issue --backfill --mail      # the same, mailing as configured
+# what would be issued
+php artisan certificates:issue --backfill --dry-run
+
+# dated at each completion, no mail
+php artisan certificates:issue --backfill
+
+# the same, mailing as configured
+php artisan certificates:issue --backfill --mail
 ```
 
 The backfill walks every enrollment in Courses with a completion date, skips those that already

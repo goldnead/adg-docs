@@ -28,7 +28,8 @@ is the slug in Courses' courses collection; the entry id always works.
 ## The command refuses: no brand is mapped
 
 ```
-The course [...] is in a site no brand is mapped to (brand-context.sites). Pass --brand=<handle>.
+The course [...] is in a site no brand is mapped to
+(brand-context.sites). Pass --brand=<handle>.
 ```
 
 Multi-brand is on, there is more than one brand, and the course's Statamic site is not mapped

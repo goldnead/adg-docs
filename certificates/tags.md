@@ -11,7 +11,8 @@ Every certificate of the signed-in user, newest first.
 
 ```antlers
 {{ certificates }}
-    <a href="{{ download_url }}">{{ course_title }}</a> ({{ issued_at format="d.m.Y" }})
+    <a href="{{ download_url }}">{{ course_title }}</a>
+    ({{ issued_at format="d.m.Y" }})
     <a href="{{ verify_url }}">{{ code_formatted }}</a>
 {{ /certificates }}
 ```

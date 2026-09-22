@@ -33,7 +33,9 @@ class.
 use Goldnead\Certificates\Facades\Certificates;
 
 $certificate = Certificates::issue($user, $courseEntryId);
-Certificates::withoutMail(fn () => Certificates::issue($user, $courseEntryId));
+Certificates::withoutMail(
+    fn () => Certificates::issue($user, $courseEntryId),
+);
 ```
 
 `issue()` throws a `CertificateRefused` when it cannot issue. From a job or a command, call it
