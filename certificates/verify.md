@@ -7,7 +7,7 @@ Every certificate prints its code and a URL; the page behind that URL says wheth
 certificate is genuine and whether it still stands.
 
 <Figure
-  src="certificates-verify"
+  src="certificates-verify-card"
   alt="The verification page on a phone: the heading Verify a certificate, the line This certificate is valid in green, and the learner, course, issue date, issuer and code, long values wrapped"
   caption="The packaged page at 390 pixels wide, shown on a wider strip of its own background. Long names and titles wrap inside the card." />
 
