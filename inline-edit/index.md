@@ -51,12 +51,13 @@ request, which is also why the addon is safe to leave installed on a site that n
 
 ## What you get
 
-- **One tag per field**, `{{ editable:title }}` instead of `{{ title }}`
+- **One tag per field**, `{{ editable:title }}` instead of `{{ title }}`, or the same marker
+  as an array from a facade where the front end is React, Inertia or Blade
 - **A button in the corner** for a signed-in editor, or `Ctrl/Cmd + Shift + E`. Nothing until
   it is pressed
-- **Four kinds of field**, so the whole page is reachable: text in place, a real control for a
-  toggle or a date, a rich editor for markdown, and a panel holding one real control panel
-  field for everything else
+- **Five kinds of field**, so the whole page is reachable: text in place, a real control for a
+  toggle or a date, a rich editor for markdown, the real control panel field over the block
+  for a Bard, and a panel holding one real control panel field for everything else
 - **Tiptap for markdown**, the same engine as Statamic's own Bard, with the markdown shortcuts
   a client already met there
 - **Statamic's own permissions**, not a second set. The core entry policy decides, and every
@@ -92,9 +93,10 @@ still renders the same string for everybody else.
 - **Find the fields by itself.** Antlers has flattened a value to a string before it reaches
   the output buffer, and inside Bard a text node does not know its entry. Every comparable tool
   in every CMS marks in the template. See [Marking a field](/inline-edit/marking).
-- **Edit Bard or Replicator in place.** Not a shortcut left for later: the core builds those
-  values without a parent, so the text cannot be traced back. They open in a panel holding
-  that one control panel field instead, which is the honest answer rather than a worse editor.
+- **Mark one paragraph inside a Bard or Replicator.** Not a shortcut left for later: the core
+  builds those values without a parent, so the text cannot be traced back. The whole field
+  opens as one real control panel field instead — for a Bard, over the block it belongs to
+  and in the page's own type — which is the honest answer rather than a worse editor.
 - **Touch the slug.** Changing it changes the URL, and a URL is not a word in a sentence.
 - **Work around a revision workflow.** A collection with revisions enabled is refused with a
   message. Somebody chose that workflow; this addon does not get to skip it.
@@ -103,10 +105,11 @@ still renders the same string for everybody else.
 ## Next
 
 - [Installation](/inline-edit/installation)
-- [Configuration](/inline-edit/configuration) — nine keys, and the one that matters is `rich`
+- [Configuration](/inline-edit/configuration) — twelve keys, and the one that matters is `rich`
 - [Marking a field](/inline-edit/marking) — the tag, both forms, and why there is no magic
-- [What can be edited](/inline-edit/field-types) — the four modes, field type by field type
+- [What can be edited](/inline-edit/field-types) — the five modes, field type by field type
 - [The rich editor](/inline-edit/rich-editor) — Tiptap, the markdown trade, and how to turn it off
 - [Permissions and safety](/inline-edit/permissions) — who may write what, and what is refused
+- [A front end that is not Antlers](/inline-edit/headless) — React, Inertia, Blade, and the two keys they need
 - [Static caching](/inline-edit/static-caching) — the one thing to get wrong quietly
 - [Reference](/inline-edit/reference) · [Troubleshooting](/inline-edit/troubleshooting)

@@ -505,6 +505,7 @@ export const addons = [
       { text: 'What can be edited', link: 'field-types' },
       { text: 'The rich editor', link: 'rich-editor' },
       { text: 'Permissions and safety', link: 'permissions' },
+      { text: 'A front end that is not Antlers', link: 'headless' },
       { text: 'Static caching', link: 'static-caching' },
     ],
   },

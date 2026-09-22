@@ -49,7 +49,7 @@ browser inserts on Enter, not a `<span style>` from a paste, not a stray `<br>`.
 
 ::: danger This guarantee is exactly as strong as the fieldtype list
 It holds because every fieldtype in `fieldtypes` stores a plain string. Adding one that does
-not breaks it. See [Configuration](/inline-edit/configuration#fieldtypes-controls-source).
+not breaks it. See [Configuration](/inline-edit/configuration#fieldtypes-controls-source-inline).
 :::
 
 ## What is refused, with a message
@@ -60,12 +60,25 @@ Not silently, and not by doing something almost right instead:
 | --- | --- |
 | The slug | It changes the URL. Every link to the page breaks, including the one the editor is standing on. |
 | `id`, `published`, `blueprint`, `date`, `author`, `parent` | Structural. None of them is the sentence somebody wanted fixed. |
+| A marker on any of those seven | Not rendered at all. See below. |
 | A collection with revisions enabled | Somebody chose a review workflow. This addon does not get to skip it. |
 | A fieldtype on no list | Not editable in place. With `control_panel` on it opens the one-field panel instead. |
 | A handle the page never offered | The request is not trusted because the page said so. |
 | A save from a page older than the entry | See below. |
 
 A refusal answers with a status and a sentence, and the bar shows it. Nothing is half-written.
+
+### The refused handles get no marker in the first place
+
+The save route turned those seven away from the start, but the tag still drew a `cp` marker
+on them: the field was outlined, the double-click opened a panel, and the panel answered 404.
+A refusal only works as a refusal where somebody could plausibly have got it right. A marker
+that cannot lead anywhere is a broken promise, so `{{ editable:slug }}` and its six siblings
+now render the plain value, exactly as the tag does with editing switched off.
+
+This is the one place where a marker is withheld for something other than a permission. The
+rule sits with the marker as well as with the route, on purpose: two places, because the
+request is not trusted because the page said so.
 
 ## Two people at once
 
@@ -102,5 +115,6 @@ With `enabled` off, both answer 404.
 
 ## Next
 
+- [A front end that is not Antlers](/inline-edit/headless) — the same markers, without a template tag
 - [Static caching](/inline-edit/static-caching) — the half that is not solved
-- [Reference](/inline-edit/reference) — the tag, the routes and the response codes
+- [Reference](/inline-edit/reference) — the tag, the facade, the routes and the response codes

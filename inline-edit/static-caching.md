@@ -14,6 +14,14 @@ That matters more than it sounds. An editor's page carries their CSRF token, the
 their configuration block. Handing that to the next visitor would leak a token and show
 outlines to somebody who cannot edit anything.
 
+::: warning With `inject_for_signed_in` on, that is every page
+The switch a site with a client-side front end needs puts the editor, and therefore a CSRF
+token, on every page a signed-in editor opens — so every one of them is marked uncacheable,
+not only the ones with a marker. On a site whose pages Statamic does not serve that costs
+nothing, because Statamic is not caching them either. See
+[A front end that is not Antlers](/inline-edit/headless).
+:::
+
 ::: tip Why this is middleware and not an event listener
 `pushMiddlewareToGroup` appends, so this addon's middleware runs innermost and its outbound
 work happens **before** the caching middleware looks at the response. That is the only order in

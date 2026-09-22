@@ -12,6 +12,181 @@ Release notes for `goldnead/statamic-inline-edit`, as published with the package
 Cross-version upgrade notes for the whole suite are in
 [Upgrading](/guide/upgrading).
 
+## 1.6.0
+
+### A site that draws itself keeps its markers
+
+1.5.0 gave those sites a marker. This gives them the second half, which the
+first release got wrong in a way only a real site could show.
+
+On a site whose pages are drawn client-side, a new page is not a new request.
+Going from a list to an article is a fetch that returns JSON, so nothing is
+injected into it, and the markers that arrive with it were born after the
+script ran. The editor read the document once, found them the first time by
+waiting, and was silently dead from the second page on. Double-click, nothing,
+no error.
+
+So nothing is read once any more. Every marker goes through `rescan()`, which
+runs at boot and again whenever the document changes — batched to the end of
+the task, because a framework rendering a page touches the document a few
+hundred times. Markers that leave with their page are let go, so the bar stops
+counting unsaved changes in a document nobody can see.
+
+And the script has to be on the page *before* those markers appear, which on
+such a site means before there is anything to edit. New config:
+
+```php
+'inject_for_signed_in' => true,
+```
+
+Off by default. On, the editor is placed on every page a signed-in user opens,
+and shows nothing on a page with no markers on it. The price is stated rather
+than hidden: the script carries a CSRF token, so those pages are marked
+uncacheable. On a site whose pages Statamic does not serve, that costs nothing.
+
+Two things a router can ask, for the cases the observer cannot see:
+
+```js
+window.StatamicInlineEdit.rescan()   // I just changed the page
+window.StatamicInlineEdit.dirty()    // how many fields have unsaved text in them
+```
+
+`dirty()` exists because leaving a page is a navigation on such a site, not an
+unload — `beforeunload` never fires, and three rewritten paragraphs go with it
+without a word. Ask it in your router's before-hook.
+
+## 1.5.1
+
+Three findings from the Gauntlet rounds that 1.5.0 shipped without. Each one is
+a case the first version could not see because nobody had opened it on a page
+that had the problem.
+
+### The controls had to stop covering the page
+
+They floated over the content, and what they floated over was another editable
+field and a line of the article. "Everything but the controls looks the same"
+cannot mean the controls delete what they cover.
+
+Now they sit in a strip under the text — toolbar on the left, Save and Close on
+the right — and the page makes room for exactly that strip. What that costs is
+measured rather than assumed: an element between two paragraphs stops their
+margins collapsing into one another, which is sixteen pixels the page would
+otherwise gain for nothing, so the strip takes it off its own height.
+
+The toolbar moves under the text through `order` on a flex column, so core's
+markup is not touched. It goes on the element that actually holds it, found
+through `:has(> .bard-fixed-toolbar)` — naming `.bard-editor` instead puts the
+toolbar straight back on top of the text it was meant to move out from under.
+
+### The editor sets the text in the page's own font file
+
+Every font property matched and the same sentence still measured two and a half
+pixels narrower in the frame, which over a line is a word climbing into the row
+above. It was not a property that was missed. The control panel ships its own
+Inter and so does half the web; `font-family: Inter` in the frame asks for a
+different file than the same words ask for on the page, and two builds of a
+typeface do not have the same advances.
+
+So the page's own `@font-face` rules travel with the typography, renamed so
+nothing can claim them, with their URLs made absolute. Where the rules cannot
+be read — a stylesheet from another origin, which is how most sites load Google
+Fonts — the frame asks that stylesheet for itself, and being declared last is
+what makes it win. Only from hosts that serve font declarations and nothing
+else; an unknown CDN stylesheet would be a whole framework's reset going
+through the control panel's interface.
+
+Measured after, not before: the same sentence, 264.59 pixels in both.
+
+### The markers do not have to be in the HTML yet
+
+A site drawn by React or Vue sends an empty root and a blob of props, and the
+markers appear when the application mounts — which is after a deferred script
+has run. Reading the document once and giving up found nothing, so the editor
+never appeared on exactly the pages the headless marker had been added for.
+
+It waits for them now, for fifteen seconds. A client-side navigation to another
+page inside the same application is not covered, and says so in the source.
+
+## 1.5.0
+
+### A Bard opens where it stands
+
+Until now a Bard opened as a card in the middle of the screen. That was the right answer for a
+Grid or an asset picker and the wrong one for the field that holds the article: a Bard is not a
+field on a page, it *is* the page. On a card it has a different column width, a different
+typeface and a different measure, and you cannot see what you are writing.
+
+Now the same real control panel field — same fieldtype, same validation, same save, sets and
+all — is put over the block it belongs to. The block keeps its box and stops being drawn, the
+frame paints nothing of its own, and the page around it is untouched. Configured in `inline`,
+which starts as `['bard']`.
+
+The typography is not approximated. The page measures the element that was double-clicked and
+one probe for each kind of block a Bard can produce — paragraph, h2, h3, h4, list, list item,
+quote, link, bold, italic, code, rule — and sends the computed result to the frame as rules
+scoped to the editor. Nothing of the site's stylesheet is loaded into the control panel, which
+would put a site's own reset through the control panel's interface.
+
+What the frame carries with it is taken off on the way in: the box around the field, the label,
+the instructions, the editor's own padding and background. The toolbar becomes a floating panel
+as wide as its buttons, and Save and Close a second one — light panels over the content, the
+same rule the selection toolbar has followed since 1.2.
+
+Three things found while building it, all of which the first version got wrong:
+
+- **An iframe cannot take a block's place.** A heading's top margin collapses out through its
+  parent; a replaced element has no children and cannot collapse anything, so the gap above
+  closes by exactly that margin and the rest of the article slides up. Eight pixels on the test
+  page, and a different eight on every site. The block therefore keeps its box and the frame is
+  positioned over it.
+- **The chrome must not be in the flow either.** With the toolbar and the buttons taking room,
+  opening the editor pushed everything below down the screen, starting with the paragraph that
+  had just been double-clicked. The frame is taller than the text and hangs over what is above
+  and below instead.
+- **Measure after the rules arrive, not before.** The rules change the toolbar's padding and
+  the editor's, so numbers reported before they landed describe a layout that is already gone —
+  and the text ends up a few pixels off the line it belongs on.
+
+While a field is open in place, the page's own bar steps aside. Two buttons saying "Save", one
+of them greyed out, is a question nobody should have to answer.
+
+**Known:** the frame covers a band above and below the text while it is open, and a click there
+does not reach the page — an iframe cannot let a click through part of itself. The block keeps
+the height it had, so the page does not reflow while the text grows; the reload after saving
+puts it right.
+
+### The marker without a template tag
+
+A Statamic site is not always Antlers. The content stays, the control panel stays, and the
+pages are drawn by React through Inertia, by Blade, or by a front end of its own. Those sites
+could not use this addon at all: the only way to mark a field was a template tag in an engine
+they do not run.
+
+```php
+// wherever you build your props
+'edit' => ['content' => InlineEdit::marker($entry, 'content')],
+```
+
+```jsx
+<div {...edit.content} dangerouslySetInnerHTML={{ __html: article.content }} />
+```
+
+Same decisions, same refusals, same permissions — the gates moved out of the tag into
+`Support\Marker`, which both callers now use. A second copy for the headless path is how one of
+the two ends up more permissive than the other.
+
+Such a site also has to name its own route group in `middleware_groups`, which starts as
+`['statamic.web']`. Pages a site's own controllers serve are in `web`, and nothing would inject
+the editor there or mark those responses uncacheable. Naming both is safe: Statamic's frontend
+controller adds `statamic.web` on top of `web`, so its pages pass through twice, and the second
+pass leaves the script it finds alone.
+
+### A marker that leads nowhere is not drawn
+
+`slug`, `published`, `id`, `date`, `author`, `parent`, `blueprint`: the save route and the
+one-field form have always refused these, but a marker was still drawn on them, and
+double-clicking it opened a panel that answered 404. A broken promise is not a safe default.
+
 ## 1.4.1
 
 ### The one-field panel is a white card, not sometimes a black one

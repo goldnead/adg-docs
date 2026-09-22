@@ -17,6 +17,17 @@ Work down this list; it is ordered by how often each one is the answer.
 6. **The assets were never published**, or were published once and are now stale. Run
    `php artisan vendor:publish --tag=statamic-inline-edit-assets --force`.
 
+## It works on the first page and on no page after it
+
+A site whose pages are drawn client-side. Going from a list to an article never reaches the
+server, so nothing injects the editor into the JSON that comes back, and the markers arriving
+with it have no script to act on them. The page looks editable, the double-click does
+nothing, and there is no error anywhere.
+
+Two keys, both in [A front end that is not Antlers](/inline-edit/headless):
+`middleware_groups` has to name the group your own controllers serve from, and
+`inject_for_signed_in` has to be on so the script is already there when those markers appear.
+
 ## The outlines appear but the button does nothing
 
 The script is loading and the stylesheet is not, or the other way round. Both live in
@@ -24,9 +35,13 @@ The script is loading and the stylesheet is not, or the other way round. Both li
 
 ## A field has no outline, and the others do
 
-Its fieldtype is on none of the three lists, and `control_panel` is off. That is the intended
+Its fieldtype is on none of the four lists, and `control_panel` is off. That is the intended
 outcome, not a fault. Switch `control_panel` on to reach it through the one-field panel, or
 add its fieldtype to a list if it stores a plain string.
+
+The other possibility is the handle rather than the fieldtype: `id`, `slug`, `published`,
+`blueprint`, `date`, `author` and `parent` get no marker, because the save route would refuse
+them anyway. Not configurable; see [Permissions and safety](/inline-edit/permissions).
 
 ## Every control panel page is a 500, including the login page
 
