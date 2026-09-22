@@ -36,7 +36,7 @@ export const LAYERS = {
  * How far along each addon is.
  *
  * The suite reads finished. It is not: twenty-four packages went public inside
- * five weeks and three more came later, nineteen of the twenty-seven are
+ * five weeks and four more came later, twenty of the twenty-eight are
  * declared commercial, and exactly one can be bought. A reader
  * deciding whether to put one of these on a client site has no
  * way to tell a package that has run several brands for months from one that
@@ -96,6 +96,7 @@ export const MATURITY_BY_SLUG = {
   booking: 'experimental',
   'flow-canvas': 'experimental',
   events: 'experimental',
+  courses: 'experimental',
 }
 
 /** The exceptions a one-word level would misrepresent. */
@@ -110,6 +111,8 @@ export const MATURITY_NOTES = {
     'Carries no test suite and no CI of its own, although Automations and Funnels both build on it and are covered. Treat a change here as unverified until those two have been run against it.',
   events:
     'Installed, but not yet driving a live event. The publishing side is exercised; attendance and reminders are not.',
+  courses:
+    'Extracted from adriangoldner.com on 22 September 2026. Exercised in the playground, and on that site\'s staging it runs beside the site\'s own copy, behind a switch. No production site uses it yet. On Packagist at 0.1.0.',
   'inline-edit':
     'Built on 19 September 2026 and running on the public demo, but on no client site yet. On Packagist since the same day, so the install below resolves.',
 }
@@ -192,6 +195,9 @@ export const SALES_BY_SLUG = {
   // Commercial, unpublished, and outside the Suite as sold today.
   clientrooms: 'not-sold',
   assessments: 'not-sold',
+  // Not in Schedule A yet, so `sync-licenses.mjs` fails on this line until the
+  // EULA names it. The schedule moves first; this entry follows it.
+  courses: 'not-sold',
 }
 
 export const salesOf = (slug) => SALES_BY_SLUG[slug] ?? null
@@ -646,6 +652,23 @@ export const addons = [
     configuration: false,
     troubleshooting: false,
     pages: [{ text: 'What a room is', link: 'concepts' }],
+  },
+  {
+    slug: 'courses',
+    name: 'Courses',
+    package: 'goldnead/statamic-courses',
+    license: 'Commercial',
+    layer: 'platform',
+    tagline:
+      'Modules and lessons as entries, a state per learner and lesson, drip by schedule or by progress. Who may open a course is asked of Entitlements.',
+    icon: '▦',
+    pages: [
+      { text: 'Tags and the form route', link: 'tags' },
+      { text: 'The Course Progress screen', link: 'control-panel' },
+      { text: 'Access and entitlements', link: 'access' },
+      { text: 'Lesson types and proof', link: 'lesson-types' },
+      { text: 'Drip and locks', link: 'locks' },
+    ],
   },
   {
     slug: 'consent',

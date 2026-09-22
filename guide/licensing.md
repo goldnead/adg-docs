@@ -42,9 +42,12 @@ Statamic supports addon editions natively: a package declares them in its
 `composer.json` and resolves the active one through Statamic's own licensing,
 with no key handling of its own.
 
-**No addon in this suite currently ships editions.** Automations did until 2.0.0,
-where the edition gates and a home-grown licence manager were both removed. There
-is nothing to configure, and no `license` block in any addon's config.
+**One addon declares an edition: [Courses](/courses/), a single `pro`.** With one
+edition there is nothing to choose, and the code checks no edition anywhere. No
+other addon in this suite ships editions.
+Automations did until 2.0.0, where the edition gates and a home-grown licence
+manager were both removed. There is nothing to configure, and no `license` block
+in any addon's config.
 
 ## Statamic Pro
 
@@ -86,21 +89,21 @@ members:
 
 ## Buying
 
-**Twenty-four of the twenty-seven packages are on Packagist**, commercial ones
+**Twenty-six of the twenty-eight packages are on Packagist**, commercial ones
 included, and every one of those installs with a bare `composer require`. Client
 Rooms and Assessments are not published yet; see
 [Client Rooms → Installation](/clientrooms/installation) and
 [Assessments → Installation](/assessments/installation).
 
-Being on Packagist is not the same as being free. **Nineteen are commercial** and
+Being on Packagist is not the same as being free. **Twenty are commercial** and
 **eight are MIT**; the table above is the authoritative list. The commercial ones
 resolve as ordinary Composer packages but are licensed rather than sold.
 
 The commercial packages are sold in three ways, and which one applies decides
 what you should do about a licence. Nine are meant for individual sale on the
 Statamic Marketplace. Eight are licensed only as part of the Suite, with no
-individual listing planned. Client Rooms and Assessments are not sold at all
-yet. The "How it is sold" column above says which is which, for every addon,
+individual listing planned. Client Rooms, Assessments and Courses are not sold
+at all yet. The "How it is sold" column above says which is which, for every addon,
 and the same word appears on each addon's own pages.
 
 The grouping is Schedule A of the [Suite EULA](/guide/suite-eula), the contract
@@ -125,6 +128,10 @@ The box above does not apply to these eight. There is no listing to wait for.
 Client Rooms and Assessments are commercial as well, but neither is published on
 Packagist and neither is part of the Suite as sold today. Their pages say what
 the install will be once that changes.
+
+Courses is commercial too, and in the same position on the sales side: it is not
+named in Schedule A, so it is not part of the Suite as sold today and has no
+listing. Unlike those two it is on Packagist, and `composer require` resolves it.
 
 Flow Canvas is MIT from 1.2.0 on, and deliberately: Funnels requires it, so a
 commercial editor behind a commercial addon would have meant two licences for

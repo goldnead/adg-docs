@@ -19,7 +19,7 @@ integrations are resolved at boot, not at install time, so installing Webhook
 Manager after LeadHub wires the LeadHub triggers just as installing it before
 would.
 
-The table below covers all twenty-seven: which own database tables, and which
+The table below covers all twenty-eight: which own database tables, and which
 show up in the Control Panel.
 
 ::: tip What "ships a CP screen" counts
@@ -27,11 +27,11 @@ A screen of its own: the addon registers a Control Panel route, a utility, or a
 nav entry. A fieldtype, a Bard button or a blueprint extension does not count,
 because none of them gives you a page to open.
 
-Twenty-two of the twenty-seven also register a section on the **shared settings
+Twenty-two of the twenty-eight also register a section on the **shared settings
 screen**. That is not a screen of their own, so it reads "no" in the table, but
 you will still find those addons in the Control Panel under Settings. Brand
 Context provides that screen rather than registering a section on it, and
-Identity Contracts, Products and Flow Canvas register nothing at all.
+Identity Contracts, Products, Courses and Flow Canvas register no section on it.
 :::
 
 | Addon | Owns database tables | Ships a CP screen |
@@ -61,6 +61,7 @@ Identity Contracts, Products and Flow Canvas register nothing at all.
 | [Funnels](/funnels/installation) | yes (six, from `funnels` to `funnel_mail_deliveries`) | yes, one utility |
 | [Booking](/booking/installation) | yes (`bookings`) | yes, one utility |
 | [Client Rooms](/clientrooms/installation) | yes (six, from `client_rooms` to `client_room_sessions`) | yes |
+| [Courses](/courses/installation) | yes (`courses_lesson_states`, `courses_lesson_events`, `courses_enrollments`); courses and lessons themselves are entries in two Statamic collections | yes, read-only |
 | [Consent](/consent/installation) | yes (`consent_records`) | no, a settings section only |
 | [Flow Canvas](/flow-canvas/installation) | no | no |
 
@@ -95,13 +96,14 @@ when your application has an unusual notion of who an actor is.
 Each addon publishes its config under its own tag. Publishing is optional; the
 packaged defaults are the documented ones.
 
-**Twenty-five of the twenty-seven have a config file.** Products and Flow Canvas
+**Twenty-six of the twenty-eight have a config file.** Products and Flow Canvas
 ship none, so there is no tag for them and nothing missing.
 
 ```bash
 php artisan vendor:publish --tag=activity-config
 php artisan vendor:publish --tag=assessments-config
 php artisan vendor:publish --tag=brand-context-config
+php artisan vendor:publish --tag=courses-config
 php artisan vendor:publish --tag=email-templates-config
 php artisan vendor:publish --tag=entitlements-config
 php artisan vendor:publish --tag=events-config
@@ -205,7 +207,7 @@ person to assign to.
 
 ## Installing from a local checkout
 
-**Twenty-four of the twenty-seven packages are on Packagist**, so the normal case
+**Twenty-six of the twenty-eight packages are on Packagist**, so the normal case
 needs nothing but `composer require`, and the sibling packages an addon depends
 on resolve on their own. None of the packages declares a `repositories` block,
 and you do not need one either.

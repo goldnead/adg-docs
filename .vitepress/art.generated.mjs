@@ -157,6 +157,12 @@ export const ART = {
     "light": "#9c47e9",
     "dark": "#ab58fb"
   },
+  "courses": {
+    "from": "#A21CAF",
+    "to": "#3B0764",
+    "light": "#a21caf",
+    "dark": "#ca4cd7"
+  },
   "consent": {
     "from": "#22C55E",
     "to": "#15803D",

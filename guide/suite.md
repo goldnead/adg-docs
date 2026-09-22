@@ -1,15 +1,14 @@
 # The suite
 
-Twenty-seven packages, six layers. Every arrow below is a Composer dependency;
+Twenty-eight packages, six layers. Every arrow below is a Composer dependency;
 anything not drawn is optional and detected at runtime with `class_exists`,
 which is why you can install any addon without the rest.
 
-All twenty-seven are tagged, and twenty-four of them are published on Packagist, so
+All twenty-eight are tagged, and twenty-six of them are published on Packagist, so
 `composer require` resolves any of those and pulls in whatever it depends on.
-Client Rooms, Assessments and Inline Edit are not published yet; see
-[Client Rooms → Installation](/clientrooms/installation),
-[Assessments → Installation](/assessments/installation) and
-[Inline Edit → Installation](/inline-edit/installation).
+Client Rooms and Assessments are not published yet; see
+[Client Rooms → Installation](/clientrooms/installation) and
+[Assessments → Installation](/assessments/installation).
 
 ```
 Foundation ──────────────────────────────────────────────────────────
@@ -52,7 +51,8 @@ Standalone ───────────────────────
 
   webhook-manager · automations · activity · notifications ·
   email-templates · preference-center · entitlements ·
-  assessments · events · toc · booking · clientrooms · consent
+  assessments · events · toc · booking · clientrooms · courses ·
+  consent
 
   — none of these requires another domain addon.
 ```
@@ -74,7 +74,7 @@ are worth naming, because they look like dependencies and are not:
 `notifications` rather than an optional extra: both ask the gate before they
 queue mail, and a gate that might not be there would be no gate at all.
 
-## The twenty-seven
+## The twenty-eight
 
 ### Foundation
 
@@ -263,6 +263,17 @@ the access runs out. Documents are downloaded through a signed link that expires
 and never shows the storage path. Nothing else in the suite is required: Payments,
 LeadHub, Booking and Brand Context are detected with `class_exists`.
 
+**[Courses](/courses/)** &nbsp;·&nbsp; `goldnead/statamic-courses`
+
+Modules and lessons as entries in two collections, a state per learner and
+lesson, and a rollup with the lesson to continue with. Lessons lock by sequence,
+prerequisite, phase or week from enrollment, and each locked one says which. A
+lesson's type decides how it completes: a video by being watched, a text by
+being acknowledged, a quiz only when the code that graded it says so. Who may
+open a course at all is asked of Entitlements; without it every course is
+closed. Three tables, Antlers tags, a form route and one read-only screen,
+Course Progress.
+
 **[Flow Canvas](/flow-canvas/)** &nbsp;·&nbsp; `goldnead/statamic-flow-canvas`
 
 The node-graph editor itself, extracted so that Automations and Funnels cannot
@@ -329,6 +340,8 @@ nothing.
 | Assessments | Automations | The trigger `assessments.completed`, filterable by assessment and by result level |
 | Client Rooms | Payments | The first paid coaching product opens that client's room, once |
 | Client Rooms | LeadHub | The room shows the contact's merged LeadHub timeline instead of its own short list |
+| Courses | Entitlements | A course opens for whoever holds its product; without Entitlements every course is closed |
+| Courses | Payments | The Course Progress entry sits in the suite's shared nav section instead of under Content |
 | Products | Offers | The product picker in the offer form lists what the products table holds, brand-scoped, instead of only the config file's handles |
 | Anything with figures to report | Insights | The addon's group appears on the Metrics screen, with the period, the chart and the splits supplied by Insights |
 

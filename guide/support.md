@@ -10,8 +10,8 @@
 | Anything else | [info@adriangoldner.com](mailto:info@adriangoldner.com) |
 
 Licence questions used to be routed to a package's Statamic Marketplace listing
-on this page. Only [Table of Contents](/toc/) has one, so for seventeen of the
-eighteen commercial packages that was an address with nothing behind it. Email
+on this page. Only [Table of Contents](/toc/) has one, so for every other
+commercial package that was an address with nothing behind it. Email
 is the whole of it now, for every package and for the Suite.
 
 ## What a licence buys, and what it does not

@@ -74,6 +74,11 @@ const MAP = [
   ['inline-edit', 'screenshots/03-control.png', 'inline-edit-control'],
   ['inline-edit', 'screenshots/04-control-panel.png', 'inline-edit-control-panel'],
   ['inline-edit', 'screenshots/05-phone.png', 'inline-edit-phone'],
+
+  // The lesson list is the playground's own template, not something the addon
+  // ships: the package has tags and no front end of its own.
+  ['courses', 'screenshots/progress.png', 'courses-progress'],
+  ['courses', 'screenshots/lessons.png', 'courses-lessons'],
 ]
 
 await mkdir(OUT, { recursive: true })
