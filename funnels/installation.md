@@ -25,13 +25,12 @@ Four packages are hard dependencies and install alongside it:
 | --- | --- | --- |
 | `goldnead/statamic-brand-context` | `^1.13` | Brands, the settings tab, and the brand an order is checked under. |
 | `goldnead/statamic-flow-canvas` | `^1.3` | The editor. The same canvas the automations editor runs on, not a copy of it. |
-| `goldnead/statamic-offers` | `^1.11.1` | What a thing costs. An offer step sells an offer, at the price that lives there. |
-| `goldnead/statamic-payments` | `^1.22` | Takes the money, and decides what "paid" means. |
+| `goldnead/statamic-offers` | `^1.12` | What a thing costs. An offer step sells an offer, at the price that lives there. |
+| `goldnead/statamic-payments` | `^1.25` | Takes the money, and decides what "paid" means. |
 
-Parts of the checkout need newer siblings than these floors, and switch themselves off
-without them: the coupon from a link, pay what you want and the country question need
-[Offers](/offers/) 1.12; the captcha, the reminder consent and a funnel-wide coupon on a
-one-click upsell need [Payments](/payments/) 1.25. See
+From Funnels 1.17 on these floors are Offers 1.12 and Payments 1.25, so the coupon from a
+link, pay what you want, the country question, the captcha, the reminder consent and a
+funnel-wide coupon on a one-click upsell are always available. See
 [The checkout step](/funnels/checkout).
 
 There is no build step. The addon ships its compiled Control Panel assets under

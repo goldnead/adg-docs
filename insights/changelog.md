@@ -14,7 +14,16 @@ Cross-version upgrade notes for the whole suite are in
 
 All notable changes to this addon are documented here.
 
-## Unreleased
+## 1.5.0 — 2026-09-23
+
+### Upgrading
+
+- **Run `php artisan cache:clear` after updating.** The revenue screen moved from `/cp/insights`
+  to `/cp/insights/revenue` (see below), and the Control Panel keeps the old nav addresses in
+  its cache until it is cleared. Bookmarks to `/cp/insights` keep working through a redirect.
+- No migration, no new config key, no contract changed.
+- The subscription figures read the `subscriptions` table of statamic-payments. Pauses exist from
+  statamic-payments 1.25; against an older version the screen simply shows none.
 
 ### Added: subscription figures
 
@@ -56,9 +65,17 @@ nav child a page lies under as active. It now lives at `/cp/insights/revenue`; `
 redirects there, period and currency included. Wrong since 1.2.0. After updating, `php artisan cache:clear` so the Control
 Panel's cached nav addresses are rebuilt.
 
+### Fixed: the period entries in the command palette did nothing
+
+The revenue and subscriptions screens offered one command palette entry per period, wired with an
+`@selected` listener that core's palette never calls. Choosing one did nothing, and every page load
+logged "You must provide a `url` string or `action` function" once per entry (seven on the
+subscriptions screen, found on staging with 1.5.0-rc.1). They now pass an `action`. A test reads
+every page for palette entries without a `url` or an `action`.
+
 The database only selects; every date is compared in PHP, so the figures are the same on SQLite,
 MySQL and Postgres — the new tests were run against all three (`INSIGHTS_TEST_DB_URL`).
-No contract changed; the reports use the existing `Report` contract. No migration, no new config key.
+The reports use the existing `Report` contract.
 
 ## 1.4.0 — 2026-09-16
 

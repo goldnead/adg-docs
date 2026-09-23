@@ -92,6 +92,19 @@ offers the recurring products of the same brand, rhythm and currency. A catalogu
 `brand_id` counts as every brand's and is offered to all of them; give entries a `brand_id`, or
 give the product a `switch_to` list, to narrow it. The portal only ever offers `switch_to`.
 
+With [Offers](/offers/) installed, the active offers of the subscription's brand are targets
+too, each pricing option that has a rhythm, under the same rules: brand, rhythm, currency, and
+the product's `switch_to` list where it has one. An offer has no `switch_to` or `pausable` of
+its own; it inherits both from the product it sells. A subscription bought through an offer can
+therefore be switched as well.
+
+A switch that is not made is logged with its reason: cannot switch, target does not fit, not a
+target, no provider, or the row changed meanwhile. `switch()` still returns `false`; the log
+says why.
+
+On the subscription's detail, **Starts** is when the contract began. After a resume on Mollie
+the provider's own start date is the new agreement's, so it is not shown there.
+
 A difference that later fails is marked in the agreement's history. The difference is charged at
 most once per switch and period, however often the switch is retried.
 

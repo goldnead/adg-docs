@@ -12,7 +12,21 @@ Release notes for `goldnead/statamic-courses`, as published with the package.
 Cross-version upgrade notes for the whole suite are in
 [Upgrading](/guide/upgrading).
 
-## Unreleased
+## 0.2.0 (2026-09-23)
+
+### Upgrading
+- Run `php artisan migrate`: three migrations (billing, hold and hold-source columns on
+  `courses_enrollments`, table `courses_team_members`).
+- Then `php artisan courses:install --merge` (try `--dry-run` first). It adds the new fields and
+  select options to your existing course and lesson blueprints and changes nothing else, so labels
+  and instructions you or an earlier version wrote stay as they are.
+- If the site caches routes (`php artisan optimize`), rebuild the cache: `POST /!/courses/team`
+  and the Control Panel route for lifting a payment hold are new.
+- Optional: `downloads.container` (`COURSES_DOWNLOADS_CONTAINER`) names the asset container the
+  download block picks files from; without it the site's first container other than the private
+  one is used. Set it before running `--merge`, which writes it into the lesson blueprint.
+- New permission `manage course holds` for lifting payment holds on the Course Progress screen;
+  give it to the roles that should.
 
 ### Added
 - Lesson blocks: text, callout, columns, FAQ, video, download and button, rendered by
@@ -22,7 +36,8 @@ Cross-version upgrade notes for the whole suite are in
   `canAccess()`, so team members and bundle holders get the file. YouTube and Vimeo wait behind
   statamic-consent's gate when it is installed.
 - `courses:install --merge` (with `--dry-run`): adds missing fields and select options to
-  existing blueprints and changes nothing else; translates collection titles still in English.
+  existing blueprints and changes nothing else. `--dry-run` names every file a real run would
+  write.
 - Drip modes `days`, `date`, `day_of_month`, `payments` and `after_trial` (lesson fields
   `drip_after`, `drip_date`; course field `drip_day_of_month`), `Courses::recordBilling()`.
 - Lessons and sections limited to entitlements, user groups, LeadHub tags or LeadHub segments.
@@ -52,10 +67,14 @@ Cross-version upgrade notes for the whole suite are in
 - Config `downloads.container`.
 
 ### Changed
-- Three migrations: billing, hold and hold-source columns on `courses_enrollments`, table
-  `courses_team_members`. Run `php artisan migrate`, then `courses:install --merge`.
 - `courses:install` writes an asset container into the download field.
 - A lesson locked by the drip reports its drip reason first, also before the learner enrolled.
+
+### Fixed
+- `courses:install --merge` no longer saves existing collections. It used to translate an
+  English collection title, and saving rewrote the whole collection YAML, dropping settings the
+  site had written out explicitly. Existing collections are now left untouched.
+- `courses:install --dry-run` names every file a real run would write.
 
 ## 0.1.2 (2026-09-23)
 

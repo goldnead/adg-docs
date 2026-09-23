@@ -31,8 +31,12 @@ newer version ships and the blueprint lacks, and the options a select of the sam
 lacks, and **changes nothing else**. A missing field goes next to the field it follows in the
 shipped blueprint, or into a section of the same name, or into a new section at the end of
 the first tab. Nothing is removed, reordered or reconfigured, and fields a fieldset import
-brings in count as present. It also translates a collection title that is still the English
-default (`Courses`, `Course Lessons`) into the site's language; a title somebody chose stays.
+brings in count as present. **Existing collections are never touched**: `--merge` writes
+blueprints only, so collection settings you wrote out in the YAML stay exactly as they are.
+
+If the site caches routes (`php artisan optimize`), rebuild that cache after the update:
+`POST /!/courses/team` and the Control Panel route for lifting a payment hold are new. Give
+the new permission `manage course holds` to the roles that should lift holds.
 
 From 0.2 on, `--merge` also adds the course field `brand`: on a multi-brand site the handle
 of the brand the course belongs to, empty for the brand of its site. It decides which
@@ -40,7 +44,8 @@ of the brand the course belongs to, empty for the brand of its site. It decides 
 leave it empty.
 
 `--dry-run` lists every field and option it would add, `+ drip_after` or
-`+ option drip_mode.days`, and saves nothing, on a fresh site as well ("would create").
+`+ option drip_mode.days`, names every file a real run would write, and saves nothing, on a
+fresh site as well ("would create").
 
 Do not use `--force` for an update: it rewrites both blueprints from the shipped ones and
 loses every field added by hand.

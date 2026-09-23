@@ -236,11 +236,8 @@ The thumbnail keys and `password_reset_url` are left out here. See
 | --- | --- |
 | `goldnead/statamic-brand-context` | `^1.13` |
 | `goldnead/statamic-flow-canvas` | `^1.3` |
-| `goldnead/statamic-offers` | `^1.11.1` |
-| `goldnead/statamic-payments` | `^1.22` |
-
-Offers 1.12 and Payments 1.25 switch on further parts of the checkout; see
-[The checkout step](/funnels/checkout).
+| `goldnead/statamic-offers` | `^1.12` |
+| `goldnead/statamic-payments` | `^1.25` |
 
 Optional, detected with `class_exists` and each behind its own switch:
 [LeadHub](/leadhub/), [Entitlements](/entitlements/), and

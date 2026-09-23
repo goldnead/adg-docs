@@ -12,11 +12,10 @@ server. The page only shows it.
   caption="A checkout step in the playground with two pricing options, a bump, the country question and a coupon from the link. The texts address the buyer formally." />
 
 ::: tip What needs which version
-Bump rules, the in-app notice, embedding and tracking work with the packages Funnels 1.17
-requires. The coupon from a link, pay what you want, the country question and coupon terms
-for follow-up payments need [Offers](/offers/) 1.12. The captcha, the reminder consent and a
-funnel-wide coupon on a one-click upsell need [Payments](/payments/) 1.25. Against an older
-Offers or Payments the checkout stays what it was, without those parts.
+Funnels 1.17 requires [Offers](/offers/) 1.12 and [Payments](/payments/) 1.25, so
+everything on this page is available once it is installed. The coupon from a link, pay what
+you want, the country question and coupon terms come from Offers; the captcha, the reminder
+consent and a funnel-wide coupon on a one-click upsell from Payments.
 :::
 
 ## Bump rules
@@ -75,6 +74,10 @@ The thank-you page shows the offer's thank-you line for the amount paid:
 An offer sold only in some countries, or everywhere except some
 ([Offers → Countries](/offers/setup-fee)), makes the checkout ask for the country, unless the
 form step already did. A country outside the rule is refused with the offer's own sentence.
+
+A billing field with the key `country` is always validated as a two-letter country code,
+whatever type the field library gives it, so "12" is refused in the form rather than failing
+when the payment is created.
 
 ## Captcha and the reminder consent
 
