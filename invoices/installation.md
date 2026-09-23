@@ -111,15 +111,36 @@ writes the ones that can be written.
 Run it after your first real payment. It is the fastest way to find out that a product has
 no tax class before a customer does.
 
-## No scheduler, no queue
+## No scheduler, one queued job
 
-Neither is used. An invoice is written inside the payment's own fulfilment, in one
-transaction, and the whole point of the counter is that concurrent writers queue at the
-database rather than in a worker.
+No scheduler is used, and writing an invoice needs no queue. An invoice is written inside
+the payment's own fulfilment, in one transaction, and the whole point of the counter is that
+concurrent writers queue at the database rather than in a worker.
+
+The one queued job is the [PDF archive](/invoices/exports#the-pdf-archive) of the export,
+with a timeout of 1800 seconds. **Set `retry_after` of the queue connection above 1800**, or
+a second worker starts the same archive while the first is still rendering. Without a
+worker, the archive waits as "being built"; the CSV and the tax report do not need one.
 
 ## Permissions
 
-None. The addon registers no Control Panel screen and therefore no permission.
+`access invoice-exports utility` for the export and `access vat-checks utility` for the VAT
+ID checks, both registered by Statamic with the utilities, and `manage invoices settings` for
+the section on the shared settings screen. See [Reference → Control Panel](/invoices/reference#control-panel).
+
+## Upgrading to 2.2
+
+Run the migration **before the next sale**:
+
+```bash
+composer update goldnead/statamic-invoices
+php artisan migrate
+```
+
+The invoice writer fills two new columns on `invoice_items`, `tax_mechanism` and
+`place_of_supply`. An invoice written before the migration has run fails on the missing
+column. Nothing else changes for an installation that does not switch on the shipped EU
+rates.
 
 ## Licence
 

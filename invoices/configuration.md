@@ -101,7 +101,11 @@ default is exactly what this class exists not to fall back on.
     'merchant_vat_id' => env('INVOICES_SELLER_VAT_ID'),
     'prices_include_tax' => false,
     'assume_country_when_missing' => null,
-    'oss' => ['destination_taxation' => false],
+    'oss' => [
+        'destination_taxation' => false,
+        'shipped_rates' => false,
+        'shipped_rates_class' => 'standard',
+    ],
 ],
 ```
 
@@ -115,6 +119,8 @@ default is exactly what this class exists not to fall back on.
 | `prices_include_tax` | **Are the amounts on your products gross or net?** Global, as in Cargo |
 | `assume_country_when_missing` | Null means a payment with no country gets no invoice. Set a country here **only** if you know every such payment was domestic — it is your assumption, not the calculation's, and it is recorded as a note on the result |
 | `oss.destination_taxation` | Flip it when you register for OSS. The 10,000 € threshold itself is not calculated |
+| `oss.shipped_rates` | Off by default. On, the EU standard rates that ship with the addon (as of 2 February 2026) answer for a member state no zone names, once destination taxation applies. **Have the rates confirmed by your tax adviser before switching it on.** See [VAT → The shipped EU standard rates](/invoices/vat#the-shipped-eu-standard-rates) |
+| `oss.shipped_rates_class` | The tax class the shipped standard rates stand for, `standard` by default. Any other class still needs a zone of its own |
 
 ::: danger `prices_include_tax` is the one to get right first
 The default is `false`, which means the stored amount is treated as **net** and tax is added
@@ -215,6 +221,19 @@ edited; the invoice may not.
 there only in case something changes before the addon catches up. Northern Ireland (VAT
 prefix XI) is deliberately not modelled.
 
+## Exports
+
+```php
+'export' => [
+    'disk' => env('INVOICES_EXPORT_DISK', 'local'),
+    'directory' => 'invoices/exports',
+],
+```
+
+Where the PDF archives wait until they are downloaded. Keep the disk private: an archive
+holds every invoice of the period, names and addresses included. See
+[Exports](/invoices/exports).
+
 ## Environment summary
 
 ```dotenv
@@ -231,4 +250,6 @@ INVOICES_SMALL_BUSINESS=false
 INVOICES_MERCHANT_COUNTRY=DE
 INVOICES_PRICES_INCLUDE_TAX=false
 INVOICES_OSS_DESTINATION=false
+INVOICES_OSS_SHIPPED_RATES=false
+INVOICES_EXPORT_DISK=local
 ```

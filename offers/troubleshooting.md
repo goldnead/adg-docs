@@ -71,6 +71,72 @@ In order:
 
 The **Valid right now** filter on the Coupons screen answers 1 to 4 in one look.
 
+## A coupon link opens the page without the discount
+
+A link only prefills; the code is checked when the basket is built, like a typed one. So the
+same list applies as above, plus:
+
+- **The parameter was renamed.** `coupon_link.parameter` changed after the flyer was printed.
+- **The checkout does not read it.** Your own checkout has to ask
+  `Offers::couponFromRequest()`, or read `Offers::couponParameter()` from the query itself.
+
+An ignored code is logged with the reason: expired, exhausted, unknown, or not for this offer.
+
+## A subscription coupon only took off the first payment
+
+Either the coupon says **The first payment** (the default, and what every coupon made before
+this setting existed keeps), or the installed [Payments](/payments/) does not read
+`meta.coupon` yet. The renewals are lowered over there, not here. Also check that the checkout
+attached `$basket->paymentMeta()` to the payment.
+
+A coupon that only takes off bumps never touches a renewal: renewals charge the main offer.
+
+## The buyer is told the amount is not accepted
+
+The chosen amount lies outside the minimum and maximum. Without a maximum on the offer,
+`pay_what_you_want.max_cent` caps it, by default 5,000.00. `AmountNotAccepted::buyerMessage()`
+names the bounds.
+
+A coupon never takes a chosen amount below the minimum, so "the coupon did less than it
+says" on such an offer is the floor at work.
+
+## The buyer is told the offer is not available in her country
+
+The offer has a country rule, and either her country is outside it or **no country was
+passed**. With a rule, `Basket::make()` needs the `country` argument. A checkout that never asks
+for the country cannot sell a restricted offer.
+
+## The short link answers 404
+
+The slug is unknown, or the offer has no **Target**. A slug is lowercase letters, digits and
+`-`. If a page of your site answers instead, its path starts with `links.prefix`: rename one
+of them.
+
+## The short link still leads to the first target
+
+It switches when **Switch on** has passed (else `available_until`), or when sold out with
+**Switch once sold out** on, and **only if Target afterwards is set**. Without a second target
+it stays on the first by design. The offer panel says where it leads right now.
+
+## An accepted seat gives no access
+
+In order:
+
+1. Is [Entitlements](/entitlements/) installed? Without it, or without your own `SeatAccess`
+   binding, an accepted seat grants nothing and the log says so.
+2. Does the product grant anything? A seat hands out the product's `grants`. The offer form
+   warns when there are none.
+3. The buyer herself gets no access from a seat purchase. That is intended: she hands out the
+   seats, including one to herself if she wants one.
+
+## A refunded purchase still has accepted seats
+
+The access could not be revoked when the pool closed, so the seat stayed accepted and the log
+says so. `php artisan offers:seats-reconcile` retries. It exits non-zero while a seat is still
+open. Schedule it hourly; see [Seats](/offers/seats#schedule-the-catch-up).
+
+A **partial** refund closes nothing. The buyer decides which seat goes.
+
 ## The last redemption went to somebody else
 
 Then the sale still happened, at full price. `claim()` is a conditional `UPDATE`, and when

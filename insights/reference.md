@@ -11,7 +11,7 @@ computed when the screen is requested.
 
 | Permission | |
 | --- | --- |
-| `view insights` | Both screens and the navigation entries |
+| `view insights` | Every Insights screen and the navigation entries |
 
 One permission, no children. The screens are read-only, so there is nothing on them to
 grant separately.
@@ -27,13 +27,15 @@ grant separately.
 
 | Route | |
 | --- | --- |
-| `cp_route('insights.revenue')` | The curated revenue screen. `?period=` and `?currency=` are read from the query string. |
+| `cp_route('insights.index')` | `/cp/insights`. Redirects to the revenue screen and keeps the query string, so an old bookmark still lands on its period and currency. |
+| `cp_route('insights.revenue')` | `/cp/insights/revenue`, the curated revenue screen. `?period=` and `?currency=` are read from the query string. |
+| `cp_route('insights.subscriptions')` | `/cp/insights/subscriptions`, the [subscription figures](/insights/subscriptions). Same `?period=` and `?currency=`. |
 | `cp_route('insights.metrics')` | Every registered metric, grouped by contributor. |
 | `cp_route('insights.metrics.show', $handle)` | One metric: its chart, its comparison and any splits it offers. |
 | `cp_route('insights.reports')` | Every registered report, available or not, grouped by heading. |
 | `cp_route('insights.reports.show', $handle)` | One report as a table. `?period=` is read when the report uses a period; an unavailable report answers 200 with the package it needs, not 404. |
 
-All five are registered unconditionally, because a nav item resolves its target through
+All seven are registered unconditionally, because a nav item resolves its target through
 `cp_route()` while the navigation is built, on every Control Panel page. A conditionally
 registered route behind an unconditional nav item takes the whole panel down with a
 `RouteNotFoundException`.
@@ -84,7 +86,7 @@ the way it is, is [Contributing a metric](/insights/contributing-a-metric).
 
 ## Reports
 
-Six ship with the addon, registered from its own provider. Every one reads a sibling's
+Ten ship with the addon, registered from its own provider. Every one reads a sibling's
 tables directly and is guarded by `Neighbours`: class existence and table existence, or
 the report says what it would need.
 
@@ -96,6 +98,15 @@ the report says what it would need.
 | `payments.abandonment` | `payments` | month opened: paid, open + expired, rate over those rows | yes, on `created_at` |
 | `offers.upsells` | `offers`, plus `payment_items` when payments is there | bump or post-purchase offer: shown, accepted, conversion, revenue | revenue only; the counters are lifetime |
 | `entitlements.access_by_product` | `entitlements` | access slug: active, in grace, expired; revoked in none | no — a snapshot |
+| `payments.mrr_movements` | `subscriptions`, `payments` | month: start, new, reactivated, expansion, contraction, churned, paused, change, end; one currency at a time | yes |
+| `payments.subscription_cohorts` | `subscriptions`, `payments` | start month: started, share running after 1, 2, 3, 6 and 12 months; one currency at a time | no — every cohort since the first subscription |
+| `payments.upcoming_charges` | `subscriptions`, `payments` | every charge in the next 30 days; one currency at a time | no — always the next 30 days |
+| `payments.subscription_forecast` | `subscriptions`, `payments` | the next twelve months: subscriptions, instalments, total; one currency at a time | no — always the next twelve months |
+
+The last four are the [subscription figures](/insights/subscriptions). They take their
+currency as a filter through `HasFilterOptions` rather than a currency column, and the
+report screen draws a switch for every filter that has more than one option. Any report may
+offer filters that way.
 
 Column units are `count`, `currency`, `percent`, `text`, `code`, `month` and `date`. A
 currency cell reads the row's own `currency`, which is why two currencies are two rows and
@@ -126,9 +137,10 @@ If you were reaching for it, the seven `payments.*` metrics
 
 ## What it reads
 
-**No tables of its own, and none of anybody else's.** Every figure is a query living in the
-contributing addon. This package holds a registry, a reader that catches what a metric
-throws, and two screens.
+**No tables of its own.** Every figure on the Revenue and Metrics screens is a query living
+in the contributing addon. The reports and the subscription figures are the exception: they
+read a sibling's tables directly, select only, and name the package when it is missing. This package holds a registry, a reader that catches what a metric
+throws, and the screens.
 
 `Support\RevenueView::HANDLES` maps the screen's own slots onto the seven handles it is
 built from:

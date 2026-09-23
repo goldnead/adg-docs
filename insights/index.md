@@ -14,25 +14,27 @@ table.
   alt="The Metrics screen: figures grouped by contributing addon, each tile showing a number, its change against the previous period and a sentence explaining what it counts"
   caption="One group per contributing addon, sorted by heading so that installing one never reshuffles the others." />
 
-## Three screens
+## Four screens
 
 **Revenue** is the curated one: the report you open with a question in mind, laid out to
-answer it. **Metrics** lists everything anybody registered, grouped by contributor, each
+answer it. **Subscriptions** does the same for recurring revenue: MRR, churn, the charges
+coming up. **Metrics** lists everything anybody registered, grouped by contributor, each
 with a detail view carrying its chart and any splits it offers. **Reports** are tables,
 for the questions a single number cannot answer.
 
-The difference between the first two is editorial, not technical. Both are assembled from
+The difference between Revenue and Metrics is editorial, not technical. Both are assembled from
 the same registered metrics, and a figure contributed tomorrow appears on the second one
 without a line of this addon changing.
 
 | | |
 | --- | --- |
 | [Revenue](/insights/reading-the-numbers) | Net revenue, paid, orders, average order, over time, by campaign, by product |
+| [Subscriptions](/insights/subscriptions) | MRR, ARR, running and new subscriptions, customer and revenue churn per month, charges due in 30 days, a twelve-month forecast |
 | [Metrics](/insights/what-the-family-reports) | All fifty-eight, in fourteen groups |
-| [Reports](/insights/reference#reports) | Six tables shipped with the addon: revenue by month and by product, payments by country, cart abandonment, order bumps and post-purchase offers, active access by product |
+| [Reports](/insights/reference#reports) | Ten tables shipped with the addon: revenue by month and by product, payments by country, cart abandonment, order bumps and post-purchase offers, active access by product, and four on subscriptions: MRR movements, retention by start month, charges due, forecast |
 
-Reports are the one place this addon reads a sibling's table itself, and it says so: each
-of the six names the package it reads and stays on the list with that name when the
+Reports and the Subscriptions screen are the places this addon reads a sibling's table
+itself, and it says so: each report names the package it reads and stays on the list with that name when the
 package is missing, rather than disappearing.
 
 <Figure
@@ -121,11 +123,16 @@ looking; it does not compute them, and LeadHub never learns that this addon exis
 - **It stores nothing.** No tables, no migrations, no cache, no scheduled job. Every figure
   is computed when the screen is requested, from rows another addon already wrote. There is
   no second copy of anything to fall out of step.
-- **It computes no money.** The arithmetic lives with the data. An analytics addon reading
-  another addon's operational tables directly is the coupling this whole design exists to
-  avoid, and the version of this addon that did it lasted one day.
-- **No forecasting.** Every number here happened, or — where a metric says so — is
-  scheduled to. Nothing is projected, smoothed or extrapolated.
+- **It computes no revenue.** The arithmetic of money taken lives with the data. An
+  analytics addon reading another addon's operational tables for the same sums is the
+  coupling this whole design exists to avoid, and the version of this addon that did it
+  lasted one day. The exceptions are named: the ten reports, and the subscription figures,
+  which Payments does not compute and which are reconstructed here from its
+  `subscriptions` table by rules written down in [Subscription figures](/insights/subscriptions#the-rules).
+- **No guessing at the future.** Every number here happened, or is scheduled to. The
+  subscription forecast is the second kind: the charges running subscriptions and payment
+  plans will make if nobody joins, cancels, pauses or changes price. Nothing is smoothed or
+  extrapolated from a trend.
 - **No export scheduler and no e-mailed report.** The period and the currency live in the
   query string, so a view can be bookmarked, pasted into a message or printed by the
   browser. Nothing is delivered on a timer.

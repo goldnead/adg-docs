@@ -8,7 +8,21 @@
 | --- | --- |
 | `offers:coupons:generate` | a batch of coupon codes; `--count`, `--prefix`, `--length`, `--percent` or `--amount`, `--currency`, `--offer=*`, `--from`, `--until`, `--max-uses` (0 = no limit), `--name` (placeholders `{n}` and `{code}`). Prints the codes, one per line. |
 
-Runs under `php please` too. No queue, no scheduler.
+| `offers:seats-reconcile` | takes back the seats of refunded or charged-back purchases whose access could not be revoked yet. Safe to repeat; **exits non-zero while a seat is still open**. [Schedule it hourly](/offers/seats#schedule-the-catch-up). |
+
+Both run under `php please` too. No queue. The scheduler only for `offers:seats-reconcile`, and
+only when you sell seats.
+
+## Routes
+
+| Route | |
+| --- | --- |
+| `GET /go/{slug}` | the [short link](/offers/links#short-links); prefix `links.prefix`, 302, throttled at 120/min |
+| `GET /!/statamic-offers/plaetze/{token}` | the buyer's [seat page](/offers/seats) |
+| `POST …/{token}/einladen` · `POST …/{token}/{seat}/zurueckholen` | invite, take back; throttled at 30/min |
+| `GET /!/statamic-offers/plaetze/einladung/{token}` · `POST` the same | an invited person's page, and accepting; throttled at 30/min |
+
+The seat routes use `seats.prefix`. All are in the `web` group.
 
 ## Antlers tags
 
@@ -16,6 +30,7 @@ Runs under `php please` too. No queue, no scheduler.
 | --- | --- | --- |
 | `{{ offers:show }}` | `handle` | one offer, or `no_results` |
 | `{{ offers:slot }}` | `slot` (default `standalone`), `limit` (default 5) | every sellable active offer in that slot |
+| `{{ offers:thanks }}` | `handle`, `amount_cent` | the [thank-you text](/offers/pay-what-you-want#thank-you-tiers) for a chosen amount, or nothing |
 
 Variables: `id`, `handle`, `buy_handle`, `name`, `headline`, `body`, `image`,
 `button_label`, `product`, `amount`, `amount_cent`, `compare_at`, `compare_at_cent`,
@@ -23,15 +38,24 @@ Variables: `id`, `handle`, `buy_handle`, `name`, `headline`, `body`, `image`,
 `available_until` (ISO 8601 or null), `checkout_fields` (list of keys), `withdrawal` (the
 terms array, see below). See [In a template](/offers/templates).
 
+And for the newer conditions: `pay_what_you_want` (boolean), `pwyw_min_cent`,
+`pwyw_suggested_cent`, `pwyw_max_cent` (null on a fixed price), `setup_fee_cent`,
+`setup_fee_name`, `first_payment_cent`, `country_mode` (`all`, `only`, `except`),
+`countries`, `short_link` (the full URL or null), `seats` (null for an ordinary purchase) and
+`coupon_parameter`.
+
 ## Classes you call
 
 | Class | Method | |
 | --- | --- | --- |
-| `Support\Basket` | `Basket::make($offer, $bumpHandles = [], $code = null)` | builds a basket from what a form posted |
-| | `handles()` | prefixed handles, the offer first |
+| `Support\Basket` | `Basket::make($offer, $bumpHandles = [], $code = null, $pricingOption = null, $amountCent = null, $country = null)` | builds a basket from what a form posted. Throws `AmountNotAccepted` for a chosen amount out of bounds, `OfferNotAvailable` for a country outside the rule (or none while a rule exists), `InvalidArgumentException` for an amount on a fixed-price offer or an unknown payment option |
+| | `handles()` | prefixed handles, the offer first; with the chosen amount (`offer:x:=2500`) and the setup fee line (`offer:x:+setup`) where they apply |
 | | `grossCent()` · `netCent()` · `currency()` | |
+| | `mainCent()` · `bumpsCent()` · `setupFeeCent()` · `isRecurring()` | |
 | | `coupon()` | the `Coupon` as it will apply, or `null` |
 | | `discount()` | a `Discount` for the checkout, or `null` — **claims a redemption** |
+| | `releaseCoupon()` | gives a claimed redemption back once, when the checkout refused afterwards |
+| | `couponTerms()` · `paymentMeta()` | the coupon's terms for the renewals, and `['coupon' => terms]` to attach to the payment; empty when there is nothing to carry |
 | | `offer` · `bumps` | readonly properties |
 | `Models\Offer` | `amountCent()` · `amount()` · `amountLocal()` | its own price, or the catalogue's — `amountCent()` delegates to `effectiveAmountCent()` |
 | | `effectiveAmountCent()` | own price, else catalogue price minus `discount_percent`, rounded to the cent |
@@ -43,17 +67,31 @@ terms array, see below). See [In a template](/offers/templates).
 | | `checkoutFields()` | the offer's picks, only keys the library still knows |
 | | `withdrawalTerms()` | `['days', 'text', 'waiver_text', 'checkbox_required', 'b2b_text', 'version']`; `version` is 12 characters of `sha1(days\|text\|waiver_text)` |
 | | `bumpOffers()` | the sellable bumps, in the order they were picked |
+| | `isPayWhatYouWant()` · `acceptsAmount($cent)` · `pwywMinCent()` · `pwywSuggestedCent()` · `pwywMaxCent()` | the [pay-what-you-want](/offers/pay-what-you-want) bounds; the maximum falls back to `pay_what_you_want.max_cent` |
+| | `thankYouFor(int $cent)` | the text of the highest tier reached, or `null` |
+| | `setupFeeCent()` · `setupFeeName()` · `firstPaymentCent()` | `firstPaymentCent()` is "due today" |
+| | `isAvailableIn(?string $country)` · `countryMode()` · `countryList()` | |
+| | `shortLinkUrl()` · `linkDestination()` | the full short link or `null`; `target` or `fallback` right now |
+| | `seatCount()` | `null` for an ordinary purchase |
 | | `recordShown()` · `recordAccepted()` | one `increment()` each |
 | | `Offer::prefix()` · `Offer::slots()` (static) | |
 | | scopes `active()` · `forSlot($slot)` | |
 | `Models\Coupon` | `Coupon::findByCode($code)` (static) | case-insensitive |
 | | `isLive()` · `appliesTo($offer)` | |
 | | `apply($amountCent, $currency = null)` | the price after the discount |
-| | `claim()` | conditional `UPDATE`; `false` when it was exhausted in between |
-
+| | `claim()` · `release()` | conditional `UPDATE`; `claim()` is `false` when it was exhausted in between |
+| | `duration()` · `scope()` · `appliesToPayment(int $n)` · `coversFollowUps()` · `terms()` | [duration and scope](/offers/coupons#how-long-a-coupon-applies) |
+| | `links()` · `linkFor($key)` · `link()` | the [coupon links](/offers/links#coupon-links) with the code prefilled |
 | `Support\CouponBatch` | `generate(array $options)` | up to 100 coupons in one transaction; throws `RuntimeException` after ten collisions on one slot, and then nothing was written |
 | `Support\OfferSales` | `sold($offer)` · `revenueCent($offer)` · `revenueByCurrency($offer)` | `sold()` is paid units plus unpaid checkouts younger than `RESERVATION_MINUTES` (60); revenue is net of the line's `discount_cent` and its share of `refunded_cent`; `null` when the payment tables are missing |
 | `Offers` (static, `Goldnead\StatamicOffers\Offers`) | `fieldLibrary()` · `fieldKeys()` | the checkout field library from the config, normalised: `key => ['key', 'label', 'type', 'required', 'options', 'rules']` |
+| | `couponParameter()` · `couponFromRequest($request, $offer = null)` | the prefill parameter, and the live coupon it names or `null` (logged) |
+| | `availableIn($catalogueHandle, $country)` | the country rule, for a sibling that holds only a handle |
+| | `thankYouFor($catalogueHandle, $amountCent = null)` | the thank-you text; the amount may come from the handle |
+| | `recurringDiscountCent($terms, $number, $amountCent, $currency = null)` | what a coupon takes off payment number `$number` (the first is 1), never below `floor_cent` |
+| | `linkPrefix()` · `publicUrl($path)` | the short link path, and an address on `links.base_url` or `app.url` |
+| `Support\SeatPools` | `openFor($payment)` · `invite()` · `accept()` · `revoke()` · `close()` · `closeForPayment()` · `resend()` · `reconcile()` | the [seat](/offers/seats) life cycle |
+| `Contracts\SeatAccess` | `available()` · `grant()` · `revoke(): bool` | who grants a seat its access; bound to Entitlements by default |
 
 There is no Laravel facade. `Offers` is a plain static class on purpose: siblings call it behind
 `method_exists()`, which a facade would answer with `false`. `Offer` and `Coupon` are plain
@@ -68,11 +106,13 @@ edited next month must never rewrite what somebody agreed to last month.
 
 ## Events
 
-None of its own. The addon **listens** for one:
+None of its own. The addon **listens** for three:
 
 | Event | From | What it does |
 | --- | --- | --- |
-| `PaymentPaid` | [Payments](/payments/events) | increments `accepted_count` for every line whose handle carries the offer prefix |
+| `PaymentPaid` | [Payments](/payments/events) | increments `accepted_count` for every line whose handle carries the offer prefix, payment options and chosen amounts included, the setup fee line excluded; opens a [seat pool](/offers/seats) per seat line and mails the buyer |
+| `PaymentRefunded` | Payments | a **full** refund closes the payment's seat pools and takes every seat back |
+| `PaymentChargedBack` | Payments 1.23+ | the same as a full refund |
 
 If you want to know that an offer was accepted, listen to `PaymentPaid` and read the lines.
 The offer handle is on `payment_items.product`, with the prefix.
@@ -88,6 +128,11 @@ Catalogue::extend(fn (string $handle) => /* … */);
 It answers only for handles starting with the configured prefix, refuses to re-enter itself,
 and returns `name`, `amount_cent`, `currency` and `offer` (the bare handle) — the last of
 which is what a payment line remembers it was sold as.
+
+A handle may carry a suffix after the offer: a payment option (`offer:x:raten3`), a chosen
+amount (`offer:x:=2500`) or the setup fee (`offer:x:+setup`). `Support\OfferHandle` parses all
+of them in one place, and the counters, the resolver and the acceptance listener use it. For a
+seat offer the entry carries `seat_grants` instead of `grants`.
 
 The configured catalogue always wins. See
 [Products and the catalogue](/payments/catalogue#another-addon-can-contribute-products).
@@ -115,6 +160,14 @@ the payment tables do; the **Available** column names one of four states (unlimi
 A second primary action on the Coupons screen, **Generate codes**, posts to
 `utilities/coupons/generate` behind the same permission.
 
+Further Control Panel routes, each behind the permission of its screen:
+`utilities/offers/{offer}/qr.{svg|png}` and `utilities/coupons/{coupon}/qr.{svg|png}` for the
+[QR codes](/offers/links#qr-codes), and `utilities/offers/seats/{pool}/resend` and
+`utilities/offers/seats/{pool}/{seat}/revoke` for [seats](/offers/seats#in-the-control-panel).
+
+**Money fields are in cents**, each with a preview of the amount below it. See
+[Configuration](/offers/configuration#money-is-entered-in-cents).
+
 ## Validation
 
 ### An offer
@@ -141,6 +194,18 @@ A second primary action on the Coupons screen, **Generate codes**, posts to
 | `withdrawal_waiver_text` | nullable, max 2000 |
 | `withdrawal_checkbox_required` | boolean; **omitted means `true`** |
 | `withdrawal_pdf` | boolean; a stored flag, nothing renders it yet |
+| `price_mode` | `fixed` or `pwyw` |
+| `pwyw_min_cent` · `pwyw_suggested_cent` | nullable integer, min 0; an empty minimum is saved as `0` |
+| `pwyw_max_cent` | nullable integer, min 1; not below the minimum |
+| `pwyw_thanks` | up to 12 tiers, each `from_cent` (integer, min 0) and `text` (max 2000) |
+| — | pay what you want **never together with several payment options** |
+| `setup_fee_cent` · `setup_fee_label` | nullable integer, min 1 · max 191; the fee needs a rhythm on the offer or a payment option |
+| `country_mode` | `all`, `only` or `except`; with no countries it is saved as `all` |
+| `countries.*` | two letters, up to 250 |
+| `link_slug` | nullable, `^[a-z0-9][a-z0-9-]*$`, max 64, unique |
+| `link_target` · `link_fallback` | a path starting with `/` or an `http(s)://` address, max 2000; the target is required with a slug |
+| `link_switch_at` · `link_switch_on_sold_out` | nullable date-time · boolean |
+| `seats` | nullable integer 2–1000; **never on an offer with a rhythm** |
 
 Nullable *integers* on the prices, so nobody can post `"12,00"` and have it read as 12 cents.
 
@@ -170,6 +235,11 @@ written.
 | `offers.*` | must be an existing offer handle |
 | `starts_at` · `ends_at` | nullable dates; `ends_at` after `starts_at` **when there is one** |
 | `max_uses` | nullable integer, min 1 |
+| `duration` | `once`, `repeating` or `forever`; default `once` |
+| `duration_cycles` | integer 2–120, **required with `repeating`** |
+| `applies_to` | `order`, `main` or `bumps`; default `order` |
+| `funnel_wide` | boolean |
+| `link_url` | nullable, a path starting with `/` or an `http(s)://` address, max 2000 |
 
 ## Tables
 
@@ -181,7 +251,11 @@ written.
 `withdrawal_waiver_text` · `withdrawal_checkbox_required` · `withdrawal_b2b_text` ·
 `withdrawal_pdf` · `checkout_fields` (JSON) · `access_starts_at` · `access_days` · `slot` ·
 `bumps` (JSON) · `active` · `quantity_limit` · `available_from` · `available_until` ·
-`shown_count` · `accepted_count` · `meta` · timestamps.
+`shown_count` · `accepted_count` · `brand_id` · `price_mode` · `pwyw_min_cent` ·
+`pwyw_suggested_cent` · `pwyw_max_cent` · `pwyw_thanks` (JSON) · `setup_fee_cent` ·
+`setup_fee_label` · `country_mode` · `countries` (JSON) · `link_slug` (unique) · `link_target` ·
+`link_fallback` · `link_switch_at` · `link_switch_on_sold_out` · `link_hits_target` ·
+`link_hits_fallback` · `seats` · `meta` · timestamps.
 
 There is no `sold_count`. Sold is read from paid `payment_items` every time, because a counter
 of its own would drift the first time a payment is refunded or a row deleted.
@@ -193,7 +267,22 @@ broken join.
 ### `offer_coupons`
 
 `code` (unique) · `name` · `percent` · `amount_cent` · `currency` · `offers` (JSON) ·
-`starts_at` · `ends_at` · `max_uses` · `used_count` · `active` · `meta` · timestamps.
+`starts_at` · `ends_at` · `max_uses` · `used_count` · `active` · `duration` · `duration_cycles` ·
+`applies_to` · `funnel_wide` · `link_url` · `meta` · timestamps.
+
+### `offer_seat_pools`
+
+One per paid seat line: `brand_id` · `payment_id` · `offer` · `product` · `owner_email` ·
+`owner_name` · `seats` · `grants` (JSON) · `access` (JSON) · `manage_token` (unique) ·
+`closed_at` · `closed_reason` · timestamps. Unique on `payment_id` and `offer`, so a redelivered
+event opens nothing twice.
+
+### `offer_seats`
+
+`pool_id` (cascade on delete) · `email` · `name` · `token` (unique) · `status` (`invited`,
+`claimed`, `revoked`) · `invited_at` · `claimed_at` · `revoked_at` · timestamps.
+
+Both hold the email addresses of the buyer and of everyone she invited. Nothing prunes them.
 
 ## Publish tags
 
@@ -204,5 +293,9 @@ broken join.
 
 ## Multi-site and multi-brand
 
-Offers are not site-scoped and not brand-scoped. An offer is a commercial decision, not
-content.
+Offers are not site-scoped. An offer is a commercial decision, not content.
+
+Since 1.11.0 they are brand-scoped: an offer carries a `brand_id`, and the Control Panel and
+the public tags narrow to the current brand. The catalogue resolver does not, because a webhook
+has no brand. [Short links](/offers/links#short-links) are not narrowed either, and a seat pool
+writes access under its own brand.

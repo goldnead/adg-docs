@@ -6,8 +6,9 @@
 php artisan vendor:publish --tag=courses-config
 ```
 
-Nine keys in `config/courses.php`, two of them with an environment variable. There is no
-settings screen.
+Ten keys in `config/courses.php`, three of them with an environment variable. There is no
+settings screen. What a course does (drip, payment rule, bundles, seats) is set on the course
+entry, not here.
 
 | Key | Default | What happens when it is wrong |
 | --- | --- | --- |
@@ -16,6 +17,7 @@ settings screen.
 | `auto_completion_threshold` | `90` | Percent of a video that counts as watched. Too low, a skipped lesson completes itself. |
 | `proof_required_types` | `['quiz', 'assignment', 'reflection']` | A type left out can be ticked off by hand. |
 | `record_events` | `true` | Off, nothing is written to `courses_lesson_events`. |
+| `downloads.container` | `null` (`COURSES_DOWNLOADS_CONTAINER`) | Read by `courses:install` only. A handle that does not exist falls back to the first container. |
 | `routes.enabled` | `true` (`COURSES_ROUTES_ENABLED`) | Off, `POST /!/courses/progress` does not exist and `{{ courses:form }}` renders nothing. |
 | `cp.enabled` | `true` | Off, the Course Progress screen and its nav entry are gone. |
 | `cp.stuck_after_days` | `14` | Days without activity before a started learner counts as stuck. |
@@ -55,15 +57,30 @@ for example after grading a quiz. Add a type of your own here if it needs the sa
 Every start, quarter mark and completion is written to `courses_lesson_events`. Turn it off
 if nothing reads that table. The lesson states and the two PHP events are unaffected.
 
+## `downloads.container`
+
+```dotenv
+COURSES_DOWNLOADS_CONTAINER=assets
+```
+
+The asset container the download block picks public files from. It is written into the
+lesson blueprint by `courses:install`, so changing it later means running
+`courses:install --force` or editing the field by hand. Unset, the install takes the site's
+first container other than Private Media's; the public field never defaults to the private
+container, because files there are not reachable by URL. A private download has its own field
+on Private Media's container, `private-media.source.container`. See
+[Lesson content](/courses/lesson-content#downloads).
+
 ## `routes.enabled`
 
 ```dotenv
 COURSES_ROUTES_ENABLED=false
 ```
 
-Switches off the front-end route. The switch is checked where the route is registered, so a
-disabled route does not exist, and again in the controller, so a route cache built while it
-was on cannot keep it open. `{{ courses:form }}` then renders an empty string. A site with
+Switches off both front-end routes, `/!/courses/progress` and `/!/courses/team`. The switch
+is checked where the routes are registered, so a disabled route does not exist, and again in
+the controller, so a route cache built while it was on cannot keep it open.
+`{{ courses:form }}` and `{{ courses:team_form }}` then render an empty string. A site with
 its own endpoints for its player turns it off.
 
 ## `cp`
@@ -88,3 +105,9 @@ The subject type a learner is looked up under in Entitlements when the learner i
 Eloquent model: a flat-file Statamic user, or a bare id. Unset, it is the auth model's morph
 class when Statamic's users live in Eloquent, and `user` when they are flat files. How a
 learner becomes a subject is on [Access and entitlements](/courses/access).
+
+## Not in this file: the timezone of a calendar day
+
+The drip by date and by day of the month opens lessons at midnight in Statamic's
+`statamic.system.display_timezone`, and in `app.timezone` only when that is unset. Set the
+display timezone; leave `app.timezone` on UTC. See [Drip and locks](/courses/locks#by-days-by-date-by-day-of-the-month).

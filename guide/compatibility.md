@@ -12,10 +12,10 @@
 
 **Laravel 11 is not supported by any package in the suite.** Every one of them
 requires `^12.0|^13.0` or narrower, or inherits that floor from `statamic/cms
-^6.0`, and Brand Context — a dependency of fourteen of the thirty-one — requires
-`^12.40|^13.0`, which sets the real floor for most installs. Assessments and
-Certificates declare that same `^12.40|^13.0` themselves, on top of depending on
-Brand Context, and Courses, Private Media and Smart Links declare it without
+^6.0`, and Brand Context — a dependency of twenty of the thirty-two — requires
+`^12.40|^13.0`, which sets the real floor for most installs. Assessments,
+Certificates and Affiliates declare that same `^12.40|^13.0` themselves, on top of
+depending on Brand Context, and Courses, Private Media and Smart Links declare it without
 depending on Brand Context. Ten
 packages, Client Rooms and Table of Contents among them, declare no Laravel
 constraint of their own and take whatever the rest of the install takes.
@@ -75,7 +75,7 @@ for you:
 | `statamic-products` | `statamic-payments` | A product is read through the payment catalogue, and contributing to it needs `^1.15`. |
 | `statamic-lead-magnets` | `statamic-entitlements` | The grant behind a confirmed download is an entitlement. |
 | `statamic-certificates` | `statamic-courses` | A certificate is issued on `CourseCompleted`; "completed" is Courses' word. |
-| fourteen of the thirty-one | `statamic-brand-context` | See [Multi-brand](#multi-brand) below. |
+| twenty of the thirty-two | `statamic-brand-context` | See [Multi-brand](#multi-brand) below. |
 
 Everything beyond that is a `suggest` plus a runtime `class_exists` check. The
 version constraints that matter when both are installed:
@@ -124,14 +124,15 @@ install that had LeadHub. Always resolve the root first.
 | Courses | yes, `dist/build/` | yes |
 | Certificates | yes, `dist/build/` | yes |
 | Smart Links | yes, `dist/build/` | yes |
+| Affiliates | yes, `dist/build/` | yes |
 | others | no CP JavaScript of their own | no |
 
 Brand Context is easy to overlook in that list: it is mostly an invisible
 foundation package, but it does ship an Inertia CP page for brand membership
 and therefore a compiled bundle of its own.
 
-Assessments, Client Rooms, Courses, Certificates and Smart Links build to `dist/`
-rather than `resources/dist/`.
+Assessments, Client Rooms, Courses, Certificates, Smart Links and Affiliates build
+to `dist/` rather than `resources/dist/`.
 Either is fine: the path is the addon's `$vite.publicDirectory`, and Statamic
 reads whichever the service provider declares.
 
@@ -144,10 +145,11 @@ Two Statamic 6 specifics worth knowing if you fork one of these:
 
 ## Multi-brand
 
-Brand Context is a dependency of fourteen packages: Webhook Manager, Automations,
+Brand Context is a dependency of twenty packages: Webhook Manager, Automations,
 LeadHub, Marketing, Activity, Notifications, Suppression, Preference Center,
-Entitlements, Lead Magnets, Assessments, Events, Invoices and Certificates. All
-fourteen are brand-aware, and all fourteen behave identically on a single-brand
+Entitlements, Lead Magnets, Assessments, Events, Booking, Consent, Offers,
+Invoices, Funnels, Insights, Certificates and Affiliates. All twenty are
+brand-aware, and all twenty behave identically on a single-brand
 install. There
 is no partial support to check for: if an addon depends on `brand-context`, its
 records carry `brand_id` from their first migration.
@@ -160,8 +162,9 @@ Table of Contents, Identity Contracts and Email Templates are not brand-scoped,
 because none of them persists anything that could belong to a brand.
 
 Courses is not brand-scoped either, although it persists learner progress: its
-three tables carry no `brand_id`, and it neither requires nor detects Brand
-Context. The same holds for Private Media's audit table: a resource slug is
+four tables carry no `brand_id`, and it does not require Brand Context. It only
+detects it at two seams: a quiz result from Assessments is read brand-neutrally,
+and a private download is checked in the brand of the request. The same holds for Private Media's audit table: a resource slug is
 already unique per site. Certificates, built on Courses, is brand-scoped all the
 same: a certificate takes the brand that was current when it was issued, and on
 the console the brand the course's Statamic site maps to in

@@ -12,6 +12,108 @@ Release notes for `goldnead/statamic-offers`, as published with the package.
 Cross-version upgrade notes for the whole suite are in
 [Upgrading](/guide/upgrading).
 
+## Unreleased
+
+Six migrations (additive, existing rows keep their behaviour): price modes and setup fee, country
+rule, short link, coupon duration and scope, seat pools.
+
+### Added: pay what you want (O1)
+
+`price_mode = pwyw` with minimum, suggestion and optional maximum (`pay_what_you_want.max_cent`
+caps it otherwise). The chosen amount travels in the catalogue handle, `offer:x:=2500`, and the
+catalogue refuses anything outside the bounds, any malformed amount and any amount on a fixed-price
+offer; `statamic-payments` needs no change. `Basket::make(..., amountCent:)`. Optional thank-you
+tiers: `Offer::thankYouFor()`, `Offers::thankYouFor()`, `&#123;&#123; offers:thanks }}`.
+
+### Added: setup fee on subscriptions and instalments (O2)
+
+`setup_fee_cent` and `setup_fee_label`. Charged once with the first payment as its own line
+(`offer:x:+setup`), so the invoice lists it as its own position. No rhythm, no grants, never
+discounted by a coupon. `Offer::firstPaymentCent()` for "due today".
+
+### Added: availability by country (O3)
+
+Worldwide, only these countries, everywhere except these. Enforced in `Basket::make(..., country:)`,
+which throws `OfferNotAvailable`; without a country and with a rule, the basket refuses too.
+`Offers::availableIn($handle, $country)` for the payment addon.
+
+### Added: coupon links and QR codes (O4)
+
+`?coupon=CODE` (`coupon_link.parameter`, `Offers::couponParameter()`), a target page per coupon,
+one link per offer with a short link, QR codes as SVG and PNG in the coupon panel, generated on the
+server without an external service. `Offers::couponFromRequest()` for the checkout that prefills the
+field; invalid codes are ignored and logged.
+
+### Added: short link with a switch (O5)
+
+`/go/<slug>` leads to the target until the switch date (or `available_until`) or, optionally, until
+sold out, then to the second target. The query string travels along. Visits counted per target,
+QR code in the offer panel.
+
+### Added: coupon duration and scope (O6)
+
+`duration` (first payment, first n, every payment), `applies_to` (offer and bumps, offer only, bumps
+only), `funnel_wide`. `Basket::couponTerms()` / `paymentMeta()` hand the terms to the payment,
+`Offers::recurringDiscountCent()` is the arithmetic for payment n. Existing coupons stay "first
+payment, whole basket".
+
+### Added: seats for groups (O7)
+
+`seats` on an offer: one purchase, n accesses. The buyer gets a manage link by mail, invites people
+by email, takes seats back and gives them again; access is granted on acceptance through
+`statamic-entitlements` (optional) behind `Contracts\SeatAccess`.
+
+### Seats, round two (O7)
+
+- A full refund or a chargeback closes the pools of the payment (`closed_at`, new additive
+  migration) and takes every seat back; a closed pool refuses invitations and acceptances.
+- Access is written and revoked under the brand of the pool, not the brand of the request
+  (`brand-context` `runFor`). Tested against the real `statamic-entitlements`.
+- Taking a seat back reads its state from the database and makes it a condition of the update, so an
+  acceptance between reading and taking back is no longer missed.
+- The offer panel lists the pools sold, with "resend link" and "take back" (asks first for accepted
+  seats). The buyer's page asks too.
+- The name on an invitation is limited to letters, spaces, `-`, `.`, `'` and 80 characters: it is
+  the greeting of a mail sent under this site's sender.
+
+### Round three
+
+- A seat is marked as taken back only after its access was revoked; `SeatAccess::revoke()` now
+  returns whether it did. A failed revocation leaves the seat open and logged, a redelivered event
+  retries, and `offers:seats-reconcile` catches up on closed pools.
+- The closed buyer page shows what was taken back and nothing to hand out. The CP card of a closed
+  pool shows date, reason and payment number; long names and addresses wrap instead of being cut.
+- Seats for products that grant nothing: a warning in the editor and a log line when sold.
+- `Basket::releaseCoupon()` gives a redemption back when the checkout refuses after `discount()`.
+- The floor of a chosen amount travels to the renewals (`floor_cent` in the coupon terms), and
+  `Offers::recurringDiscountCent()` respects it.
+- Every money field in the offer editor says "Cent" and shows the amount it stands for below.
+
+### Pay what you want, round two (O1)
+
+- The minimum is a floor after a coupon too.
+- An amount out of bounds throws `AmountNotAccepted` (still an `InvalidArgumentException`) with
+  `buyerMessage()`.
+- The new money fields say "in cents" and show the amount as it reads below the field.
+
+### Fixed: purchases with a suffix did not count
+
+A purchase through a payment option (`offer:x:raten3`) counted neither against the quantity limit
+nor as accepted, because the counters matched the bare handle only. `Support\OfferHandle` now parses
+every catalogue handle in one place, and the counters, the resolver and the acceptance listener use
+it. The setup fee line is revenue of its offer but not a unit.
+
+## 1.11.3 — 2026-09-22
+
+### Fixed: offer and coupon titles centered instead of aligning left
+
+The title cell in both listings is a `<button>` so it can open the edit panel, and a browser's
+default `text-align` for `<button>` is `center`. Nothing in the column definition asked for
+that — `Statamic\CP\Column` has no alignment attribute besides `numeric()`, and the cell itself is
+left-aligned — the button just centered its own content inside its own box. It only became
+visible once a title wrapped onto a second line. Both buttons now carry `text-start` explicitly,
+matching the pattern already used for the session buttons in `statamic-clientrooms`.
+
 ## 1.11.2 — 2026-09-09
 
 ### Fixed: the catalogue entry names the offer's brand

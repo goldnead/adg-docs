@@ -7,8 +7,10 @@
 | Command | Purpose |
 | --- | --- |
 | `invoices:pending [--write]` | Paid payments with no invoice, and what is missing. `--write` writes the ones that can be written. |
+| `invoices:export {csv,report,pdf}` | A period's documents as CSV, the tax report, or a ZIP of the PDFs. Options in [Exports](/invoices/exports#on-the-command-line). |
 
-One, and that is the complete list. Nothing is scheduled and nothing is queued.
+Nothing is scheduled. One job is queued: `Jobs\BuildPdfArchive`, the PDF archive, with a
+timeout of 1800 seconds. Set the queue connection's `retry_after` above that.
 
 ::: warning `--write` only catches one kind of failure
 It reports a payment whose rate is undetermined and moves on. A missing seller block
@@ -129,7 +131,11 @@ Indexed on `(brand_id, issued_at)`.
 ### `invoice_items`
 
 `product` · `name` · `quantity` · `unit_net_cent` · `discount_cent` · `net_cent` ·
-`tax_rate_bp` · `tax_cent` · `gross_cent`.
+`tax_rate_bp` · `tax_mechanism` · `place_of_supply` · `tax_cent` · `gross_cent`.
+
+`tax_mechanism` and `place_of_supply` arrived in 2.2 (migration `2026_09_23_120000`), both
+nullable: what the rules decided and where the tax is owed, copied onto credit notes. Lines
+from before carry neither, and the export derives both.
 
 The rate lives here rather than on the invoice because a single order can carry two of them,
 and that is exactly the case a single figure cannot express. Basis points, so 19% is `1900`
@@ -167,4 +173,12 @@ collect them; your checkout does.
 
 ## Control Panel
 
-None. The addon registers no screen, no nav entry and no permission.
+Two utilities, each with the permission Statamic registers for it, and a section on the
+shared settings screen.
+
+| Utility | Permission | |
+| --- | --- | --- |
+| Invoice export | `access invoice-exports utility` | The [exports](/invoices/exports). Its download routes sit under the utility and inherit the check. |
+| USt-IdNr.-Prüfungen | `access vat-checks utility` | Invoices whose VAT ID could not be confirmed at checkout. |
+
+The settings section is guarded by `manage invoices settings`.

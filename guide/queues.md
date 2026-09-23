@@ -20,6 +20,7 @@ php artisan schedule:work        # or a cron entry calling schedule:run
 | Activity | `recordLater()` only; `record()` is synchronous | fine, but see below |
 | Notifications | mail channel delivery | a mail transport hiccup slows the action that notified |
 | Certificates | the certificate mail, when mail is on; the PDF is rendered when it is built | the PDF is rendered inside the request that completed the last lesson |
+| Invoices | the PDF archive of an export | the ZIP is built inside the request that asked for it. The job may run up to 30 minutes, so the connection's `retry_after` must be above 1800, or a second worker starts the same archive. See [Invoices → Exports](/invoices/exports) |
 
 Webhook Manager's own documentation puts it plainly: a queue driver other than
 `sync` is strongly recommended. For Automations and Marketing it is closer to
@@ -80,6 +81,8 @@ wrong:
 | `smartlinks:prune` | nobody | The click table keeps a row per song, platform and day for as long as the site runs |
 | `smartlinks:check` | nobody | No link is ever marked dead: dead links stay on the landing page and the Control Panel shows no dead-link badges |
 | `smartlinks:resolve --replace-dead` | nobody | Missing links are not filled and confirmed dead links are not replaced until someone runs it |
+| `offers:seats-reconcile` | nobody; hourly, and only when you sell seats | After a refund closed a seat pool, a seat whose access could not be revoked keeps it until someone runs it. See [Offers → Seats](/offers/seats#schedule-the-catch-up) |
+| `affiliates:release` | nobody; hourly is enough | Commissions stay "on hold" in the partner area after their hold period, until someone opens the Commissions or Payouts screen. See [Affiliates → Installation](/affiliates/installation#the-scheduler) |
 
 ::: danger Retries need a working `schedule:run`
 `webhook-manager:dispatch-retries` is the command that actually performs a

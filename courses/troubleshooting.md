@@ -40,7 +40,7 @@ is `false`. The tag renders an empty string rather than a form that would post t
 
 Read the code: `{{ get_error:courses }}` after a form post, `{"error": "…"}` for a request
 that asks for JSON. The table of codes is on
-[Tags and the form route](/courses/tags#post-courses-progress). The ones that surprise:
+[Tags and the form routes](/courses/tags#post-courses-progress). The ones that surprise:
 
 - **`proof_required`**: a quiz, assignment or reflection cannot be ticked off by hand. Your
   code calls `Courses::completeLesson()` after checking the proof.
@@ -58,10 +58,73 @@ The lesson has no `video_duration`, or one the package cannot read. It takes `mm
 unknown length completes only by the learner's tick or by a duration the player sends. See
 [Lesson types and proof](/courses/lesson-types#video).
 
-## Every lesson with a week stays locked
+## Every lesson with a week or a number of days stays locked
 
-The learner was never enrolled, so the clock never started and only week 1 is open. Call
-`Courses::enroll()` where the course starts. See [Drip and locks](/courses/locks#drip-by-schedule).
+The learner was never enrolled, so the clock never started: only week 1 is open, and a lesson
+waiting for days or a day of the month shows `lock_reason: schedule` with no `available_at`.
+A subscription through Payments enrolls its buyer; anything else needs `Courses::enroll()`
+where the course starts. See [Who enrolls a learner](/courses/locks#who-enrolls-a-learner).
+
+## A lesson waits for a payment that went through
+
+`lock_reason: payment` counts what Payments reported through its subscription events. A
+one-off purchase is no subscription and reports no count, so `payments` and `after_trial`
+suit courses sold by subscription. The buyer also needs a Statamic user with the
+subscription's email address when the event arrives; a subscription for an address without an
+account is skipped (logged at debug level). A site that bills elsewhere calls
+`Courses::recordBilling()`.
+
+## A lesson opens a day early or late
+
+The drip by date and by day of the month counts calendar days in
+`statamic.system.display_timezone`, and in `app.timezone` only when that is unset. Set the
+display timezone to the site's zone. Do not turn `app.timezone` away from UTC on a live site.
+
+## After updating, the new fields are missing from the Control Panel
+
+The blueprints still are the 0.1 ones. Run `php artisan migrate`, then
+`php artisan courses:install --merge` (see first with `--dry-run`). Not `--force`, which loses
+fields added by hand. See [Upgrading from 0.1](/courses/installation#upgrading-from-0-1).
+
+## The lesson form fails with "An asset container has not been configured"
+
+The download block's file field has no container. `courses:install` writes one in, but a site
+without any asset container at install time got a warning instead. Create a container, then
+run `php artisan courses:install --force`, or set the container on the field by hand.
+
+## A private download does not show
+
+The block is dropped when Private Media is not installed, when the file lies outside Private
+Media's container (logged as a warning), or when there is no signed-in learner to sign the
+link for. See [Lesson content](/courses/lesson-content#private-downloads).
+
+## A lesson is missing for one learner but not another
+
+A [visibility rule](/courses/visibility) on the lesson or its section does not match that
+learner. A rule that names only LeadHub tags or segments matches nobody without LeadHub, or
+for a learner whose email address has no LeadHub contact.
+
+## A passed quiz does not complete the lesson
+
+In order: the questionnaire was submitted by a signed-in user (an anonymous submission counts
+for no lesson); the lesson's `assessment` is the questionnaire's handle; the lesson was not
+locked when it was submitted; the score reaches `assessment_min_score` and, if levels are set,
+the result level is one of `assessment_pass_levels`. A failed attempt shows in
+`{{ courses:quiz }}` as `attempts`. See [Quizzes](/courses/quizzes).
+
+## A learner is shut out after a failed payment although they bought the course once
+
+With Entitlements as the bound `CourseAccess`, a payment hold takes away only what the failed
+subscription paid for, and another grant keeps the course open. A custom `CourseAccess` cannot
+tell grants apart, so there the hold closes the course. A hold set by hand closes it in every
+case. The Holds table on the Course Progress screen shows which kind it is. See
+[When a payment fails](/courses/payment-failure).
+
+## A team member cannot get in
+
+The member signs in with a different address than the one the buyer added; or the buyer no
+longer holds the purchase (refund, expiry, a hold of their own), which closes the course for
+the whole team. See [Bundles and teams](/courses/teams).
 
 ## Lessons are missing from a course
 

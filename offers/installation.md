@@ -24,15 +24,26 @@ Two entries appear under **Utilities**: **Offers** and **Coupons**.
 
 | Package | Constraint | |
 | --- | --- | --- |
-| [`goldnead/statamic-payments`](/payments/) | `^1.6` | Installed automatically. It owns the catalogue an offer contributes to, and the checkout that charges it. |
+| [`goldnead/statamic-payments`](/payments/) | `^1.15` | Installed automatically. It owns the catalogue an offer contributes to, and the checkout that charges it. |
+| [`goldnead/statamic-brand-context`](/brand-context/) | `^1.13` | Installed automatically. Offers carry a brand, and the screens narrow to it. |
+| `bacon/bacon-qr-code` | `^3.0` | The QR encoder for [links](/offers/links#qr-codes). Statamic already ships it. |
+| [`goldnead/statamic-entitlements`](/entitlements/) | `^1.4`, suggested | Only for [seats](/offers/seats): it grants and revokes the access of an accepted seat. |
 
-That is a hard `require`, not a suggestion. An offer's whole reason for existing is to
+Payments is a hard `require`, not a suggestion. An offer's whole reason for existing is to
 resolve as a priced thing in the payment catalogue; without that addon there is nothing for
 it to be.
 
-The floor is `^1.6` because an offer needs `Discount` and zero-priced products, both of
-which arrived in 1.4, and the 1.6 line is the one that fixed the entitlements bridge and
-made the webhook URL configurable.
+The floor is `^1.15` because that is the version whose `Brands` carries `readerId()`, which
+the brand-scoped screens call. A constraint that allowed an older Payments would let
+somebody install the pair and get a fatal error on the Offers screen.
+
+Some of the newer conditions need more of Payments than the floor:
+
+| Feature | Needs |
+| --- | --- |
+| Closing seat pools on a chargeback | Payments 1.23 |
+| A coupon on more than the first payment of a subscription | a Payments version that reads `meta.coupon` (newer than 1.24.5) |
+| The country rule enforced in `Checkout::start()` as well as in the basket | Payments newer than 1.24.5 |
 
 ::: tip Invoices needs more than that
 If you also issue [invoices](/invoices/), the payment addon has to be `^1.9` — the version
@@ -51,7 +62,7 @@ afterwards. See [Troubleshooting](/offers/troubleshooting#an-offer-line-gets-no-
 | **Name** | for you, in the Control Panel, and the fallback headline |
 | **Handle** | lowercase, digits, `-` and `_`; unique |
 | **Product** | a select over the handles in `statamic-payments.products` |
-| **Own price** | in minor units. Leave empty for the catalogue price |
+| **Own price** | in cents, so `2900` is 29.00; the amount it stands for is shown below. Leave empty for the catalogue price |
 | **Compare-at price** | shown only, never charged |
 | **Headline · Text · Image · Button label** | the words. The image is a URL |
 | **Where** | At checkout · After the purchase · Anywhere |
@@ -90,10 +101,35 @@ app(Checkout::class)->start('offer:fruehling-upsell', $buyer);
 Separate on purpose: "may edit the words on an upsell" is not the same authority as "may
 hand out discounts".
 
-## No scheduler, no queue
+## The scheduler, only for seats
 
-Neither is used. An offer is looked up when something asks for it, and the two counters are
+No queue is used. An offer is looked up when something asks for it, and the counters are
 incremented in one statement.
+
+If you sell [seats for groups](/offers/seats), register the catch-up for access that could not
+be revoked when a purchase was refunded:
+
+```php
+// routes/console.php
+Schedule::command('offers:seats-reconcile')->hourly();
+```
+
+Without seats there is nothing for it to do.
+
+## Updating
+
+Every release that adds a column ships an additive migration: existing rows keep their
+behaviour. Run it **before the next sale**, not afterwards:
+
+```bash
+composer update goldnead/statamic-offers
+php artisan migrate
+```
+
+The release after 1.11.3 adds six: price modes and the setup fee, the country rule, the short
+link, coupon duration and scope, the seat tables, and the closing date of a seat pool. Existing
+offers stay fixed-price and worldwide, and existing coupons stay "the first payment, whole
+basket".
 
 ## Licence
 

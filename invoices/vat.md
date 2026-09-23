@@ -234,8 +234,54 @@ year, into *all* other member states combined. A calculation class that ran that
 stop being reproducible — its answer would depend on when you called it.
 
 So it is a **switch**. Flip it when you register for OSS, and fill in the zones for the
-countries you sell to, or those lines come back undetermined. Either way the choice is
-recorded as a note on the result.
+countries you sell to, or let the addon supply the standard rates (below). Without either,
+those lines come back undetermined. Either way the choice is recorded as a note on the
+result.
+
+### The shipped EU standard rates
+
+```php
+'oss' => [
+    'destination_taxation' => true,
+    'shipped_rates' => true,          // off by default
+    'shipped_rates_class' => 'standard',
+],
+```
+
+`Support\EuStandardRates` holds the standard rate of all 27 member states, **as of
+2 February 2026**, with its sources: the European Commission's Taxes in Europe Database as
+the primary source, cross-checked against two published tables. Switched on, it answers for
+a consumer in a member state that no zone of yours names, once destination taxation applies.
+It is **off by default**: an installation that does not switch it on behaves exactly as
+before. `INVOICES_OSS_SHIPPED_RATES=true` switches it on from the environment, and the
+shared settings screen has the same switch.
+
+::: danger Have the rates confirmed before you switch this on
+The table is the addon's reading of published tables, not tax advice. Rates change, usually
+on 1 January or 1 July. Before the first invoice goes out, have the rates of the countries
+you actually sell into confirmed by your tax adviser, or checked against the primary source.
+:::
+
+What it does and does not change:
+
+- **A zone you write always wins** over the table, and the table beats a `'*'` placeholder.
+  That is how you correct a rate before the addon catches up.
+- **Standard rates only.** `shipped_rates_class` names the tax class they stand for. A
+  product in any other class, a reduced rate for instance, still needs a zone of its own,
+  because reduced rates differ by country and by kind of supply.
+- **Every line taxed from the table says so** in its notes, with the date of the table, so an
+  invoice written from a stale table names the table it was written from.
+- **It only matters with `destination_taxation`.** Below the threshold your own rate applies
+  either way. Reverse charge for a business with a confirmed VAT ID, and § 19, are
+  unchanged.
+
+### Where the tax is owed, per line
+
+From 2.2 every invoice line keeps the mechanism and the place of supply the rules decided,
+in `tax_mechanism` and `place_of_supply` on `invoice_items`, and copies them onto credit
+notes. That is what lets the [tax report](/invoices/exports#the-tax-report) say a year later
+where the tax is owed. Lines written before 2.2 carry neither; the export derives both from
+the document and counts them.
 
 Anyone wanting the threshold decided automatically builds a separate service, evaluates it
 at the moment of payment, stores its verdict on the payment, and feeds that in — not the

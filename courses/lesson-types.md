@@ -76,6 +76,13 @@ retake say, does not reopen it.
 This package grades nothing. Scoring a quiz or reviewing an assignment is the site's own code,
 which then calls one of the two methods above.
 
+**A quiz can take its questions from [Assessments](/assessments/)**: name a questionnaire on
+the lesson, and a submission that passes completes the lesson with the source `assessment`,
+while one that does not records the attempt. See [Quizzes](/courses/quizzes).
+
+What a lesson shows, text, video, downloads, is independent of its type: any lesson can carry
+[blocks](/courses/lesson-content).
+
 ## Test-out lessons
 
 A lesson with `is_test_out` stays open while its phase is locked. Completing it with
@@ -85,5 +92,6 @@ skipped, so the learner lands behind them. See [Drip and locks](/courses/locks#p
 ## What every completion fires
 
 `LessonCompleted` on every transition to completed, once per transition and not on every
-save. `CourseCompleted` once per learner and course, when the last lesson is done. Both are
-in the [Reference](/courses/reference#events).
+save. `LessonUnlocked` for every lesson that completion opened. `CourseCompleted` once per
+learner and course, when the last lesson the learner can see is done. All are in the
+[Reference](/courses/reference#events).

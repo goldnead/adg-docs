@@ -35,8 +35,17 @@ comparison, a slot, an image, a counter — is what this table adds.
   them
 - **Coupons** — a code, a percentage or an amount, limited to offers, to a date range, to a
   number of redemptions
+- **Coupons for more than the first payment** — the first *n* payments or every one, on the
+  offer, the bumps or both
+- **Pay what you want** — a minimum, a suggestion, a maximum, and the minimum holds after a
+  coupon too
+- **A setup fee** on a subscription or instalments, as its own invoice line
+- **Availability by country** — worldwide, only these, or everywhere except these
+- **Coupon links and QR codes** — the code in the address, the QR code generated on the server
+- **A short link per offer** that switches to a second target when the offer ends or sells out
+- **Seats for groups** — one purchase, several accesses, handed out by the buyer
 - **Two counters per offer**: shown, and accepted — where accepted means **paid**
-- **Two Antlers tags**, `{{ offers:show }}` and `{{ offers:slot }}`
+- **Three Antlers tags**, `{{ offers:show }}`, `{{ offers:slot }}` and `{{ offers:thanks }}`
 
 ## It rides on the payment catalogue
 
@@ -81,6 +90,10 @@ that says `FRUEHLING` is a question the table answers.
 - [An offer is not a product](/offers/concepts) — the fields, the slots, the counters
 - [The price rule](/offers/price-rule) — how a second price stays safe
 - [Bumps](/offers/bumps)
-- [Coupons](/offers/coupons)
+- [Coupons](/offers/coupons) — including how long a coupon applies
+- [Pay what you want](/offers/pay-what-you-want)
+- [Setup fee and countries](/offers/setup-fee)
+- [Links and QR codes](/offers/links) — coupon links and the short link that switches
+- [Seats for groups](/offers/seats)
 - [In a template](/offers/templates)
 - [Reference](/offers/reference) · [Troubleshooting](/offers/troubleshooting)

@@ -1,21 +1,23 @@
 # The suite
 
-Thirty-one packages, six layers. Every arrow below is a Composer dependency;
+Thirty-two packages, six layers. Every arrow below is a Composer dependency;
 anything not drawn is optional and detected at runtime with `class_exists`,
 which is why you can install any addon without the rest.
 
-All thirty-one are tagged and published on Packagist, so `composer require`
+All thirty-two are tagged and published on Packagist, so `composer require`
 resolves any of them and pulls in whatever it depends on.
 
 ```
 Foundation ──────────────────────────────────────────────────────────
 
-  brand-context          required by 14: webhook-manager, automations,
+  brand-context          required by 20: webhook-manager, automations,
                                          leadhub, marketing, activity,
                                          notifications, suppression,
                                          preference-center, entitlements,
                                          lead-magnets, assessments, events,
-                                         invoices, certificates
+                                         booking, consent, offers, invoices,
+                                         funnels, insights, certificates,
+                                         affiliates
 
   identity-contracts     required by 4:  activity, notifications,
                                          preference-center, entitlements
@@ -41,9 +43,13 @@ Commerce ───────────────────────�
   invoices   ──requires──▶  payments
   funnels    ──requires──▶  payments, offers, flow-canvas
 
-  insights               requires nothing at all: every figure on its
-                         screens is registered at runtime by the addon
+  insights               requires no other domain addon: every figure on
+                         its screens is registered at runtime by the addon
                          that owns the table behind it
+
+  affiliates             requires no other domain addon either: it listens
+                         to payments' events when payments is installed,
+                         and books nothing without it
 
 Standalone ──────────────────────────────────────────────────────────
 
@@ -72,7 +78,7 @@ are worth naming, because they look like dependencies and are not:
 `notifications` rather than an optional extra: both ask the gate before they
 queue mail, and a gate that might not be there would be no gate at all.
 
-## The thirty-one
+## The thirty-two
 
 ### Foundation
 
@@ -218,6 +224,16 @@ drawn on a canvas. Not an automation — an automation is event then action, a
 funnel needs a page and a memory of how far each visitor got. Landing pages come
 from ordinary Statamic entries rather than a second, worse page builder.
 
+**[Affiliates](/affiliates/)** &nbsp;·&nbsp; `goldnead/statamic-affiliates`
+
+A partner programme on the till you already run. A sale belongs to a partner
+through a tracking link, remembered in a cookie only with consent, or through a
+coupon code the partner owns, never through anything the buyer typed.
+Commissions per product on first payments, renewals, bumps and upsells; a hold
+period, refunds that reverse them, payout lists exported as CSV, and
+joint-venture shares without any link. It moves no money. Commercial, and not
+sold yet.
+
 ### Platform services
 
 **[Activity](/activity/)** &nbsp;·&nbsp; `goldnead/statamic-activity`
@@ -265,12 +281,15 @@ LeadHub, Booking and Brand Context are detected with `class_exists`.
 
 Modules and lessons as entries in two collections, a state per learner and
 lesson, and a rollup with the lesson to continue with. Lessons lock by sequence,
-prerequisite, phase or week from enrollment, and each locked one says which. A
-lesson's type decides how it completes: a video by being watched, a text by
-being acknowledged, a quiz only when the code that graded it says so. Who may
-open a course at all is asked of Entitlements; without it every course is
-closed. Three tables, Antlers tags, a form route and one read-only screen,
-Course Progress.
+prerequisite, phase, or a drip by week or days from enrollment, a calendar
+date, a day of the month, the number of payments or the end of a trial, and each
+locked one says which. A lesson is built
+from blocks, can be hidden from people outside a group, and can carry a quiz
+from Assessments with a minimum score. A failed subscription payment can keep,
+pause or revoke what it paid for. Who may open a course at all is asked of
+Entitlements; without it every course is closed. Bundles and team seats, four
+tables, Antlers tags, two form routes and one screen, Course Progress, whose
+only write is lifting a payment hold.
 
 **[Certificates](/certificates/)** &nbsp;·&nbsp; `goldnead/statamic-certificates`
 

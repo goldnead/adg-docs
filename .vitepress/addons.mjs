@@ -36,7 +36,7 @@ export const LAYERS = {
  * How far along each addon is.
  *
  * The suite reads finished. It is not: twenty-four packages went public inside
- * five weeks and seven more came later, twenty-two of the thirty-one are
+ * five weeks and eight more came later, twenty-three of the thirty-two are
  * declared commercial, and exactly one can be bought. A reader
  * deciding whether to put one of these on a client site has no
  * way to tell a package that has run several brands for months from one that
@@ -100,6 +100,7 @@ export const MATURITY_BY_SLUG = {
   'private-media': 'experimental',
   certificates: 'experimental',
   smartlinks: 'experimental',
+  affiliates: 'experimental',
 }
 
 /** The exceptions a one-word level would misrepresent. */
@@ -122,6 +123,8 @@ export const MATURITY_NOTES = {
     'Built on 22 September 2026 on top of Courses and exercised in the playground: issuing, the PDF, the verification page and the Control Panel screen. No production site uses it yet. On Packagist at 0.1.0.',
   smartlinks:
     'Built on 23 September 2026 for a band site and exercised in the playground: the landing page, the counting redirect, the platform badge in the entry form, the link cleanup, the dead-link badges and filter, and accepting and rejecting suggestions on the Control Panel screen. Installed on that band site, anders-band.de, in a local copy only; not live there or on any other site yet. On 23 September 2026 auto-fill ran read-only against the live Deezer and Apple Music APIs on that band\'s catalogue: all 39 songs with a Deezer link identified, no link found that was wrong. Spotify and Tidal have not run against their APIs, for want of credentials, and are covered by tests with faked responses only; YouTube was not part of that run. On Packagist at 0.2.1.',
+  affiliates:
+    'Built on 23 September 2026 and exercised in the playground against Payments and Offers: attribution by link and by coupon, commissions, refunds before and after a payout, joint ventures, payout lists and the partner area. No real sale has been attributed, and no production site uses it yet.',
   'inline-edit':
     'Built on 19 September 2026 and running on the public demo, but on no client site yet. On Packagist since the same day, so the install below resolves.',
 }
@@ -207,6 +210,10 @@ export const SALES_BY_SLUG = {
   assessments: 'not-sold',
   certificates: 'not-sold',
   smartlinks: 'not-sold',
+  // OFFEN (23.09.2026): Affiliates steht noch nicht in Schedule A der EULA.
+  // Ob "not-sold" oder "suite-only" entscheidet Adrian; die EULA bewegt sich
+  // zuerst, dann dieser Eintrag. Bis dahin meldet sync-licenses genau diese Zeile.
+  affiliates: 'not-sold',
 }
 
 export const salesOf = (slug) => SALES_BY_SLUG[slug] ?? null
@@ -593,6 +600,7 @@ export const addons = [
     pages: [
       { text: 'What the family reports', link: 'what-the-family-reports' },
       { text: 'Reading the numbers', link: 'reading-the-numbers' },
+      { text: 'Subscription figures', link: 'subscriptions' },
       { text: 'Contributing a metric', link: 'contributing-a-metric' },
       { text: 'On the contact screen', link: 'contact-panel' },
     ],
@@ -611,6 +619,10 @@ export const addons = [
       { text: 'The price rule', link: 'price-rule' },
       { text: 'Bumps', link: 'bumps' },
       { text: 'Coupons', link: 'coupons' },
+      { text: 'Pay what you want', link: 'pay-what-you-want' },
+      { text: 'Setup fee and countries', link: 'setup-fee' },
+      { text: 'Links and QR codes', link: 'links' },
+      { text: 'Seats for groups', link: 'seats' },
       { text: 'In a template', link: 'templates' },
     ],
   },
@@ -629,6 +641,7 @@ export const addons = [
       { text: 'An invoice does not change', link: 'immutability' },
       { text: 'Credit notes and refunds', link: 'credit-notes' },
       { text: 'Delivery and storage', link: 'delivery' },
+      { text: 'Exports for tax and bookkeeping', link: 'exports' },
     ],
   },
   {
@@ -646,6 +659,24 @@ export const addons = [
       { text: 'Landing pages from entries', link: 'landing-pages' },
       { text: 'Deadlines and split tests', link: 'deadlines-and-tests' },
       { text: 'Where people stop', link: 'analytics' },
+    ],
+  },
+  {
+    slug: 'affiliates',
+    name: 'Affiliates',
+    package: 'goldnead/statamic-affiliates',
+    license: 'Commercial',
+    layer: 'commerce',
+    tagline:
+      'A partner programme: tracking links with a consent-aware cookie, commissions per product, refunds that reverse them, payout lists and joint ventures.',
+    icon: '⇄',
+    pages: [
+      { text: 'Attribution', link: 'attribution' },
+      { text: 'Commissions', link: 'commissions' },
+      { text: 'Joint ventures', link: 'joint-ventures' },
+      { text: 'Payouts', link: 'payouts' },
+      { text: 'The partner area', link: 'partner-area' },
+      { text: 'The Control Panel', link: 'control-panel' },
     ],
   },
   {
@@ -690,11 +721,16 @@ export const addons = [
       'Modules and lessons as entries, a state per learner and lesson, drip by schedule or by progress. Who may open a course is asked of Entitlements.',
     icon: '▦',
     pages: [
-      { text: 'Tags and the form route', link: 'tags' },
+      { text: 'Tags and the form routes', link: 'tags' },
       { text: 'The Course Progress screen', link: 'control-panel' },
       { text: 'Access and entitlements', link: 'access' },
+      { text: 'Lesson content', link: 'lesson-content' },
       { text: 'Lesson types and proof', link: 'lesson-types' },
+      { text: 'Quizzes', link: 'quizzes' },
       { text: 'Drip and locks', link: 'locks' },
+      { text: 'Who sees a lesson', link: 'visibility' },
+      { text: 'When a payment fails', link: 'payment-failure' },
+      { text: 'Bundles and teams', link: 'teams' },
     ],
   },
   {

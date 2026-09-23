@@ -198,3 +198,40 @@ place a reader looks for an exception.
 
 If a reverse-charge or § 19 note is missing, the mechanism was not what you expected. Check
 `tax_reason` on the invoice and the rules in [VAT](/invoices/vat#the-decision-in-order).
+
+## An invoice fails on `tax_mechanism` or `place_of_supply` after an update
+
+The migration of 2.2 has not run. The writer fills both columns on `invoice_items`. Run
+`php artisan migrate`; then `invoices:pending --write` writes the invoices the failed sales
+are waiting for.
+
+## The PDF archive says "being built" and never finishes
+
+No queue worker is running for the connection the job is on, or the job was stopped. An
+archive older than its timeout is shown as not finished, with a request to build it again;
+one the queue gave up on shows as failed. Start a worker and build it again.
+
+## Two workers build the same archive
+
+The queue connection's `retry_after` is below the job's timeout of 1800 seconds, so the
+queue hands the job to a second worker while the first is still rendering. Set `retry_after`
+above 1800. See [Exports → The PDF archive](/invoices/exports#the-pdf-archive).
+
+## The tax report says lines were derived
+
+Those lines were written before 2.2 and carry no treatment and place of supply of their own.
+The export derives both from the document, and says how many. Nothing is wrong with the
+invoices; the note is there so the figure is not mistaken for a stored one.
+
+## A name in the CSV starts with an apostrophe
+
+Deliberate. A text a buyer typed that starts with `=`, `+`, `-`, `@`, a tab or a carriage
+return is written with a leading apostrophe, so a spreadsheet opens it as text rather than
+running it as a formula.
+
+## A sale to another EU country is undetermined with OSS switched on
+
+Destination taxation is on, but there is no zone for that country and the shipped rates are
+off, or the product is in a class other than `shipped_rates_class`. Write a zone for the
+country, or switch on `tax.oss.shipped_rates` after having the rates confirmed. Reduced
+classes always need a zone. See [VAT → The shipped EU standard rates](/invoices/vat#the-shipped-eu-standard-rates).

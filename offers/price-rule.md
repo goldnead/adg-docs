@@ -54,6 +54,14 @@ Both guards exist because of the same bug: a pair of offers pointing at each oth
 each other what they cost until memory ran out — and the listing you would have deleted one
 from died with it, because every row asks whether it is sellable.
 
+## Pay what you want is inside the rule
+
+An offer set to [pay what you want](/offers/pay-what-you-want) takes the one number that does
+come from the buyer. It is not an exception either: the amount travels in the handle
+(`offer:workshop:=2500`), and the resolver answers only when it lies inside the minimum and
+maximum stored on the offer. An amount outside them, a malformed one, or any amount at all on a
+fixed-price offer resolves to nothing, and the checkout refuses.
+
 ## What a coupon does not change
 
 A coupon is the one thing that looks like an exception to the rule and is not.

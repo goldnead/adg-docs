@@ -90,20 +90,41 @@ stretched, so none is drawn. Widen the period.
 **Nothing was measured in any bucket.** A bucket that earned nothing gets no bar at all —
 never a short one, which would draw activity on a quiet day.
 
-## The breadcrumb says "Revenue" while you are on the Metrics screen
+## The breadcrumb says "Revenue" on a report or a metric
 
-Statamic caches the list of URLs its Control Panel navigation knows about. Upgrading
-from 1.0 adds a second child page, and until that cache is rebuilt the breadcrumb still
-resolves to the only child it knew — so the page heading, the sidebar and the breadcrumb
-disagree with each other.
+From 1.2.0 until the subscription release it was a bug, and clearing the cache did not
+fix it. The revenue screen lived at `/cp/insights`, above every other Insights page, and
+Statamic marks the first nav child whose address a page lies under as active: every report
+and every metric showed "Revenue". The revenue screen now lives at `/cp/insights/revenue`,
+and `/cp/insights` redirects there with its query string.
 
-Nothing is wrong with the data, and clearing the cache is the whole fix:
+**After updating, clear the cache.** Statamic caches the addresses its Control Panel
+navigation knows about, and until that cache is rebuilt it has neither the new revenue
+address nor the new Subscriptions page:
 
 ```
 php artisan cache:clear
 ```
 
-It applies to any addon that adds a nav item during an upgrade, not only this one.
+The same applies to any addon that adds or moves a nav item during an upgrade.
+
+## Subscriptions says "Counted as paused, because this addon does not know the status"
+
+A subscription row carries a status word this addon has no rule for. It is counted as
+held, not as churn, so a new status in Payments cannot turn into a wave of cancellations.
+The notice names the word. If it means *ended*, the figures keep that subscription in the
+paused column until the addon learns the word; report it.
+
+## The subscription screen shows expansion nobody bought
+
+Most likely a coupon that applied to the first few payments has run out. The renewal after
+it charges the full price, and that difference is expansion. See
+[Subscription figures](/insights/subscriptions#the-rules).
+
+## MRR is missing from the Metrics screen
+
+It is not a metric. The metric contract carries no currency, and MRR summed across
+currencies means nothing, so the subscription figures live on their own screen.
 
 ## A group is missing from the Metrics screen
 

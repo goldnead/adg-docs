@@ -41,6 +41,11 @@ have none, and those get no invoice rather than one at the seller's own rate.
 - **Credit notes**, taking the next number and copying the original's figures
 - **An HTML document**, the same one the preview shows
 - **`invoices:pending`**, which lists paid payments with no invoice and says what is missing
+- **[Exports for tax and bookkeeping](/invoices/exports)**: a CSV per document and rate, a
+  tax report per treatment, place of supply and rate, and a ZIP of the period's PDFs, in the
+  Control Panel and as `invoices:export`
+- **The EU standard rates for OSS**, shipped and switched off, for a consumer in a member
+  state you have no zone for
 - **Four figures for [Insights](/insights/what-the-family-reports#invoices)**, dated by
   invoice date and simply absent when that addon is not installed
 
@@ -78,17 +83,19 @@ See [Tax facts and retention](/payments/tax-and-retention).
 
 ## What it deliberately does not do
 
-- **Bookkeeping, DATEV export, dunning.** Different job, different software.
+- **Bookkeeping, a native DATEV EXTF batch, dunning.** The CSV imports into bookkeeping
+  software; posting accounts are that software's job.
 - **The OSS threshold.** Below €10,000 of annual turnover into other EU countries the
   seller's own rate applies; above it, the recipient's. That is a state over time and needs
   a turnover figure, which is a bookkeeping question rather than a per-line one. There is a
-  switch and a named seam.
+  switch and a named seam, and the rates for the other side of it ship with the addon.
 - **VIES lookups.** A VAT ID is checked for shape, never over the network: a tax calculation
   that depends on somebody else's server is one that fails at checkout when their server is
   down.
 - **Send anything.** `InvoiceIssued` and `CreditNoteIssued` are where a site hangs its mail
   and its filing.
-- **A Control Panel screen.** There is none yet.
+- **A Control Panel screen for invoices.** There is no listing or editor; the Control Panel
+  has two utilities, the export and the VAT ID checks.
 - **Tax zones by state or postcode.** In the EU the country carries the rate; states and
   postcodes start to matter in the US.
 
@@ -101,4 +108,5 @@ See [Tax facts and retention](/payments/tax-and-retention).
 - [An invoice does not change](/invoices/immutability)
 - [Credit notes and refunds](/invoices/credit-notes)
 - [Delivery and storage](/invoices/delivery)
+- [Exports for tax and bookkeeping](/invoices/exports)
 - [Reference](/invoices/reference) · [Troubleshooting](/invoices/troubleshooting)

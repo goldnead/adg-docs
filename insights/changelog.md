@@ -14,6 +14,52 @@ Cross-version upgrade notes for the whole suite are in
 
 All notable changes to this addon are documented here.
 
+## Unreleased
+
+### Added: subscription figures
+
+A new screen, **Insights → Subscriptions**, and four reports in a new "Subscriptions" group, read
+from the `subscriptions` table of statamic-payments and the cycles charged on it:
+
+- MRR and ARR, running subscriptions, new subscriptions, customer churn and revenue churn per
+  month, the charges due in the next 30 days and a twelve-month forecast, with MRR over time.
+- **MRR movements by month**: start, new, reactivated, expansion, contraction, churned, paused,
+  net new MRR, end. Summed month by month, so a price change of somebody who joined inside a long
+  window is still an expansion.
+- **Retention by start month**: the share of each cohort still there after 1, 2, 3, 6 and 12
+  months.
+- **Charges due in the next 30 days** and **Revenue forecast from running subscriptions**.
+
+The rules: a quarterly cycle counts a third, a yearly one a twelfth. Payment plans and trials are
+not MRR; plans are their own line in charges and forecast. Currencies are never added — every
+figure is per currency, with a switch on the screen, because the suite has no exchange rate.
+A paused subscription, one suspended after a failed payment, and one in a status this addon does
+not know are *held*: their own movement, counted as retained, never churn; an unknown status is
+named on screen. The price at a moment is what the latest renewal charged, not the checkout,
+which may carry a bump or a setup fee; a charge marked `meta.proration` is ignored.
+
+Churn rates are per month: a window shorter than its month is compounded up to it,
+`1 − (1 − r)^(month / days)`, so a rate can never pass 100 %, and the pieces of a window are
+weighted by their days. Pauses a subscription came back from (`meta.pauses`, written by
+statamic-payments on resuming) take it out of MRR for exactly that window; going in and coming
+back are both pause movements, never churn or new. A subscription cancelled during a pause stopped
+paying when the pause began (`paused_at`).
+
+The four reports show one currency at a time with a switch above the table, like the screen.
+A report may now offer filter choices through the existing `HasFilterOptions` contract, and the
+report screen draws a switch for every filter with more than one option.
+
+### Fixed: the breadcrumb of every report and metric said "Revenue"
+
+The revenue screen lived at `/cp/insights`, above every other screen, and Statamic marks the first
+nav child a page lies under as active. It now lives at `/cp/insights/revenue`; `/cp/insights`
+redirects there, period and currency included. Wrong since 1.2.0. After updating, `php artisan cache:clear` so the Control
+Panel's cached nav addresses are rebuilt.
+
+The database only selects; every date is compared in PHP, so the figures are the same on SQLite,
+MySQL and Postgres — the new tests were run against all three (`INSIGHTS_TEST_DB_URL`).
+No contract changed; the reports use the existing `Report` contract. No migration, no new config key.
+
 ## 1.4.0 — 2026-09-16
 
 ### Added: the website's own traffic

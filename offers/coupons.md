@@ -21,6 +21,10 @@ ignored; a request that says `FRUEHLING` is a question this table answers.
 | **Only for these offers** | empty means every offer |
 | **From** · **Until** | both optional |
 | **Maximum uses** | empty means no limit |
+| **Applies to** | the first payment (default), the first *n* payments, or every payment. See [below](#how-long-a-coupon-applies) |
+| **Takes off** | offer and bumps (default), the offer only, or the bumps only |
+| **Also for later offers in the same funnel** | off by default |
+| **Link target page** | where the [coupon link](/offers/links#coupon-links) leads; empty means the home page |
 | **Active** | |
 
 **Exactly one of percent and amount.** Not both, not neither — the form says so, and the
@@ -92,6 +96,61 @@ default for a campaign code. Name offers and it works on those and no others.
 The check runs against the offer the basket was built around — the primary one, not the
 bumps.
 
+## What it takes off
+
+**Takes off** decides which part of the basket the discount is computed on:
+
+| Setting | |
+| --- | --- |
+| **Offer and bumps** | the whole basket. The default, and what every coupon did before |
+| **The offer only** | the main offer's amount |
+| **The bumps only** | the ticked bumps |
+
+Two parts are never discounted, whatever the setting: a
+[setup fee](/offers/setup-fee#setup-fee), and on a
+[pay-what-you-want](/offers/pay-what-you-want#the-minimum-is-a-floor-after-discounts-too)
+offer the part of the chosen amount up to the minimum.
+
+## How long a coupon applies
+
+On a one-off purchase there is one payment, and this setting changes nothing. On a subscription
+or instalments, **Applies to** says which payments are discounted:
+
+| Setting | `duration` | |
+| --- | --- | --- |
+| **The first payment** | `once` | the default, and what every existing coupon keeps |
+| **The first payments** | `repeating` | with **How many payments**, 2 to 120 |
+| **Every payment** | `forever` | for as long as the agreement runs |
+
+The listing names it under the discount: *First 3 payments*, *Every payment*.
+
+The basket hands the terms to the payment, frozen at the moment of purchase:
+
+```php
+$basket->paymentMeta();   // ['coupon' => [...]] or [] — attach it to the payment's meta
+$basket->couponTerms();   // the same terms, or null
+```
+
+The terms are `code`, `percent`, `amount_cent`, `currency`, `duration`, `cycles` and
+`floor_cent`. They are empty for a one-off purchase, a `once` coupon, and a coupon that only
+takes off bumps, because renewals only charge the main offer.
+
+Lowering the renewals themselves is the job of [Payments](/payments/), which asks
+
+```php
+\Goldnead\StatamicOffers\Offers::recurringDiscountCent($terms, $number, $amountCent, $currency);
+```
+
+for payment number `$number` (the first is 1). It never returns more than the amount or less
+than zero, respects `floor_cent`, and returns zero for a fixed amount in another currency.
+**On a Payments version that does not read `meta.coupon`, every coupon behaves as "the first
+payment".** Payments 1.24.5 does not read it yet.
+
+**Also for later offers in the same funnel** (`funnel_wide`) marks a code as valid for the
+upsells after the purchase too, so the buyer does not type it again.
+`Coupon::coversFollowUps()` answers it; carrying the code from step to step is the funnel's
+job.
+
 ## Redemptions are claimed, not counted
 
 `used_count` is incremented with a conditional `UPDATE`, at the moment a basket becomes a
@@ -107,6 +166,15 @@ its way into `Checkout::start()`.
 under concurrency — a read-then-write check would hand the last one to both. And if somebody
 else took it in between, **the sale still happens, at full price**: a sale lost to a race is
 worse than a discount missed.
+
+**A refused checkout gives the use back.** When `Checkout::start()` returns `null` after
+`discount()` claimed a use, for example because of the buyer's country, call
+
+```php
+$basket->releaseCoupon();
+```
+
+It gives the redemption back once, however often it is called.
 
 ## On the payment
 

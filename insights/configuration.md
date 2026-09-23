@@ -34,9 +34,12 @@ One of `7d`, `30d`, `90d`, `12m`, `ytd`, `all`. Anything else falls back to `30d
 than producing an empty range.
 
 The period and currency both live in the query string —
-`/cp/insights?period=90d&currency=CHF` — so a view can be bookmarked or pasted into a
-message, and survives a reload. The Metrics screen and a single metric's detail view read
-the same parameters.
+`/cp/insights/revenue?period=90d&currency=CHF` — so a view can be bookmarked or pasted
+into a message, and survives a reload. The Subscriptions screen, the Metrics screen and a
+single metric's detail view read the same parameters.
+
+A bookmark of the old address, `/cp/insights?period=90d&currency=CHF`, still works:
+`/cp/insights` redirects to the revenue screen and keeps the query string.
 
 Both keys govern presentation only. A contributing addon decides for itself what a figure
 counts and on which day; nothing here can change that.
@@ -45,7 +48,7 @@ counts and on which day; nothing here can change that.
 
 | Permission | What it opens |
 | --- | --- |
-| `view insights` | Both screens and their navigation entries |
+| `view insights` | Revenue, Subscriptions, Metrics and Reports, and their navigation entries |
 
 One permission, no children. The screens are read-only: there is nothing on them to grant
 separately.

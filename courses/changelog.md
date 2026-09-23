@@ -12,6 +12,52 @@ Release notes for `goldnead/statamic-courses`, as published with the package.
 Cross-version upgrade notes for the whole suite are in
 [Upgrading](/guide/upgrading).
 
+## Unreleased
+
+### Added
+- Lesson blocks: text, callout, columns, FAQ, video, download and button, rendered by
+  `&#123;&#123; courses:blocks }}` with overridable partials. The markdown `content` stays and renders
+  first. Private downloads have their own field on statamic-private-media's container and are
+  signed for `course:<slug>`; a MediaAccess from courses answers that resource with
+  `canAccess()`, so team members and bundle holders get the file. YouTube and Vimeo wait behind
+  statamic-consent's gate when it is installed.
+- `courses:install --merge` (with `--dry-run`): adds missing fields and select options to
+  existing blueprints and changes nothing else; translates collection titles still in English.
+- Drip modes `days`, `date`, `day_of_month`, `payments` and `after_trial` (lesson fields
+  `drip_after`, `drip_date`; course field `drip_day_of_month`), `Courses::recordBilling()`.
+- Lessons and sections limited to entitlements, user groups, LeadHub tags or LeadHub segments.
+- Quiz lessons from statamic-assessments (`assessment`, `assessment_min_score`,
+  `assessment_pass_levels`): a pass completes the lesson, a fail records the attempt; applied
+  brand-neutrally. `&#123;&#123; courses:quiz }}`.
+- `on_payment_failure` per course (`keep`, `pause_drip`, `revoke`), applied from
+  statamic-payments' subscription events. A hold remembers its subscription and only takes away
+  what that one paid for; a new purchase lifts it. Payment holds on the Course Progress screen,
+  lifted there with the permission `manage course holds`.
+- Bundles on the course (`bundles`) and team seats per purchase (`team_seats`,
+  `courses_team_members`, `POST /!/courses/team`, `&#123;&#123; courses:team }}`,
+  `&#123;&#123; courses:team_form }}`); a bundle's team covers all its courses.
+- Calendar drip days are counted in `statamic.system.display_timezone`.
+- Access is also looked up under the learner's email address (subject type `email`), where
+  statamic-payments grants on a site without a SubjectResolver.
+- A hold set by hand is absolute: no grant, team seat, renewal or purchase gets past it; only
+  `restoreAccess()` or the Control Panel lifts it.
+- `courses:install --dry-run` saves nothing, also on a fresh site ("would create").
+- Events `LearnerEnrolled`, `LessonUnlocked`, `QuizPassed`, `QuizFailed`, `DripPaused`,
+  `DripResumed`, `CourseAccessSuspended`, `CourseAccessRestored`, `TeamMemberAdded`,
+  `TeamMemberRemoved`.
+- Config `downloads.container`.
+
+### Changed
+- Three migrations: billing, hold and hold-source columns on `courses_enrollments`, table
+  `courses_team_members`. Run `php artisan migrate`, then `courses:install --merge`.
+- `courses:install` writes an asset container into the download field.
+- A lesson locked by the drip reports its drip reason first, also before the learner enrolled.
+
+## 0.1.2 (2026-09-23)
+
+### Fixed
+- CourseCompleted fires once under concurrent completion.
+
 ## 0.1.1 (2026-09-22)
 
 ### Changed

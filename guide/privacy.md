@@ -48,6 +48,14 @@ cookie, user agent or referrer. The IP is used for one thing, a cap on counted
 clicks per minute, and only as part of a SHA-256 hash that serves as a cache key
 for that minute. See [Configuration → Clicks](/smartlinks/configuration#clicks).
 
+[Affiliates](/affiliates/) writes its referral cookie only with the visitor's
+consent, and without it keeps the referral in the session the visitor already
+has. A click row holds the partner and the landing path, no IP and no user
+agent. Partners' payout details (IBAN, PayPal address) are stored encrypted and
+shown in the Control Panel only with `manage affiliate payouts`; the payout CSV
+carries them in plain text, because it is the file you pay from. The commission
+mail never names the buyer. See [Attribution → Consent](/affiliates/attribution#consent).
+
 ## Redaction on write
 
 Both LeadHub and Activity sanitise before persisting, not after.
@@ -196,6 +204,9 @@ work around: a ledger you can quietly edit is not a ledger.
 | Certificates | — | none; a certificate is kept, revoked or not |
 | Private Media | `private-media:prune --days=` | `audit.retention_days`, default 90, **not scheduled**; you register it |
 | Smart Links | `smartlinks:prune --days=` | `clicks.prune_days`, default 400, **not scheduled**; you register it. The counters hold no personal data. |
+| Affiliates | — | none; partners, clicks, referrals, commissions and payouts are the books of the programme and are kept |
+| Offers | — | none; seat pools keep the names and addresses of the invited people |
+| Invoices | — | none; export archives stay on `export.disk` until you delete them |
 
 ::: warning Nothing here prunes itself
 Deliveries and run logs are the two tables that grow fastest, and neither

@@ -6,7 +6,7 @@
 php artisan vendor:publish --tag=statamic-offers-config
 ```
 
-Five keys. Everything else about an offer is a row in a table, edited in the Control Panel,
+Nine keys. Everything else about an offer is a row in a table, edited in the Control Panel,
 because that is the point of the addon.
 
 | Key | Default | What happens when it is wrong |
@@ -16,6 +16,10 @@ because that is the point of the addon.
 | `seller.name` · `seller.contact` | `null` | Fill `{seller_name}` and `{seller_contact}` in the withdrawal text. Empty falls back to `app.name` and `mail.from.address`. |
 | `withdrawal` | 14 days, German draft wording | The site-wide terms every offer inherits field by field. |
 | `checkout_fields` | eight fields | The library the offer form picks from. |
+| `pay_what_you_want.max_cent` | `500000` | The ceiling for a [chosen amount](/offers/pay-what-you-want) when the offer names none. A check against a typo, not a price recommendation. |
+| `coupon_link.parameter` | `coupon` | The URL parameter that [prefills a code](/offers/links#coupon-links). Renaming it breaks every printed link with the old name: the page opens, without the discount. |
+| `links.prefix` · `links.base_url` | `go` · `null` | The [short link](/offers/links#short-links) path, and the address printed in links and QR codes (`null` means `app.url`). The prefix must not equal a page path of the site. |
+| `seats.prefix` · `seats.after_claim_url` | `!/statamic-offers/plaetze` · `null` | Where the [seat pages](/offers/seats) live, and where the button after accepting a seat leads. `null` means no button. |
 
 ## Withdrawal defaults
 
@@ -93,6 +97,35 @@ and is seen a thousand times.
 
 The counter is an `increment()` — one statement in the database, so two people seeing the
 same offer in the same second cannot lose one of them the way read-add-write does.
+
+## Links and seats
+
+```php
+'pay_what_you_want' => ['max_cent' => 500000],
+
+'coupon_link' => ['parameter' => 'coupon'],
+
+'links' => [
+    'prefix' => 'go',        // /go/<slug>
+    'base_url' => null,      // null = app.url
+],
+
+'seats' => [
+    'prefix' => '!/statamic-offers/plaetze',
+    'after_claim_url' => null,
+],
+```
+
+`base_url` is for an install whose Control Panel runs under a different address than the site
+that should be printed on the flyer. The QR code encodes whatever address this produces, so set
+it before printing.
+
+## Money is entered in cents
+
+Every money field in the offer and coupon forms takes **cents**: `2500` is 25.00. Each one says
+so next to the field and shows the amount it stands for below it ("Equals 25,00 €"), so a
+missing or extra zero is visible before saving. The whole suite enters money this way. That is
+not a setting.
 
 ## What is not configurable
 
