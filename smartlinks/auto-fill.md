@@ -16,12 +16,17 @@ php artisan smartlinks:resolve
 
 # one song, by slug or ID
 php artisan smartlinks:resolve alles-wird-gut
+
+# also replace links smartlinks:check confirmed dead
+php artisan smartlinks:resolve --replace-dead
 ```
 
 ## What it never does
 
-- **It never overwrites.** Only platforms the song has no link for are asked at all. A found
-  link is appended as a new row; an existing link is never touched, even when it is wrong.
+- **It never overwrites.** Only platforms the song has no link for are asked at all. Every
+  platform the song holds a link for counts as present, dead or not. A found link is appended
+  as a new row; an existing link is never touched, even when it is wrong. The one exception
+  is a confirmed dead link, and only with [`--replace-dead`](#replace-dead).
 - **It never writes a name match.** YouTube can only be searched by name, so what it finds is
   a [suggestion](#suggestions) that someone accepts or rejects in the Control Panel.
 - **It never guesses.** A resolver that is not sure reports why and adds nothing.
@@ -157,6 +162,30 @@ Found links are appended to the song's links field:
 A localisation that inherits its links from the origin gets the new links added **on the
 origin**, not as a copy that would end the inheritance. The entry is saved like any other
 save, with Statamic's events.
+
+## Replacing dead links {#replace-dead}
+
+A link that [`smartlinks:check`](/smartlinks/link-health#dead-links) has confirmed dead still
+counts as present. Without `--replace-dead` its platform is not asked, and no second link is
+appended next to the dead one. With the option, off by default:
+
+- A platform is asked again only when **all** its stored links are confirmed dead, that is
+  dead on two checks in a row. A link that is `suspect` or `unknown`, or a live link of the
+  same platform, keeps the platform out.
+- A found link goes into the row of the platform's first dead link. In a Grid only the URL
+  column changes; the row's other columns stay. A List gets the new URL in the old one's
+  place. Further dead links of that platform stay where they are.
+- The dead link's check history in `smartlinks_link_status` is dropped, so the new link
+  starts with none.
+- Each replacement is logged at `info` as `smartlinks: replaced dead link`, with the entry, the
+  platform, the old and the new URL.
+
+The console shows a replacement as its own row, Result `replaced` (`would replace` on a dry
+run) and the URL column `old → new`. A replacement is not counted among the added links in
+the last line.
+
+Run `--replace-dead` after the check, not before it: the nightly plan on
+[Schedule it](/smartlinks/link-health#schedule) puts it an hour later.
 
 ## Reasons
 

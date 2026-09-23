@@ -11,8 +11,20 @@ In order:
    `songs`.
 3. **Is the slug the one in the current site?** On a multisite install a slug is looked up in
    the site the request is for.
-4. **Are the routes on?** [`SMARTLINKS_ROUTES_ENABLED`](/smartlinks/configuration#routes) is
-   `false`, or `routes.prefix` was changed without clearing the route cache.
+4. **Is it under the right segment?** A release is at `/hoeren/release/{slug}`, a song at
+   `/hoeren/{slug}`, and neither answers under the other. See
+   [One segment per collection](/smartlinks/landing#segments).
+5. **Are the routes on?** [`SMARTLINKS_ROUTES_ENABLED`](/smartlinks/configuration#routes) is
+   `false`, or `routes.prefix` or `routes.segments` was changed without clearing the route
+   cache.
+
+## The buttons of a song called `release` answer 404
+
+A song whose slug equals a segment is shadowed by that segment's routes. Its page at
+`/hoeren/release` opens, but its redirect `/hoeren/release/spotify` is read as the page of a
+release called `spotify`, a 404 unless there is one. Give the song another slug,
+or the releases another segment in
+[`routes.segments`](/smartlinks/configuration#routes).
 
 ## The page shows "No links for this song yet."
 
@@ -81,7 +93,8 @@ log. See [Reasons](/smartlinks/auto-fill#reasons).
   [`country`](/smartlinks/auto-fill#region).
 - **`rate_limited`**: the service asked to slow down. Run it again later.
 - **Nothing in the table at all:** every platform the resolvers cover already has a link. Those
-  rows are `already_present`, and the console leaves them out.
+  rows are `already_present`, and the console leaves them out. A confirmed dead link counts
+  too; `--replace-dead` asks for its platform again.
 
 Amazon, Amazon Music, Boomplay, Yandex Music, Anghami, Napster and every other platform without
 a resolver are never filled. Enter them by hand.
@@ -106,8 +119,9 @@ The user has `view smartlinks` but not `manage smartlinks`.
 
 [`smartlinks:check`](/smartlinks/link-health#dead-links) found the link dead twice in a row,
 and [`check.hide_dead`](/smartlinks/configuration#check) leaves it off. The song shows a "Dead
-links" badge on the Smart Links screen. Replace the link, or run `smartlinks:resolve` for the
-song: it sees the platform as missing.
+links" badge on the Smart Links screen. Replace the link, or run
+`smartlinks:resolve --replace-dead` for the song. Plain `smartlinks:resolve` does not help: it
+counts the dead link as present. See [Replacing dead links](/smartlinks/auto-fill#replace-dead).
 
 ## `smartlinks:check` reports `unknown` for a link that works in the browser
 

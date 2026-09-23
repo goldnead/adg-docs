@@ -125,11 +125,15 @@ did not answer `ok` with the song, the verdict, the HTTP status and the URL.
 - It is left off the landing page, out of the tags, and its redirect answers 404
   ([`check.hide_dead`](/smartlinks/configuration#check), on by default). A second link of the
   same platform takes over.
-- The next `smartlinks:resolve` sees the platform as missing and can fill it.
+- `smartlinks:resolve` still counts the platform as present and appends nothing next to the
+  dead link. `smartlinks:resolve --replace-dead` asks for the platform again, once all its
+  links are confirmed dead, and puts a found link into the dead link's row. See
+  [Replacing dead links](/smartlinks/auto-fill#replace-dead).
 - The [Smart Links screen](/smartlinks/control-panel#badges) shows a "Dead links" badge on the
   song, and the filter "Dead links" lists those songs.
 
-The link stays in the entry. Deleting it is left to a person.
+The link stays in the entry. Deleting it is left to a person, and replacing it to a person or
+to `--replace-dead`.
 
 ### No request to your own network {#ssrf}
 
@@ -146,13 +150,22 @@ the server needs a different DNS policy; the addon's binding only applies when t
 
 ### Schedule it {#schedule}
 
-The addon does not schedule the check. Register it yourself:
+The addon schedules nothing. A suggested nightly plan, registered by you:
 
 ```php
 // routes/console.php
 Schedule::command('smartlinks:check')->dailyAt('03:30');
+Schedule::command('smartlinks:resolve --replace-dead')
+    ->dailyAt('04:30');
+Schedule::command('smartlinks:prune')->weekly();
 ```
 
-Without it no link is ever marked dead, nothing is hidden, and the screen shows no dead-link
-badges. Since a link is confirmed only on the second dead check in a row, a nightly run
-confirms it on the second night.
+- `smartlinks:check` at 03:30 records the verdicts. Without it no link is ever marked dead,
+  nothing is hidden, and the screen shows no dead-link badges. Since a link is confirmed only
+  on the second dead check in a row, a nightly run confirms it on the second night.
+- `smartlinks:resolve --replace-dead` at 04:30, an hour later, fills missing platforms and
+  replaces the links the check has confirmed dead. See
+  [Replacing dead links](/smartlinks/auto-fill#replace-dead). Leave the option out if dead
+  links should wait for a person.
+- `smartlinks:prune` weekly deletes click counters older than
+  [`clicks.prune_days`](/smartlinks/configuration#pruning).

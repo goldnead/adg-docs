@@ -2,33 +2,66 @@
 
 <AddonHeader />
 
-The link you put on a poster, in a bio or in a newsletter is `/hoeren/{slug}`. Listeners pick
-their platform there, and the pick goes through a redirect that counts it.
+The link you put on a poster, in a bio or in a newsletter is `/hoeren/{slug}`, for a release
+`/hoeren/release/{slug}`. Listeners pick their platform there, and the pick goes through a
+redirect that counts it.
 
-## Two routes
+## The routes
 
-Both sit inside the `web` group, and both disappear with
+All sit inside the `web` group, and all disappear with
 [`SMARTLINKS_ROUTES_ENABLED=false`](/smartlinks/configuration#routes).
 
 | Route | Name | What |
 | --- | --- | --- |
-| `GET /hoeren/{slug}` | `smartlinks.show` | The landing page, one button per platform. |
+| `GET /hoeren/{slug}` | `smartlinks.show` | A song's landing page, one button per platform. |
 | `GET /hoeren/{slug}/{platform}` | `smartlinks.go` | 302 to the URL stored for that platform, click counted. |
+| `GET /hoeren/release/{slug}` | `smartlinks.segment.show` | The same page for a release. |
+| `GET /hoeren/release/{slug}/{platform}` | `smartlinks.segment.go` | The same redirect for a release. |
 
 The prefix `hoeren` is [`routes.prefix`](/smartlinks/configuration#routes). `{platform}` is the
 platform handle, `spotify` or `applemusic`; the table is on
 [Platform detection](/smartlinks/platforms#built-in-platforms).
 
+## One segment per collection {#segments}
+
+Songs sit at the prefix. Entries of
+[`release_collections`](/smartlinks/configuration#collections) sit under the segment `release`,
+so a song and its single can share a slug: on anders-band.de five pairs do, `alles-wird-gut`
+among them, and `/hoeren/alles-wird-gut` and `/hoeren/release/alles-wird-gut` are two
+different pages.
+
+[`routes.segments`](/smartlinks/configuration#routes) sets the segment per collection. An
+empty segment mounts that collection at the prefix. The two routes with a segment are
+registered before the two without, so `/hoeren/release/x` is never read as the song
+`release` and the platform `x`.
+
+Up to 0.2.0 a release answered at `/hoeren/{slug}` like a song. Since 0.2.1 that URL is a 404
+for it; a link to a release printed or sent before the update needs the new URL. Song URLs
+are unchanged.
+
+::: warning A song with the slug `release`
+A song whose slug equals a segment, `release` by default, is shadowed by that segment's routes.
+`/hoeren/release` still reaches it, but `/hoeren/release/{platform}` is read as a release
+called `{platform}`. Give the song another slug, or the releases another segment.
+:::
+
 ## Which song
 
-`{slug}` is looked up among the published entries of the configured
-[collections](/smartlinks/configuration#collections), in the current site. A slug is only
-unique per site, so on a multisite install each site's pages show that site's song. A
-localisation without links of its own shows its origin's.
+`{slug}` is looked up among the published entries of the collections at that segment, in the
+current site: at the prefix the collections without a segment, under `release/` the release
+collections. A song's slug under `release/` is a 404, and so is a release's slug at the
+prefix.
+
+When several collections share a segment, they are asked one after the other in config order,
+[`collections`](/smartlinks/configuration#collections) first, then `release_collections`. The
+first published entry with that slug wins, every time.
+
+A slug is only unique per site, so on a multisite install each site's pages show that site's
+song. A localisation without links of its own shows its origin's.
 
 ## What is a 404
 
-- a slug that is not a song of the configured collections, or not in the current site;
+- a slug that is not an entry of the collections at that segment, or not in the current site;
 - a song that is not published;
 - on the redirect, a platform the song has no link for, or whose only link is confirmed dead.
 
@@ -62,7 +95,7 @@ A song with no links gets its page anyway, with the line "No links for this song
 
 ## No throttle {#no-throttle}
 
-Neither route is throttled, on purpose. At a concert a whole room scans the same QR code
+None of these routes is throttled, on purpose. At a concert a whole room scans the same QR code
 through one venue IP, and every one of them has to get through. Only the counting is capped,
 at [`clicks.per_minute`](/smartlinks/configuration#clicks) per IP, song and platform. The
 pages themselves are cheap reads.
@@ -112,5 +145,7 @@ song yet.", comes from the language files, English and German
 
 ## Linking to the page
 
-Put `/hoeren/{slug}` wherever you announce the song. In a template,
-[`{{ smartlinks:page }}`](/smartlinks/tags#smartlinks-page) returns the URL.
+Put `/hoeren/{slug}` wherever you announce the song, `/hoeren/release/{slug}` for a release.
+In a template, [`{{ smartlinks:page }}`](/smartlinks/tags#smartlinks-page) returns the URL, and
+it builds each entry's URL on its own route. So do `click_url`, the facade's `landingUrl()`
+and `clickUrl()`, and the links on the [Smart Links screen](/smartlinks/control-panel).

@@ -6,7 +6,7 @@
 
 | Command | |
 | --- | --- |
-| `php artisan smartlinks:resolve {entry?}` | Fills missing links by ISRC or UPC from Spotify, Deezer, Apple Music and Tidal, and stores YouTube finds as suggestions; never overwrites. `entry` is an ID or a slug; without it, every song and release. `--dry-run` saves nothing. |
+| `php artisan smartlinks:resolve {entry?}` | Fills missing links by ISRC or UPC from Spotify, Deezer, Apple Music and Tidal, and stores YouTube finds as suggestions; never overwrites. Every platform with a stored link counts as present, dead or not. `entry` is an ID or a slug; without it, every song and release. `--dry-run` saves nothing. `--replace-dead` also resolves platforms whose links are all confirmed dead and puts the new link into the dead link's row. |
 | `php artisan smartlinks:clean` | Removes affiliate and tracking parameters from every stored link, normalises its form and drops rows that are duplicates afterwards. `--dry-run` saves nothing. |
 | `php artisan smartlinks:check {entry?}` | Asks every stored link whether it still answers and records the verdict; a link is dead on the second dead check in a row. `--dry-run` records nothing. Not scheduled. |
 | `php artisan smartlinks:prune` | Deletes day counters older than `clicks.prune_days` (400). `--days=` for another number. Not scheduled. |
@@ -79,13 +79,17 @@ The addon binds its own only when nothing else is bound.
 | --- | --- | --- | --- |
 | GET | `/hoeren/{slug}` | `smartlinks.show` | `web` group, public, not throttled |
 | GET | `/hoeren/{slug}/{platform}` | `smartlinks.go` | `web` group, public, not throttled, 302 |
+| GET | `/hoeren/{segment}/{slug}` | `smartlinks.segment.show` | the same for a collection with a segment, `release` by default; registered only when a segment is in use |
+| GET | `/hoeren/{segment}/{slug}/{platform}` | `smartlinks.segment.go` | the same, 302 |
 | GET | `{cp}/smartlinks` | `statamic.cp.smartlinks.index` | `can:view smartlinks` |
 | GET | `{cp}/smartlinks/listing` | `statamic.cp.smartlinks.listing` | `can:view smartlinks`, the rows as JSON |
 | POST | `{cp}/smartlinks/suggestions/{id}/accept` | `statamic.cp.smartlinks.suggestions.accept` | `can:manage smartlinks` |
 | POST | `{cp}/smartlinks/suggestions/{id}/reject` | `statamic.cp.smartlinks.suggestions.reject` | `can:manage smartlinks` |
 
 `{slug}` matches letters, digits, `-` and `_`; `{platform}` lower-case letters, digits, `-` and
-`_`; `{id}` digits. The two front-end routes follow
+`_`; `{segment}` one of the segments in use; `{id}` digits. The segment routes are
+registered before the other two, so a song whose slug is a segment is shadowed; see
+[One segment per collection](/smartlinks/landing#segments). The four front-end routes follow
 [`routes.*`](/smartlinks/configuration#routes); the four Control Panel routes follow
 [`cp.enabled`](/smartlinks/configuration#cp).
 
@@ -151,6 +155,7 @@ rewrote and removes rows for links the song no longer holds.
 | Message | Level | When |
 | --- | --- | --- |
 | `smartlinks: resolve` | info | every auto-fill decision, with its reason |
+| `smartlinks: replaced dead link` | info | `--replace-dead` put a new link into a dead link's row, with the platform, the old and the new URL |
 | `smartlinks: resolver failed` | warning | a resolver threw; that platform is recorded as `http_error`, the others go on |
 | `smartlinks: click not recorded` | warning | a click could not be written; the listener was redirected anyway |
 | `statamic-smartlinks: the smartlinks_clicks table is missing; run php artisan migrate.` | warning | the Smart Links screen was opened before the migration ran |
@@ -181,6 +186,7 @@ rewrote and removes rows for links the song no longer holds.
 | `routes.enabled` | `true` (`SMARTLINKS_ROUTES_ENABLED`) |
 | `routes.prefix` | `'hoeren'` |
 | `routes.view` | `'smartlinks::landing'` |
+| `routes.segments` | `[]`: release collections under `release`, the rest at the prefix |
 | `clicks.enabled` | `true` |
 | `clicks.per_minute` | `10` |
 | `clicks.prune_days` | `400` |

@@ -16,7 +16,8 @@ Spotify and Tidal, and YouTube finds wait in the Control Panel for someone to ac
 ## What it is
 
 - **A landing page per song or release** and a **counting redirect** per platform, both
-  public, both `noindex`. See [The landing page](/smartlinks/landing).
+  public, both `noindex`. A release sits at `/hoeren/release/{slug}`, so a song and its single
+  can share a slug. See [The landing page](/smartlinks/landing).
 - **Platform detection from the URL's host**, for 19 built-in platforms, short links included,
   and extendable in config. A fieldtype, **Streaming URL**, shows the detected platform next to
   each URL in the entry form. See [Platform detection](/smartlinks/platforms).
@@ -65,6 +66,7 @@ entry in a smart link collection
 
 GET /hoeren/{slug}             landing page, one button each
 GET /hoeren/{slug}/{platform}  302 to the stored URL
+    releases: /hoeren/release/{slug}, same two routes
   ├─ counted: +1 in smartlinks_clicks
   │    (song, platform, day)
   └─ not counted: bot, preview, HEAD,

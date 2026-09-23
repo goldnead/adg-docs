@@ -27,7 +27,7 @@ The song's links, one per platform, in [priority order](/smartlinks/configuratio
 | `url` | the stored URL |
 | `label` | the label, `Spotify` |
 | `icon` | the handle again, for your own icon set |
-| `click_url` | the full URL of the counting redirect, ending in `/hoeren/{slug}/spotify` |
+| `click_url` | the full URL of the counting redirect, ending in `/hoeren/{slug}/spotify`, for a release `/hoeren/release/{slug}/spotify` |
 
 Link to `click_url` if the click should be counted. It is `null` when the
 [routes are off](/smartlinks/configuration#routes) or the entry has no slug; fall back to `url`.
@@ -54,8 +54,8 @@ This is the stored URL itself, so a click on it is not counted.
 
 ## `{{ smartlinks:page }}` {#smartlinks-page}
 
-The full URL of the landing page, ending in `/hoeren/{slug}`, or nothing when the routes are
-off.
+The full URL of the landing page, ending in `/hoeren/{slug}` (a release:
+`/hoeren/release/{slug}`), or nothing when the routes are off.
 
 ```antlers
 <a href="{{ smartlinks:page }}">All platforms</a>

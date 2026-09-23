@@ -167,10 +167,11 @@ SMARTLINKS_ROUTES_ENABLED=false
     'enabled' => (bool) env('SMARTLINKS_ROUTES_ENABLED', true),
     'prefix' => 'hoeren',
     'view' => 'smartlinks::landing',
+    'segments' => [],
 ],
 ```
 
-`enabled` removes both front-end routes, the landing page and the redirect. The switch is
+`enabled` removes every front-end route, the landing pages and the redirects. The switch is
 checked where the routes are registered, so a disabled route does not exist, and again in the
 controller, so a route cache built while it was on cannot keep them open. The tags then return
 `null` for `click_url` and for the page URL.
@@ -179,7 +180,23 @@ controller, so a route cache built while it was on cannot keep them open. The ta
 any Blade or Antlers view; see
 [The landing page](/smartlinks/landing#your-own-page).
 
-There is deliberately no throttle on either route. See
+`segments` maps a collection to the URL segment after the prefix. A collection that is not
+listed gets `release` when it is in `release_collections`, and no segment otherwise:
+
+```php
+'segments' => [
+    'releases' => 'album',  // /hoeren/album/{slug}
+    'songs' => '',          // at the prefix, the default
+],
+```
+
+An empty segment mounts the collection at the prefix. A slug is looked up only in the
+collections of its segment, in config order, so two collections at the same segment always
+resolve the same way. Like `prefix`, `segments` is read when routes are registered. A song
+whose slug equals a segment is shadowed by that segment's routes; see
+[One segment per collection](/smartlinks/landing#segments).
+
+There is deliberately no throttle on any of these routes. See
 [The landing page](/smartlinks/landing#no-throttle).
 
 ## Clicks {#clicks}
@@ -236,8 +253,11 @@ The command is **not scheduled**. Register it yourself:
 
 ```php
 // routes/console.php
-Schedule::command('smartlinks:prune')->daily();
+Schedule::command('smartlinks:prune')->weekly();
 ```
+
+Weekly is enough for a limit counted in days; daily does no harm either. The whole nightly
+plan is on [Schedule it](/smartlinks/link-health#schedule).
 
 Without it the table keeps a row per song, platform and day for as long as the site runs.
 

@@ -50,21 +50,27 @@ hand-typed `platform` column you already have is ignored and can go. See
 
 ## The scheduler
 
-The addon schedules nothing. Two commands want a schedule, and nothing runs them for you:
+The addon schedules nothing. Three commands want a schedule, and nothing runs them for you:
 
+- `smartlinks:check` finds dead links. Without it no link is ever marked dead.
+- `smartlinks:resolve --replace-dead` fills missing links and replaces the ones the check
+  confirmed dead. Without it both wait for someone to run it.
 - `smartlinks:prune` deletes click counters older than 400 days. Without it they are kept
   for as long as the site runs.
-- `smartlinks:check` finds dead links. Without it no link is ever marked dead.
 
-Register both in `routes/console.php`:
+The suggested nightly plan, in `routes/console.php`:
 
 ```php
-Schedule::command('smartlinks:prune')->daily();
 Schedule::command('smartlinks:check')->dailyAt('03:30');
+Schedule::command('smartlinks:resolve --replace-dead')
+    ->dailyAt('04:30');
+Schedule::command('smartlinks:prune')->weekly();
 ```
 
-See [Pruning](/smartlinks/configuration#pruning), [Dead links](/smartlinks/link-health#dead-links)
-and [Queues & scheduling](/guide/queues#what-is-scheduled). Nothing in the addon is queued.
+See [Schedule it](/smartlinks/link-health#schedule),
+[Replacing dead links](/smartlinks/auto-fill#replace-dead),
+[Pruning](/smartlinks/configuration#pruning) and
+[Queues & scheduling](/guide/queues#what-is-scheduled). Nothing in the addon is queued.
 
 ## Permissions
 

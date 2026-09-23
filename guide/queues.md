@@ -79,6 +79,7 @@ wrong:
 | `private-media:prune` | nobody | The audit table, with an IP and a user agent per row, grows without limit |
 | `smartlinks:prune` | nobody | The click table keeps a row per song, platform and day for as long as the site runs |
 | `smartlinks:check` | nobody | No link is ever marked dead: dead links stay on the landing page and the Control Panel shows no dead-link badges |
+| `smartlinks:resolve --replace-dead` | nobody | Missing links are not filled and confirmed dead links are not replaced until someone runs it |
 
 ::: danger Retries need a working `schedule:run`
 `webhook-manager:dispatch-retries` is the command that actually performs a
@@ -101,6 +102,17 @@ decision, not a package default, so register it in your own scheduler:
 // routes/console.php or App\Console\Kernel
 Schedule::command('notifications:send-digests --frequency=daily')->dailyAt('07:00');
 Schedule::command('notifications:send-digests --frequency=weekly')->mondays()->at('08:00');
+```
+
+Smart Links suggests a nightly plan: the check first, the replacement of what it confirmed
+dead an hour later, the counters pruned once a week. See
+[Smart Links → Schedule it](/smartlinks/link-health#schedule).
+
+```php
+Schedule::command('smartlinks:check')->dailyAt('03:30');
+Schedule::command('smartlinks:resolve --replace-dead')
+    ->dailyAt('04:30');
+Schedule::command('smartlinks:prune')->weekly();
 ```
 
 ### Without the scheduler
