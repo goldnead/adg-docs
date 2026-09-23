@@ -31,7 +31,12 @@ Eighteen triggers ship built in. Each can be switched off individually under
 | Global Set Saved | `global_set_saved` | Statamic | A global set is saved |
 | Navigation Saved | `nav_saved` | Statamic | A navigation is saved |
 
-Two more arrive with the sibling addons, and six with LeadHub:
+The suite's commerce and learning addons bring their own: twenty with Payments, six with
+Funnels, twelve with Courses, four with Affiliates, and more with Entitlements, Booking and
+Invoices. They are listed with their filters on
+[Triggers from the suite](/automations/suite-triggers).
+
+Webhook Manager, LeadHub and Marketing bring these:
 
 | Trigger | Handle | Group | Fires when |
 | --- | --- | --- | --- |

@@ -30,10 +30,42 @@ permission to send mail. `Payment::$email` is on the event because the listener 
 
 ```php
 // routes/console.php
-Schedule::command('payments:sweep-abandoned')->hourly();
+Schedule::command('payments:sweep-abandoned')->hourly()->withoutOverlapping();
 ```
 
 The sweep is not scheduled for you. Without the schedule the flag does nothing.
+
+## Whose address may be used: `abandoned.capture`
+
+From **1.25**, `enabled` alone is not enough. A second key decides which checkouts may be
+announced at all:
+
+| `abandoned.capture` | |
+| --- | --- |
+| `consent` (default) | Only a checkout whose form passed `meta.reminder_consent = true` is announced and reminded. |
+| `always` | Every unpaid checkout, as before 1.25. |
+| `never` | None. |
+
+Env `STATAMIC_PAYMENTS_ABANDONED_CAPTURE`, and editable on the settings screen.
+
+The consent comes from the checkout form, as its own unticked box ("remind me if I do not finish
+the order"), not the purchase consent. It travels in the payment's `meta` through the `$details`
+argument of `start()`:
+
+```php
+app(Checkout::class)->start(
+    'noten-paket',
+    ['email' => $request->input('email')],
+    details: ['meta' => ['reminder_consent' => $request->boolean('reminder_consent')]],
+);
+```
+
+::: warning Behaviour change in 1.25
+A site that had `abandoned.enabled` on and upgrades without touching the form announces **no
+abandoned checkout any more**: none carries the consent. Pass the consent from the form, or set
+`abandoned.capture` to `always` to keep the old behaviour. [Funnels](/funnels/) 1.17 asks for it
+with a box of its own on the checkout step and passes it on, with the time and the wording.
+:::
 
 `after_minutes` is in minutes rather than hours because the line between "still typing" and
 "gone" is not the same on a nine-euro download as on a course that costs two thousand.

@@ -12,6 +12,173 @@ Release notes for `goldnead/statamic-funnels`, as published with the package.
 Cross-version upgrade notes for the whole suite are in
 [Upgrading](/guide/upgrading).
 
+## Unreleased
+
+### Fixed (review round 4)
+
+- **Escaped output, completed.** The offer's button label, the field library's labels, the reminder
+  label, the in-app notice's labels, prices, and every visitor input put back into a form field
+  (name, address, library fields) are escaped as well. Markdown from the CP is rendered by a new
+  modifier `funnels_markdown` (CommonMark with `html_input: escape`, `allow_unsafe_links: false`):
+  `[x](javascript:…)` is no longer a link, while quotes (`>`) and autolinks (`<https://…>`) work
+  again. Together with round 3 this closes a way around the permission *Edit tracking code*; only
+  the tracking slots output code unescaped.
+- After a refused coupon the bumps are shown for the chosen pricing option, not the first one.
+- README: known embedding limits (Safari before 16.4, switching to a banking app).
+
+### Fixed (review round 3)
+
+- **Embedding: the way back from the provider is bound to the browser that ordered.** The order
+  (top level) sets a short-lived cookie with the one-time token; a return link opened in another
+  browser does not get the visit. Without `Sec-Fetch-Dest` a signed walk is no longer accepted
+  (fail closed). Inside a frame the walk is removed from the address before any script runs, so a
+  pixel cannot send it along. No fixed consent banner inside a frame.
+- **Escaped output (behaviour change):** headline, text, offer and bump texts, labels and the
+  withdrawal wording are escaped in the shipped template; Markdown still works, HTML inside it is
+  shown as text. A funnel that put HTML into a headline or text field now shows it literally.
+- The editor warns when a consent service is missing from the consent config.
+- After a refused coupon the chosen pricing option, bumps, country and code stay, and the message
+  stands at the field. The price at the top follows the chosen pricing option. The coupon field is
+  full width on narrow screens.
+- A funnel-wide coupon also applies to the one-click upsell (statamic-payments >= 1.25); a refused
+  or failing one-click gives the coupon's use back before the checkout takes over.
+- Declining the same offer twice records and announces one decline, not two.
+- Split tests show the progress to the sample (51/100) until they are decided.
+
+### Fixed (review round 2)
+
+- **Embedding: a walk could be taken over.** A signed walk in the address (`?w=`) was accepted on
+  every request and overwrote the visitor's cookie for 30 days, so a link with somebody else's walk
+  put the victim into the sender's visit. It now counts only inside a frame (`embed=1` and
+  `Sec-Fetch-Dest: iframe`), a frame never writes a cookie, and the way back from the provider uses a
+  one-time token bound to the payment, removed from the address by a redirect. An existing cookie is
+  never overwritten.
+- **Laravel 13:** the embedded route also excludes `PreventRequestForgery`, not only its subclasses.
+- **Split tests decide once, on a fixed sample**, at least 100 visits per version and a day after the
+  last of them; "no difference" is recorded too. Deciding on every look found false winners in about a
+  third of A/A tests.
+- **A typed coupon that does not apply refuses the order** with the reason at the field instead of
+  charging the full price; the amount and code typed stay in the fields after an error.
+- **Tracking:** the shipped template is a whole document with viewport and, with statamic-consent,
+  its script and banner, so parked code actually starts. A consent service per code. New permission
+  *Edit tracking code*.
+- **Meta Purchase** also for an earlier purchase of the same walk (`meta.funnel_visit_id` on the
+  payment).
+- Embedded frame height counts margins and is re-sent after a bump shows or hides.
+- In-app notice: Threads, Pinterest, Snapchat; on Android a text without Apple Pay.
+- Checkout texts address the buyer formally, like the rest of the suite. A refusal at payments' door
+  shows payments' own sentence (`Checkout::refusal()`, `CheckoutBlocked::$message`).
+
+### Added: bump rules (F1)
+
+Per checkout step and bump: only with some pricing options, only together with another bump,
+preselected, and shown to everyone, hidden from returning customers or shown only to them. The page
+shows and hides live (`funnels.js`); the server applies the same rules to the order.
+
+### Added: split tests with a goal and an automatic winner (F2)
+
+`split_goal` (`continue`, `purchase`, `upsell`, `revenue`), `split_auto`, `split_min_visits`. The
+winner is picked at 95 % confidence once each version has the minimum visits (z-test for rates,
+Welch test for revenue per visit) and stored in `funnels.meta.split_winners`; new visitors then only
+see it. The editor shows goal, figures, confidence and winner.
+
+### Added: in-app browser notice (F3)
+
+Instagram, Facebook, TikTok and LinkedIn are recognised from the user agent; the page says to open it
+in the real browser, with *Copy link* and, on Android, a Chrome link. Per funnel off or reworded;
+`in_app_browser.enabled` switches it off everywhere.
+
+### Added: popup and inline embedding on other sites (F4)
+
+`embed.js` opens a funnel as a popup (`data-funnel-popup`) or embeds it (`data-funnel-embed`). Every
+funnel page now sends `Content-Security-Policy: frame-ancestors 'self'` plus the funnel's allowed
+domains, and removes `X-Frame-Options`. **A site that frames a funnel page from another domain today
+has to list that domain on the funnel.** Inside a foreign frame the walk travels signed in links and
+forms (`embed.link_minutes`), a new route `statamic-funnels.advance-embed` accepts posts without a
+CSRF token from this site's own origin only, and the order button leaves the frame for the provider.
+
+### Added: statamic-offers 1.12 at the checkout (F5)
+
+Coupon from the link (`?coupon=`, remembered on the walk, funnel-wide codes carried on), pay what you
+want with an amount field, the country question for offers with a country rule, the thank-you line by
+amount, and the coupon terms for follow-up payments in `meta.coupon` of the first payment. A refused
+payment gives the coupon's use back. All guarded: against offers 1.11 the checkout is unchanged.
+
+### Added: tracking code and Meta pixel with Conversions API (F6, F7)
+
+Head code, purchase code (once per paid purchase, with `{amount}`, `{currency}`, `{order_id}`) and a
+Meta pixel per funnel, a purchase code per checkout step. Only with consent: parked under the
+statamic-consent service `tracking.consent_service`, or `tracking.without_consent_addon`. With
+`FUNNELS_META_CAPI_TOKEN` PageView, InitiateCheckout and Purchase also go from the server (Purchase on
+`PaymentPaid`), queued, with the pixel's event ID.
+
+### Added: captcha, block list and reminder consent from statamic-payments (P7, P8)
+
+The checkout renders the payments captcha widget; a checkout refused at the door names the reason
+(captcha, too many attempts, general for the block list). With abandonment reminders on and
+`capture = consent`, the checkout asks with its own box and passes `meta.reminder_consent`.
+
+### Added: `UpsellDeclined` event
+
+`Goldnead\StatamicFunnels\Events\UpsellDeclined(visit, step, offerHandle, payment)`: a "no" on an
+offer after a paid purchase in the same walk. Next to `FunnelOfferDeclined`, which fires on every no.
+
+### Added: funnel settings in the editor
+
+*Settings* opens a stack for the in-app notice, embedding and tracking; saved with the graph into
+`funnels.meta.settings`. Four new operator settings (in-app notice, link lifetime, consent service,
+behaviour without the consent addon).
+
+### Fixed: the checkout shows the consent text of the brand that sells
+
+On a multi-brand install the page drew the withdrawal wording under the request's brand and the
+order compared it under the offer's brand, so every order of an offer of a second brand with its own
+text ended in "the terms have changed". The checkout page now renders under the offer's brand.
+
+### Fixed: a capture step says why it did not go on
+
+Validation errors of form steps were never shown on the shipped template. They are now, above the
+form.
+
+### Fixed: a provider failure at checkout no longer ends on an error page
+
+The buyer gets the checkout back with a sentence; the reason is logged.
+
+## 1.16.0 — 2026-09-22
+
+### Fixed: the node library's tab bar scrolls, and now shows that it does
+
+Comes through `goldnead/statamic-flow-canvas`, which both flow editors share. Statamic's
+`TabList` is a flex row with neither `overflow-x` nor `flex-wrap`, so in a 272px column the
+last group sat past the edge with no way to reach it. The bar now scrolls horizontally and
+carries a soft edge that appears on the side there is more to see and disappears at either end.
+
+The rebuilt bundle is part of this release. It has to be: the shared component's styles are
+compiled by *this* package's Vite, not by flow-canvas, and until 2026-09-22 they were written
+as Tailwind utilities that this build never generated, because its `@source` only scans
+`resources/js` of this repo. They are plain CSS in a scoped block now. See
+`goldnead/statamic-flow-canvas` 1.5.0 for the full account.
+
+### Fixed: the funnel editor uses the whole window width
+
+Statamic wraps every CP page in `[data-max-width-wrapper]` with `max-width: 85rem` (1360px).
+That is right for reading matter and wrong for a canvas: on a 1920px window the funnel graph sat
+in a 1360px column with more than 500px of empty gutter on either side. This editor never opted
+out of the cap — neither the marker attribute nor the rule existed here.
+
+Both now do. The editor's root carries `data-flow-full-bleed`, and `resources/css/cp.css` lifts
+the cap for exactly the page that carries it. Measured in the running CP at viewport 1920:
+before `max-width: 1360px`, width 1360px; after `max-width: none`, width 1622px. Nothing below
+1360px changes, because there the cap never applied.
+
+The rule sits **unlayered** on purpose, and it has to. Measured on 22.09.2026, the CP's
+cascade-layer order (first mention wins) is `properties > base > addon-theme > addon-utilities >
+components > utilities > ui > ui-states > theme`: `addon-utilities` comes *before* `utilities`,
+so a rule in that layer loses to Statamic's `max-w-page` no matter how specific it is. That is
+also why the rule cannot live once in the shared `@goldnead/flow-canvas/canvas.css` — this addon
+imports that file from inside its own `addon-utilities` block, which would re-layer it. The
+identical block in `statamic-automations` is a deliberate duplicate, not an oversight.
+
 ## 1.15.2 — 2026-09-09
 
 ### Fixed: a purchase belongs to the brand that sells it, not to whoever reads the page

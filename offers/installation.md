@@ -42,8 +42,8 @@ Some of the newer conditions need more of Payments than the floor:
 | Feature | Needs |
 | --- | --- |
 | Closing seat pools on a chargeback | Payments 1.23 |
-| A coupon on more than the first payment of a subscription | a Payments version that reads `meta.coupon` (newer than 1.24.5) |
-| The country rule enforced in `Checkout::start()` as well as in the basket | Payments newer than 1.24.5 |
+| A coupon on more than the first payment of a subscription | Payments 1.25, which reads `meta.coupon` |
+| The country rule enforced in `Checkout::start()` as well as in the basket | Payments 1.25 |
 
 ::: tip Invoices needs more than that
 If you also issue [invoices](/invoices/), the payment addon has to be `^1.9` — the version
@@ -126,7 +126,7 @@ composer update goldnead/statamic-offers
 php artisan migrate
 ```
 
-The release after 1.11.3 adds six: price modes and the setup fee, the country rule, the short
+Version 1.12 adds six: price modes and the setup fee, the country rule, the short
 link, coupon duration and scope, the seat tables, and the closing date of a seat pool. Existing
 offers stay fixed-price and worldwide, and existing coupons stay "the first payment, whole
 basket".

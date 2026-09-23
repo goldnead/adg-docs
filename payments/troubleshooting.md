@@ -145,6 +145,62 @@ agreement as running — leaves the row untouched.
 Marking the row cancelled and hoping is how somebody keeps being charged for a thing their
 account says they cancelled. Check the agreement in the Mollie dashboard.
 
+## The cancel action is gone from the Subscriptions screen
+
+Since 1.25, pausing, resuming, switching **and cancelling** need `manage payment subscriptions`
+on top of `access subscriptions utility`. A role without it sees no entry, and nothing says why.
+Add the permission to the role. See
+[Upgrading to 1.25](/payments/installation#upgrading-to-1-25).
+
+## A subscription shows "Pausing", "Resuming", "Switching" or "Cancelling"
+
+The row is claimed while the provider is asked. That takes seconds. A row still in that state
+after ten minutes was left by a process that died, or by a provider that did not answer.
+`payments:resume-paused` settles it: schedule it, or run it once by hand. A half switch it
+cannot read back is logged as an error; check the provider and use the row action
+**Release switch** to say whether the old or the new product is true. See
+[the clean-up run](/payments/subscription-changes#the-clean-up-run).
+
+## Pause or switch is not offered
+
+- In the Control Panel: the role lacks `manage payment subscriptions`, or the agreement is a
+  payment plan, in a trial or in dunning (not pausable), or no product has the same rhythm and
+  currency (nothing to switch to).
+- In the portal: `portal.allow_pause` is off and the product is not `pausable`, or
+  `portal.allow_switch` is off, or the product lists nothing under `switch_to`.
+
+## A paused subscription did not resume on its date
+
+`payments:resume-paused` is not scheduled. It resumes dated pauses once a day.
+
+## No reminder was sent
+
+Each kind is off by default (`reminders.upcoming.enabled`, `reminders.card_expiring.enabled`,
+`reminders.card_expired.enabled`), `payments:reminders` must be scheduled, and a product with
+`reminders: false` gets none. Each reminder goes out once per agreement and date: running the
+command again sends nothing new. SEPA mandates have no card expiry. See
+[Reminders](/payments/reminders).
+
+## Checkouts are refused: "Too many order attempts"
+
+The checkout brake counts per IP and per address. Behind Cloudflare without TrustProxies,
+every buyer arrives from one of a few Cloudflare addresses and they share one brake. Set up
+TrustProxies. A test suite that runs many checkouts for one address switches the brake off with
+`protection.rate_limit.enabled = false`. See
+[Checkout protection](/payments/checkout-protection#the-brake).
+
+## Checkouts are refused: "Please confirm you are not a robot"
+
+A captcha is configured and the form does not render `{{ payments:captcha }}`, or the site key
+and secret do not belong together. With a captcha on, **every** checkout form needs the widget,
+including forms built by other addons.
+
+## The thank-you page says it has expired
+
+`thanks.expires_minutes` is set, and either the window since the first visit is over, or the
+page was opened without going through the signed link (a bookmark, a shared URL). That is the
+feature. Raise the minutes, or set `thanks.expires_minutes` to `0` to switch it off.
+
 ## The follow-up offer tag prints nothing
 
 By design, and there are four reasons. In order of likelihood:
@@ -185,6 +241,10 @@ consistently.
 3. Its status must be `initiated` or `open`. `failed`, `expired` and `canceled` are not
    abandoned — they already have `PaymentFailed`.
 4. It must not have been announced before. The claim is permanent for that payment.
+5. From 1.25, `abandoned.capture` must allow it. The default `consent` announces only checkouts
+   whose form passed `meta.reminder_consent = true`. A site that upgraded without changing the
+   form announces nothing at all. See
+   [Abandoned checkouts](/payments/abandoned#whose-address-may-be-used-abandoned-capture).
 
 ## `payments:prune-unpaid` deletes nothing
 

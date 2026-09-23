@@ -144,7 +144,7 @@ Lowering the renewals themselves is the job of [Payments](/payments/), which ask
 for payment number `$number` (the first is 1). It never returns more than the amount or less
 than zero, respects `floor_cent`, and returns zero for a fixed amount in another currency.
 **On a Payments version that does not read `meta.coupon`, every coupon behaves as "the first
-payment".** Payments 1.24.5 does not read it yet.
+payment".** Payments reads it from 1.25 on.
 
 **Also for later offers in the same funnel** (`funnel_wide`) marks a code as valid for the
 upsells after the purchase too, so the buyer does not type it again.

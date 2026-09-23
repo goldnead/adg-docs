@@ -31,6 +31,12 @@ installed it.
 | `trial_days` · `trial_amount_cent` | `int` | A trial, and what it charges today. |
 | `grants` | `string` | The entitlement a paid product hands out, with the [Entitlements](/entitlements/) bridge on. |
 | `digital` | `bool` | Whether this is a digital service or a physical good. Read by [Invoices](/invoices/), never by this addon. |
+| `pausable` | `bool` | May the buyer pause it in the portal, overriding `portal.allow_pause`. **1.25.** See [Pausing, switching and replacing](/payments/subscription-changes). |
+| `switch_to` | `list<string>` | The products it may be switched to. **1.25.** |
+| `replaces` · `replaces_credit` | `list<string>` · `bool` | A paid purchase ends the buyer's running agreements of these products, and credits what was left of them as a later first charge (default `true`). **1.25.** |
+| `reminders` | `bool` | `false`: no [reminders](/payments/reminders) for this product. **1.25.** |
+| `portal_cancel` | `bool` | Overrides `portal.self_cancel` for this product. **1.25.** |
+| `setup_fee` | `bool` | Marks a line as a setup fee: it takes no share of a coupon. Set by [Offers](/offers/setup-fee). **1.25.** |
 
 Anything else you put on a product survives untouched — `Catalogue::find()` returns the
 array it found plus `handle`, `currency` and `name` filled in — which is how keys that mean

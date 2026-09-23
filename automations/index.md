@@ -30,6 +30,11 @@ overkill, and custom code for every small workflow is expensive to maintain.
 - **Visual node-based flow builder** in the Control Panel
 - **Eighteen built-in triggers** for forms, entries, terms, users, assets, globals,
   navigations and a schedule, plus lead and webhook triggers from the siblings
+- **Triggers from the commerce and learning addons**: payments and subscriptions (paused,
+  resumed, charge upcoming, card expiring, *n*-th failed charge, plan paid off, changed,
+  replaced), funnels (upsell declined), courses, partner commissions, access, bookings and
+  invoices, each filterable by product, offer or pricing option, and started in the brand the
+  event belongs to
 - **Eleven logic nodes**: Filter, Branch, Switch, Stop, Delay, Wait Until, Loop,
   Parallel, Throttle, Set Variable and Call Automation
 - **Actions** for email, webhooks, LeadHub updates and Statamic changes
@@ -117,4 +122,6 @@ configurations look individually correct. See [Boundaries](/guide/boundaries).
 - [Templates](/automations/templates) — the eleven that ship, and registering your own
 - [Export, import & file sync](/automations/export-import)
 - [Integrations](/automations/integrations) — LeadHub and Webhook Manager
+- [Triggers from the suite](/automations/suite-triggers) — Payments, Funnels, Courses,
+  Affiliates and the rest, with filters and the brand rule
 - [Extending](/automations/extending) — custom nodes with no front-end build

@@ -116,7 +116,7 @@ export const MATURITY_NOTES = {
   events:
     'Installed, but not yet driving a live event. The publishing side is exercised; attendance and reminders are not.',
   courses:
-    'Extracted from adriangoldner.com on 22 September 2026. Exercised in the playground. On that site\'s staging it now serves the member courses in place of the site\'s own copy (addon mode), and a comparison against the old code found no differences, identical pages included. No production site uses it yet. On Packagist at 0.1.1.',
+    'Extracted from adriangoldner.com on 22 September 2026. Exercised in the playground. On that site\'s staging it now serves the member courses in place of the site\'s own copy (addon mode), and a comparison against the old code found no differences, identical pages included. No production site uses it yet. On Packagist at 0.2.0; the lesson blocks, drip variants, quizzes, payment holds and teams of that release are exercised in the playground only.',
   'private-media':
     'Extracted from adriangoldner.com on 22 September 2026. On that site\'s staging branch it is wired in behind a switch whose default is still the site\'s own delivery code. No production site uses it yet. On Packagist at 0.1.0.',
   certificates:
@@ -124,7 +124,7 @@ export const MATURITY_NOTES = {
   smartlinks:
     'Built on 23 September 2026 for a band site and exercised in the playground: the landing page, the counting redirect, the platform badge in the entry form, the link cleanup, the dead-link badges and filter, and accepting and rejecting suggestions on the Control Panel screen. Installed on that band site, anders-band.de, in a local copy only; not live there or on any other site yet. On 23 September 2026 auto-fill ran read-only against the live Deezer and Apple Music APIs on that band\'s catalogue: all 39 songs with a Deezer link identified, no link found that was wrong. Spotify and Tidal have not run against their APIs, for want of credentials, and are covered by tests with faked responses only; YouTube was not part of that run. On Packagist at 0.2.1.',
   affiliates:
-    'Built on 23 September 2026 and exercised in the playground against Payments and Offers: attribution by link and by coupon, commissions, refunds before and after a payout, joint ventures, payout lists and the partner area. No real sale has been attributed, and no production site uses it yet.',
+    'Built on 23 September 2026 and exercised in the playground against Payments and Offers: attribution by link and by coupon, commissions, refunds before and after a payout, joint ventures, payout lists and the partner area. No real sale has been attributed, and no production site uses it yet. On Packagist at 0.1.0.',
   'inline-edit':
     'Built on 19 September 2026 and running on the public demo, but on no client site yet. On Packagist since the same day, so the install below resolves.',
 }
@@ -310,6 +310,7 @@ export const addons = [
       { text: 'Templates', link: 'templates' },
       { text: 'Export, import & file sync', link: 'export-import' },
       { text: 'Integrations', link: 'integrations' },
+      { text: 'Triggers from the suite', link: 'suite-triggers' },
       { text: 'Extending', link: 'extending' },
     ],
   },
@@ -564,6 +565,10 @@ export const addons = [
       { text: 'Reacting to a payment', link: 'events' },
       { text: 'Bumps and follow-up offers', link: 'bumps' },
       { text: 'Subscriptions, plans and trials', link: 'subscriptions' },
+      { text: 'Pausing, switching and replacing', link: 'subscription-changes' },
+      { text: 'Reminders and card expiry', link: 'reminders' },
+      { text: 'Checkout protection and the thank-you link', link: 'checkout-protection' },
+      { text: 'The customer portal', link: 'portal' },
       { text: 'Refunds', link: 'refunds' },
       { text: 'Abandoned checkouts', link: 'abandoned' },
       { text: 'Payment methods', link: 'payment-methods' },
@@ -656,6 +661,9 @@ export const addons = [
     pages: [
       { text: 'A funnel is not an automation', link: 'concepts' },
       { text: 'The five kinds of step', link: 'steps' },
+      { text: 'The checkout step', link: 'checkout' },
+      { text: 'Embedding and in-app browsers', link: 'embedding' },
+      { text: 'Tracking code and the Meta pixel', link: 'tracking' },
       { text: 'Landing pages from entries', link: 'landing-pages' },
       { text: 'Deadlines and split tests', link: 'deadlines-and-tests' },
       { text: 'Where people stop', link: 'analytics' },

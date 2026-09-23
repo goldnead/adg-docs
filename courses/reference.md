@@ -19,7 +19,7 @@
 | Method | |
 | --- | --- |
 | `course(string $courseSlug): ?array` | the course fields |
-| `courses(): array` | every course, by title |
+| `courses(?int $brandId = null): array` | every course, by title; with a brand, that brand's courses and those without one |
 | `canAccess($user, string $courseSlug): bool` | asks [`CourseAccess`](/courses/access) |
 | `enroll($user, string $courseSlug): ?Enrollment` | starts the schedule clock; a second call keeps the first date |
 | `advanceToWeek($user, string $courseSlug, int $week): ?Enrollment` | moves a learner on, never back |
@@ -66,6 +66,13 @@ locked lesson, or a type the method does not accept. `refusalReason()` names whi
 | `Goldnead\Courses\Events\CourseAccessRestored` | the same | the hold was lifted |
 | `Goldnead\Courses\Events\TeamMemberAdded` | `$ownerId`, `$courseId`, `$courseSlug`, `$email`, `$product` | a buyer put somebody on their team; the member may have no account yet |
 | `Goldnead\Courses\Events\TeamMemberRemoved` | the same | a seat is free again |
+
+Every event also carries `$brandId`, the last constructor parameter, optional and `null`
+without [Brand Context](/brand-context/). It is the course's brand: its `brand` field, else
+the brand `brand-context.sites` maps the course's site to, else the brand current when the
+event fired. Events fired from a Payments webhook carry the subscription's brand. A listener
+that runs from a webhook, where no brand is current, can therefore switch to the right one
+before it reads or writes anything branded.
 
 `$source` is `auto` for a video that completed by being watched, `manual` for a tick or an
 acknowledgement, `item` for `updateLessonItem()`, `assessment` for a passed quiz, and whatever

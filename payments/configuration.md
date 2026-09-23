@@ -6,9 +6,9 @@
 php artisan vendor:publish --tag=statamic-payments-config
 ```
 
-Everything lives in `config/statamic-payments.php`. There is no Control Panel settings
-screen: the two screens this addon ships are read-only views of what happened, and a price
-is not a preference.
+Everything lives in `config/statamic-payments.php`. Many keys (not the catalogue: a price is
+not a preference) can also be changed per brand in the Payments section of the shared settings
+screen, which needs `manage payments settings`; only overrides are stored there.
 
 ## The whole file at a glance
 
@@ -23,6 +23,19 @@ is not a preference.
 | `max_quantity` | `1000` | The global cap on a quantity a request may ask for. |
 | `abandoned.enabled` | `false` | On, plus a scheduled sweep, dispatches `CheckoutAbandoned`. |
 | `abandoned.after_minutes` | `60` | How long "still typing" lasts before a checkout counts as gone. |
+| `abandoned.capture` | `consent` | Whose unfinished checkout may be announced: `consent` (only with `meta.reminder_consent = true`), `always`, `never`. **1.25**, a behaviour change. |
+| `pause.access` | `period_end` | The access during a pause: `period_end`, `immediate`, `keep`. **1.25** |
+| `switch.min_proration_cent` | `50` | A switch difference below this is not charged. **1.25** |
+| `reminders.upcoming.*` | off, `days` 7 | A mail before every charge. **1.25** |
+| `reminders.card_expiring.*` · `reminders.card_expired.*` | off, `days` 30 | A mail before and once the card on file expires. **1.25** |
+| `reminders.card_check_days` | `7` | How often the card's expiry is asked again. |
+| `thanks.expires_minutes` | `null` (off) | The thank-you page belongs to the buyer this long from the first visit. **1.25** |
+| `thanks.expired_url` · `thanks.link_hours` | `null` · `24` | Where a late link goes; how long the signed link works. |
+| `protection.blocklist.*` | `[]` | Addresses, domains, IP ranges refused at the checkout. **1.25** |
+| `protection.rate_limit.*` | on, 100 per IP and 10 per address in 10 minutes | The checkout brake. **1.25** |
+| `protection.captcha.*` | `off` | `turnstile` or `hcaptcha`, keys in `.env`. **1.25** |
+| `portal.logo_url` · `logo_alt` · `greeting` | `null` | How the customer portal looks. **1.25** |
+| `portal.self_cancel` · `allow_pause` · `allow_switch` | `true` · `false` · `false` | What the buyer may do in the portal. **1.25** |
 | `rate_limit` | `60` | Per minute, per IP, on the webhook. |
 | `follow_up.enabled` | `false` | The post-payment offer. Read [Bumps and follow-up offers](/payments/bumps) before switching it on. |
 | `follow_up.collect_mandate` | `false` | Makes the first payment ask the provider to remember the buyer. Required for follow-ups **and** for subscriptions. |
@@ -163,6 +176,19 @@ Off unless three things are true: [Entitlements](/entitlements/) is installed, t
 on, and the product carries a `grants` key. A payment addon that granted access by default
 would be deciding something that is the site's to decide.
 
+## Running subscriptions
+
+`pause`, `switch` and `reminders` are explained on
+[Pausing, switching and replacing](/payments/subscription-changes) and
+[Reminders and card expiry](/payments/reminders). The catalogue keys that go with them, per
+product: `pausable`, `switch_to`, `reminders`, `replaces`, `replaces_credit`, `portal_cancel`.
+
+## Checkout protection and the thank-you link
+
+`protection` and `thanks` are explained on
+[Checkout protection and the thank-you link](/payments/checkout-protection). The brake is **on by
+default**; behind a proxy it needs TrustProxies.
+
 ## Rate limit
 
 ```php
@@ -185,4 +211,15 @@ STATAMIC_PAYMENTS_ABANDONED_AFTER=60
 STATAMIC_PAYMENTS_FOLLOW_UP=false
 STATAMIC_PAYMENTS_COLLECT_MANDATE=false
 STATAMIC_PAYMENTS_ENTITLEMENTS=false
+
+# 1.25
+STATAMIC_PAYMENTS_ABANDONED_CAPTURE=consent
+STATAMIC_PAYMENTS_PAUSE_ACCESS=period_end
+STATAMIC_PAYMENTS_REMIND_UPCOMING=false
+STATAMIC_PAYMENTS_REMIND_CARD=false
+STATAMIC_PAYMENTS_THANKS_EXPIRES=
+STATAMIC_PAYMENTS_CAPTCHA=off
+STATAMIC_PAYMENTS_CAPTCHA_SITE_KEY=
+STATAMIC_PAYMENTS_CAPTCHA_SECRET=
+STATAMIC_PAYMENTS_PORTAL_LOGO=
 ```

@@ -38,12 +38,19 @@ See [A funnel is not an automation](/funnels/concepts) for the full version.
   Statamic's own response, so password protection and `private` keep working
 - **Two ways out of an offer** — `accepted` and `declined`, because most visitors decline
 - **Deadlines enforced on the server** — one fixed moment, or a rolling window per visitor
-- **Split tests per step** — stable per visitor, and recorded onto the arrival so the
-  drop-off numbers can be read per version
+- **Split tests per step** — stable per visitor, recorded onto the arrival, with a goal
+  (continue, purchase, upsell, revenue) and a winner decided once on a fixed sample
 - **Drop-off figures on the step cards** — visitors, continued, share, counted per visitor
 - **A preview that writes nothing** — no visit, no step event, no offer impression
-- **Order bumps and coupon codes**, both settled on the server
-- **Four events** for [Automations](/automations/) to hang off, and an optional bridge to
+- **A checkout that is settled on the server** — bumps with rules, a coupon from the link,
+  pay what you want, a country question, captcha and reminder consent. See
+  [The checkout step](/funnels/checkout)
+- **Embedding on other sites** — as a popup or inline, only on domains you list, and a
+  notice for visitors stuck in Instagram's or TikTok's browser. See
+  [Embedding](/funnels/embedding)
+- **Tracking code and the Meta pixel, only with consent** — per slot, with the Conversions
+  API from the server. See [Tracking](/funnels/tracking)
+- **Six events** for [Automations](/automations/) to hang off, and an optional bridge to
   [LeadHub](/leadhub/)
 - **Two Antlers tags**: `{{ funnels:link }}` and `{{ funnels:progress }}`
 - **Four figures for [Insights](/insights/what-the-family-reports#funnels)**, offered at
@@ -95,6 +102,9 @@ served.
 - [A funnel is not an automation](/funnels/concepts) — the walk, the visit, the token
 - [The five kinds of step](/funnels/steps)
 - [Landing pages from entries](/funnels/landing-pages) — the `funnel` context, templates
+- [The checkout step](/funnels/checkout) — bump rules, coupons, pay what you want, escaping
+- [Embedding and in-app browsers](/funnels/embedding)
+- [Tracking code and the Meta pixel](/funnels/tracking)
 - [Deadlines and split tests](/funnels/deadlines-and-tests)
 - [Where people stop](/funnels/analytics)
 - [Reference](/funnels/reference) — routes, events, tables, config

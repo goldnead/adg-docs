@@ -21,6 +21,11 @@ rather than a checkout URL glued onto the model, because an attribute without a 
 survives until somebody calls `save()` and then throws on a column that does not exist, at
 the worst possible moment.
 
+From **1.25**, `null` has a second meaning: the [checkout door](/payments/checkout-protection)
+refused the buyer (block list, brake, captcha, or a country rule from [Offers](/offers/)).
+`app(Checkout::class)->refusal()` then holds a sentence for the page; for an unknown handle it
+is `null`.
+
 ## The signature
 
 ```php
@@ -29,8 +34,13 @@ start(
     array $buyer = [],
     ?string $returnUrl = null,
     ?Discount $discount = null,
+    array|PaymentDetails $details = [],
 ): ?CheckoutResult
 ```
+
+`$details` is what the calling flow wants on this payment, `meta` and `country`, written in the
+same transaction as the payment itself. A key the package keeps for itself
+(`subscription_intent`, `refunds`, …) is refused with an exception.
 
 ## What the buyer sends, and what is done with it
 
@@ -137,6 +147,10 @@ an installation behind several domains does not send a paying customer to the wr
 A buyer who closes the tab still paid. A buyer who reaches the thank-you page has not
 necessarily paid. Fulfil on [the event](/payments/events), never on the page.
 :::
+
+From 1.25 the thank-you page can belong to the buyer for a limited time
+(`thanks.expires_minutes`), and `{{ payments:thanks }}` tells the page whether this visitor
+paid. See [The thank-you link](/payments/checkout-protection#the-thank-you-link).
 
 ## A discount
 

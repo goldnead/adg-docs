@@ -151,6 +151,12 @@ export const ART = {
     "light": "#996d00",
     "dark": "#facc15"
   },
+  "affiliates": {
+    "from": "#C2410C",
+    "to": "#431407",
+    "light": "#c2410c",
+    "dark": "#de5b2f"
+  },
   "booking": {
     "from": "#22D3EE",
     "to": "#0E7490",

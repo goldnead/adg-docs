@@ -13,6 +13,10 @@
 | GET | `{prefix}/{funnel}/_preview/{nodeKey}` | `statamic-funnels.preview` | Needs a pass. Throttled to 60/min. |
 | GET | `{prefix}/{funnel}/_preview-mail/{nodeKey}` | `statamic-funnels.preview-mail` | The rendered mail of a mail node, with sample data. Same pass, same throttle. |
 | POST | `{prefix}/{funnel}/{nodeKey}/advance` | `statamic-funnels.advance` | Moving on. Keeps CSRF. Throttled to 30/min. |
+| POST | `{prefix}/{funnel}/{nodeKey}/advance-embed` | `statamic-funnels.advance-embed` | Moving on from inside a frame on another site. No CSRF token (`ValidateCsrfToken`, `VerifyCsrfToken` and Laravel 13's `PreventRequestForgery` are excluded); accepted only from this site's own origin with a valid signed walk. Throttled to 30/min. See [Embedding](/funnels/embedding#how-the-visit-travels-without-cookies). |
+
+Every funnel page sends `Content-Security-Policy: frame-ancestors 'self'` plus the funnel's
+allowed domains, and no `X-Frame-Options`.
 
 The preview route sits **above** the `{slug}` route on purpose: `_preview` would otherwise
 be read as the slug of a step.
@@ -29,7 +33,10 @@ answer **404** rather than 403. From outside, there is nothing there.
 | `offer` | `accept` | `1` to buy, anything falsy to decline |
 | | `confirmed` | must be accepted, when `accept` is truthy |
 | | `bumps[]` | handles; intersected with the offer's own bumps |
-| | `coupon` | a string; ignored when `coupons` is off |
+| | `coupon` | a string; ignored when `coupons` is off. A typed code that does not apply refuses the order. |
+| | `amount` | pay what you want only; checked against the offer's floor and ceiling |
+| | `country` | only when the offer has a country rule and the form step did not ask |
+| | `reminder_consent` | only when the page asked for it (Payments' `abandoned.capture = consent`) |
 | everything else | — | an ordinary continue |
 
 Advancing from a step the walk has not `entered` is a **403**.
@@ -61,11 +68,12 @@ Under Statamic's utility routes, all behind `access funnels utility`.
 | Mail | `mail` | `mail` | none | **Not a page.** Hangs off another step's output and fires when that output is taken. Never entered, no slug, not counted. |
 
 Shared fields on all page steps: `entry`, `template`, `headline`, `body`, `split_share`,
-`variant_entry`, `variant_headline`, `variant_body`.
+`variant_entry`, `variant_headline`, `variant_body`, `split_goal`, `split_auto`,
+`split_min_visits`.
 
 Own fields: `form`, `billing` (`minimal`, `name`, `full`, `offer`), `newsletter` (`hidden`,
 `optional`), `newsletter_label` on Form; `offer`, `countdown`, `countdown_until`,
-`countdown_hours` on Offer; `optional`, `login_after` on Account; `redirect` on Finish;
+`countdown_hours`, `bump_rules`, `tracking_purchase` on Offer; `optional`, `login_after` on Account; `redirect` on Finish;
 `template`, `delay_amount`, `delay_unit`, `recipient`, `recipient_address`,
 `subject_override` on Mail.
 
@@ -84,9 +92,10 @@ use Goldnead\StatamicFunnels\Events\FunnelCompleted;
 | `FunnelFormSubmitted` | `$visit`, `$step`, `$values` | A form step is left. Dispatched **before** moving on. |
 | `FunnelOfferAccepted` | `$visit`, `$step`, `$payment` | The payment is **paid**, not when the button was clicked |
 | `FunnelCompleted` | `$visit` | The walk ended: a Finish step, or an output with nothing beyond it |
-| `FunnelOfferDeclined` | `$visit`, `$step` | An offer was declined. Declining is an answer, and now it has an event. |
+| `FunnelOfferDeclined` | `$visit`, `$step` | An offer was declined. Declining is an answer, and now it has an event. Declining the same offer twice fires once. |
+| `UpsellDeclined` | `$visit`, `$step`, `$offerHandle`, `$payment` | A "no" on an offer **after a paid purchase in the same walk**: the declined upsell. Fires next to `FunnelOfferDeclined`, which fires on every no. |
 
-All five are plain `Dispatchable` classes with readonly public properties. None is
+All six are plain `Dispatchable` classes with readonly public properties. None is
 queued, and none is broadcast.
 
 `FunnelStepEntered` is the seam an automation hangs off: "send the reminder when somebody
@@ -103,7 +112,8 @@ reaches the offer and does not buy" is an automation, not a funnel feature.
 
 ## In Automations
 
-Four triggers, registered only when this addon is detected. Group **Funnels**.
+Six triggers, registered only when this addon is detected. Group **Funnels**. The two
+declines come with [Automations](/automations/) 2.20.
 
 | Trigger | Handle | Filters |
 | --- | --- | --- |
@@ -111,6 +121,8 @@ Four triggers, registered only when this addon is detected. Group **Funnels**.
 | Funnel Form Submitted | `funnels.form_submitted` | `funnel` |
 | Funnel Offer Accepted | `funnels.offer_accepted` | `funnel` |
 | Funnel Completed | `funnels.completed` | `funnel` |
+| Funnel Offer Declined | `funnels.offer_declined` | `funnel`, `step` |
+| Upsell Declined | `funnels.upsell_declined` | `funnel`, `step`, `bought_offer`; carries the payment of what was bought |
 
 Each filter is a handle, and empty means every funnel. *Step Entered* takes a step filter
 as well, because it is the busiest of the four by a wide margin: an automation that ran on
@@ -140,9 +152,12 @@ For the `funnel:` context available inside a step's own template, see
 | Permission | Grants |
 | --- | --- |
 | `access funnels utility` | The Funnels utility: the list, the editor, saving, deleting, and minting preview passes |
+| `edit funnels tracking code` | Changing tracking code, the Meta pixel ID and their consent services. Enforced on the server, not only in the form. |
+| `manage funnels settings` | The Funnels tab on the suite's settings screen |
 
-One permission, because the utility is the whole Control Panel surface. Statamic's own
-utility permission machinery grants it.
+The first is Statamic's own utility permission. The tracking permission is separate on
+purpose: tracking code is raw JavaScript on the site's pages, and building funnels should not
+include the right to put that there.
 
 ## Preview passes
 
@@ -177,6 +192,11 @@ were given per step), `payments` (which payment each offer step started), `pendi
 `billing` (the billing details from the form step, keys one to one) and `newsletter`
 (`opted_in`, `at`, `text` — the tick, when, and the sentence it was ticked next to).
 
+`funnels.meta` holds `settings` (in-app notice, embedding domains, tracking slots, saved with
+the graph) and `split_winners` (the decision per step and goal). Every payment a funnel starts
+carries `meta.funnel_visit_id`, and with a reminder consent `meta.reminder_consent`,
+`reminder_consent_at` and `reminder_consent_text`. No migration in 1.17.
+
 Deleting a funnel cascades to its steps, edges, visits and their events.
 
 ## Configuration
@@ -189,8 +209,16 @@ Deleting a funnel cascades to its steps, edges, visits and their events.
 | `template_prefix` | `''` |
 | `integrations.leadhub` | `false` |
 | `integrations.entitlements` | `false` |
+| `in_app_browser.enabled` | `true` |
+| `embed.link_minutes` | `180` |
+| `tracking.consent_service` | `'meta_pixel'` |
+| `tracking.without_consent_addon` | `'block'` |
+| `tracking.meta.access_token` | env `FUNNELS_META_CAPI_TOKEN` |
+| `tracking.meta.test_event_code` | env `FUNNELS_META_TEST_EVENT_CODE` |
+| `tracking.meta.api_version` | `'v21.0'` |
 
-No environment variables. See [Configuration](/funnels/configuration).
+The thumbnail keys and `password_reset_url` are left out here. See
+[Configuration](/funnels/configuration).
 
 ## Requirements
 
@@ -199,16 +227,20 @@ No environment variables. See [Configuration](/funnels/configuration).
 | PHP | 8.2+ |
 | Statamic | 6.0+ |
 | Database | MySQL or SQLite |
-| Queue | Not needed |
+| Queue | Needed for mail nodes, step pictures and Meta Conversions API events |
 | Scheduler | Not needed |
 
 ### Package dependencies
 
 | Package | Constraint |
 | --- | --- |
-| `goldnead/statamic-flow-canvas` | `^1.1` |
-| `goldnead/statamic-offers` | `^1.2` |
-| `goldnead/statamic-payments` | `^1.6` |
+| `goldnead/statamic-brand-context` | `^1.13` |
+| `goldnead/statamic-flow-canvas` | `^1.3` |
+| `goldnead/statamic-offers` | `^1.11.1` |
+| `goldnead/statamic-payments` | `^1.22` |
+
+Offers 1.12 and Payments 1.25 switch on further parts of the checkout; see
+[The checkout step](/funnels/checkout).
 
 Optional, detected with `class_exists` and each behind its own switch:
 [LeadHub](/leadhub/), [Entitlements](/entitlements/), and
@@ -216,11 +248,12 @@ Optional, detected with `class_exists` and each behind its own switch:
 
 ## Not included
 
-- **No console commands.** Nothing is deferred, scheduled or batched, so there is nothing
-  to run.
+- **No console commands.** Nothing is scheduled, so there is nothing to run.
 - **No retention or pruning.** `funnel_visits` and `funnel_step_events` grow with traffic.
-- **No brand scoping.** This addon does not depend on
-  [Brand Context](/brand-context/), and its tables carry no `brand_id`.
+- **No brand scoping of funnels.** The addon requires [Brand Context](/brand-context/) for
+  its settings tab, the sender of its mails and the brand an order is checked under (the
+  offer's), but a funnel itself belongs to no brand. Only `funnel_mail_deliveries` carries a
+  `brand_id`.
 - **No site scoping.** A funnel is a campaign, not content. The *entry* a step points at is
   localised; the funnel is not.
 - **No export or import.** A funnel lives in the database only.

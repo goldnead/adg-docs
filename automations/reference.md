@@ -49,6 +49,11 @@ Eighteen ship built in. Every handle below is also a key under `builtin_nodes` i
 | LeadHub | Lead Follow-up Due | `leadhub.lead_follow_up_due` | LeadHub |
 | LeadHub | Contact score changed | `contact_score_changed` | LeadHub |
 | Marketing | Subscriber Confirmed · Unsubscribed · Campaign Sent | `marketing.subscribed` · `marketing.unsubscribed` · `marketing.campaign_sent` | Marketing |
+| Payments | 20 triggers, `payments.*` | see [Triggers from the suite](/automations/suite-triggers#payments) | Payments; the subscription, card and block triggers Payments 1.25 |
+| Funnels | 6 triggers, `funnels.*` | see [Triggers from the suite](/automations/suite-triggers#funnels) | Funnels; `funnels.upsell_declined` Funnels 1.17 |
+| Courses | 12 triggers, `courses.*` | see [Triggers from the suite](/automations/suite-triggers#courses) | Courses |
+| Affiliates | 4 triggers, `affiliates.*` | see [Triggers from the suite](/automations/suite-triggers#affiliates) | Affiliates |
+| Entitlements · Booking · Invoices | `entitlements.*` · `booking.*` · `invoices.*` | see [Triggers from the suite](/automations/suite-triggers#entitlements-booking-invoices) | the addon |
 
 ## Logic nodes
 

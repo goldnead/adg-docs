@@ -19,13 +19,20 @@ Funnels then live under **Utilities → Funnels**.
 
 ## What comes with it
 
-Three packages are hard dependencies and install alongside it:
+Four packages are hard dependencies and install alongside it:
 
 | Package | Constraint | Why |
 | --- | --- | --- |
-| `goldnead/statamic-flow-canvas` | `^1.1` | The editor. The same canvas the automations editor runs on, not a copy of it. |
-| `goldnead/statamic-offers` | `^1.2` | What a thing costs. An offer step sells an offer, at the price that lives there. |
-| `goldnead/statamic-payments` | `^1.6` | Takes the money, and decides what "paid" means. |
+| `goldnead/statamic-brand-context` | `^1.13` | Brands, the settings tab, and the brand an order is checked under. |
+| `goldnead/statamic-flow-canvas` | `^1.3` | The editor. The same canvas the automations editor runs on, not a copy of it. |
+| `goldnead/statamic-offers` | `^1.11.1` | What a thing costs. An offer step sells an offer, at the price that lives there. |
+| `goldnead/statamic-payments` | `^1.22` | Takes the money, and decides what "paid" means. |
+
+Parts of the checkout need newer siblings than these floors, and switch themselves off
+without them: the coupon from a link, pay what you want and the country question need
+[Offers](/offers/) 1.12; the captcha, the reminder consent and a funnel-wide coupon on a
+one-click upsell need [Payments](/payments/) 1.25. See
+[The checkout step](/funnels/checkout).
 
 There is no build step. The addon ships its compiled Control Panel assets under
 `dist/build/`, and Statamic publishes them to `public/vendor/statamic-funnels/` on
@@ -65,15 +72,36 @@ advance past them. Set it up as
 [Payments](/payments/) documents, and check it before
 publishing a funnel with an offer in it.
 
-No queue worker and no scheduler entry are needed. Nothing in this addon is deferred or
-scheduled: a walk advances inside the request that advances it, or inside the webhook that
-paid for it.
+A walk advances inside the request that advances it, or inside the webhook that paid for it.
+No scheduler entry is needed. A queue worker is: mail nodes, the step pictures in the editor
+and the [Meta Conversions API](/funnels/tracking#meta-conversions-api) events are queued jobs.
 
 ## Permissions
 
 The Control Panel screens sit behind Statamic's utility permission,
 `access funnels utility`. Grant it per role under **CP → Users → Permissions →
-Utilities**.
+Utilities**. Two more, under the group Funnels:
+
+| Permission | Allows |
+| --- | --- |
+| `edit funnels tracking code` | Changing a funnel's [tracking code](/funnels/tracking#who-may-edit-it), pixel ID and consent services. Without it those fields are read-only. |
+| `manage funnels settings` | The Funnels tab on the suite's settings screen |
+
+## Updating to 1.17
+
+No migrations. Two changes in behaviour to check before updating a live site:
+
+- **Frames from other domains.** Funnel pages now send
+  `Content-Security-Policy: frame-ancestors 'self'` plus the domains listed on the funnel. A
+  site that frames a funnel from another domain has to be listed on it. See
+  [Embedding](/funnels/embedding#which-sites-may-frame-it).
+- **HTML in texts is shown as text.** Headline, text, offer and bump texts, labels and the
+  withdrawal wording are escaped. Markdown still works. See
+  [The checkout step → Escaping](/funnels/checkout#escaping).
+
+Grant `edit funnels tracking code` to whoever should maintain tracking code, and republish the
+front-end assets (`vendor:publish --tag=statamic-funnels --force`) for the new `embed.js` and
+`funnels.js`.
 
 The permission is what mints a [preview pass](/funnels/reference#preview-passes), so
 somebody who cannot open the utility cannot render an unpublished funnel either.

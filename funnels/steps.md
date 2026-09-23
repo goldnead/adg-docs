@@ -144,6 +144,9 @@ take a coupon code. Both are settled on the server:
 Set [`coupons => false`](/funnels/configuration#coupons) to leave the field off the page
 entirely.
 
+Bump rules, the coupon from a link, pay what you want, the country question and what the
+page escapes are on [The checkout step](/funnels/checkout).
+
 ### A second purchase in the same walk
 
 If the walk has already paid once and the site collects mandates, the second offer is

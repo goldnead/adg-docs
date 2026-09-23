@@ -111,6 +111,51 @@ can be split by it. A test that cannot be counted is a coin toss with extra step
 result shows in the editor, on the step where the test is set up — a split report on
 another screen is a report nobody opens.
 
+### A goal and a winner
+
+A test measures one of four goals (`split_goal`, in the step's inspector):
+
+| Goal | Counted |
+| --- | --- |
+| `continue` (default) | visitors who went on to a step this one leads to |
+| `purchase` | a paid purchase on this or a later step, written by the webhook, not by the click |
+| `upsell` | an offer accepted on a **later** step |
+| `revenue` | revenue per visit, from the paid payments of those purchases, minus refunds |
+
+With **`split_auto`** on, the test is **decided once, on a fixed sample**:
+
+1. It waits until each version has `split_min_visits` visits (100 by default, and never fewer
+   than 100) and the last of them arrived a day ago, or an hour ago for `continue`. That day is
+   the time a visitor gets to buy.
+2. It compares the first `split_min_visits` visits of each version: a two-proportion z-test for
+   the rates, a Welch test on the means for revenue.
+3. If one version leads with 95 % confidence, it wins. New visitors only see the winner; a
+   visitor who already had a version keeps it.
+4. Otherwise **"no difference"** is recorded, and both versions keep running without a winner.
+
+It is never decided again. That is the point of the fixed sample, and it is worth saying why:
+checking after every visit and stopping at the first 95 % finds a "winner" between two
+**identical** versions about a third of the time. Deciding once on a sample fixed in advance
+keeps that at the promised 5 %. The addon's tests simulate 2,000 A/A runs to hold it there.
+
+<Figure
+  src="funnels-split-interim"
+  alt="The split test panel of a checkout step, German: goal purchase, A at 9.8 % from 5 of 51, B ahead at 36.2 % from 21 of 58, confidence 99.8 %, marked as an interim figure and not a result, with the sentence explaining when the test is decided"
+  caption="An open test in the editor. The confidence is already 99.8 %, and the panel still says interim, not a result: neither version has its 100 visits yet." />
+
+What the editor shows on the step: the goal, both figures, the progress to the sample
+(51/100), the interim confidence, marked as not a result, and the decision once there is one.
+
+Limits worth knowing before relying on it:
+
+- **5 % is still 5 %.** One test in twenty between two equal versions ends with a winner.
+- **Small differences need more than 100 visits.** With 100 per version, only a large
+  difference reaches 95 %. A real but small improvement usually ends as "no difference". Raise
+  `split_min_visits` for a page with enough traffic.
+- **The decision is stored per goal** in `funnels.meta.split_winners`. Changing the goal starts
+  over. There is no button to restart a test on the same goal.
+- Without `split_auto` the test only reports, and runs until you change the share.
+
 ### Only what B sets is swapped
 
 A test that changes one headline must not silently blank the body, and having to copy

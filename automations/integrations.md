@@ -10,6 +10,8 @@ working without them, and nothing needs to be enabled on the other side.
 | Webhook Manager | `Goldnead\WebhookManager\Facades\WebhookManager` | the *Send Webhook (via Webhook Manager)* action, with its destinations, plus the *Webhook Received* trigger |
 | LeadHub | `Goldnead\Leadhub\Facades\LeadHub` | 6 LeadHub triggers and 11 LeadHub actions |
 | Marketing | `Goldnead\Marketing\Services\SubscriptionService` | 3 Marketing triggers and 3 Marketing actions |
+| Payments, Funnels, Courses, Affiliates, Entitlements, Booking, Invoices | per addon, under `integrations.<name>.detect` | their triggers, listed on [Triggers from the suite](/automations/suite-triggers) |
+| Offers | `integrations.offers.detect` | no triggers of its own (Offers fires no events); the *Offer* and *Pricing option* filters on the payments triggers |
 
 Class names are configurable under `integrations` in `config/automations.php`, so you can
 swap implementations or use a fork. Leave the defaults otherwise.

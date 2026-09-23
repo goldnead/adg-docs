@@ -45,7 +45,7 @@ complete as that ledger.
 ## Updating
 
 Still no migration and no new config key. **Clear the cache after every update that adds or
-moves a screen**, which the subscription release does twice: it adds Subscriptions and moves
+moves a screen**, which 1.5, the subscription release, does twice: it adds Subscriptions and moves
 Revenue from `/cp/insights` to `/cp/insights/revenue`.
 
 ```bash

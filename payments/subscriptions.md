@@ -133,9 +133,22 @@ A provider that refuses, or that accepts the call and goes on reporting the agre
 running, leaves the row untouched and returns `false`.
 
 In the Control Panel the same method backs a row action and a bulk action under
-**Utilities → Subscriptions**, behind the `access subscriptions utility` permission — and a
-refusal produces a **red** toast rather than the green one the Control Panel gives every
-action by default.
+**Utilities → Subscriptions**, behind `access subscriptions utility` **and, from 1.25,
+`manage payment subscriptions`** — and a refusal produces a **red** toast rather than the green
+one the Control Panel gives every action by default.
+
+A cancellation first claims the row (`cancelling`) and waits for a pause, resume or switch that
+is still talking to the provider. See
+[Pausing, switching and replacing](/payments/subscription-changes#two-requests-at-once).
+
+## A coupon on later charges
+
+From **1.25**, a coupon from [Offers](/offers/coupons) can cover more than the first payment.
+The coupon as Offers froze it on the first payment (`meta.coupon`) is kept on the agreement, and
+the provider is asked to charge the lowered amount for as long as Offers says the coupon covers
+a charge, then the full price from the charge after that. Each cycle carries `discount_code`
+and `discount_cent`; `amount_cent` on the agreement stays the price. A pause keeps the coupon,
+a switch ends it.
 
 ## Ended is not cancelled
 
@@ -191,7 +204,13 @@ the buyer. Sorted by what is charged next, so what is about to happen is at the 
 
 Two filters: **Status**, and **Still running**. Clicking a row opens a read-only slide-over
 with the whole agreement and the cycles actually paid — which are ordinary payments, so they
-also appear on the Payments screen.
+also appear on the Payments screen. From 1.25 the slide-over also shows a pause and its resume
+date, the card's expiry, a running coupon with the date of the last charge it covers, and the
+history of pauses and switches.
+
+Row actions from 1.25: **Pause**, **Resume**, **Switch**, **Cancel**, and **Release switch** for a
+switch a dead process left behind. All of them need `manage payment subscriptions`. See
+[Pausing, switching and replacing](/payments/subscription-changes).
 
 Nothing here creates a subscription. One is what a confirmed first payment leaves behind,
 never something typed into a form.
@@ -204,6 +223,8 @@ never something typed into a form.
 | `pending` | The provider has it and has not started charging |
 | `active` | Running |
 | `suspended` | The provider stopped charging, usually after failed attempts |
+| `paused` | Paused on purpose, from the Control Panel or the portal. **1.25** |
+| `pausing` · `resuming` · `switching` · `cancelling` | A change is being made at the provider right now; the row is claimed. Settled within minutes, or by `payments:resume-paused`. **1.25** |
 | `cancelled` | Somebody stopped it |
 | `completed` | A payment plan paid its last instalment |
 

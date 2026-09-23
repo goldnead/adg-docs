@@ -12,6 +12,192 @@ Release notes for `goldnead/statamic-automations`, as published with the package
 Cross-version upgrade notes for the whole suite are in
 [Upgrading](/guide/upgrading).
 
+## Unreleased
+
+### Auslöser für die neuen Abo-, Kurs-, Partner- und Funnel-Ereignisse
+
+payments, courses, affiliates und funnels feuern seit dem Suite-Bau vom 23.09.2026 Ereignisse, die
+im Editor nicht zu finden waren. Jetzt gibt es für jedes einen Auslöser, gebaut wie die
+bestehenden `payments.*`: Kopplung nur über `class_exists` und den `IntegrationDetector`, flache
+Felder im Kontext für Mails und Bedingungen, Filter am Auslöser.
+
+- **payments (11):** `payments.subscription_paused`, `…_resumed`, `…_payment_upcoming`,
+  `…_card_expiring`, `…_card_expired`, `…_attempt_failed` (Filter „Only failure number"),
+  `…_plan_completed`, `…_changed` (Filter Upgrade/Downgrade), `…_replaced` (Filter auf das
+  ersetzte Produkt), `payments.checkout_blocked` (Filter Grund), `payments.charged_back`. Das
+  Abo im Kontext trägt dazu `paused_at` und `resumes_at`. Nicht verdrahtet:
+  `SubscriptionCycleFailed` (feuert je Zustellung, `…_attempt_failed` deckt ihn einmal je Fehlschlag
+  ab) und `PaymentCommunicationLogged`.
+- **courses (12):** `courses.learner_enrolled`, `…lesson_completed`, `…lesson_unlocked`,
+  `…quiz_passed`, `…quiz_failed`, `…course_completed`, `…drip_paused`, `…drip_resumed`,
+  `…access_suspended`, `…access_restored`, `…team_member_added`, `…team_member_removed`. Die
+  Ereignisse tragen nur Kennungen; der Auslöser schlägt die Person nach und legt sie unter `user`
+  ab (id, email, name), den Kurs unter `course` mit Titel. `user.email` ist damit der Betreff des
+  Durchlaufs, „nur einmal je Person" greift ohne Einstellung. Bei Teamplätzen ist das Mitglied der
+  Betreff (`member.email`), der Käufer steht unter `owner`. Filter: Kurs (Eintrag-ID oder Slug),
+  bei Lektionen zusätzlich der Lektions-Slug.
+- **affiliates (4):** `affiliates.commission_earned`, `…commission_reversed` (Filter Art),
+  `affiliates.partner_applied`, `…partner_approved`. Partner mit Adresse und Code im Kontext,
+  Auszahlungsdaten bewusst nicht.
+- **funnels (2):** `funnels.offer_declined` auf `FunnelOfferDeclined`, bei jedem Nein. Filter
+  Funnel, Schritt und Angebot; `step.offer` nennt das abgelehnte Angebot.
+  `funnels.upsell_declined` auf `UpsellDeclined` (funnels ab `6167932`): nur ein Nein, nachdem im
+  selben Lauf schon bezahlt wurde. Der Kauf davor steht unter `payment`, zusätzlicher Filter
+  „Bought offer" (gleich welche Zahlweise). Beide feuern auf denselben Klick; wer nur Käufer nachfassen will, nimmt den
+  zweiten.
+
+### Filter je Angebot und Zahlweise an den Kauf-Auslösern
+
+Jeder payments-Auslöser mit Produkt hat neben *Product* zwei neue Felder. *Offer* trifft jeden
+Kauf über ein Angebot, gleich welche Zahlweise oder welcher frei gewählte Betrag
+(`offer:kurs`, `offer:kurs:raten3`, `offer:kurs:=2500`). *Pricing option* trifft genau eine
+Zahlweise (`offer:kurs:raten3`). *Product* bleibt exakt, damit gespeicherte Abläufe mit
+`offer:kurs` nicht plötzlich auch auf die Ratenzahlung anspringen. Zerlegt wird mit
+`OfferHandle::parse()` aus statamic-offers, wenn es da ist, sonst mit derselben Regel hier.
+Neue Auswahlquellen `offers.offers`, `offers.pricing_options` (nach Marke eingeengt) und
+`courses.courses`.
+
+### Die Marke kommt aus dem Ereignis, nicht aus dem Zufall
+
+Bisher suchten die Listener der Geschwister-Addons Abläufe nur in der Marke, die gerade gesetzt
+war. Ein Befehl wie `payments:reminders` hat keine, also starteten seine Erinnerungen nichts; ein
+Webhook fällt auf die Standardmarke zurück, also starteten dort Abläufe der falschen Marke, mit
+dem falschen Absender. Das galt auch für die alten `payments.*`-, `entitlements.*`-,
+`booking.*`- und `invoices.*`-Auslöser.
+
+Jetzt liest `Support\EventBrand` die Marke aus dem Ereignis: zuerst ein ausdrückliches `brandId`
+(courses ab `0ec0f86` trägt es an jedem Ereignis), dann `brand_id` an Abo, Zahlung, Partner,
+Provision oder Zugang, bei Kurs-Ereignissen ohne beides die Seite des Kurs-Eintrags über
+`brand-context.sites`. Suche und Dispatch laufen in `brand-context->runFor()`, die Marke der
+Anfrage bleibt danach unverändert. Ohne Marke im Ereignis gilt die gesetzte; ist auch keine
+gesetzt, steht eine Warnung im Log statt nichts. Eine Marke, die es nicht gibt, ebenso. Ohne
+`multi_brand` ändert sich nichts.
+
+### Weitere Nachbesserungen aus der Prüfung
+
+- **Deutsch in der Knoten-Bibliothek.** Beschriftung, Beschreibung und Gruppe aller payments-,
+  funnels-, courses- und affiliates-Auslöser kommen aus `resources/lang/de/triggers.php`, nach
+  Handle geordnet und im Namensraum des Addons, damit „Courses" oder „Quiz Passed" nicht in
+  anderen Addons mitübersetzt werden. Die Suche der Bibliothek findet damit „abo".
+- Auslöser, die auf denselben Moment feuern, sagen es in der Beschreibung:
+  `offer_declined` und `upsell_declined`, `subscription_ended` und `subscription_plan_completed`.
+- `payments.checkout_blocked`: keine volle IP-Adresse mehr im Kontext, nur das Netz
+  (`blocked.ip_prefix`, /24 bzw. /48). Die Beschreibung warnt vor Mails an `blocked.email`.
+- Kurs-Auslöser für eine Person, die sich nicht finden lässt (gelöscht), starten nicht mit leerem
+  Betreff, sondern werden übersprungen, mit Warnung im Log. Teamplätze laufen weiter, dort ist
+  das Mitglied per Adresse der Betreff.
+- `courses.courses` nimmt, wo vorhanden, `CourseProgress::courses($brandId)` mit der aktuellen
+  Marke (Kurse der Marke und ohne Marke).
+
+`IntegrationDetector` kennt dafür `courses`, `affiliates` und `offers` (Schlüssel
+`automations.integrations.<name>.detect` wie bei den anderen). Keine Migration, keine neuen
+Pflicht-Config-Schlüssel.
+
+## 2.19.0 — 2026-09-22
+
+### Die Mail-Vorschau steht jetzt im Node-Stack und zeigt, was im Formular steht
+
+Eine Vorschau gab es am `send_email`-Knoten schon, aber in einer Form, die zwei Dinge nicht
+leistete. Sie lag hinter einem Knopf „Vorschau", der ein **Modal** über das Formular zog — eine
+zweite Ebene über genau der Fläche, in die sie gehört. Und sie holte den **gespeicherten**
+Knoten aus der Datenbank: wer einen Betreff tippte und dann auf Vorschau klickte, sah die
+Fassung von vorhin.
+
+Beides ist weg. Die Vorschau ist ein eigener Abschnitt im Formular selbst
+(`MailPreviewPane.vue` in `ConfigPanel`), sie geht mit dem Mail-Knoten auf, ohne dass jemand
+einen zweiten Knopf sucht, und sie rendert den Formularzustand — 400 ms nach dem letzten
+Tastendruck, entprellt und mit Abbruch der vorigen Anfrage, wie das Vorschau-Panel in
+`statamic-funnels`. Dazu eine Gerätewahl Desktop/Mobil nach demselben Muster. Der Knopf
+„Vorlage wählen" bleibt, wo er war.
+
+Das gilt in **beiden** Verwendungen von `ConfigPanel`: im halbbreiten Stack, der aus der
+Mails-Liste aufgeht, und in der 360px-Spalte rechts neben der Leinwand. Es ist dieselbe
+Komponente, der Rahmen wird nur schmaler (gemessen im Playground: 862×352 im Stack, 309×352 in
+der Spalte).
+
+Serverseitig nimmt derselbe Endpunkt jetzt auch POST:
+`POST automations/{flow}/mails/{nodeKey}/preview` mit `{ config: { template, subject, body } }`
+rendert die ungespeicherte Konfiguration. GET rendert weiter den gespeicherten Knoten — die
+Mails-Liste ruft ihn so auf, und die Berechtigung (`view automations`) ist auf beiden Wegen
+dieselbe. Ein Mail-Schritt, den es erst auf der Leinwand und noch nicht in der Datenbank gibt,
+ist damit ebenfalls darstellbar.
+
+### Behoben: die Vorschau rendert jetzt wie der Versand
+
+`EmailTemplatePreviewController::renderWithSample()` hatte einen eigenen Ersetzer, und der
+konnte weniger als der Motor: `&#123;&#123; contact.first_name | upper }}` blieb als Ganzes stehen, weil
+die Filterkette nicht Teil der Ersetzung war. Die Vorschau zeigte damit nachweislich etwas
+anderes, als rausging — der teuerste Fehler, den eine Vorschau machen kann. Aufgelöst wird
+jetzt mit `TokenResolver`, demselben Renderer wie der Versand.
+
+Eine Sache bleibt absichtlich anders: ein Platzhalter, für den es kein Beispiel gibt, bleibt
+stehen. Der Motor macht daraus eine leere Zeichenkette, was für einen Versand richtig ist und
+sich in einer Vorschau als kaputte Mail liest („Hallo ," / „über Cent ()"). Ausgenommen davon
+ist `| default:` — dieser Filter existiert genau für den fehlenden Wert, und der Versand
+schickt dafür den Ersatz raus, also löst die Vorschau ihn auch auf. Nebenwirkung, die hier
+erwünscht ist: `&#123;&#123; secret.* }}` kennt der Vorschau-Kontext nicht, also fragt auch niemand den
+SecretStore — ein Zugangsschlüssel landet nicht in einer Vorschau.
+
+Und der frisch eingefügte Mail-Knoten — keine Vorlage, kein Betreff, kein Text — bekommt aus
+dem Formular heraus nicht mehr 404 („trägt weder eine Vorlage noch einen eigenen Text"),
+sondern `source: 'empty'` und den neutralen Satz „Noch nichts anzuzeigen". Der Normalfall sah
+sonst aus wie ein Defekt, und weil die Vorschau entprellt fragt, schrieb jeder Tastendruck eine
+Log-Warnung. Auf dem gespeicherten Weg (GET, Mails-Liste) bleibt der 404: einen Knoten ohne
+beides hat dort jemand so abgelegt.
+
+### Behoben: die Vorschau-Rahmen im CP waren zu großzügig eingestellt
+
+Alle drei `srcdoc`-Rahmen (Node-Vorschau, Mails-Liste, Vorlagen-Wähler) trugen
+`sandbox="allow-same-origin"`. Im Rahmen steht HTML, das ein CP-Benutzer geschrieben hat, und
+`allow-same-origin` gibt ihm die Herkunft des Control Panels zurück; zusammen mit einem später
+einmal hinzugefügten `allow-scripts` wäre das laut Spezifikation dasselbe wie gar kein
+Sandkasten. Der Inhalt kommt aus `srcdoc` und braucht keine Herkunft, also steht dort jetzt
+`sandbox=""`. `tests/js/preview-sandbox.test.js` prüft das für jeden `srcdoc`-Rahmen im Addon,
+auch für den nächsten, den jemand baut.
+
+### Behoben: der Automatisierungs-Editor nimmt jetzt wirklich die volle Fensterbreite
+
+Die Regel dafür gibt es seit dem 14.08.2026 (v2.10.0), und sie hat nie gewirkt. Statamic legt
+jede CP-Seite in `[data-max-width-wrapper]` mit `max-width: 85rem` (1360px); das Addon markiert
+seine eigene Wurzel mit `data-sa-full-bleed` und hebt die Grenze für diese eine Seite auf. Im
+Browser blieb der Editor trotzdem 1360px breit, mit gleich breitem Weißraum links und rechts —
+auf einem 1920er Fenster sind das über 500px verschenkte Leinwand.
+
+Nicht der Selektor war schuld, sondern die Kaskadenschicht. Im laufenden CP gemessen
+(22.09.2026) lautet die Schichtreihenfolge `properties > base > addon-theme > addon-utilities >
+components > utilities > ui > ui-states > theme`. `addon-utilities` steht **vor** `utilities`,
+und bei Kaskadenschichten gewinnt die spätere Schicht, unabhängig von der Spezifität. Statamics
+`max-w-page` liegt in `utilities`. Die Regel matchte, war geladen, stand im Inspector — und
+verlor still.
+
+Die Regel steht jetzt ungeschichtet in `resources/css/cp.css`, nicht mehr in
+`@layer addon-utilities`. Ungeschichtet schlägt jede Schicht und hält auch, wenn Statamic seine
+Reihenfolge noch einmal ändert; `@layer utilities` täte das nicht. Gemessen am Editor bei
+Viewport 1920: vorher `max-width: 1360px`, Breite 1360px. Nachher `max-width: none`, Breite
+1622px. Zusätzlich wird `data-flow-full-bleed` als neutraler Name erkannt, den auch andere
+Hosts des geteilten Canvas benutzen; `data-sa-full-bleed` bleibt unverändert gültig.
+
+Wer eigene Regeln in `@layer addon-utilities` schreibt: das bleibt richtig für **neue eigene
+Klassen**. Nur Überschreibungen von Core-Utilities gehören dort nicht hinein.
+
+## 2.18.1 (2026-09-22)
+
+### Fixed: installierbar auf aktuellem Statamic 6
+
+Das Paket verlangte `inertiajs/inertia-laravel ^1.0|^2.0`. Statamic 6.33.0 ist die erste
+Version, die `^2.0 || ^3.0` erlaubt, und löst dort auf v3 auf — wer sie einsetzt, konnte dieses
+Addon nicht mehr installieren. Composer meldet das als unlösbare Anforderung, was sich auf den
+ersten Blick wie ein Fehler am eigenen Projekt liest.
+
+Die Anforderung steht jetzt auf `^2.0 || ^3.0`, wie in `statamic-brand-context`. Am Code war
+nichts zu tun: genutzt werden `Inertia::render` (sieben Controller plus `Support/Setup.php`) und
+der Typ `Inertia\Response`; es gibt keine Unterklasse von `Inertia\Middleware`, kein
+`HandleInertiaRequests`, und die Tests setzen den `X-Inertia`-Header selbst, statt die
+Testing-Helfer zu benutzen, deren API sich hätte drehen können. 922 Tests unter Inertia 3.3.4
+grün.
+
+Auf Statamic vor 6.33.0 ändert sich nichts, dort wird weiterhin Inertia 2 gezogen.
+
 ## 2.18.0 (2026-09-08)
 
 ### Fixed: an unmigrated install no longer answers HTTP 500

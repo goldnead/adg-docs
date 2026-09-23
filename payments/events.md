@@ -72,6 +72,25 @@ So: make irreversible work in a listener idempotent, or queue it.
 | `SubscriptionEnded` | `$subscription` | A payment plan paid its last instalment. |
 | `SubscriptionStartFailed` | `$payment`, `$reason` | The first payment was taken and no agreement was created. |
 
+New in **1.25**:
+
+| Event | Carries | When |
+| --- | --- | --- |
+| `SubscriptionPaused` | `$subscription`, `$resumesAt`, `$by` | The provider confirmed a pause. `$by`: `cp` or `portal`. |
+| `SubscriptionResumed` | `$subscription`, `$by` | It runs again. `$by`: `cp`, `portal`, `schedule` or `provider`. |
+| `SubscriptionChanged` | `$subscription`, `$fromProduct`, `$toProduct`, `$fromAmountCent`, `$toAmountCent`, `$prorationCent`, `$prorationPayment`, `$immediate`, `$by` | A switch was accepted. |
+| `SubscriptionReplaced` | `$replaced`, `$purchase`, `$replacement`, `$creditCent`, `$creditDays` | A purchase ended another agreement. |
+| `SubscriptionPaymentUpcoming` | `$subscription`, `$dueAt`, `$daysBefore` | `reminders.upcoming` days before a charge. Once per agreement and date. |
+| `SubscriptionCardExpiring` | `$subscription`, `$expiresAt` | Before the card on file expires. Once per agreement and date. |
+| `SubscriptionCardExpired` | `$subscription`, `$expiredAt` | The card on file has expired. Once per agreement and date. |
+| `SubscriptionAttemptFailed` | `$subscription`, `$payment`, `$attempt` | A charge failed; `$attempt` counts the failures since the last paid cycle. |
+| `SubscriptionPlanCompleted` | `$subscription`, `$payment` | A payment plan paid its last instalment, next to `SubscriptionEnded`. |
+| `CheckoutBlocked` | `$reason`, `$email`, `$ip`, `$message` | The [checkout door](/payments/checkout-protection) refused a checkout. |
+
+The reminder events fire whether or not the mail is on (`mail: false` keeps the event), so
+[Automations](/automations/) can take them over. Events of commands and webhooks are dispatched
+under the brand of their row.
+
 `PaymentFailed` is **not** dispatched for a payment that was already fulfilled: an
 unfamiliar provider status must not revoke what somebody paid for.
 

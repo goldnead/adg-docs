@@ -10,10 +10,32 @@ No run means the trigger never matched. In order:
 2. **Does the trigger's scope cover the event?** A Form Submitted trigger scoped to one
    form will not fire for another.
 3. **Is a brand current?** In multi-brand mode a console command or worker with no brand
-   sees no automations.
+   sees no automations. Triggers from the suite's addons take the brand from the event
+   instead; when the event names none either, the log says
+   `event carries no brand and none is current`. See
+   [The brand comes from the event](/automations/suite-triggers#the-brand-comes-from-the-event).
 4. **Is Webhook Manager doing it instead?** If both are installed, check both.
 5. **Is the trigger registered at all?**
    `array_keys(Automations::nodes()->all())` lists every registered handle.
+
+## A payments trigger on `offer:kurs` ignores the instalment plan
+
+By design. *Product* matches the handle exactly, so `offer:kurs` does not match
+`offer:kurs:raten3`. Use the *Offer* filter for every way of buying through the offer, or
+*Pricing option* for exactly one. See
+[Filter by product, offer or pricing option](/automations/suite-triggers#filter-by-product-offer-or-pricing-option).
+
+## A course trigger fired, but no run started
+
+The learner could not be found, usually because the user was deleted. The run is skipped and
+the log says `course event for a learner who cannot be found; skipped.` Team triggers are not
+affected: there the member's address is the subject.
+
+## A follow-up flow runs twice after a declined upsell
+
+`funnels.offer_declined` and `funnels.upsell_declined` fire on the same click when the visitor
+had already paid. Use one of them per flow. The same holds for
+`payments.subscription_plan_completed` and `payments.subscription_ended` on a paid-off plan.
 
 ## The run is stuck at `waiting`
 

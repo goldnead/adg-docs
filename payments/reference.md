@@ -9,9 +9,14 @@
 | `payments:sweep-abandoned` | Announce checkouts left unpaid past the waiting period, once each. Needs `abandoned.enabled`. |
 | `payments:prune-unpaid [--dry-run]` | Delete checkouts that were started and never paid. Needs `prune_unpaid_after_days` above `0`. |
 | `payments:prune-legal-drafts [--days=7] [--dry-run]` | Delete withdrawal and cancellation declarations that were begun and never confirmed. Confirmed ones are never touched. |
+| `payments:dunning [--dry-run]` | Follow up failed renewals in stages, then end the agreement. Needs `dunning.enabled`. |
+| `payments:resume-paused` | Resume pauses whose date has come, and settle rows a dead process left in `pausing`, `resuming`, `switching` or `cancelling` for more than ten minutes. **1.25.** See [the clean-up run](/payments/subscription-changes#the-clean-up-run). |
+| `payments:reminders` | Send the reminders before a charge and before and after a card expires, once per agreement and date. **1.25.** See [Reminders](/payments/reminders). |
+| `payments:brand-backfill [--dry-run]` · `payments:subscription-brand-backfill [--apply]` · `payments:leadhub-backfill` | One-off backfills for older rows. |
 
-That is the complete list. **None is scheduled for you** — register them in
-`routes/console.php` yourself.
+**None is scheduled for you** — register them in `routes/console.php` yourself, each with
+`->withoutOverlapping()`. The suggested plan is on
+[Installation → The scheduler](/payments/installation#the-scheduler).
 
 ## Classes you call
 
@@ -62,8 +67,22 @@ namespace Goldnead\StatamicPayments\Events;
 | `SubscriptionCancelled` | `$subscription` |
 | `SubscriptionEnded` | `$subscription` |
 | `SubscriptionStartFailed` | `$payment`, `$reason` |
+| `SubscriptionCycleFailed` | `$subscription`, `$payment`, `$status` |
+| `PaymentChargedBack` | `$payment`, `$reference`, `$amountCent`, `$reason` |
+| `PaymentCommunicationLogged` | `$communication` |
+| `SubscriptionPaused` | `$subscription`, `$resumesAt`, `$by` — **1.25** |
+| `SubscriptionResumed` | `$subscription`, `$by` — **1.25** |
+| `SubscriptionChanged` | `$subscription`, `$fromProduct`, `$toProduct`, `$fromAmountCent`, `$toAmountCent`, `$prorationCent`, `$prorationPayment`, `$immediate`, `$by` — **1.25** |
+| `SubscriptionReplaced` | `$replaced`, `$purchase`, `$replacement`, `$creditCent`, `$creditDays` — **1.25** |
+| `SubscriptionPaymentUpcoming` | `$subscription`, `$dueAt`, `$daysBefore` — **1.25** |
+| `SubscriptionCardExpiring` | `$subscription`, `$expiresAt` — **1.25** |
+| `SubscriptionCardExpired` | `$subscription`, `$expiredAt` — **1.25** |
+| `SubscriptionAttemptFailed` | `$subscription`, `$payment`, `$attempt` — **1.25** |
+| `SubscriptionPlanCompleted` | `$subscription`, `$payment` — **1.25** |
+| `CheckoutBlocked` | `$reason`, `$email`, `$ip`, `$message` — **1.25** |
 
-Nine, and that is the complete list. `PaymentPaid`, `PaymentFailed` and `CheckoutAbandoned`
+Twenty-two, and that is the complete list. What each one means is on
+[Reacting to a payment](/payments/events#the-events). `PaymentPaid`, `PaymentFailed` and `CheckoutAbandoned`
 are each dispatched **once per payment**, claimed by a conditional `UPDATE` on their own
 column. See [Reacting to a payment](/payments/events#dispatched-once).
 
@@ -74,6 +93,12 @@ column. See [Reacting to a payment](/payments/events#dispatched-once).
 | `Contracts\PaymentGateway` | add a provider: `createPayment()`, `fetch()`, `provider()` |
 | `Contracts\FollowUpGateway` | *extends the above* — `supportsFollowUp()`, `rememberBuyer()`, `chargeAgain()` |
 | `Contracts\SubscriptionGateway` | *extends FollowUpGateway* — `supportsSubscriptions()`, `createSubscription()`, `cancelSubscription()`, `fetchSubscription()` |
+| `Contracts\PausesSubscriptions` | pause natively: `pauseSubscription()`, `resumeSubscription()`. Stripe has it; without it a pause ends the agreement and a resume starts a new one. **1.25** |
+| `Contracts\UpdatesSubscriptions` | change the amount of a running agreement: `updateSubscription()`. Used by switches and coupons that run out. **1.25** |
+| `Contracts\ListsSubscriptions` | `subscriptionsFor()`, so the clean-up run can find an agreement a dead resume started. **1.25** |
+| `Contracts\ReadsCardExpiry` | `cardExpiry()`, for the card reminders. **1.25** |
+
+Mollie and Stripe implement all four new ones except that Mollie has no native pause.
 
 Three interfaces rather than one fat one, because a provider that cannot do the later two
 should not have to declare stubs that throw, and a site should be able to **ask** rather
@@ -98,6 +123,14 @@ account.
 | --- | --- | --- | --- |
 | `POST` | `/!/statamic-payments/webhook` | `statamic-payments.webhook` | throttle `rate_limit`,1 — **CSRF dropped** |
 | `POST` | `/!/statamic-payments/offer` | `statamic-payments.offer.accept` | `web`, throttle 10,1 — **CSRF kept** |
+| `GET` | `/!/statamic-payments/danke/{payment}` | `statamic-payments.thanks` | `web`, throttle 30,1; signed, checked by the controller so a late link gets a page, not a 403. Only used with `thanks.expires_minutes`. **1.25** |
+| `GET`, `POST` | `{portal.prefix}/abo/{subscription}/pausieren` | `statamic-payments.portal.pause.confirm`, `….pause.run` | portal session; the `POST` throttled 10,1. **1.25** |
+| `POST` | `{portal.prefix}/abo/{subscription}/fortsetzen` | `statamic-payments.portal.resume.run` | portal session, throttle 10,1. **1.25** |
+| `GET`, `POST` | `{portal.prefix}/abo/{subscription}/wechseln` | `statamic-payments.portal.switch.confirm`, `….switch.run` | portal session; the `POST` throttled 10,1. **1.25** |
+
+The other portal, withdrawal and cancellation routes are listed on
+[The customer portal](/payments/portal) and
+[Consent, withdrawal and cancellation](/payments/recht).
 
 ### The webhook
 
@@ -119,7 +152,7 @@ The one payment the site legitimately never created is a **cycle** the provider 
 an agreement the site *did* create. The evidence there is the agreement, and the
 subscription id comes from the provider's own answer rather than from the caller.
 
-## Antlers tag
+## Antlers tags
 
 ```antlers
 {{ payments:offer payment="{payment_id}" product="begleit-cd" }} … {{ /payments:offer }}
@@ -130,23 +163,31 @@ yields **nothing** unless follow-ups are on, the payment is paid, a mandate exis
 offer has not already been taken. See
 [Bumps and follow-up offers](/payments/bumps#in-a-template).
 
+| Tag | |
+| --- | --- |
+| `{{ payments:thanks }}…{{ /payments:thanks }}` | `valid`, `paid`, `pending`, `payment_id`, `expires_at` for an expiring thank-you page. **1.25.** See [The thank-you link](/payments/checkout-protection#the-thank-you-link). |
+| `{{ payments:captcha }}` | The captcha widget for a checkout form; empty when no captcha is configured. **1.25** |
+| `{{ payments:withdrawal_url }}` · `{{ payments:cancellation_url }}` | The statutory withdrawal and cancellation pages. See [Consent, withdrawal and cancellation](/payments/recht). |
+
 ## Control Panel
 
 | Screen | Permission | |
 | --- | --- | --- |
 | **Utilities → Payments** | `access payments utility` | Read-only listing of orders |
-| **Utilities → Subscriptions** | `access subscriptions utility` | Agreements, a read-only detail, and cancelling |
+| **Utilities → Subscriptions** | `access subscriptions utility` | Agreements and a read-only detail |
+| row actions on Subscriptions | `manage payment subscriptions` (**1.25**) | Pause, Resume, Switch, Cancel, Release switch |
 
-Two permissions, deliberately separate: "may read the till" is not the same authority as
-"may end an agreement".
+Deliberately separate: "may read the till" is not the same authority as "may change what
+somebody pays". The permission `manage payment subscriptions` is new in 1.25, and cancelling
+needs it too; see [Upgrading to 1.25](/payments/installation#upgrading-to-1-25).
 
 The Payments screen filters on **Status** and **Fulfilment**, the latter with the entry
 *Paid, not fulfilled* — the one case worth chasing. The Subscriptions screen filters on
 **Status** and **Still running**. Both are real Statamic filters, so they show a badge,
 survive sorting and paging, and can be saved as a view.
 
-One action is registered: `statamic_payments_cancel_subscription`, marked dangerous, offered
-only on an agreement that is still live, authorised by `access subscriptions utility`.
+The cancel action is marked dangerous and offered only on an agreement that is still live, or
+on a row stuck in a claim.
 
 ## Tables
 
@@ -194,9 +235,17 @@ quantity, not a second row.
 | `product` · `amount_cent` · `currency` | looked up once and kept, so a price change does not re-price a running agreement |
 | `interval` | the provider's own vocabulary, unparsed |
 | `times` · `times_charged` | `times` null means "until cancelled"; a number makes it a payment plan |
-| `status` | `initiated` · `pending` · `active` · `suspended` · `cancelled` · `completed` |
+| `status` | `initiated` · `pending` · `active` · `suspended` · `paused` · `cancelled` · `completed`, and while a change is in flight `pausing` · `resuming` · `switching` · `cancelling` |
 | `starts_at` · `next_payment_at` · `cancelled_at` · `ended_at` | |
-| `email` · `name` · `meta` | |
+| `paused_at` · `resumes_at` | a pause, and the date it resumes by itself. **1.25** |
+| `card_expires_at` · `card_checked_at` | the card on file's expiry, cached, and when it was last asked. **1.25** |
+| `email` · `name` · `meta` | `meta` also holds a running `coupon`, `previous_provider_ids` after a resume or switch, and the pause and switch history |
+
+### `payment_subscription_notices`
+
+**1.25.** One row per reminder sent: `subscription_id`, `kind` (`upcoming`, `card_expiring`,
+`card_expired`), `reference` (the date it was about), `created_at`. The unique index over the
+three is what makes each reminder go out once however often `payments:reminders` runs.
 
 Deleting a payment deletes its lines, in the model as well as by cascade — SQLite quietly
 does not enforce the foreign key, and orphaned lines would count towards every revenue
@@ -221,10 +270,17 @@ Each takes an optional `product` filter and hands the flow `id`, `product`, `amo
 | --- | --- |
 | `statamic-payments-config` | `config/statamic-payments.php` |
 | `statamic-payments-migrations` | the migrations, if you want them in your own repo |
+| `statamic-payments-views` | the Blade views: portal, reminder, dunning and abandoned mails, thank-you and withdrawal pages. Publish again with `--force` after updating to 1.25, or merge the new portal pages into your copies. |
+| `statamic-payments-translations` | the language files, including every statutory wording |
 
 ## Multi-site and multi-brand
 
-Payments are neither site-scoped nor brand-scoped. A payment is a transaction, not content.
+Payments are not site-scoped. A payment is a transaction, not content.
 
-That is also why [Invoices](/invoices/numbering#one-series-per-brand) cannot read a brand off
-a payment row and asks for one instead.
+`payments.brand_id` and `subscriptions.brand_id` carry the brand a row was created in, `0` on
+a single-brand install. With [Brand Context](/brand-context/) in multi-brand mode the portal
+shows each brand only its own orders. From 1.25, `payments:reminders`,
+`payments:resume-paused` (clean-up included), the Mollie and Stripe webhooks, and Stripe refunds
+and disputes run each row's work and its events under that row's brand through
+`Brands::runFor()`, so brand-aware listeners hear the right brand. A row on brand `0`, or an
+install without Brand Context, runs unchanged.

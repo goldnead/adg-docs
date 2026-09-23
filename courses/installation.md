@@ -34,6 +34,11 @@ the first tab. Nothing is removed, reordered or reconfigured, and fields a field
 brings in count as present. It also translates a collection title that is still the English
 default (`Courses`, `Course Lessons`) into the site's language; a title somebody chose stays.
 
+From 0.2 on, `--merge` also adds the course field `brand`: on a multi-brand site the handle
+of the brand the course belongs to, empty for the brand of its site. It decides which
+`brandId` the course's [events](/courses/reference#events) carry. A single-brand site can
+leave it empty.
+
 `--dry-run` lists every field and option it would add, `+ drip_after` or
 `+ option drip_mode.days`, and saves nothing, on a fresh site as well ("would create").
 

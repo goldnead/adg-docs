@@ -111,6 +111,73 @@ Same cause: `public/vendor/statamic-funnels/funnels.css` was never published. Se
 An empty share is read as **50**, so a filled variant with a blank share *is* an even
 split, not "off". To switch a test off, clear the variant fields or set the share to 0.
 
+## The split test shows 99 % and still no winner
+
+It is not decided yet. A test with `split_auto` decides once, when each version has
+`split_min_visits` visits and the last of them arrived a day ago (an hour for `continue`).
+Until then the editor shows the progress (51/100) and an interim confidence, marked as not a
+result. Deciding on an interim figure is exactly what makes false winners. See
+[A goal and a winner](/funnels/deadlines-and-tests#a-goal-and-a-winner).
+
+## The split test ended with "no difference"
+
+Neither version led with 95 % confidence on the fixed sample. Both keep running, and the test
+is not decided again on the same goal. A small real difference usually needs more visits than
+100 per version; set a higher `split_min_visits` for the next test.
+
+## An embedded funnel shows an empty frame
+
+The funnel page refused to be framed. In order:
+
+1. The embedding site's domain is not listed on the funnel (**Settings → Embedding**). Since
+   1.17 every funnel page sends `frame-ancestors 'self'` plus that list.
+2. Your own site overrides it: a CSP middleware, or `X-Frame-Options: SAMEORIGIN` from nginx or
+   Apache. Exempt the funnel routes. See
+   [Embedding → Your site's own headers win](/funnels/embedding#your-site-s-own-headers-win).
+
+## An embedded funnel starts over on every page
+
+The browser does not send `Sec-Fetch-Dest`, which is Safari before 16.4. Without it the signed
+walk is not accepted inside a frame, on purpose. Link to the funnel instead of embedding it for
+those visitors. See [Embedding → Known limits](/funnels/embedding#known-limits).
+
+## After paying, the buyer did not come back into the funnel
+
+The payment switched to a banking app and came back in another browser. The payment is
+recorded and the walk advanced on the webhook; only the next page was not shown in that
+browser, because the return is bound to the browser that ordered.
+
+## A headline shows `<strong>` literally
+
+Since 1.17 the shipped template escapes headlines and texts. Use Markdown (`**bold**`). See
+[The checkout step → Escaping](/funnels/checkout#escaping).
+
+## The order is refused with a coupon message
+
+The buyer typed a code that does not apply: unknown, expired, used up, or not for this offer.
+The order is refused rather than charged at the full price, with the reason at the field. An
+empty field orders at the regular price.
+
+## Tracking code does not run
+
+- The visitor has not allowed the Consent service the slot names. That is the rule working.
+- The service does not exist in `config/statamic-consent.php`, so the banner never offers it.
+  The editor warns about it.
+- A template of your own lacks `{{ consent:head }}` and `{{ consent:banner }}`.
+- Consent is not installed and `tracking.without_consent_addon` is `block`.
+- The page is a preview. Nothing is printed there.
+
+## The tracking fields are read-only
+
+The user lacks `edit funnels tracking code`.
+
+## Meta counts a purchase twice
+
+The pixel and the server event arrived with different event IDs, or Meta did not match them.
+Send a test event with `FUNNELS_META_TEST_EVENT_CODE` and check the Events Manager. The
+Conversions API has not been checked against a real Meta account yet; see
+[Tracking](/funnels/tracking#meta-conversions-api).
+
 ## A step points at an entry and shows the step's own headline instead
 
 The entry is unpublished. That is deliberate: `handleDraft()` would 404, and a page pulled

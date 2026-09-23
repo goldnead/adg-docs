@@ -75,6 +75,11 @@ Four things it does deliberately:
 - **Not narrowed by brand.** A flyer knows no brand. The slug is unique across all brands, and
   the only thing the route reveals is the target somebody entered for it.
 
+The switch date, like "available from" and "available until", is typed and shown in
+Statamic's `display_timezone` and stored in `app.timezone`; the form names the display timezone
+next to the fields. On a site with a UTC database and a Berlin display, 18:00 in the form is
+18:00 in Berlin.
+
 The slug is lowercase letters, digits and `-`, up to 64 characters, and unique. A target is a
 path starting with `/` or a full `http(s)://` address. The route answers 404 for an unknown
 slug or an offer without a target, and is throttled at 120 requests a minute.

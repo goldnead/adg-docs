@@ -6,8 +6,11 @@
 php artisan vendor:publish --tag=statamic-funnels-config
 ```
 
-Six keys, all of them in `config/statamic-funnels.php`. There is no settings screen: none
-of these is a thing an editor changes, and two of them change every URL on the site.
+All keys live in `config/statamic-funnels.php`. Most of them can also be set per brand on the
+Funnels tab of the suite's settings screen
+([Brand Context → Addon settings](/brand-context/settings)). Not there: `route_prefix`, which
+changes every URL on the site and is read while routes are registered,
+`integrations.entitlements`, and the `tracking.meta.*` keys.
 
 | Key | Default | What happens when it is wrong |
 | --- | --- | --- |
@@ -17,6 +20,13 @@ of these is a thing an editor changes, and two of them change every URL on the s
 | `template_prefix` | `''` | A folder name confines what a step may name as its own template. |
 | `integrations.leadhub` | `false` | On, a captured address goes to LeadHub as a contact. |
 | `integrations.entitlements` | `false` | Off because the payment addon offers the same bridge. |
+| `in_app_browser.enabled` | `true` | Off, no funnel shows the [in-app browser notice](/funnels/embedding#the-in-app-browser-notice), whatever the funnel says. |
+| `embed.link_minutes` | `180` | How long a signed walk in an [embedded](/funnels/embedding) page's links stays good, the way back from the payment included. |
+| `tracking.consent_service` | `'meta_pixel'` | The Consent service that releases [tracking code](/funnels/tracking) when a slot names none. A service the consent config does not have keeps everything blocked. |
+| `tracking.without_consent_addon` | `'block'` | Without Consent installed: `block` prints no tracking code, `render` prints it as it is. |
+| `tracking.meta.access_token` | env `FUNNELS_META_CAPI_TOKEN` | Empty means no server-side events. The pixel still works. |
+| `tracking.meta.test_event_code` | env `FUNNELS_META_TEST_EVENT_CODE` | Sends to the Events Manager's test view. Remove after testing. |
+| `tracking.meta.api_version` | `'v21.0'` | The Graph API version in the URL. |
 
 ## `route_prefix`
 
@@ -127,5 +137,10 @@ and two addons granting the same thing is worse than neither.
 
 ## Environment variables
 
-None. Every switch above is a config value, because every one of them is a decision about
-the site rather than about the environment it runs in.
+| Variable | |
+| --- | --- |
+| `FUNNELS_META_CAPI_TOKEN` | The Meta Conversions API access token. A secret, so it is not a config value. |
+| `FUNNELS_META_TEST_EVENT_CODE` | Routes server events to the Events Manager's test view. |
+
+Every other switch is a config value, because it is a decision about the site rather than
+about the environment it runs in.

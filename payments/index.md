@@ -49,7 +49,15 @@ documentation refers back to it rather than restating it:
 - **Subscriptions, payment plans and trials** — one mechanism, three faces
 - **Follow-up offers**, off by default, charged without new card details
 - **Refunds recorded**, with a full one withdrawing the access it paid for
-- **Abandoned checkouts**, announced once each, off by default
+- **Running a subscription** (1.25): pause and resume, switch to another product with the
+  difference charged pro rata, a purchase that replaces an older subscription
+- **Reminders** (1.25) before a charge and before a card expires, each off by default
+- **A door in front of the checkout** (1.25): block list, a brake per IP and address that is on
+  by default, an optional captcha, and a thank-you page that can expire
+- **A customer portal** with orders, invoices, the statutory cancellation button, a new card, and
+  from 1.25 a logo, a greeting, and pausing and switching where you allow them
+- **Abandoned checkouts**, announced once each, off by default, and from 1.25 only for buyers
+  who agreed to a reminder
 - **Two Control Panel screens**: Payments and Subscriptions, each behind its own permission
 - **The facts an invoice needs** — the buyer's country and the discount per line — recorded
   while they still exist
@@ -102,6 +110,10 @@ a container binding, not a fork.
 - [Reacting to a payment](/payments/events) — the events, and what "once" means
 - [Bumps and follow-up offers](/payments/bumps)
 - [Subscriptions, plans and trials](/payments/subscriptions)
+- [Pausing, switching and replacing](/payments/subscription-changes)
+- [Reminders and card expiry](/payments/reminders)
+- [Checkout protection and the thank-you link](/payments/checkout-protection)
+- [The customer portal](/payments/portal)
 - [Refunds](/payments/refunds)
 - [Abandoned checkouts](/payments/abandoned)
 - [Tax facts and retention](/payments/tax-and-retention)

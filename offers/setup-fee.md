@@ -63,6 +63,6 @@ whether to ask. Sibling addons ask:
 \Goldnead\StatamicOffers\Offers::availableIn('offer:workshop', 'CH');
 ```
 
-[Payments](/payments/) newer than 1.24.5 asks the same question before it starts a checkout for
+[Payments](/payments/) 1.25 asks the same question before it starts a checkout for
 an offer handle, so a checkout that skipped the basket is refused too. On an older Payments the
 basket is the only guard.

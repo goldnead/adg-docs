@@ -88,6 +88,17 @@ version constraints that matter when both are installed:
 | Notifications' LeadHub digest source | LeadHub `^1.0` | The digest omits overdue follow-ups |
 | Activity's producers for LeadHub and Marketing | LeadHub / Marketing installed | The producers do not attach |
 | Marketing's footer preference link | Preference Center installed | The link goes to Marketing's own unsubscribe page instead |
+| Funnels' coupon from a link, pay what you want, country question and coupon terms | Offers 1.12 | The checkout step stays as it was, without those parts |
+| Funnels' captcha, reminder consent and a funnel-wide coupon on a one-click upsell | Payments 1.25 | The checkout step stays as it was, without those parts |
+| Coupons on renewals and the second country check | Payments 1.25 with Offers 1.12 | A coupon covers the first payment only; the basket is the only country check |
+| Automations' subscription, card and checkout-protection triggers | Payments 1.25 | The triggers do not appear in the library |
+| Automations' `upsell_declined` trigger | Funnels 1.17 | The trigger does not appear |
+| `brandId` on Courses events | Courses 0.2 | Listeners run in whatever brand is current |
+
+Funnels 1.17 sends `Content-Security-Policy: frame-ancestors` on its pages. A site
+that sets its own CSP or `X-Frame-Options` for every path wins over it, and an
+embedded checkout then stays blank: exempt `/f/*`, or add the funnel's allowed
+domains to the site's policy. See [Embedding](/funnels/embedding).
 
 Optional integrations degrade rather than fail. The pattern throughout the suite
 is a capability check on the facade root, not a version comparison:

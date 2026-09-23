@@ -56,6 +56,24 @@ shown in the Control Panel only with `manage affiliate payouts`; the payout CSV
 carries them in plain text, because it is the file you pay from. The commission
 mail never names the buyer. See [Attribution → Consent](/affiliates/attribution#consent).
 
+[Payments](/payments/) 1.25 counts checkout attempts per IP address and per email
+address in the cache only, for its checkout brake. A refused checkout's event
+carries the IP; its log line keeps the email's domain only. Whether a buyer agreed
+to reminders about an abandoned checkout is recorded on the payment
+(`meta.reminder_consent`), and without that consent no reminder goes out when
+`abandoned.capture` asks for it. See
+[Checkout protection](/payments/checkout-protection).
+
+[Funnels](/funnels/) runs a tracking code slot or the Meta pixel only with the
+consent that slot names. The Conversions API sends the buyer's email hashed, and
+the IP address, user agent and the `_fbp`/`_fbc` cookies only with consent. See
+[Tracking code and the Meta pixel](/funnels/tracking).
+
+[Automations](/automations/) stores a run's context, shows it in the run log and
+can forward it through a webhook node. For a blocked checkout that context keeps
+only the network of the IP address (`/24` or `/48`), never the full address. See
+[Triggers from the suite](/automations/suite-triggers).
+
 ## Redaction on write
 
 Both LeadHub and Activity sanitise before persisting, not after.
