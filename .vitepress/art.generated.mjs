@@ -109,6 +109,12 @@ export const ART = {
     "light": "#2f6fe4",
     "dark": "#3e7ff5"
   },
+  "smartlinks": {
+    "from": "#12A594",
+    "to": "#063B37",
+    "light": "#008373",
+    "dark": "#12a594"
+  },
   "payments": {
     "from": "#8B5CF6",
     "to": "#4C1D95",

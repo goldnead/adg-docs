@@ -42,6 +42,12 @@ certificate rather than certified under their email address. The page is sent
 with `noindex, nofollow`, and a revoked certificate still shows its name there.
 See [The verification page](/certificates/verify).
 
+[Smart Links](/smartlinks/) counts clicks on public pages without holding
+personal data: its table has one counter per song, platform and day, and no IP,
+cookie, user agent or referrer. The IP is used for one thing, a cap on counted
+clicks per minute, and only as part of a SHA-256 hash that serves as a cache key
+for that minute. See [Configuration → Clicks](/smartlinks/configuration#clicks).
+
 ## Redaction on write
 
 Both LeadHub and Activity sanitise before persisting, not after.
@@ -189,6 +195,7 @@ work around: a ledger you can quietly edit is not a ledger.
 | Notifications | — | no automatic pruning |
 | Certificates | — | none; a certificate is kept, revoked or not |
 | Private Media | `private-media:prune --days=` | `audit.retention_days`, default 90, **not scheduled**; you register it |
+| Smart Links | `smartlinks:prune --days=` | `clicks.prune_days`, default 400, **not scheduled**; you register it. The counters hold no personal data. |
 
 ::: warning Nothing here prunes itself
 Deliveries and run logs are the two tables that grow fastest, and neither

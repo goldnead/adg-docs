@@ -1,10 +1,10 @@
 # The suite
 
-Thirty packages, six layers. Every arrow below is a Composer dependency;
+Thirty-one packages, six layers. Every arrow below is a Composer dependency;
 anything not drawn is optional and detected at runtime with `class_exists`,
 which is why you can install any addon without the rest.
 
-All thirty are tagged and published on Packagist, so `composer require`
+All thirty-one are tagged and published on Packagist, so `composer require`
 resolves any of them and pulls in whatever it depends on.
 
 ```
@@ -50,7 +50,7 @@ Standalone ───────────────────────
   webhook-manager · automations · activity · notifications ·
   email-templates · preference-center · entitlements ·
   assessments · events · toc · booking · clientrooms · courses ·
-  private-media · consent
+  private-media · consent · smartlinks
 
   — none of these requires another domain addon.
 ```
@@ -72,7 +72,7 @@ are worth naming, because they look like dependencies and are not:
 `notifications` rather than an optional extra: both ask the gate before they
 queue mail, and a gate that might not be there would be no gate at all.
 
-## The thirty
+## The thirty-one
 
 ### Foundation
 
@@ -327,6 +327,16 @@ of either. A Bard gets it over the block it belongs to, in the page's own type
 and column width, because a Bard is not a field on a page, it is the page.
 A front end that is not Antlers asks for the same markers from a facade. No
 migrations, and no screen in the Control Panel navigation.
+
+**[Smart Links](/smartlinks/)** &nbsp;·&nbsp; `goldnead/statamic-smartlinks`
+
+A page per song with one button per streaming platform, and a redirect behind
+each button that counts the click per song, platform and day, with no IP, cookie
+or user agent stored. The platform comes from the URL's host, never from a
+hand-typed label. Songs stay ordinary collections of the site. Missing links can
+be filled from Spotify, Deezer and YouTube, never overwriting one that is there;
+Apple Music, Amazon and Tidal stay hand-entered. One table, three tags, two
+public routes and one read-only screen. Commercial, and not sold.
 
 **[Consent](/consent/)** &nbsp;·&nbsp; `goldnead/statamic-consent`
 

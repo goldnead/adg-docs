@@ -36,7 +36,7 @@ export const LAYERS = {
  * How far along each addon is.
  *
  * The suite reads finished. It is not: twenty-four packages went public inside
- * five weeks and six more came later, twenty-one of the thirty are
+ * five weeks and seven more came later, twenty-two of the thirty-one are
  * declared commercial, and exactly one can be bought. A reader
  * deciding whether to put one of these on a client site has no
  * way to tell a package that has run several brands for months from one that
@@ -99,6 +99,7 @@ export const MATURITY_BY_SLUG = {
   courses: 'experimental',
   'private-media': 'experimental',
   certificates: 'experimental',
+  smartlinks: 'experimental',
 }
 
 /** The exceptions a one-word level would misrepresent. */
@@ -119,6 +120,8 @@ export const MATURITY_NOTES = {
     'Extracted from adriangoldner.com on 22 September 2026. On that site\'s staging branch it is wired in behind a switch whose default is still the site\'s own delivery code. No production site uses it yet. On Packagist at 0.1.0.',
   certificates:
     'Built on 22 September 2026 on top of Courses and exercised in the playground: issuing, the PDF, the verification page and the Control Panel screen. No production site uses it yet. On Packagist at 0.1.0.',
+  smartlinks:
+    'Built on 23 September 2026 for a band site and exercised in the playground: the landing page, the counting redirect, the platform badge in the entry form and the Control Panel screen. Not installed on that band site or any other yet. Auto-fill from Deezer was checked against the live API. The Spotify lookup has not run against Spotify yet, for want of credentials, and YouTube depends on the title and artist that lookup supplies. On Packagist at 0.1.0.',
   'inline-edit':
     'Built on 19 September 2026 and running on the public demo, but on no client site yet. On Packagist since the same day, so the install below resolves.',
 }
@@ -203,6 +206,7 @@ export const SALES_BY_SLUG = {
   clientrooms: 'not-sold',
   assessments: 'not-sold',
   certificates: 'not-sold',
+  smartlinks: 'not-sold',
 }
 
 export const salesOf = (slug) => SALES_BY_SLUG[slug] ?? null
@@ -518,6 +522,23 @@ export const addons = [
       { text: 'Permissions and safety', link: 'permissions' },
       { text: 'A front end that is not Antlers', link: 'headless' },
       { text: 'Static caching', link: 'static-caching' },
+    ],
+  },
+  {
+    slug: 'smartlinks',
+    name: 'Smart Links',
+    package: 'goldnead/statamic-smartlinks',
+    layer: 'content',
+    license: 'Commercial',
+    tagline:
+      'A page per song with one button per streaming platform, the platform read from the URL, clicks counted per day without personal data.',
+    icon: '↗',
+    pages: [
+      { text: 'The landing page', link: 'landing' },
+      { text: 'Platform detection', link: 'platforms' },
+      { text: 'Antlers tags', link: 'tags' },
+      { text: 'Auto-fill', link: 'auto-fill' },
+      { text: 'The Smart Links screen', link: 'control-panel' },
     ],
   },
   {

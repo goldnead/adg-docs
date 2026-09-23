@@ -363,6 +363,27 @@ html.dark[data-addon='inline-edit'] {
   --vp-c-brand-soft: rgba(62, 127, 245, 0.16);
 }
 
+html[data-addon='smartlinks'] {
+  --gn-accent-from: #12A594;
+  --gn-accent-to: #063B37;
+  --vp-c-brand-1: #008373;
+  --vp-c-brand-2: #006e5f;
+  --vp-c-brand-3: #12A594;
+  --vp-c-brand-soft: rgba(18, 165, 148, 0.16);
+  --vp-button-brand-bg: #12A594;
+  --vp-button-brand-hover-bg: #063B37;
+  --vp-button-brand-active-bg: #063B37;
+  --vp-button-brand-text: #1a1a1a;
+  --vp-button-brand-hover-text: #ffffff;
+}
+
+html.dark[data-addon='smartlinks'] {
+  --vp-c-brand-1: #12a594;
+  --vp-c-brand-2: #3abbaa;
+  --vp-c-brand-3: #063B37;
+  --vp-c-brand-soft: rgba(18, 165, 148, 0.16);
+}
+
 html[data-addon='payments'] {
   --gn-accent-from: #8B5CF6;
   --gn-accent-to: #4C1D95;

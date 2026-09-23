@@ -33,6 +33,7 @@ works, just badly. This page starts from the problem.
 | Stop sending to a mailbox that bounced, from every addon at once | [Suppression](/suppression/) | a per-addon block list, which only one of them keeps |
 | Let a subscriber change what they receive, without an account | [Preference Center](/preference-center/) | Marketing's unsubscribe page, which only ends one list |
 | Put a table of contents on an article | [Table of Contents](/toc/) | |
+| Give each song one link that sends listeners to their platform, and see which platform they pick | [Smart Links](/smartlinks/) | a list of streaming links with hand-typed labels, which drift away from the URLs they describe |
 
 ## Transport or orchestration
 

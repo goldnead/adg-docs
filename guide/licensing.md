@@ -89,18 +89,18 @@ members:
 
 ## Buying
 
-**All thirty packages are on Packagist**, commercial ones included, and
+**All thirty-one packages are on Packagist**, commercial ones included, and
 every one installs with a bare `composer require`.
 
-Being on Packagist is not the same as being free. **Twenty-one are commercial** and
+Being on Packagist is not the same as being free. **Twenty-two are commercial** and
 **nine are MIT**; the table above is the authoritative list. The commercial ones
 resolve as ordinary Composer packages but are licensed rather than sold.
 
 The commercial packages are sold in three ways, and which one applies decides
 what you should do about a licence. Nine are meant for individual sale on the
 Statamic Marketplace. Nine are licensed only as part of the Suite, with no
-individual listing planned. Client Rooms, Assessments and Certificates are not
-sold at all yet. The "How it is sold" column above says which is which, for every addon,
+individual listing planned. Client Rooms, Assessments, Certificates and Smart
+Links are not sold at all yet. The "How it is sold" column above says which is which, for every addon,
 and the same word appears on each addon's own pages.
 
 The grouping is Schedule A of the [Suite EULA](/guide/suite-eula), the contract
@@ -122,8 +122,8 @@ The nine are <SalesGroup kind="suite-only" />. They carry no individual price an
 The box above does not apply to these nine. There is no listing to wait for.
 :::
 
-Client Rooms, Assessments and Certificates are commercial as well, and on
-Packagist, but none of them is part of the Suite as sold today.
+Client Rooms, Assessments, Certificates and Smart Links are commercial as well,
+and on Packagist, but none of them is part of the Suite as sold today.
 
 Flow Canvas is MIT from 1.2.0 on, and deliberately: Funnels requires it, so a
 commercial editor behind a commercial addon would have meant two licences for
