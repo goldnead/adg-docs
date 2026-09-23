@@ -132,8 +132,8 @@ did not answer `ok` with the song, the verdict, the HTTP status and the URL.
 - The [Smart Links screen](/smartlinks/control-panel#badges) shows a "Dead links" badge on the
   song, and the filter "Dead links" lists those songs.
 
-The link stays in the entry. Deleting it is left to a person, and replacing it to a person or
-to `--replace-dead`.
+The link stays in the entry. `--replace-dead` can replace it in its row; deleting it is left
+to a person.
 
 ### No request to your own network {#ssrf}
 
