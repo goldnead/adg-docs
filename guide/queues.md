@@ -78,6 +78,7 @@ wrong:
 | `webhook-manager:prune` | nobody | The deliveries table grows without limit |
 | `private-media:prune` | nobody | The audit table, with an IP and a user agent per row, grows without limit |
 | `smartlinks:prune` | nobody | The click table keeps a row per song, platform and day for as long as the site runs |
+| `smartlinks:check` | nobody | No link is ever marked dead: dead links stay on the landing page and the Control Panel shows no dead-link badges |
 
 ::: danger Retries need a working `schedule:run`
 `webhook-manager:dispatch-retries` is the command that actually performs a

@@ -121,7 +121,7 @@ export const MATURITY_NOTES = {
   certificates:
     'Built on 22 September 2026 on top of Courses and exercised in the playground: issuing, the PDF, the verification page and the Control Panel screen. No production site uses it yet. On Packagist at 0.1.0.',
   smartlinks:
-    'Built on 23 September 2026 for a band site and exercised in the playground: the landing page, the counting redirect, the platform badge in the entry form and the Control Panel screen. Not installed on that band site or any other yet. Auto-fill from Deezer was checked against the live API. The Spotify lookup has not run against Spotify yet, for want of credentials, and YouTube depends on the title and artist that lookup supplies. On Packagist at 0.1.0.',
+    'Built on 23 September 2026 for a band site and exercised in the playground: the landing page, the counting redirect, the platform badge in the entry form, the link cleanup, the dead-link badges and filter, and accepting and rejecting suggestions on the Control Panel screen. Not installed on that band site or any other yet. On 23 September 2026 auto-fill ran read-only against the live Deezer and Apple Music APIs on that band\'s catalogue: all 39 songs with a Deezer link identified, no link found that was wrong. Spotify and Tidal have not run against their APIs, for want of credentials, and are covered by tests with faked responses only; YouTube was not part of that run. On Packagist at 0.2.0.',
   'inline-edit':
     'Built on 19 September 2026 and running on the public demo, but on no client site yet. On Packagist since the same day, so the install below resolves.',
 }
@@ -538,6 +538,7 @@ export const addons = [
       { text: 'Platform detection', link: 'platforms' },
       { text: 'Antlers tags', link: 'tags' },
       { text: 'Auto-fill', link: 'auto-fill' },
+      { text: 'Cleanup and dead links', link: 'link-health' },
       { text: 'The Smart Links screen', link: 'control-panel' },
     ],
   },

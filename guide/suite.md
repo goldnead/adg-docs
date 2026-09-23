@@ -333,10 +333,12 @@ migrations, and no screen in the Control Panel navigation.
 A page per song with one button per streaming platform, and a redirect behind
 each button that counts the click per song, platform and day, with no IP, cookie
 or user agent stored. The platform comes from the URL's host, never from a
-hand-typed label. Songs stay ordinary collections of the site. Missing links can
-be filled from Spotify, Deezer and YouTube, never overwriting one that is there;
-Apple Music, Amazon and Tidal stay hand-entered. One table, three tags, two
-public routes and one read-only screen. Commercial, and not sold.
+hand-typed label. Songs stay ordinary collections of the site. Missing links are
+filled by ISRC or UPC from Deezer, Apple Music, Spotify and Tidal, never
+overwriting one that is there; YouTube finds wait as suggestions, and Amazon and
+the rest stay hand-entered. Links lose foreign tracking parameters on save, and a
+check you schedule yourself hides the ones that are dead. Three tables, three tags, two public
+routes and one screen. Commercial, and not sold.
 
 **[Consent](/consent/)** &nbsp;·&nbsp; `goldnead/statamic-consent`
 

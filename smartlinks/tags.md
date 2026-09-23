@@ -33,6 +33,10 @@ Link to `click_url` if the click should be counted. It is `null` when the
 [routes are off](/smartlinks/configuration#routes) or the entry has no slug; fall back to `url`.
 A song without links gives an empty list.
 
+Both `{{ smartlinks:links }}` and `{{ smartlinks:url }}` leave out a link that
+[`smartlinks:check`](/smartlinks/link-health#dead-links) has confirmed dead, as the landing page
+does, while [`check.hide_dead`](/smartlinks/configuration#check) is on.
+
 ## `{{ smartlinks:url }}` {#smartlinks-url}
 
 The stored URL for one platform, or nothing.

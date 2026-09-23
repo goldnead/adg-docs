@@ -30,7 +30,7 @@ localisation without links of its own shows its origin's.
 
 - a slug that is not a song of the configured collections, or not in the current site;
 - a song that is not published;
-- on the redirect, a platform the song has no link for.
+- on the redirect, a platform the song has no link for, or whose only link is confirmed dead.
 
 A stored value that is not an `http` or `https` URL never becomes a button and never becomes a
 redirect target. **The redirect only ever goes to a URL stored on the entry.** Nothing from
@@ -53,6 +53,10 @@ When a song has two Spotify links, the first one stored counts and the second is
 The buttons follow [`smartlinks.priority`](/smartlinks/configuration#priority), not the stored
 row order: Spotify, Apple Music, YouTube Music, Amazon Music, Deezer, Tidal, YouTube,
 SoundCloud, Bandcamp, Amazon, then the rest alphabetically by handle, "other" last.
+
+A link that [`smartlinks:check`](/smartlinks/link-health#dead-links) has confirmed dead is left
+off, and a second link of the same platform takes its place. See
+[`check.hide_dead`](/smartlinks/configuration#check).
 
 A song with no links gets its page anyway, with the line "No links for this song yet."
 

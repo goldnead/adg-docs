@@ -6,10 +6,13 @@
 
 | Command | |
 | --- | --- |
-| `php artisan smartlinks:resolve {entry?}` | Fills missing links from Spotify, Deezer and YouTube; never overwrites. `entry` is an ID or a slug; without it, every song. `--dry-run` saves nothing. |
+| `php artisan smartlinks:resolve {entry?}` | Fills missing links by ISRC or UPC from Spotify, Deezer, Apple Music and Tidal, and stores YouTube finds as suggestions; never overwrites. `entry` is an ID or a slug; without it, every song and release. `--dry-run` saves nothing. |
+| `php artisan smartlinks:clean` | Removes affiliate and tracking parameters from every stored link, normalises its form and drops rows that are duplicates afterwards. `--dry-run` saves nothing. |
+| `php artisan smartlinks:check {entry?}` | Asks every stored link whether it still answers and records the verdict; a link is dead on the second dead check in a row. `--dry-run` records nothing. Not scheduled. |
 | `php artisan smartlinks:prune` | Deletes day counters older than `clicks.prune_days` (400). `--days=` for another number. Not scheduled. |
 
-Details on [Auto-fill](/smartlinks/auto-fill) and
+Details on [Auto-fill](/smartlinks/auto-fill),
+[Cleanup and dead links](/smartlinks/link-health) and
 [Pruning](/smartlinks/configuration#pruning).
 
 ## Facade
@@ -18,7 +21,7 @@ Details on [Auto-fill](/smartlinks/auto-fill) and
 
 | Method | |
 | --- | --- |
-| `links(Entry $entry): array` | the song's links as `Link` objects, one per platform, in priority order |
+| `links(Entry $entry): array` | the song's links as `Link` objects, one per platform, in priority order; confirmed dead links left out while `check.hide_dead` is on |
 | `url(Entry $entry, string $platform): ?string` | the stored URL for that platform |
 | `landingUrl(Entry $entry): ?string` | `null` when the routes are off |
 | `clickUrl(Entry $entry, string $platform): ?string` | `null` when the routes are off |
@@ -49,9 +52,20 @@ redirect.
 | `resolve(Track $track): Resolution` | a URL, or the reason there is none |
 
 `Resolution::found($platform, $url)` and `Resolution::none($platform, $reason)`, with the reason
-constants `FOUND`, `NOT_CONFIGURED`, `MISSING_INPUT`, `NOT_FOUND`, `NO_CONFIDENT_MATCH` and
-`HTTP_ERROR`. `Track` carries `spotifyId`, `isrc`, `title` and `artist`, each nullable. See
-[Auto-fill](/smartlinks/auto-fill#a-resolver-of-your-own).
+constants `FOUND`, `NOT_CONFIGURED`, `MISSING_INPUT`, `NOT_FOUND`, `NO_CONFIDENT_MATCH`,
+`HTTP_ERROR`, `RATE_LIMITED`, `NOT_AVAILABLE_IN_REGION`, `MISMATCH` and `SUGGESTED`.
+
+`Track` carries what the entry holds, `spotifyId`, `isrc`, `upc`, `deezerId`, `tidalId` and
+`album` (true for a release), and what step one adds: `title`, `artist`, `deezerLink`,
+`deezerAlbumId`, `trackNumber`, `discNumber`, `duration` in seconds and
+`availableCountries`. See [Auto-fill](/smartlinks/auto-fill#a-resolver-of-your-own).
+
+`Goldnead\Smartlinks\Contracts\SuggestsOnly` extends `Resolver` and adds nothing: a resolver
+that implements it has its finds stored as suggestions instead of links.
+
+`Goldnead\Smartlinks\Contracts\HostResolver` has one method, `resolve(string $host): array`,
+every A and AAAA address of the host, or an empty list. The link check's SSRF guard uses it.
+The addon binds its own only when nothing else is bound.
 
 ## Fieldtype
 
@@ -67,18 +81,25 @@ constants `FOUND`, `NOT_CONFIGURED`, `MISSING_INPUT`, `NOT_FOUND`, `NO_CONFIDENT
 | GET | `/hoeren/{slug}/{platform}` | `smartlinks.go` | `web` group, public, not throttled, 302 |
 | GET | `{cp}/smartlinks` | `statamic.cp.smartlinks.index` | `can:view smartlinks` |
 | GET | `{cp}/smartlinks/listing` | `statamic.cp.smartlinks.listing` | `can:view smartlinks`, the rows as JSON |
+| POST | `{cp}/smartlinks/suggestions/{id}/accept` | `statamic.cp.smartlinks.suggestions.accept` | `can:manage smartlinks` |
+| POST | `{cp}/smartlinks/suggestions/{id}/reject` | `statamic.cp.smartlinks.suggestions.reject` | `can:manage smartlinks` |
 
 `{slug}` matches letters, digits, `-` and `_`; `{platform}` lower-case letters, digits, `-` and
-`_`. The two front-end routes follow [`routes.*`](/smartlinks/configuration#routes); the two
-Control Panel routes follow [`cp.enabled`](/smartlinks/configuration#cp).
+`_`; `{id}` digits. The two front-end routes follow
+[`routes.*`](/smartlinks/configuration#routes); the four Control Panel routes follow
+[`cp.enabled`](/smartlinks/configuration#cp).
 
 ## Permissions
 
 | Permission | |
 | --- | --- |
 | `view smartlinks` | the Smart Links screen |
+| `manage smartlinks` | accepting and rejecting suggestions; nested under `view smartlinks` |
 
-## Table
+## Tables
+
+Four migrations, run from the package, create three tables. None of them holds anything that
+identifies a listener.
 
 `smartlinks_clicks`, one row per song, platform and day:
 
@@ -92,13 +113,45 @@ Control Panel routes follow [`cp.enabled`](/smartlinks/configuration#cp).
 
 Unique on `entry_id` + `platform` + `day`: that index, and an upsert on it, is what keeps
 parallel clicks from making a second row. Indexed on `day` for pruning. No IP, no user agent,
-no cookie, nothing that identifies a listener.
+no cookie.
+
+`smartlinks_suggestions`, one row per suggested URL and song:
+
+| Column | |
+| --- | --- |
+| `id` | |
+| `entry_id` | up to 64 characters |
+| `platform` | the handle, up to 32 characters |
+| `url` | the suggested URL |
+| `url_hash` | its SHA-256 |
+| `status` | `pending`, `accepted`, `rejected` or `superseded` |
+| `created_at`, `updated_at` | |
+
+Unique on `entry_id` + `url_hash`, so a URL is suggested once per song. Indexed on
+`entry_id` + `status`.
+
+`smartlinks_link_status`, the last verdict of `smartlinks:check` per stored link:
+
+| Column | |
+| --- | --- |
+| `id` | |
+| `entry_id` | up to 64 characters |
+| `url_hash` | the SHA-256 of the URL |
+| `url` | the URL |
+| `status` | `ok`, `suspect`, `dead` or `unknown` |
+| `http_status` | the last HTTP status, or `null` |
+| `dead_streak` | dead checks in a row |
+| `checked_at` | |
+
+Unique on `entry_id` + `url_hash`, indexed on `status`. The cleanup moves a row to the URL it
+rewrote and removes rows for links the song no longer holds.
 
 ## Log lines
 
 | Message | Level | When |
 | --- | --- | --- |
 | `smartlinks: resolve` | info | every auto-fill decision, with its reason |
+| `smartlinks: resolver failed` | warning | a resolver threw; that platform is recorded as `http_error`, the others go on |
 | `smartlinks: click not recorded` | warning | a click could not be written; the listener was redirected anyway |
 | `statamic-smartlinks: the smartlinks_clicks table is missing; run php artisan migrate.` | warning | the Smart Links screen was opened before the migration ran |
 
@@ -107,10 +160,20 @@ no cookie, nothing that identifies a listener.
 | Key | Default |
 | --- | --- |
 | `collections` | `['songs']` |
+| `release_collections` | `[]` |
 | `field` | `'streaming_links'` |
 | `url_key` | `'url'` |
 | `spotify_field` | `'spotify_id'` |
 | `isrc_field` | `null` |
+| `upc_field` | `null` |
+| `country` | `SMARTLINKS_COUNTRY`, else `'DE'` |
+| `cleanup.on_save` | `true` |
+| `cleanup.keep` | `[]` |
+| `cleanup.strip` | `[]` |
+| `check.hide_dead` | `true` |
+| `check.timeout` | `10` |
+| `check.per_host_ms` | `1000` |
+| `check.user_agent` | `'Mozilla/5.0 (compatible; statamic-smartlinks link check)'` |
 | `platform_key` | `'platform'` |
 | `platform_value` | `'handle'` |
 | `platforms` | `[]` |
@@ -122,10 +185,14 @@ no cookie, nothing that identifies a listener.
 | `clicks.per_minute` | `10` |
 | `clicks.prune_days` | `400` |
 | `clicks.bots` | fourteen fragments, from `bot` to `monitor` |
-| `resolvers` | `SpotifyResolver`, `DeezerResolver`, `YouTubeResolver` |
+| `resolvers` | `SpotifyResolver`, `DeezerResolver`, `AppleMusicResolver`, `TidalResolver`, `YouTubeResolver` |
 | `services.spotify.client_id` | `SPOTIFY_CLIENT_ID` |
 | `services.spotify.client_secret` | `SPOTIFY_CLIENT_SECRET` |
-| `services.spotify.market` | `SPOTIFY_MARKET`, else `'DE'` |
+| `services.spotify.market` | `SPOTIFY_MARKET`, else `country` |
+| `services.tidal.client_id` | `TIDAL_CLIENT_ID` |
+| `services.tidal.client_secret` | `TIDAL_CLIENT_SECRET` |
+| `services.itunes.interval_ms` | `3100` |
+| `services.itunes.duration_tolerance` | `10` |
 | `services.youtube.key` | `YOUTUBE_API_KEY` |
 | `services.timeout` | `10` |
 | `cp.enabled` | `true` |

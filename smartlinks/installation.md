@@ -9,8 +9,10 @@ composer require goldnead/statamic-smartlinks
 php artisan migrate
 ```
 
-The migration creates one table, `smartlinks_clicks`. There is no install command, and no
-other addon of the suite is required.
+The migrations create three tables: `smartlinks_clicks` for the counters,
+`smartlinks_suggestions` for YouTube finds waiting for review, and `smartlinks_link_status`
+for the dead-link check. There is no install command, and no other addon of the suite is
+required.
 
 Then tell it where the links are. Publish the config and set the collection and the field:
 
@@ -29,6 +31,16 @@ The defaults are the ones above, so a site whose songs already live in a `songs`
 with a `streaming_links` Grid needs no config at all. Every key is on
 [Configuration](/smartlinks/configuration).
 
+From the first save on, the links of a song lose foreign tracking and affiliate parameters.
+For links stored before the install, run the cleanup once:
+
+```bash
+php artisan smartlinks:clean --dry-run
+php artisan smartlinks:clean
+```
+
+See [Cleanup](/smartlinks/link-health#cleanup).
+
 ## The blueprint
 
 Give the URL column of the links field the **Streaming URL** fieldtype (`smartlink_url`). It
@@ -38,23 +50,30 @@ hand-typed `platform` column you already have is ignored and can go. See
 
 ## The scheduler
 
-Click counters are kept until you delete them. `smartlinks:prune` deletes the ones older than
-400 days, but nothing runs it for you. Register it in `routes/console.php`:
+The addon schedules nothing. Two commands want a schedule, and nothing runs them for you:
+
+- `smartlinks:prune` deletes click counters older than 400 days. Without it they are kept
+  for as long as the site runs.
+- `smartlinks:check` finds dead links. Without it no link is ever marked dead.
+
+Register both in `routes/console.php`:
 
 ```php
 Schedule::command('smartlinks:prune')->daily();
+Schedule::command('smartlinks:check')->dailyAt('03:30');
 ```
 
-See [Configuration](/smartlinks/configuration#pruning) and
-[Queues & scheduling](/guide/queues#what-is-scheduled). Nothing in the addon is queued.
+See [Pruning](/smartlinks/configuration#pruning), [Dead links](/smartlinks/link-health#dead-links)
+and [Queues & scheduling](/guide/queues#what-is-scheduled). Nothing in the addon is queued.
 
 ## Permissions
 
-One, under the group **Smart Links** in a role's permissions:
+Two, under the group **Smart Links** in a role's permissions:
 
 | Permission | Allows |
 | --- | --- |
 | `view smartlinks` | the [Smart Links](/smartlinks/control-panel) screen |
+| `manage smartlinks` | accepting and rejecting [suggestions](/smartlinks/control-panel#suggestions); nested under `view smartlinks` |
 
 The landing page and the redirect are public and need no permission.
 
@@ -63,11 +82,11 @@ The landing page and the redirect are public and need no permission.
 | Tag | What it publishes |
 | --- | --- |
 | `smartlinks-config` | `config/smartlinks.php` |
-| `smartlinks-migrations` | The migration, into `database/migrations/` |
+| `smartlinks-migrations` | The four migrations, into `database/migrations/` |
 | `smartlinks-views` | `landing.blade.php`, into `resources/views/vendor/smartlinks/` |
 | `smartlinks-translations` | The language files (English and German), into `lang/vendor/smartlinks/` |
 
-The migration runs from the package without being published. The Control Panel bundle ships
+The migrations run from the package without being published. The Control Panel bundle ships
 compiled under `dist/build/` and Statamic publishes it on install. A fresh install whose
 migration has not run gets a sentence on the Smart Links screen, not an error.
 

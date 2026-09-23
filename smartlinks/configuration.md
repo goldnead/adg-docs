@@ -6,16 +6,26 @@
 php artisan vendor:publish --tag=smartlinks-config
 ```
 
-Twenty-four keys in `config/smartlinks.php`, five of them with an environment variable. None
+Thirty-eight keys in `config/smartlinks.php`, eight of them with an environment variable. None
 is on the shared settings screen: Smart Links registers no section there.
 
 | Key | Default | What happens when it is wrong |
 | --- | --- | --- |
 | `collections` | `['songs']` | Entries of other collections get no page, no redirect and no row on the screen. |
+| `release_collections` | `[]` | Releases get no page, or are resolved as songs by ISRC instead of as albums by UPC. |
 | `field` | `'streaming_links'` | No links are found, and every song's page shows "No links for this song yet." |
 | `url_key` | `'url'` | The same, for a Grid whose URL column has another handle. |
-| `spotify_field` | `'spotify_id'` | Auto-fill falls back to a Spotify link already stored on the entry, or has no starting point. |
-| `isrc_field` | `null` | Deezer needs the ISRC from Spotify's API instead. |
+| `spotify_field` | `'spotify_id'` | Auto-fill starts from the stored links alone. |
+| `isrc_field` | `null` | The ISRC is worked out on every run and never stored. |
+| `upc_field` | `null` | The same, for the UPC. |
+| `country` | `SMARTLINKS_COUNTRY`, else `'DE'` | Links point to another storefront, and Deezer tracks unavailable in your country are linked or left out wrongly. |
+| `cleanup.on_save` | `true` | Off, links are saved as typed, tracking parameters included. |
+| `cleanup.keep` | `[]` | Your own affiliate token is removed with the others. |
+| `cleanup.strip` | `[]` | Extra parameters to remove. |
+| `check.hide_dead` | `true` | Off, confirmed dead links stay on the landing page and in the tags. |
+| `check.timeout` | `10` | Seconds per request of the link check. |
+| `check.per_host_ms` | `1000` | The pause between two check requests to the same host. |
+| `check.user_agent` | `'Mozilla/5.0 (compatible; statamic-smartlinks link check)'` | The user agent the check sends. |
 | `platform_key` | `'platform'` | Where auto-fill writes the platform next to a URL it adds. `null` writes the URL only. |
 | `platform_value` | `'handle'` | `handle` writes `spotify`, `label` writes `Spotify`. |
 | `platforms` | `[]` | Extra hosts, added to the built-in table. |
@@ -27,27 +37,41 @@ is on the shared settings screen: Smart Links registers no section there.
 | `clicks.per_minute` | `10` | Counted clicks per IP, song and platform and minute. `0` means no cap. |
 | `clicks.prune_days` | `400` | The default for `smartlinks:prune`. |
 | `clicks.bots` | fourteen fragments | User agents containing one of them are not counted. |
-| `resolvers` | Spotify, Deezer, YouTube | The auto-fill chain, in this order. |
+| `resolvers` | Spotify, Deezer, Apple Music, Tidal, YouTube | The auto-fill chain, in this order. |
 | `services.spotify.client_id` | `SPOTIFY_CLIENT_ID` | Without it, Spotify's API is not asked. |
 | `services.spotify.client_secret` | `SPOTIFY_CLIENT_SECRET` | The same. |
-| `services.spotify.market` | `SPOTIFY_MARKET`, else `'DE'` | The market the track is looked up in. |
+| `services.spotify.market` | `SPOTIFY_MARKET`, else `country` | The market the track is looked up in. |
+| `services.tidal.client_id` | `TIDAL_CLIENT_ID` | Without it, Tidal reports `not_configured`. |
+| `services.tidal.client_secret` | `TIDAL_CLIENT_SECRET` | The same. |
+| `services.itunes.interval_ms` | `3100` | The pause between two Apple lookups. Too low, and Apple refuses calls: `rate_limited`. |
+| `services.itunes.duration_tolerance` | `10` | Seconds an Apple track may differ in length before it is a `mismatch`. |
 | `services.youtube.key` | `YOUTUBE_API_KEY` | Without it, YouTube reports `not_configured`. |
-| `services.timeout` | `10` | Seconds per request to any of the three services. |
+| `services.timeout` | `10` | Seconds per request to any of the services. |
 | `cp.enabled` | `true` | Off, the Smart Links screen and its nav entry are gone. |
 | `cp.days` | `30` | The period the screen counts clicks over, today included. |
+
+One more key is read but not in the file: `services.deezer.retry_ms`, `1500`, the pause
+before the Deezer client repeats a request that hit Deezer's quota.
 
 ## Collections and fields {#collections}
 
 ```php
 'collections' => ['songs'],
+'release_collections' => [],
 'field' => 'streaming_links',
 'url_key' => 'url',
 'spotify_field' => 'spotify_id',
 'isrc_field' => null,
+'upc_field' => null,
+'country' => env('SMARTLINKS_COUNTRY', 'DE'),
 ```
 
 `collections` are the collections whose entries get a smart link page. Songs and releases stay
 ordinary collections of the site; the addon only reads them.
+
+`release_collections` are collections of releases: albums, EPs, singles. Their entries get a
+page too, appear on the Smart Links screen, and are resolved as albums by UPC instead of as
+tracks by ISRC. See [Releases](/smartlinks/auto-fill#releases).
 
 `field` holds the streaming links. Two shapes work:
 
@@ -60,9 +84,46 @@ with userinfo; see [Platform detection](/smartlinks/platforms#what-is-not-a-link
 
 Links are read with inheritance, so a localisation without links of its own shows its origin's.
 
-`spotify_field` holds a Spotify track ID or URL, the starting point for auto-fill. `isrc_field`
-is optional; with it, Deezer can be filled without Spotify credentials. See
-[Auto-fill](/smartlinks/auto-fill#what-each-resolver-needs).
+`spotify_field` holds a Spotify track ID or URL, for a release an album ID or URL. It is one of
+the starting points of auto-fill. `isrc_field` and `upc_field` are optional: when the
+blueprint has them, auto-fill reads the ISRC and UPC from there, and stores the ones it works
+out in them while they are empty. See
+[Step one: the identity](/smartlinks/auto-fill#identity).
+
+`country` is the storefront: iTunes `country`, Spotify `market`, Tidal `countryCode`, and the
+country in which Deezer must list a track as available. See
+[The region](/smartlinks/auto-fill#region).
+
+## `cleanup` {#cleanup}
+
+```php
+'cleanup' => [
+    'on_save' => true,
+    'keep' => [],
+    'strip' => [],
+],
+```
+
+`on_save` cleans the links of every entry of the configured collections before it is saved.
+`keep` lists parameters never to remove, your own affiliate token say. `strip` adds parameters
+to remove; a name ending in `*` matches by prefix. What is removed by default is on
+[Cleanup and dead links](/smartlinks/link-health#cleanup).
+
+## `check` {#check}
+
+```php
+'check' => [
+    'hide_dead' => true,
+    'timeout' => 10,
+    'per_host_ms' => 1000,
+    'user_agent' => 'Mozilla/5.0 '
+        .'(compatible; statamic-smartlinks link check)',
+],
+```
+
+Used by `smartlinks:check`. `hide_dead` leaves confirmed dead links off the landing page, out
+of the tags and out of the redirect. `timeout` is per request, `per_host_ms` the pause between
+two requests to the same host. See [Dead links](/smartlinks/link-health#dead-links).
 
 ## `platform_key` and `platform_value` {#platform-key}
 
@@ -186,6 +247,8 @@ Without it the table keeps a row per song, platform and day for as long as the s
 'resolvers' => [
     SpotifyResolver::class,
     DeezerResolver::class,
+    AppleMusicResolver::class,
+    TidalResolver::class,
     YouTubeResolver::class,
 ],
 
@@ -193,7 +256,16 @@ Without it the table keeps a row per song, platform and day for as long as the s
     'spotify' => [
         'client_id' => env('SPOTIFY_CLIENT_ID'),
         'client_secret' => env('SPOTIFY_CLIENT_SECRET'),
-        'market' => env('SPOTIFY_MARKET', 'DE'),
+        // Falls back to `country`.
+        'market' => env('SPOTIFY_MARKET'),
+    ],
+    'tidal' => [
+        'client_id' => env('TIDAL_CLIENT_ID'),
+        'client_secret' => env('TIDAL_CLIENT_SECRET'),
+    ],
+    'itunes' => [
+        'interval_ms' => 3100,
+        'duration_tolerance' => 10,
     ],
     'youtube' => [
         'key' => env('YOUTUBE_API_KEY'),
@@ -202,10 +274,10 @@ Without it the table keeps a row per song, platform and day for as long as the s
 ],
 ```
 
-Used by `php artisan smartlinks:resolve`, in the order listed. Only services that are free:
-Spotify's Web API with client credentials, Deezer's public ISRC lookup without a key, and the
-YouTube Data API. How each one decides is on [Auto-fill](/smartlinks/auto-fill). A resolver of
-your own goes into `resolvers`.
+Used by `php artisan smartlinks:resolve`, in the order listed. Deezer and Apple Music need no
+key; Spotify and Tidal use client credentials; YouTube needs a Data API key. How each one
+decides, and the limits of each service, are on [Auto-fill](/smartlinks/auto-fill). A resolver
+of your own goes into `resolvers`.
 
 ## `cp` {#cp}
 
@@ -216,6 +288,6 @@ your own goes into `resolvers`.
 ],
 ```
 
-`enabled` removes the nav entry and the route together: a hidden entry with a reachable URL
+`enabled` removes the nav entry and the routes together: a hidden entry with a reachable URL
 would not be a disabled screen. `days` is the period the
 [Smart Links screen](/smartlinks/control-panel) sums clicks over, today included.
