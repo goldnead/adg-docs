@@ -114,20 +114,32 @@ for itself, and only from hosts that serve font declarations and nothing else.
 ### What the control panel draws, and what comes off
 
 Everything a control panel draws to tell one field from the next comes off: the box around
-the field, the label, the instructions, the editor's own padding and its background. What is
-left is the text, in the column it will be read in.
+the field, the label, the instructions, the editor's own padding, its background and its
+focus ring. What is left is the text, in the column it will be read in.
 
-The toolbar and the Save and Close buttons sit in a strip **under** the text, toolbar on the
-left and the buttons on the right, and the page makes room for exactly that strip. They used
-to float over the content, and what they floated over was another editable field and a line
-of the article. The page's own bar steps aside while a field is open in place: two buttons
-saying "Save", one of them greyed out, is a question nobody should have to answer.
+**The toolbar comes with the selection.** In place the field is opened in Bard's floating
+mode, whatever `toolbar_mode` the blueprint sets: select a few words and the buttons appear
+over them, let go and they are gone. A bar that stands there whether or not anybody is about
+to use it says "form", and the promise of this mode is "page". The blueprint's own setting is
+untouched — it answers a different question, how the field should look in the control panel,
+where a docked toolbar is right, and it still applies on the card.
+
+Room for it is reserved above the text all the same. That toolbar is drawn inside the frame
+and the frame ends where the text does, so a selection on the first line would put it half
+outside and it would be cut off. The reserved strip hangs over what is above the article and
+is empty until something is selected.
+
+Save and Close keep a strip **under** the text, and the page makes room for exactly that
+strip. They have to be reachable the whole time, not only while something is selected. The
+page's own bar steps aside while a field is open in place: two buttons saying "Save", one of
+them greyed out, is a question nobody should have to answer.
 
 ### Two things it does not do
 
-**A click in the strip under the text does not reach the page.** The frame covers that much
-space, and an iframe cannot let a click through part of itself. Whatever is under the strip
-is not clickable while the field is open.
+**A click in the strips does not reach the page.** The frame covers the room reserved for the
+toolbar above the text and the one holding Save and Close below it, and an iframe cannot let a
+click through part of itself. Whatever is under those strips is not clickable while the field
+is open.
 
 **The block keeps the height it had.** The page does not reflow while the text grows, so a
 Bard that gets longer while you type has the frame covering more of what is under it rather
