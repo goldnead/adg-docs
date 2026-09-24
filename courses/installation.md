@@ -16,8 +16,8 @@ scheduled task: what Payments and Assessments report is handled in the same requ
 
 ## Upgrading from 0.1
 
-Update to 0.2.1, not 0.2.0: 0.2.0 crashes at boot on a site without
-[Private Media](/private-media/).
+Update straight to the current version (0.3.0), never to 0.2.0: 0.2.0 crashes at boot on a
+site without [Private Media](/private-media/).
 
 ```bash
 php artisan migrate

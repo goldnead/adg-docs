@@ -12,6 +12,37 @@ Release notes for `goldnead/statamic-offers`, as published with the package.
 Cross-version upgrade notes for the whole suite are in
 [Upgrading](/guide/upgrading).
 
+## 1.13.0 — 2026-09-24
+
+### Upgrading
+
+- **Run `php artisan migrate`**: one migration adds the columns `sold_out_at` and
+  `link_switched_at` to `offers` and the table `offer_coupon_redemptions`. Until then purchases
+  and short links work as before; only the new moments are skipped.
+- **With statamic-webhook-manager 2.10 the offer events appear there as triggers.** Nothing to do
+  if you want that. To switch it off, set `statamic-offers.webhook_manager.enabled` to `false`
+  (env `STATAMIC_OFFERS_WEBHOOK_MANAGER`). Without the webhook manager nothing changes.
+
+### Added
+
+- **Events.** Until now this addon fired none. `SeatPoolOpened`, `SeatInvited`, `SeatAccepted`,
+  `SeatRevoked`, `SeatPoolClosed`, `OfferSoldOut`, `CouponRedeemed` and `ShortLinkSwitched`, each
+  once per moment and with `brandId`. Listed with their properties in the README. `OfferSoldOut`
+  counts paid purchases only; `CouponRedeemed` fires once per payment, also when payments delivers
+  "paid" again. A failing moment is logged and never holds up the purchase or the short link.
+- **Webhook Manager triggers.** With goldnead/statamic-webhook-manager installed, each event is a
+  trigger (`offers.seat_accepted`, `offers.sold_out`, `offers.coupon_redeemed`, …, source type
+  `offers`, labels in German and English), fired in the event's brand. The payload is chosen field
+  by field and never carries a seat or pool token. Optional: nothing of the webhook manager loads
+  without it, proven by a boot test in its own process.
+- Every webhook payload carries a stable `event_id` (`sha1(handle|<type>:<id>|<row time>)`, as in
+  every suite addon; for a coupon keyed by the payment, so a
+  redelivered "paid" is recognisable), and `occurred_at` is the time of the moment. Sent after the
+  transaction commits, never after a rollback; an event whose brand does not exist sends nothing
+  instead of reaching the current brand's hooks.
+- Config `statamic-offers.webhook_manager.enabled` (env `STATAMIC_OFFERS_WEBHOOK_MANAGER`,
+  default `true`).
+
 ## 1.12.0 — 2026-09-23
 
 ### Upgrading

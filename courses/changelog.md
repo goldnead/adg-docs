@@ -12,6 +12,27 @@ Release notes for `goldnead/statamic-courses`, as published with the package.
 Cross-version upgrade notes for the whole suite are in
 [Upgrading](/guide/upgrading).
 
+## 0.3.0 (2026-09-24)
+
+### Upgrading
+- No migration, no new permission.
+- With statamic-webhook-manager 2.10 the twelve course events appear there as triggers. Nothing to
+  do if you want that. To switch it off, set `courses.webhook_manager.enabled` to `false` (env
+  `COURSES_WEBHOOK_MANAGER`). Without the webhook manager nothing changes.
+
+### Added
+- Webhook Manager triggers: with goldnead/statamic-webhook-manager installed, all twelve course
+  events are triggers an outbound webhook can listen to (`courses.learner_enrolled` …
+  `courses.team_member_removed`, source type `courses`), labelled in German and English. The
+  payload is chosen field by field (learner looked up as `{id, email, name}`, course
+  `{id, slug, title}`, brand `{id, handle}`, `occurred_at` in ISO 8601), documented in the README.
+  A hook fires in the course's brand, also when no brand is current. Optional: nothing of the
+  webhook manager is loaded without it, and a boot test in its own process proves that.
+- Every webhook payload carries a stable `event_id` (`sha1(handle|<type>:<id>|<row time>)`, as in every suite addon), and
+  `occurred_at` is the time of the moment. Sent after the transaction commits, never after a
+  rollback; a course whose brand does not exist sends nothing instead of the current brand's hooks.
+- Config `courses.webhook_manager.enabled` (env `COURSES_WEBHOOK_MANAGER`, default `true`).
+
 ## 0.2.1 (2026-09-23)
 
 ### Fixed

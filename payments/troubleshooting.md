@@ -254,6 +254,18 @@ status, and **anything that has ever been announced as abandoned**. That last on
 people. See
 [Tax facts and retention](/payments/tax-and-retention#what-is-never-touched).
 
+## The buyer's country is the card's, not the billing address
+
+A known limitation of the Mollie gateway. The country stored on a payment (`country`, which
+[Invoices](/invoices/) copies to `buyer_country`) is read from Mollie in this order: the card's
+issuing country, then the bank account's, then the method's country, and only then the billing
+address. A buyer living in Austria who pays with a German card is recorded as `DE`.
+
+That matters for OSS: the VAT rate of a digital sale follows the buyer's country, and two
+pieces of evidence that disagree are exactly what a tax audit asks about. Until this changes,
+check the sales where card country and billing address can differ before you file. See
+[VAT](/invoices/vat).
+
 ## A price in a foreign currency is out by a factor of a hundred
 
 `amount_cent` is minor units, and not every currency has two decimals. The yen has none, the

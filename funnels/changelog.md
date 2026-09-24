@@ -12,6 +12,38 @@ Release notes for `goldnead/statamic-funnels`, as published with the package.
 Cross-version upgrade notes for the whole suite are in
 [Upgrading](/guide/upgrading).
 
+## 1.18.0 — 2026-09-24
+
+### Upgrading
+
+- No migration, no new permission.
+- **With statamic-webhook-manager 2.10 the seven funnel events appear there as triggers.** Nothing
+  to do if you want that. To switch it off, set `statamic-funnels.webhook_manager.enabled` to
+  `false` (env `STATAMIC_FUNNELS_WEBHOOK_MANAGER`). Without the webhook manager nothing changes.
+- `funnels.form_submitted` sends what the visitor typed to the receiving service. Before you
+  point a hook at it, make sure you have a data processing agreement with that service (see
+  Added).
+
+### Added
+
+- **Webhook Manager triggers.** With goldnead/statamic-webhook-manager installed, all seven funnel
+  events are triggers an outbound webhook can listen to: `funnels.step_entered`,
+  `funnels.form_submitted`, `funnels.offer_accepted`, `funnels.offer_declined`,
+  `funnels.upsell_declined`, `funnels.completed`, `funnels.funnel_saved` (source type `funnels`,
+  labels in German and English). The payload is chosen field by field and documented in the
+  README; the visit token never leaves the addon. A hook fires in the brand of the payment, else
+  of the request. Optional: nothing of the webhook manager loads without it, proven by a boot test
+  in its own process.
+- `funnels.form_submitted` sends what the visitor typed (address, phone, VAT id, offer fields); the
+  README lists it and says the receiver needs a data processing agreement. Fields named like card
+  data or secrets (IBAN, BIC, card, Kredit, CVC, CVV, password, token) are held back.
+- Every webhook payload carries a stable `event_id` (`sha1(handle|visit:<id>|step:<key>|…)`, as in
+  every suite addon; form submissions counted, not timed), and `occurred_at` is the time of the moment.
+  Sent after the transaction commits, never after a rollback; a payment whose brand does not exist
+  sends nothing instead of reaching the current brand's hooks.
+- Config `statamic-funnels.webhook_manager.enabled` (env `STATAMIC_FUNNELS_WEBHOOK_MANAGER`, default
+  `true`).
+
 ## 1.17.0 — 2026-09-23
 
 ### Upgrading

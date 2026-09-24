@@ -12,6 +12,38 @@ Release notes for `goldnead/statamic-invoices`, as published with the package.
 Cross-version upgrade notes for the whole suite are in
 [Upgrading](/guide/upgrading).
 
+## 2.3.0 — 2026-09-24
+
+### Upgrading
+
+- No migration, no new permission.
+- **With statamic-webhook-manager 2.10 issued invoices, credit notes and deliveries appear there as
+  triggers.** Nothing to do if you want that. To switch it off, set
+  `invoices.webhook_manager.enabled` to `false` (env `INVOICES_WEBHOOK_MANAGER`). Without the
+  webhook manager nothing changes.
+
+### Added
+
+- **Webhook Manager triggers.** With `goldnead/statamic-webhook-manager` installed,
+  `invoices.issued`, `invoices.credit_note_issued` and `invoices.delivered` appear there as
+  triggers, labelled in German and English. Each body is a chosen list of fields (number, kind,
+  amounts in cent with currency, tax zone, buyer name, email, country and VAT id, the lines), never
+  the row: no postal address, no seller block, no VAT check record, no `meta`. Every body carries
+  `event`, `occurred_at`, `brand` (`id`, `handle`), `subject_type` and `subject_id`. Delivered in
+  the brand of the document. List per trigger in the README.
+- Every body carries `event_id` (`sha1` of handle, document and its own time), the same when the
+  same moment is told twice; `occurred_at` and the manager's event time are `issued_at`, not the
+  time of sending.
+- Handed over after the surrounding database transaction commits, never after a rollback.
+- A document naming a brand that cannot be set is not delivered at all (logged), instead of going
+  out through the current brand's hooks.
+- README: order between triggers is not guaranteed (`invoices.delivered` can arrive before
+  `invoices.issued`); sort by `occurred_at`, deduplicate by `event_id`.
+- Config `webhook_manager.enabled` (`INVOICES_WEBHOOK_MANAGER`, default on).
+- The coupling is optional: composer `suggest`, the manager's classes are checked by name before
+  anything that implements its interface is loaded, and registration retries at the end of the
+  booted queue. A new test boots the addon in its own process with the manager hidden.
+
 ## 2.2.0 — 2026-09-23
 
 ### Upgrading

@@ -12,6 +12,39 @@ Release notes for `goldnead/statamic-affiliates`, as published with the package.
 Cross-version upgrade notes for the whole suite are in
 [Upgrading](/guide/upgrading).
 
+## 0.2.0 — 2026-09-24
+
+### Upgrading
+
+- No migration, no new permission.
+- **With statamic-webhook-manager 2.10 the commission and partner moments appear there as
+  triggers.** Nothing to do if you want that. To switch it off, set
+  `affiliates.webhook_manager.enabled` to `false` (env `AFFILIATES_WEBHOOK_MANAGER`). Without the
+  webhook manager nothing changes.
+
+### Added
+
+- **Webhook Manager triggers.** With `goldnead/statamic-webhook-manager` installed,
+  `affiliates.commission_earned`, `affiliates.commission_reversed`, `affiliates.partner_applied`
+  and `affiliates.partner_approved` appear there as triggers (the automations handles), labelled in
+  German and English. Each body is a chosen list of fields, never a row: no payout method or
+  details, no invitation token, no notes. Every body carries `event`, `occurred_at`, `brand`
+  (`id`, `handle`), `subject_type` and `subject_id`. Delivered in the brand of the row. List per
+  trigger in the README.
+- Every body carries `event_id` (`sha1` of handle, row and its own time; for a reversal also the
+  amount taken back so far), the same when the same moment is told twice; `occurred_at` and the
+  manager's event time are the row's own time, not the time of sending.
+- Handed over after the surrounding database transaction commits, never after a rollback (the
+  ledger reverses commissions inside one).
+- A row naming a brand that cannot be set is not delivered at all (logged), instead of going out
+  through the current brand's hooks.
+- README: order between triggers is not guaranteed (`affiliates.commission_reversed` can arrive
+  before `payments.refunded`); sort by `occurred_at`, deduplicate by `event_id`.
+- Config `webhook_manager.enabled` (`AFFILIATES_WEBHOOK_MANAGER`, default on).
+- The coupling is optional: composer `suggest`, the manager's classes are checked by name before
+  anything that implements its interface is loaded, and registration retries at the end of the
+  booted queue. A new test boots the addon in its own process with the manager hidden.
+
 ## 0.1.0 — 2026-09-23
 
 First version.
