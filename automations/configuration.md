@@ -270,6 +270,19 @@ Each toggle removes a capability from the builder rather than hiding it decorati
 Turning `delay_nodes` off on a site with no scheduler is honest: a delay node there
 would never resume.
 
+## Connections
+
+```php
+'connections' => [
+    'allow_private_hosts' => (bool) env('STATAMIC_AUTOMATIONS_CONNECTIONS_ALLOW_PRIVATE_HOSTS', false),
+],
+```
+
+A [connection](/automations/connections)'s base URL must resolve to a public address;
+loopback, private, link-local and reserved ranges are refused on save and before every
+call. `true` allows them, e.g. for an n8n on the same machine. Only set it if everyone who
+may manage connections may also reach your internal network.
+
 ## Security
 
 ```php
@@ -370,6 +383,7 @@ STATAMIC_AUTOMATIONS_MAX_CALL_DEPTH=3
 STATAMIC_AUTOMATIONS_ALERT_MAIL_TO=
 STATAMIC_AUTOMATIONS_ENCRYPT_CONTEXT=false
 STATAMIC_AUTOMATIONS_FILE_PATH=
+STATAMIC_AUTOMATIONS_CONNECTIONS_ALLOW_PRIVATE_HOSTS=false
 STATAMIC_AUTOMATIONS_AI_MODEL=claude-sonnet-4-5
 ANTHROPIC_API_KEY=
 ```

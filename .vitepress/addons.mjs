@@ -311,6 +311,7 @@ export const addons = [
       { text: 'Templates', link: 'templates' },
       { text: 'Export, import & file sync', link: 'export-import' },
       { text: 'Integrations', link: 'integrations' },
+      { text: 'Connections', link: 'connections' },
       { text: 'Triggers from the suite', link: 'suite-triggers' },
       { text: 'Extending', link: 'extending' },
     ],
