@@ -12,6 +12,11 @@ Release notes for `goldnead/statamic-certificates`, as published with the packag
 Cross-version upgrade notes for the whole suite are in
 [Upgrading](/guide/upgrading).
 
+## 0.1.2 (2026-09-24)
+
+### Changed
+- Works with statamic-courses 0.3 (`^0.1 || ^0.2 || ^0.3`).
+
 ## 0.1.1 (2026-09-23)
 
 ### Changed
