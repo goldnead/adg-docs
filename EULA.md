@@ -330,6 +330,7 @@ Use them under the MIT licence in each package.
 **Not covered by this agreement, and not currently sold**
 
 Client Rooms (`goldnead/statamic-clientrooms`), Assessments
-(`goldnead/statamic-assessments`), Certificates (`goldnead/statamic-certificates`) and Smart
-Links (`goldnead/statamic-smartlinks`). All four are commercial. None is published on Packagist,
+(`goldnead/statamic-assessments`), Certificates (`goldnead/statamic-certificates`), Smart
+Links (`goldnead/statamic-smartlinks`) and Affiliates (`goldnead/statamic-affiliates`). All five
+are commercial. None is published on Packagist,
 and none is part of the Suite as sold today.

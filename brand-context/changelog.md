@@ -12,6 +12,121 @@ Release notes for `goldnead/statamic-brand-context`, as published with the packa
 Cross-version upgrade notes for the whole suite are in
 [Upgrading](/guide/upgrading).
 
+## 1.14.0 — 2026-09-22
+
+### Added: eine weiche Kante an der Tableiste, damit Scrollen keine Vermutung bleibt
+
+Die Scroll-Huelle von weiter unten behob die Erreichbarkeit, nicht die Auffindbarkeit: der
+Scrollbalken ist ein unsichtbarer Overlay, bis man scrollt, und nichts sagte einer Person, die nie
+scrollt, dass da noch mehr Addons stehen. Zwei unabhaengige Pruefungen haben dieselbe Restluecke
+gemeldet.
+
+Am jeweiligen Rand der Huelle liegt jetzt ein weicher Farbverlauf, nur sichtbar auf der Seite, auf
+der wirklich noch etwas liegt, und weg, sobald das Ende erreicht ist — eine Kante, die nie
+verschwindet, wuerde luegen, dass die Liste weitergeht. `aria-hidden` und `pointer-events: none`,
+damit sie nie zum Treffer wird, den der Tab darunter haben sollte. Die Farbe ist
+`var(--theme-color-content-bg)` (derselbe Wert, den `bg-content-bg` aufloest), kein Hex-Wert, das
+traegt Hell und Dunkel gleichermassen mit.
+
+Als reines CSS in einem komponenten-gebundenen `<style>`-Block umgesetzt, nicht als
+Tailwind-Utility-Klassen: dieses Addon hat keinen eigenen Tailwind-Build (kein
+`@import "tailwindcss"`, kein Plugin in `vite.config.js`) und traegt nur, was Statamics eigenes
+CP-Bundle zufaellig schon mitbringt. Eine neue Utility-Klasse wie `from-content-bg` waere lautlos
+leer geblieben. Plain CSS im `<style>`-Block der SFC umgeht das: Vite kompiliert es unabhaengig
+davon, was ein Tailwind-Scanner sieht oder nicht.
+
+Dieselbe Kante, dieselbe Begruendung, baugleich (nicht geteilt) in `statamic-flow-canvas`s
+`NodeLibrary.vue` gebaut: dieses Addon haengt von jenem Paket nicht ab, um eine Komponente darueber
+zu teilen, und `NodeLibrary.vue` hat dasselbe Problem mit dem Tailwind-Scanning seiner
+konsumierenden Hosts (siehe dortiges CHANGELOG).
+
+### Added: ein Tab je Addon, und in der Seitenleiste ein Eintrag, der ihn oeffnet
+
+Am 22.09.2026 gezaehlt: **22 Addons** melden Einstellungen an, zusammen rund **90 Feldgruppen**,
+alle untereinander auf einer einzigen scrollenden Seite. Das ist kein Schoenheitsfehler. Bei
+neunzig Gruppen ist eine Einstellung nicht auffindbar, und das Versprechen der ganzen Schicht —
+ein Ort statt zweiundzwanzig — haelt nur, wenn ein Ort auch eine Sache auf einmal heisst.
+
+Die Seite ist jetzt eine Tableiste, ein Tab je Addon, aus Statamics eigenen `Tabs`, `TabList`,
+`TabTrigger` und `TabContent`. Nicht `PublishTabs`: das haengt an der Blueprint-Semantik eines
+Publish-Formulars, und die gibt es hier nicht.
+
+In der Seitenleiste steht statt des einen Sammeleintrags „Addon-Einstellungen" **ein Eintrag je
+Addon**, nach dem Addon benannt, auf `?section=<namensraum>` zeigend. Der Controller liest den
+Parameter und reicht ihn als Anfangswert durch; ein unbekannter Namensraum, einer ohne
+Berechtigung und ein fehlender Parameter fallen auf den ersten Tab zurueck, ohne Fehler.
+
+**Das ist die Haelfte, an der es haengt.** `statamic-automations` hatte seinen eigenen
+Settings-Kindeintrag entfernt, weil ein Menuepunkt, der nur weiterleitet, als Bug gemeldet wurde.
+Dieses Ticket dreht das um, und es ist nur dann kein Rueckfall, wenn der Eintrag mit geoeffnetem
+Tab landet statt oben auf der Sammelseite. Ohne die Vorwahl waere der Eintrag derselbe Bug von
+damals.
+
+**Kein einziges der 22 Addons muss angefasst werden.** Die beiden neuen Angaben — wo der Tab
+sitzt (`settingsOrder()`, Vorgabe 100) und welches Symbol der Seitenleisten-Eintrag traegt
+(`settingsIcon()`, Vorgabe `sliders-horizontal`) — stehen bewusst **nicht** in
+`ProvidesSettings`. Ein PHP-Interface kennt keine Vorgabewerte: dort deklariert waeren sie am Tag
+des Updates ein Fatal beim Booten auf allen zweiundzwanzig gewesen, im Control Panel, wegen einer
+Tab-Reihenfolge. Die Registry fragt mit `method_exists()` und faellt zurueck. Wer die Signaturen
+vom Compiler geprueft haben will, deklariert zusaetzlich `DescribesSettingsScreen`; noetig ist es
+nicht. Und wer an der optionalen Haelfte scheitert, verliert seinen Abschnitt nicht — anders als
+bei einer kaputten Feldliste, ohne die der Abschnitt nicht bedienbar waere.
+
+Die Reihenfolge ist `settingsOrder()` und bei Gleichstand der Namensraum, also alphabetisch.
+Vorher war es die Reihenfolge, in der die Provider zufaellig gebootet haben: auf zwei
+Installationen dieselben Addons und zwei verschiedene Leisten, und beim Suchen half keine von
+beiden.
+
+Nebenbei: die Adresszeile folgt dem offenen Tab (`history.replaceState`, kein Inertia-Besuch).
+Ohne das landet, wer `payments` aus der Seitenleiste oeffnet, auf `invoices` wechselt und
+speichert, wieder auf `payments` — und der Speichervorgang sieht aus, als waere er nicht
+passiert.
+
+**Die Tableiste scrollt, statt ueber den Rand zu laufen.** Statamics `TabList` ist eine reine
+Flex-Reihe ohne `overflow-x` und ohne `flex-wrap`. Im laufenden Playground bei 1920px gemessen:
+22 Tabs brauchen **2191px**, die Spalte ist **1368px** breit, und der letzte Tab
+(„Webhook Manager") endete bei 2559 gegen ein Listenende bei 1736 — rund ein Viertel der Addons
+war nicht anklickbar. Die Leiste sitzt jetzt in einer `-mx-1 px-1 overflow-x-auto`-Huelle,
+dieselbe wie in `statamic-flow-canvas` (61f7701).
+
+Gescrollt und nicht umgebrochen, und das ist gemessen: mit `flex-wrap: wrap` entstehen bei diesen
+Addon-Namen **drei** Zeilen, und Statamics `TabsIndicator` ist absolut zur Liste positioniert —
+er folgt der Spalte des aktiven Tabs, nicht seiner Zeile. Im Bild stand der Unterstrich unter
+„Statamic ToC" in Zeile 3, waehrend „Activity" in Zeile 1 aktiv war.
+
+Dazu gehoert, dass der offene Tab in den sichtbaren Ausschnitt geholt wird. Ohne das waere die
+Huelle schlimmer als der Ueberlauf: wer in der Seitenleiste auf das letzte Addon klickt, bekaeme
+den richtigen Inhalt unter einer Leiste, die ganz links steht. Belegt bei
+`?section=webhook-manager`: `scrollLeft` 823 von 823, aktiver Tab sichtbar, Indikator darunter.
+
+Volle Seitenbreite wurde geprueft und **verworfen**: die Spalte waechst bei 1920px auf hoechstens
+1622px, die Leiste braucht 2191px. Vollbreite haette den Ueberlauf nicht behoben, nur verkleinert
+— und haette jede Beschreibungszeile auf einer Seite verlaengert, die fast nur aus Fliesstext
+besteht.
+
+Und die Abschnittsueberschrift faellt weg, solange eine Tableiste da ist, die den Addon-Namen
+schon traegt. Die Config-Zeile und der Speichern-Knopf bleiben. Auf einer Installation mit einem
+einzigen Addon gibt es keine Leiste, dort bleibt die Ueberschrift.
+
+### Fixed: die Einstellungsseite war auf jeder Site weiss, die das CP-Bundle nie veroeffentlicht hat
+
+Dieses Paket erweitert Illuminates `ServiceProvider`, nicht Statamics `AddonServiceProvider`.
+Damit greift keine Addon-Konvention, und `statamic:install` — der Composer-Hook, der auf jeder
+Site die CP-Assets aller Addons veroeffentlicht — hat `resources/dist/build` nie mitgenommen.
+`public/vendor/statamic-brand-context/` existierte auf `staging.adriangoldner.com` nie, die
+Vite-Anmeldung stieg wegen des fehlenden Manifests (richtig) aus, das Bundle wurde nie geladen,
+und `/cp/brand-settings` blieb weiss mit `Couldn't find Inertia component for the
+[brand-context::Settings] page` in der Browserkonsole. Der Provider haengt sich jetzt selbst in
+`Statamic::afterInstalled()` und veroeffentlicht `brand-context-cp`.
+
+### Fixed: ein einziger Wert in der falschen Form nahm die Seite aller Addons mit
+
+Ein Addon darf einen Wert als `list` deklarieren, dessen Config auf einer Site eine Zuordnung
+traegt (`entitlements.manual.subject_types` war `{"App\Models\User": "Mitglied"}`). Im Browser
+kam dort ein Objekt an, `join()` gibt es darauf nicht, der Fehler flog aus dem Setup der Seite,
+und alle Abschnitte aller Addons blieben leer. Dieselbe Falle wie bei `select` in 1.12.x. Eine
+Zuordnung wird jetzt ueber ihre Schluessel gelesen, die Seite steht.
+
 ## 1.13.1 — 2026-09-08
 
 ### Fixed: an addon that merges its config too late no longer pins every setting for good

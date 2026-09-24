@@ -12,6 +12,30 @@ Release notes for `goldnead/statamic-webhook-manager`, as published with the pac
 Cross-version upgrade notes for the whole suite are in
 [Upgrading](/guide/upgrading).
 
+## 2.9.3 — 2026-09-22
+
+### Fixed: der Kopier-Knopf in der Inbound-Tabelle zentrierte sich selbst
+
+Der Standard-`text-align` eines `<button>` ist `center`. In der Pfad-Spalte der
+Inbound-Übersicht sass ein Icon-Kopierknopf ohne `text-start`, dieselbe fehlende Klasse wie bei
+den Titel-Buttons in `statamic-offers` und `statamic-products`. Ohne sichtbare Auswirkung
+bei einem einzeiligen Icon, aber derselbe Fehler, deshalb mitgenommen: `text-start` steht jetzt
+explizit dabei.
+
+## 2.9.2 — 2026-09-22
+
+### Fixed: installierbar auf aktuellem Statamic 6
+
+Das Paket verlangte `inertiajs/inertia-laravel ^1.0|^2.0`. Statamic 6.33.0 ist die erste
+Version, die `^2.0 || ^3.0` erlaubt, und löst dort auf v3 auf — wer sie einsetzt, konnte dieses
+Addon nicht mehr installieren.
+
+Die Anforderung steht jetzt auf `^2.0 || ^3.0`, wie in `statamic-brand-context`. Am Code war
+nichts zu tun: `Inertia::render`, der Typ `Inertia\Response` und die Middleware verhalten sich
+unter v3 unverändert. 431 Tests unter Inertia 3.3.4 grün.
+
+Auf Statamic vor 6.33.0 ändert sich nichts, dort wird weiterhin Inertia 2 gezogen.
+
 ## 2.9.1 — 2026-09-08
 
 ### Fixed: the Insights screen was left out of the setup check in 2.9.0

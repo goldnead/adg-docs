@@ -118,9 +118,9 @@ export const MATURITY_NOTES = {
   courses:
     'Extracted from adriangoldner.com on 22 September 2026. Exercised in the playground. On that site\'s staging it now serves the member courses in place of the site\'s own copy (addon mode), and a comparison against the old code found no differences, identical pages included. No production site uses it yet. On Packagist at 0.2.1; the lesson blocks, drip variants, quizzes, payment holds and teams of that release are exercised in the playground only.',
   'private-media':
-    'Extracted from adriangoldner.com on 22 September 2026. On that site\'s staging branch it is wired in behind a switch whose default is still the site\'s own delivery code. No production site uses it yet. On Packagist at 0.1.0.',
+    'Extracted from adriangoldner.com on 22 September 2026. On that site\'s staging branch it is wired in behind a switch whose default is still the site\'s own delivery code. No production site uses it yet. On Packagist at 0.1.1.',
   certificates:
-    'Built on 22 September 2026 on top of Courses and exercised in the playground: issuing, the PDF, the verification page and the Control Panel screen. No production site uses it yet. On Packagist at 0.1.0.',
+    'Built on 22 September 2026 on top of Courses and exercised in the playground: issuing, the PDF, the verification page and the Control Panel screen. No production site uses it yet. On Packagist at 0.1.1.',
   smartlinks:
     'Built on 23 September 2026 for a band site and exercised in the playground: the landing page, the counting redirect, the platform badge in the entry form, the link cleanup, the dead-link badges and filter, and accepting and rejecting suggestions on the Control Panel screen. Installed on that band site, anders-band.de, in a local copy only; not live there or on any other site yet. On 23 September 2026 auto-fill ran read-only against the live Deezer and Apple Music APIs on that band\'s catalogue: all 39 songs with a Deezer link identified, no link found that was wrong. Spotify and Tidal have not run against their APIs, for want of credentials, and are covered by tests with faked responses only; YouTube was not part of that run. On Packagist at 0.2.1.',
   affiliates:

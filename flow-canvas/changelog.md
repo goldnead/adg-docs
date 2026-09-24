@@ -12,6 +12,89 @@ Release notes for `goldnead/statamic-flow-canvas`, as published with the package
 Cross-version upgrade notes for the whole suite are in
 [Upgrading](/guide/upgrading).
 
+## 1.5.0 — 2026-09-22
+
+### Added: an edge fade on the node library's tab bar, so scroll isn't a guess
+
+The horizontal scroll strip added for the tab-bar overflow (below) fixed reachability but not
+discoverability: the scrollbar is an invisible overlay until you scroll, so nothing told an
+operator who never scrolled that "Actions" was still there. Two independent reviews flagged the
+same residual gap.
+
+A soft gradient now sits at each edge of the strip, visible only on the side that still has
+content to scroll to, and gone once that end is reached — a fade that never disappears would be
+lying about the list having more. `aria-hidden` and `pointer-events: none`, so it never becomes
+the click target the tab underneath should be. Colour is `var(--theme-color-content-bg)` (the
+same custom property `bg-content-bg` resolves to), not a hex value, so it tracks the CP's
+light/dark theme.
+
+Implemented as plain CSS in a component-scoped `<style>` block, not Tailwind utility classes.
+Measured while building this: automations does **not** `@import` `canvas.css` (it keeps its own
+hand-duplicated copy of the `sa-*` classes), and neither host's Tailwind build scans this
+package's `resources/js` at all — a brand-new utility class used only here compiles into no rule
+in either consuming host, silently. `bg-content-bg` already in `NodeLibrary.vue` only ever
+"worked" because both hosts happen to use that exact class elsewhere in their own source; a
+gradient stop like `from-content-bg` has no such coincidence to fall back on. Plain CSS in the
+SFC's own `<style>` block sidesteps both problems — Vite compiles it regardless of what any host's
+Tailwind content scanner sees.
+
+Same fade, same reasoning, built identically (not shared) in `statamic-brand-context`'s
+`Settings.vue`: that addon has no dependency on this package to share a component through, and
+carries no Tailwind build of its own at all.
+
+### Fixed: the scroll strip itself now uses the same plain CSS as the fade
+
+Building the fade above surfaced that the scroll strip's own classes (`overflow-x-auto`,
+`flex-nowrap`, `-mx-1`, `px-1`) had the identical problem, one strip earlier: see the correction
+under "the node library's tab bar no longer hides its last group" below for what was actually
+measured. `.flow-tab-scroll`/`.flow-tab-list-nowrap`/`.flow-tab-fade-wrap` in `NodeLibrary.vue`'s
+`<style scoped>` block replace all four now, so the strip scrolls and lines up the same way in
+every host regardless of what that host's own bundle happens to contain.
+
+### Fixed: the node library's tab bar no longer hides its last group
+
+`TabList` (`@statamic/cms/ui`) renders a plain flex row with neither `overflow-x-auto` nor
+`flex-wrap`. Four groups plus their count pills (Triggers 63, Logic 11, Actions 4, …) don't fit
+the sidebar's 288-300px column. Under automations, whose `overflow-hidden` wrapper around the
+library made it worse, "Actions" was clipped to half a label and unreachable; under funnels,
+which has no such wrapper, the same tabs simply ran off the edge of the canvas. Neither host's
+wrapper is the source, both import the same `NodeLibrary.vue`.
+
+`NodeLibrary.vue` now wraps the tab bar in its own horizontally scrollable strip, so the fix
+lands in both hosts from one place. The bottom border stays full-width, and the fix works
+whether the host clips its column (automations) or not (funnels).
+
+**Correction, same day.** The paragraph above is the intent this commit shipped with, not a full
+account of what it did. The strip's classes (`overflow-x-auto`, `flex-nowrap`, `-mx-1`, `px-1`)
+were plain Tailwind utility classes, and this package has no Tailwind build of its own — each
+host compiles `NodeLibrary.vue` through its own. Measured against each host's own compiled CSS on
+22.09.2026: `flex-nowrap` compiled in **neither** host (harmless — `nowrap` is the flexbox
+default, so this was a no-op, not a break). `overflow-x-auto` compiled in both, but only because
+each host happens to use that exact class elsewhere in its own source — the one property that
+actually makes the strip scroll worked by coincidence, not because this fix put it there. `-mx-1`
+and `px-1` did not compile in funnels' own bundle at all; they only appeared to work in the
+Playground because every installed addon's CSS loads on every CP page there, and
+`statamic-automations`'s unrelated bundle happens to define the same classes. A real installation
+with only `statamic-funnels` would not have that safety net. Reachability (can you reach
+"Actions"/the last group by scrolling) held up under this coincidence; the edge padding that lines
+the strip up with the sidebar did not, silently, in funnels specifically. Now fixed for real: see
+the entry above — the same conversion to plain CSS in `NodeLibrary.vue`'s own `<style scoped>`
+block covers the strip's classes too, not just the new fade.
+
+### Documented: what must NOT go into `canvas.css`, and why
+
+Measured in a running Statamic 6 CP on 22.09.2026, the document's cascade-layer order (first
+mention wins) is `properties > base > addon-theme > addon-utilities > components > utilities >
+ui > ui-states > theme`. `addon-utilities` therefore comes **before** `utilities`, and the later
+layer wins regardless of specificity. Because every host imports `canvas.css` from *inside* its
+own `addon-utilities` block, anything written here can never beat a Statamic core utility: the
+selector matches, the rule loads, nothing happens.
+
+The header of `canvas.css` now says so. This is not theoretical — the flow editor's full-bleed
+rule (`[data-max-width-wrapper]:has(> [data-flow-full-bleed])`, which lifts the CP's 85rem page
+cap) shipped inside `addon-utilities` from 14.08.2026 and never once worked. It lives unlayered
+in each host's own `cp.css` and must stay there. No code change, no behaviour change.
+
 ## 1.4.1 — 2026-09-07
 
 ### Changed: the developer address points to adriangoldner.dev

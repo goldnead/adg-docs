@@ -12,6 +12,203 @@ Release notes for `goldnead/statamic-marketing`, as published with the package.
 Cross-version upgrade notes for the whole suite are in
 [Upgrading](/guide/upgrading).
 
+## 2.25.0 — 2026-09-22
+
+### Added: ein Layout lässt sich auch aus Bausteinen bauen
+
+Ein Layout war bisher rohes Mail-HTML in einem Code-Editor. Das kann Adrian, und deshalb ist es
+nie aufgefallen — für ein Addon, das an andere verkauft wird, ist es die falsche Einstiegshürde.
+Wer ein Layout anlegte, bekam das Standard-HTML vorgesetzt und musste Tabellen-Layout,
+Inline-Styles und die Eigenheiten von Outlook selbst beherrschen.
+
+Beim Anlegen steht jetzt eine Wahl: **Baukasten** oder **HTML schreiben**. Der Baukasten ist
+Statamics eigener Replicator mit sieben Bausteinen — Kopf, Text, Bild, Knopf, Trenner, Abstand,
+Fuß — und dem Inhalts-Baustein, der die Stelle markiert, an der der Text der Kampagne einläuft.
+Absichtlich wenige: der Satz deckt jede Mail ab, die dieses Addon verschickt, und jeder einzelne
+Baustein kommt in jedem Postfach an. Kein eigener Editor, weil Sortieren, Klappen, Abschalten
+und Duplizieren beim Replicator schon fertig sind und aussehen wie der Rest des CP.
+
+**Der Zuschnitt ist der eigentliche Punkt: Blöcke sind eine zweite Eingabe, kein zweiter
+Ausgang.** Beim Speichern übersetzt `Services\BlockLayoutCompiler` sie zu Mail-HTML, und das
+landet in derselben `html`-Spalte, die ein handgeschriebenes Layout auch füllt. `CampaignRenderer`,
+der Versand, `SendSnapshot`, `ArchiveDocument` und die Kampagnen-Vorschau lesen weiter genau
+einen HTML-String und wurden nicht angefasst. Kein Test an diesen Stellen musste geändert werden
+— das ist der Beleg, nicht die Behauptung.
+
+Dass „Mail-HTML" nicht „HTML" heißt, steckt im Übersetzer: Tabellen statt Boxen, weil Outlook
+über Word rendert und weder Flexbox noch Grid kennt; Inline-Styles, weil Gmail den `<head>`
+wegwirft, sobald es die Mail in einen Thread einklappt; die Schrift an jedem `<td>`, weil
+Vererbung in Outlook nicht verlässlich ist; der Knopf als einzellige Tabelle mit `bgcolor`, weil
+ein gestyltes `<a>` dort ein farbloser Link bleibt. Das eine `<style>` im Kopf trägt nur Dinge,
+ohne die die Mail vollständig funktioniert — die Handy-Breite und `prefers-color-scheme` —, und
+genau das macht der Hell/Dunkel-Schalter der Vorschau an einem Block-Layout sofort sichtbar.
+
+Farben und Schrift stehen an **einer** Stelle (`BlockLayoutCompiler::THEME`), nicht an den
+Blöcken. Damit hat die Theme-Anpassung je Marke später einen Ort zum Andocken, statt sich durch
+zwanzig Blockdefinitionen zu ziehen.
+
+Zwei Dinge, die das Addon dabei ausdrücklich sagt statt sie zu verschweigen:
+
+- **Der Typ ist nach dem Anlegen fest.** Ein HTML-Layout wird nicht zum Baukasten und umgekehrt.
+  Es gäbe keinen ehrlichen Weg zurück: HTML ließe sich nur in Blöcke *raten*, und ein Wechsel auf
+  HTML würfe die Blöcke ersatzlos weg. Wer wechseln will, legt ein neues Layout an — und liest
+  das schon beim Anlegen, nicht erst nach einem Nachmittag Arbeit.
+- **`html` ist für ein Block-Layout ein abgeleiteter Wert.** Wer die Spalte von Hand ändert, über
+  die API oder in der Datenbank, verliert es beim nächsten Speichern. Das steht als Kommentar an
+  der Migration und an den Spalten, als Hinweis unter dem Editor, und als Test.
+
+Was ein Baustein nicht hergibt, sagt der Editor, statt es wegzuwerfen. Ein Knopf, dessen Ziel
+keine benutzbare Adresse ist, fiele sonst lautlos aus der Mail — Beschriftung eingetippt, Ziel
+eingetippt, und im Postfach fehlt er. Die häufigste Eingabe, `www.example.com`, bekommt ihr
+`https://` jetzt einfach dazu; was danach noch übrig bleibt, erscheint als Warnung neben der
+Vorschau, zusammen mit dem Namen des Bausteins. Dasselbe für ein Bild, dessen Datei inzwischen
+gelöscht wurde. Und weil `Assets::process()` bei einer gelöschten Datei mitten aus der Kette
+heraus wirft, ist das eine Ablehnung am Feld und in der Vorschau ein Fehlertext — vorher wäre es
+eine 500er-Seite gewesen, beim Speichern und bei jedem Tastendruck.
+
+Das `&#123;&#123; content }}`-Loch bleibt auch im Baukasten Pflicht. Im HTML-Weg ist es ein Befund in der
+Vorschau; im Baukasten gibt es eine Zeile dafür, also ist es eine harte Ablehnung am Feld: genau
+ein Inhalts-Baustein, keiner zu wenig (die Mail käme leer an) und keiner zu viel (die Kampagne
+käme doppelt an). Eine abgeschaltete Zeile zählt nicht mit.
+
+Bestehende Layouts bleiben unverändert und öffnen weiter im Code-Editor. Es wird nichts
+konvertiert; die Migration setzt nur `type = 'html'` und lässt `blocks` leer. Neue Spalten:
+`marketing_templates.type` und `marketing_templates.blocks` (longText, damit sie sich auf SQLite
+und MySQL gleich verhält).
+
+### Changed: die Vorschau steht neben dem Formular, nicht darunter
+
+Eine Live-Vorschau gibt es im Kampagnen-Editor seit 2.15.0, und sie aktualisiert beim Tippen.
+Nur zu sehen war sie praktisch nie: sie saß als Panel unter dem Inhaltsfeld, ganz unten in der
+Hauptspalte, und sie war zugeklappt (`showPreview = false`). Wer eine Kampagne öffnete, sah also
+zuerst gar keine Vorschau, und der Weg dorthin war scrollen und klicken. Eine Live-Vorschau, um
+die man bitten muss, ist keine Live-Vorschau, sondern ein Knopf, der eine Seite rendert.
+
+Der Kampagnen-Editor folgt jetzt dem Muster, das der Layout-Editor schon hatte: Formular links,
+Mail rechts, beim Öffnen sichtbar, mit Gerätewahl Desktop/Handy. Das Formular behält seine
+bisherigen zwei Spalten und nimmt drei Fünftel, die Vorschau zwei — auf einem 1920px-Fenster
+sind das rund 640px für die Mail, die Breite, auf die Mail-HTML gebaut wird. Unter `2xl` stapelt
+es sich wieder, weil zwei halbe Spalten in einem 1280px-Fenster keine von beiden benutzbar
+lassen; die Vorschau bleibt dabei offen und steht direkt hinter dem Inhaltsfeld.
+
+Wer sie zuklappt, bekommt sie nicht bei der nächsten Kampagne wieder vorgesetzt: die
+Entscheidung liegt im `localStorage` (`marketing.campaign.preview.open`). Jeder Zugriff darauf
+ist abgesichert — in einem privaten Fenster wirft schon der Lesezugriff, und eine ungeschützte
+Abfrage hätte nicht die Einstellung gekostet, sondern die ganze Seite.
+
+Am `sandbox=""` des Rahmens und an der Content-Security-Policy der Vorschau-Route ändert das
+nichts. `tests/js/preview-sandbox.test.js` hält beide Editoren weiter darauf fest.
+
+### Changed: die Editor-Seiten nutzen die volle Fensterbreite
+
+Kampagnen-, Layout- und Sequenz-Editor steckten in Statamics `max-w-page` (85rem = 1360px). Zwei
+Spalten darin sind je rund 660px — für einen HTML-Code-Editor neben einer Mail-Vorschau zu
+schmal, während rechts und links Rand leer bleibt. Die drei Seiten tragen jetzt
+`data-marketing-full-bleed` und heben den Deckel auf: gemessen im laufenden CP 1360px vorher,
+1622px nachher, bei einem 1920px-Fenster. Die Listen-Seiten behalten ihn, das sind keine
+Editoren.
+
+Die Regel steht **unlayered** in `resources/css/cp.css`, und das ist der Punkt: im CP steht
+`addon-utilities` vor `utilities`, und die spätere Schicht gewinnt unabhängig von der
+Spezifität. Dieselbe Regel in `@layer addon-utilities` verliert still gegen Statamics
+`max-w-page` — der Selektor trifft, die Regel steht im Inspector, und die Breite bleibt bei
+1360px. In `statamic-automations` war genau das dreizehn Monate lang so gebaut und hat nie
+gewirkt. Der `addon-utilities`-Block bleibt für die eigenen Klassen dieses Addons richtig; nur
+die Überschreibung gehört heraus.
+
+### Added: Hell/Dunkel in der Vorschau
+
+Neben der Gerätewahl steht in beiden Editoren ein zweiter Schalter. Gemeint ist nicht das Thema
+des Control Panels, sondern das des Empfängergeräts: Apple Mail, Gmail und Outlook legen eine
+Mail auf einem dunkel gestellten Gerät auf dunkles Papier und lassen
+`prefers-color-scheme: dark` im Mail-HTML greifen. Bisher ließ sich das nur herausfinden, indem
+man sich eine Testmail schickte und die Einstellung des eigenen Telefons umstellte.
+
+Der Rahmen bekommt dafür `color-scheme: dark`, was die Medienabfrage **im gerahmten Dokument**
+umschaltet, dazu ein dunkles Blatt darunter (`--marketing-email-canvas-dark`).
+
+Die Entscheidung, dass die Vorschau-Fläche dem CP-Thema **nicht** folgt, bleibt bestehen und
+wird durch diesen Schalter nicht aufgeweicht — er ist eine ausdrückliche Wahl des Benutzers, kein
+Automatismus. Der Kommentar an `--marketing-email-canvas` sagt jetzt beides.
+
+## 2.24.1 — 2026-09-22
+
+### Fixed: installierbar auf aktuellem Statamic 6
+
+Das Paket verlangte `inertiajs/inertia-laravel ^1.0|^2.0`. Statamic 6.33.0 ist die erste
+Version, die `^2.0 || ^3.0` erlaubt, und löst dort auf v3 auf — wer sie einsetzt, konnte dieses
+Addon nicht mehr installieren.
+
+Die Anforderung steht jetzt auf `^2.0 || ^3.0`, wie in `statamic-brand-context`. Am Code war
+nichts zu tun: von Inertia werden nur `Inertia::render` (15 Stellen) und der Typ
+`Inertia\Response` genutzt, keine eigene Middleware, kein `Inertia::lazy`, kein `assertInertia`.
+Die v3-Entfernung `LazyProp` trifft nichts, `SessionKey` ist lediglich nach `Support/` umgezogen,
+und die Page-Payload ist unverändert. 751 Tests unter Inertia 3.3.4, dasselbe Ergebnis wie unter
+v2.
+
+**Wirksam erst zusammen mit `statamic-leadhub` 2.12.1.** Dieses Paket verlangt LeadHub, und
+dessen ältere Tags tragen noch die enge Anforderung; solange einer davon aufgelöst wird, bleibt
+Inertia 2 stehen, unabhängig von dieser Datei.
+
+## 2.24.0 — 2026-09-20
+
+### Fixed: an image from the Control Panel arrived broken
+
+Bard stores an image inserted in the editor as `statamic://asset::<container>::<path>`. In an
+application that reference is resolved when the field is augmented; the campaign renderer takes
+the stored HTML directly and augments nothing. So the reference went into the mail verbatim, and
+`src="statamic://asset::assets::logo.png"` is a broken image in every mailbox that receives it.
+
+It surfaced only now because until 2.23.3 a campaign with an image could not be saved at all.
+Fixing that opened the path that leads here.
+
+Statamic's own `ResolvesStatamicUrls` does the same lookup but writes `$data->url()` — a path
+with no host. On a web page that is exactly right; in a mail there is no current page for a
+relative path to resolve against, so it would be as dead as the reference it replaced. Hence
+absolute URLs, with `app.url` as the fallback for anything that has no absolute form.
+
+A reference that no longer resolves takes the whole `<img>` with it rather than leaving
+`src=""`, which draws the same broken icon. A link keeps its text and loses its href — the
+sentence it sits in is still worth reading.
+
+### Added: images are sized for a mail, not for an archive
+
+What gets uploaded is the file from the camera: a send test on 18.09.2026 carried an image of
+1114×2429 px. Weight costs more in a mail than on a page, because it is paid once per recipient
+and nobody reloads an image in a mailbox. Statamic now renders a mail-sized version at twice the
+display width, so it stays sharp on dense screens.
+
+Each content image also gets a `width` attribute — Outlook reads the attribute and ignores the
+CSS beside it, and without one it draws the image at its true pixel width, far past the edge of
+the mail. `max-width:100%; height:auto` sits beside it for everything else.
+
+`marketing.editor.image_width` (env `MARKETING_IMAGE_WIDTH`) sets the display width; the default
+576 fits a 640px layout with 32px padding. Only images are resized — a PDF on the same path keeps
+its URL — and if the image pipeline fails (no GD, a file that is not an image), the plain URL
+stays: an image that is too large beats no image.
+
+### Added: the alt text comes from the asset
+
+`Bard\ImageNode` fills an image's alt from the asset's own `alt` field when augmenting. Our path
+skips augmenting, so it is fetched here instead — an image was going out without its alternative
+text even where one was maintained. An alt already on the tag wins; it is the more specific one.
+
+Where there is genuinely none, the image gets `alt=""` rather than no attribute at all. That is
+the correct marking for an image without an alternative text and removes a checker's "image
+without alt attribute" finding. Nothing is invented.
+
+### Fixed: one date format on the report page, not two
+
+The send time in the report header read "18.9.2026, 20:03:50" while the snapshot box below it
+read "18.09.2026, 18:03" — one- against two-digit numbers, with seconds against without. Half of
+the impression that those were two different times was simply two formats. The header now uses
+the same shape as the box.
+
+The other half was a real two hours, and it belongs to the host: the box formatted in the
+application's timezone. That is fixed in `goldnead/statamic-email-templates` v2.7.1, which
+formats in `Statamic::displayTimezone()` instead. The timezone here is unchanged and still the
+browser's.
+
 ## 2.23.3 — 2026-09-19
 
 ### Fixed: a campaign with an image could not be saved, and said nothing

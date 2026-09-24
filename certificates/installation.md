@@ -29,7 +29,7 @@ Three packages are required and arrive with Composer:
 
 | Package | Constraint | Why |
 | --- | --- | --- |
-| `goldnead/statamic-courses` | `^0.1` | The `CourseCompleted` event and the completed enrollments the backfill reads. Without Courses there is nothing to certify. |
+| `goldnead/statamic-courses` | `^0.1 \|\| ^0.2` | The `CourseCompleted` event and the completed enrollments the backfill reads. Without Courses there is nothing to certify. |
 | `goldnead/statamic-brand-context` | `^1.13` | The per-brand template settings, and the brand a certificate belongs to. |
 | `dompdf/dompdf` | `^3.1` | Renders the PDF. Pure PHP, no Chrome, no binary. |
 

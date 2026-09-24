@@ -12,6 +12,13 @@ Release notes for `goldnead/statamic-private-media`, as published with the packa
 Cross-version upgrade notes for the whole suite are in
 [Upgrading](/guide/upgrading).
 
+## 0.1.1 (2026-09-22)
+
+### Fixed
+- The service provider no longer overrides Statamic's `bootRoutes()`, `bootCommands()` and
+  `bootPublishables()`. `AddonServiceProvider::boot()` calls those itself before `bootAddon()`,
+  so the delivery route, the prune command and the publishables were registered twice.
+
 ## 0.1.0 (2026-09-22)
 
 First release, extracted from adriangoldner.com.
