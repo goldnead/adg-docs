@@ -53,6 +53,7 @@ Eighteen ship built in. Every handle below is also a key under `builtin_nodes` i
 | Funnels | 6 triggers, `funnels.*` | see [Triggers from the suite](/automations/suite-triggers#funnels) | Funnels; `funnels.upsell_declined` Funnels 1.17 |
 | Courses | 12 triggers, `courses.*` | see [Triggers from the suite](/automations/suite-triggers#courses) | Courses |
 | Affiliates | 4 triggers, `affiliates.*` | see [Triggers from the suite](/automations/suite-triggers#affiliates) | Affiliates |
+| Offers | 8 triggers, `offers.*` | see [Triggers from the suite](/automations/suite-triggers#offers) | Offers 1.13, Automations 2.21 |
 | Entitlements · Booking · Invoices | `entitlements.*` · `booking.*` · `invoices.*` | see [Triggers from the suite](/automations/suite-triggers#entitlements-booking-invoices) | the addon |
 
 ## Logic nodes

@@ -109,4 +109,5 @@ See [Tax facts and retention](/payments/tax-and-retention).
 - [Credit notes and refunds](/invoices/credit-notes)
 - [Delivery and storage](/invoices/delivery)
 - [Exports for tax and bookkeeping](/invoices/exports)
+- [Webhooks](/invoices/webhooks) — issued, credit note and delivered as triggers
 - [Reference](/invoices/reference) · [Troubleshooting](/invoices/troubleshooting)

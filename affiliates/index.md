@@ -70,5 +70,6 @@ Create Payout List ─────────► CSV → you pay → mark as pa
 - [Payouts](/affiliates/payouts)
 - [The partner area](/affiliates/partner-area): tags, sign-up, promotional material
 - [The Control Panel](/affiliates/control-panel)
+- [Webhooks](/affiliates/webhooks): the four triggers for Webhook Manager, payload, brand, `event_id`
 - [Reference](/affiliates/reference): commands, events, routes, permissions, tables
 - [Troubleshooting](/affiliates/troubleshooting)

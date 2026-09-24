@@ -90,6 +90,7 @@ See [Commissions](/affiliates/commissions).
 | `materials.collection` | `affiliate_materials` | The collection partners see promotional material from. |
 | `materials.container` | `null`, env `AFFILIATES_MATERIALS_CONTAINER` | The asset container `affiliates:install` gives the material's image field. Empty: the site's first container. |
 | `cp.enabled` | `true` | The Control Panel screens and nav. Off hides both, and the routes are not registered. |
+| `webhook_manager.enabled` | `true`, env `AFFILIATES_WEBHOOK_MANAGER` | Offer the four partner moments as [Webhook Manager](/affiliates/webhooks) triggers, where that addon is installed. |
 
 `routes.*` and `cp.enabled` are read while routes and nav are registered, before the settings
 layer applies its values, so they are config only and a change needs a route cache clear.

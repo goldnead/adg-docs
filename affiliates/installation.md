@@ -28,7 +28,9 @@ blueprint whose image field has no container is repaired, and nothing else in it
 | [Offers](/offers/) | partner coupons: a redeemed code counts as a referral without a cookie | links only |
 | [Consent](/consent/) | asking the visitor before the referral cookie is written | with the default `consent.mode: auto`, no cookie is written; the referral lasts for the visit |
 
-All three are `suggest`, detected at runtime.
+| [Webhook Manager](/webhook-manager/) | the four partner moments as triggers for outbound webhooks, from Affiliates 0.2 | no triggers; nothing else changes |
+
+All four are `suggest`, detected at runtime.
 
 ## Consent
 

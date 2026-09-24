@@ -55,6 +55,11 @@ on the trigger:
 | `user.saved` | — |
 | `asset.saved` | asset container |
 
+The triggers other addons of the suite register (Payments, Invoices, Offers, Funnels,
+Courses, Affiliates, LeadHub, Marketing) are listed, with links to their payloads, on
+[Triggers from the suite](/webhook-manager/suite-triggers). The picker groups all triggers by
+where they come from and searches label, group and handle.
+
 Scope narrowly and add a second hook rather than writing a condition to undo a broad
 scope. A hook that fires and is then filtered out still costs a rendered payload and
 a decision; a hook that never matched costs nothing.
@@ -98,6 +103,26 @@ delivery.
 
 So a green test means the thing genuinely works, and a red one gives you a delivery
 snapshot with the response body in it.
+
+## Idempotency headers
+
+A retry resends the stored request, so a receiver may see the same delivery more than once.
+From 2.10 every outbound request carries an id to dedupe on:
+
+| Header | When | Value |
+| --- | --- | --- |
+| `X-Webhook-Id` | always | the delivery's idempotency key |
+| `Idempotency-Key` | the hook's **Idempotency** switch is on | the same key; it is also stored on the delivery row |
+
+The key is the payload's own `event_id` when it carries one (a string or integer of at most 128
+characters), so the same event keeps its key across dispatches. The suite's commerce addons all
+send one; see [Triggers from the suite](/webhook-manager/suite-triggers#idempotency-headers).
+Without it, the key is a hash over hook, trigger, source reference and the moment the event was
+built. A retry and a replay from the stored snapshot resend the first value; a replay with
+re-rendering builds a new request with a new key. A header of the same name configured on the
+hook wins.
+
+Before 2.10 the key was computed and stored but never sent.
 
 ## Disabling and the circuit breaker
 

@@ -89,6 +89,10 @@ lesson and completing it again does not fire it twice.
 public verification page, one per learner and course. A lesson skipped by a test-out counts as
 completed there too. See [Issuing and the snapshot](/certificates/issuing).
 
+With [Webhook Manager](/webhook-manager/) installed, all twelve events are webhook triggers,
+`courses.learner_enrolled` to `courses.team_member_removed`. Payload and rules on
+[Webhooks](/courses/webhooks).
+
 ## Routes
 
 | Method | URL | Name | |
@@ -156,3 +160,4 @@ The `blocks` replicator's sets: `text`, `callout`, `columns`, `faq` (group Conte
 | `cp.enabled` | `true` |
 | `cp.stuck_after_days` | `14` |
 | `entitlements.subject_type` | `null` (`COURSES_SUBJECT_TYPE`) |
+| `webhook_manager.enabled` | `true` (`COURSES_WEBHOOK_MANAGER`) |

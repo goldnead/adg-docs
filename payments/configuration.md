@@ -37,6 +37,7 @@ screen, which needs `manage payments settings`; only overrides are stored there.
 | `portal.logo_url` · `logo_alt` · `greeting` | `null` | How the customer portal looks. **1.25** |
 | `portal.self_cancel` · `allow_pause` · `allow_switch` | `true` · `false` · `false` | What the buyer may do in the portal. **1.25** |
 | `rate_limit` | `60` | Per minute, per IP, on the webhook. |
+| `webhook_manager.enabled` | `true` (`STATAMIC_PAYMENTS_WEBHOOK_MANAGER`) | Off, no payment moment is offered as a trigger in [Webhook Manager](/payments/webhooks). **1.26** |
 | `follow_up.enabled` | `false` | The post-payment offer. Read [Bumps and follow-up offers](/payments/bumps) before switching it on. |
 | `follow_up.collect_mandate` | `false` | Makes the first payment ask the provider to remember the buyer. Required for follow-ups **and** for subscriptions. |
 | `entitlements.enabled` | `false` | On, plus a `grants` key on a product, grants that entitlement to the buyer. |

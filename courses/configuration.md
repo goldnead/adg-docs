@@ -22,6 +22,7 @@ entry, not here.
 | `cp.enabled` | `true` | Off, the Course Progress screen and its nav entry are gone. |
 | `cp.stuck_after_days` | `14` | Days without activity before a started learner counts as stuck. |
 | `entitlements.subject_type` | `null` (`COURSES_SUBJECT_TYPE`) | Must match the type the grants were written with, or every course stays closed. |
+| `webhook_manager.enabled` | `true` (`COURSES_WEBHOOK_MANAGER`) | Off, the course events are not offered as [Webhook Manager triggers](/courses/webhooks). Without that addon it does nothing. |
 
 ## `collections`
 

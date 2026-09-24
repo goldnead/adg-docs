@@ -106,7 +106,41 @@ edited next month must never rewrite what somebody agreed to last month.
 
 ## Events
 
-None of its own. The addon **listens** for three:
+From 1.13 the addon fires eight events of its own, in `Goldnead\StatamicOffers\Events`. Each is
+readonly, fires once per moment (also on a redelivered webhook or a double click), and carries
+`brandId`: the brand of the pool, the offer or the payment, `null` without brands. A listener
+started from a provider webhook or a seat page opened from a mail can switch to that brand first.
+
+| Event | When | Properties |
+| --- | --- | --- |
+| `SeatPoolOpened` | a paid purchase of seats opened its pool | `pool` |
+| `SeatInvited` | a seat was given to an address | `seat`, `pool` |
+| `SeatAccepted` | the invited person accepted, access granted | `seat`, `pool` |
+| `SeatRevoked` | a seat was taken back, after its access was revoked | `seat`, `pool`, `previousStatus` (`claimed`, `invited`), `reason` |
+| `SeatPoolClosed` | a full refund or chargeback closed the pool, after its seats | `pool`, `reason` |
+| `OfferSoldOut` | paid purchases reached the limit of a limited offer | `offer`, `sold` (paid units) |
+| `CouponRedeemed` | a payment that used a coupon is paid, once per payment | `coupon`, `payment` |
+| `ShortLinkSwitched` | the [short link](/offers/links#short-links) leads to its second target for the first time | `offer`, `reason` (`date`, `sold_out`) |
+
+Sold out and the switch are marked on the offer (`sold_out_at`, `link_switched_at`) and cleared
+when it opens again (limit raised, date moved), so the next change fires again.
+
+- **Sold out counts paid purchases only.** An open checkout holds a unit back from the next
+  checkout, but a declined card must not have announced "sold out". The short link follows the
+  same limit including open checkouts, so it can switch before `OfferSoldOut` fires.
+- **The switch is noticed**, not scheduled: by the purchase that sells out, or by the first
+  visit after the date.
+- **A redemption is recorded** in `offer_coupon_redemptions`, so a redelivered "paid" does not
+  redeem twice.
+
+None of this can hold up a purchase or the short link: a failing moment is logged. On a site
+that has not run the 1.13 migration yet, the moments are skipped until it has.
+
+Every one of them is also a [webhook trigger](/offers/webhooks).
+
+### What it listens to
+
+The addon **listens** for three:
 
 | Event | From | What it does |
 | --- | --- | --- |
@@ -255,7 +289,10 @@ written.
 `pwyw_suggested_cent` · `pwyw_max_cent` · `pwyw_thanks` (JSON) · `setup_fee_cent` ·
 `setup_fee_label` · `country_mode` · `countries` (JSON) · `link_slug` (unique) · `link_target` ·
 `link_fallback` · `link_switch_at` · `link_switch_on_sold_out` · `link_hits_target` ·
-`link_hits_fallback` · `seats` · `meta` · timestamps.
+`link_hits_fallback` · `seats` · `sold_out_at` · `link_switched_at` · `meta` · timestamps.
+
+`sold_out_at` and `link_switched_at` (1.13) mark that `OfferSoldOut` and `ShortLinkSwitched`
+fired, and are cleared when the offer opens again.
 
 There is no `sold_count`. Sold is read from paid `payment_items` every time, because a counter
 of its own would drift the first time a payment is refunded or a row deleted.
@@ -269,6 +306,11 @@ broken join.
 `code` (unique) · `name` · `percent` · `amount_cent` · `currency` · `offers` (JSON) ·
 `starts_at` · `ends_at` · `max_uses` · `used_count` · `active` · `duration` · `duration_cycles` ·
 `applies_to` · `funnel_wide` · `link_url` · `meta` · timestamps.
+
+### `offer_coupon_redemptions`
+
+1.13. `coupon_id` · `payment_id` · `created_at`. Unique on both together: one redemption per
+coupon and payment, so `CouponRedeemed` fires once even when Payments delivers "paid" again.
 
 ### `offer_seat_pools`
 

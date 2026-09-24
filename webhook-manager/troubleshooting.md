@@ -182,6 +182,27 @@ Symptom: two identical deliveries milliseconds apart, one in the delivery list a
 in an automation run log. Delete whichever you did not mean to keep. See
 [Boundaries](/guide/boundaries).
 
+## A trigger from another addon does not appear
+
+The addon registers its triggers only when it is new enough and its switch is on: Payments
+1.26, Invoices 2.3, Offers 1.13, Funnels 1.18, Courses 0.3, Affiliates 0.2, each with
+`<config>.webhook_manager.enabled` (on by default). See
+[Triggers from the suite](/webhook-manager/suite-triggers). On a multi-brand site, check that
+the hook belongs to the brand of the object: a subscription of another brand fires that
+brand's hooks, not the current one's.
+
+## The receiver sees the same event twice, or in the wrong order
+
+Both are normal. A retry resends the delivery, and a moment such as `PaymentPaid` can be
+dispatched again when the provider repeats its webhook. Dedupe by `X-Webhook-Id` (or the
+payload's `event_id`) and sort by `occurred_at`. Deliveries run on the queue, so order is not
+guaranteed. See [Order and duplicates](/webhook-manager/suite-triggers#order-and-duplicates).
+
+## The trigger labels are still "Eintrag — gespeichert"
+
+The site published the language files before 2.10. Publish them again, or edit the published
+strings to the "Group: moment" form.
+
 ## A custom trigger or action does not appear
 
 1. **Registered in `register()` instead of `boot()`.** Statamic boots addon providers

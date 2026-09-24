@@ -107,5 +107,6 @@ served.
 - [Tracking code and the Meta pixel](/funnels/tracking)
 - [Deadlines and split tests](/funnels/deadlines-and-tests)
 - [Where people stop](/funnels/analytics)
+- [Webhooks](/funnels/webhooks) — the funnel events as Webhook Manager triggers, and what `form_submitted` hands over
 - [Reference](/funnels/reference) — routes, events, tables, config
 - [Troubleshooting](/funnels/troubleshooting)

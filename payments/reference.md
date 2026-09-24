@@ -262,7 +262,16 @@ Registered by [Automations](/automations/) when both addons are installed. Group
 | Checkout Abandoned | `payments.checkout_abandoned` |
 
 Each takes an optional `product` filter and hands the flow `id`, `product`, `amount_cent`,
-`currency`, `discount_code`, `status`, `email`, `name`, `provider`.
+`currency`, `discount_code`, `status`, `email`, `name`, `provider`. The full list of triggers
+from the suite, subscriptions included, is on
+[Automations → Triggers from the suite](/automations/suite-triggers).
+
+## Webhook Manager triggers
+
+From 1.26, with [Webhook Manager](/webhook-manager/) installed, the twenty payment and
+subscription moments are triggers for outbound webhooks under the same handles, from
+`payments.paid` to `payments.subscription_ended`. Bodies, what never goes along, brand and
+`event_id`: [Webhooks](/payments/webhooks). Off with `webhook_manager.enabled`.
 
 ## Publish tags
 

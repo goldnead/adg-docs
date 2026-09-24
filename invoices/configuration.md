@@ -23,6 +23,7 @@ can be changed by whoever can log in is a tax rule that can be changed by whoeve
 | `seller_per_brand` | `[]` | Merged over `seller` for that brand |
 | `small_amount_cent` | `25000` | Where a Kleinbetragsrechnung ends |
 | `tax.*` | see below | |
+| `webhook_manager.enabled` | `true` (`INVOICES_WEBHOOK_MANAGER`) | Off, the three events are no longer offered as [webhook triggers](/invoices/webhooks). 2.3 |
 
 ## The number series
 

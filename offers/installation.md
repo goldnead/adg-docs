@@ -131,6 +131,11 @@ link, coupon duration and scope, the seat tables, and the closing date of a seat
 offers stay fixed-price and worldwide, and existing coupons stay "the first payment, whole
 basket".
 
+Version 1.13 adds one: `sold_out_at` and `link_switched_at` on `offers`, and the table
+`offer_coupon_redemptions`. They back the new [events](/offers/reference#events) and
+[webhook triggers](/offers/webhooks). Until the migration has run, purchases and short links
+work as before and only the new moments are skipped.
+
 ## Licence
 
 Commercial: `composer.json` says `proprietary`. See [Licensing](/guide/licensing).

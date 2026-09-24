@@ -21,7 +21,10 @@ button. It does not own workflows — that is
 
 - **Outbound webhooks** triggered by Statamic events, with conditional execution,
   payload templates, header and auth control, retry policies and queue-first
-  delivery.
+  delivery. Every request carries `X-Webhook-Id` to dedupe on.
+- **Triggers from the whole suite**: payments, subscriptions, invoices, offers, funnels,
+  courses, partners, LeadHub contacts and Marketing subscribers, in a picker grouped by where
+  they come from. See [Triggers from the suite](/webhook-manager/suite-triggers).
 - **Integration presets** — a guided "pick a destination, fill in a URL" setup for
   Slack, Discord, Microsoft Teams, Zapier, Make, n8n and generic JSON, so you never
   hand-write a payload template.
@@ -97,6 +100,7 @@ other CP-heavy addons were ported from.
 - [Configuration](/webhook-manager/configuration) — thirteen sections, with defaults
 - [Concepts](/webhook-manager/concepts) — the delivery pipeline end to end
 - [Outbound webhooks](/webhook-manager/outbound) — triggers, presets, scoping
+- [Triggers from the suite](/webhook-manager/suite-triggers) — every addon's triggers, the payload frame, order and idempotency
 - [Payload templates](/webhook-manager/templates) — the token renderer
 - [Authentication & signing](/webhook-manager/auth) — five outbound schemes, six inbound verifiers
 - [Deliveries, retries & replay](/webhook-manager/deliveries) — and the circuit breaker

@@ -117,4 +117,5 @@ a container binding, not a fork.
 - [Refunds](/payments/refunds)
 - [Abandoned checkouts](/payments/abandoned)
 - [Tax facts and retention](/payments/tax-and-retention)
+- [Webhooks](/payments/webhooks) — every payment and subscription moment as a trigger
 - [Reference](/payments/reference) · [Troubleshooting](/payments/troubleshooting)

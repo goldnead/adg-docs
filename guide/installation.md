@@ -58,7 +58,7 @@ register no section on it.
 | [Payments](/payments/installation) | yes (ten, from `payments` to `payment_subscription_notices`) | yes, four utilities |
 | [Products](/products/installation) | yes (`products`) | yes, one utility |
 | [Insights](/insights/installation) | no | yes |
-| [Offers](/offers/installation) | yes (`offers`, `offer_coupons`, `offer_seat_pools`, `offer_seats`) | yes, two utilities |
+| [Offers](/offers/installation) | yes (`offers`, `offer_coupons`, `offer_seat_pools`, `offer_seats`, `offer_coupon_redemptions`) | yes, two utilities |
 | [Invoices](/invoices/installation) | yes (`invoices`, `invoice_items`, `invoice_counters`, `invoice_vat_id_checks`) | yes, one utility, under Tools rather than in the suite nav |
 | [Funnels](/funnels/installation) | yes (six, from `funnels` to `funnel_mail_deliveries`) | yes, one utility |
 | [Affiliates](/affiliates/installation) | yes (seven, from `affiliate_partners` to `affiliate_payouts`); promotional material is entries in a Statamic collection | yes |

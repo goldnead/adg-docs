@@ -6,7 +6,7 @@
 php artisan vendor:publish --tag=statamic-offers-config
 ```
 
-Nine keys. Everything else about an offer is a row in a table, edited in the Control Panel,
+Ten keys. Everything else about an offer is a row in a table, edited in the Control Panel,
 because that is the point of the addon.
 
 | Key | Default | What happens when it is wrong |
@@ -20,6 +20,7 @@ because that is the point of the addon.
 | `coupon_link.parameter` | `coupon` | The URL parameter that [prefills a code](/offers/links#coupon-links). Renaming it breaks every printed link with the old name: the page opens, without the discount. |
 | `links.prefix` · `links.base_url` | `go` · `null` | The [short link](/offers/links#short-links) path, and the address printed in links and QR codes (`null` means `app.url`). The prefix must not equal a page path of the site. |
 | `seats.prefix` · `seats.after_claim_url` | `!/statamic-offers/plaetze` · `null` | Where the [seat pages](/offers/seats) live, and where the button after accepting a seat leads. `null` means no button. |
+| `webhook_manager.enabled` | `true` (`STATAMIC_OFFERS_WEBHOOK_MANAGER`) | Off, the events are no longer offered as [webhook triggers](/offers/webhooks). The events themselves still fire. 1.13. |
 
 ## Withdrawal defaults
 

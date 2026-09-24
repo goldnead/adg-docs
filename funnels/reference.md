@@ -216,6 +216,7 @@ Deleting a funnel cascades to its steps, edges, visits and their events.
 | `tracking.meta.access_token` | env `FUNNELS_META_CAPI_TOKEN` |
 | `tracking.meta.test_event_code` | env `FUNNELS_META_TEST_EVENT_CODE` |
 | `tracking.meta.api_version` | `'v21.0'` |
+| `webhook_manager.enabled` | `true`, env `STATAMIC_FUNNELS_WEBHOOK_MANAGER` |
 
 The thumbnail keys and `password_reset_url` are left out here. See
 [Configuration](/funnels/configuration).
@@ -241,7 +242,9 @@ The thumbnail keys and `password_reset_url` are left out here. See
 
 Optional, detected with `class_exists` and each behind its own switch:
 [LeadHub](/leadhub/), [Entitlements](/entitlements/), and
-[Automations](/automations/), which detects this addon rather than the other way round.
+[Automations](/automations/), which detects this addon rather than the other way round, and
+[Webhook Manager](/webhook-manager/), which gets the funnel events as triggers
+([Webhooks](/funnels/webhooks)).
 
 ## Not included
 

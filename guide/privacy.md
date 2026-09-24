@@ -69,6 +69,18 @@ consent that slot names. The Conversions API sends the buyer's email hashed, and
 the IP address, user agent and the `_fbp`/`_fbc` cookies only with consent. See
 [Tracking code and the Meta pixel](/funnels/tracking).
 
+**Webhooks from the suite.** Payments, Invoices, Offers, Affiliates, Courses and
+Funnels offer their moments as triggers in [Webhook Manager](/webhook-manager/).
+Offering a trigger sends nothing; data leaves only through a webhook somebody
+creates, and then it goes to that receiver. The bodies carry what the moment is
+about: a buyer's email, name and country on a payment, the name, email, country
+and VAT ID on an invoice (never the postal address), seat holders' emails and
+names on a seat, never a token, payout details or card data. Funnels'
+`form_submitted` hands over the visitor's form values as typed, which makes the
+receiving service a processor that needs a data processing agreement (Art. 28
+GDPR). Each addon's Webhooks page lists what goes along and what never does; see
+[Triggers from the suite](/webhook-manager/suite-triggers).
+
 [Automations](/automations/) stores a run's context, shows it in the run log and
 can forward it through a webhook node. For a blocked checkout that context keeps
 only the network of the IP address (`/24` or `/48`), never the full address. See

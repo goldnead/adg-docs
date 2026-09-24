@@ -64,8 +64,11 @@ namespace Goldnead\Invoices\Events;
 | --- | --- | --- |
 | `InvoiceIssued` | `$invoice` | An invoice exists. Fired after the transaction. |
 | `CreditNoteIssued` | `$creditNote`, `$reverses` | An invoice was reversed. |
+| `InvoiceDelivered` | `$invoice`, `$to` | The invoice was mailed, and to which address. An event rather than a column, because the row refuses every update once it exists. |
 
-Two, and that is the complete list.
+Three, and that is the complete list. With [Webhook Manager](/webhook-manager/) installed each
+is also a trigger: `invoices.issued`, `invoices.credit_note_issued`, `invoices.delivered`. See
+[Webhooks](/invoices/webhooks).
 
 ## Listeners it registers
 

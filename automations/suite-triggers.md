@@ -156,13 +156,48 @@ Needs [Affiliates](/affiliates/).
 
 The partner is in the context with address and code. Their payout details are not, on purpose.
 
+## Offers
+
+Needs [Offers](/offers/) 1.13 and Automations 2.21. The handles are the same as those of the
+[Offers webhooks](/offers/webhooks), so a flow and a webhook on the same moment are easy to
+line up.
+
+| Trigger | Handle | Fires when | Subject of the run |
+| --- | --- | --- | --- |
+| Seat Pool Opened | `offers.seat_pool_opened` | a purchase of several seats opens a pool for the buyer to hand out | the buyer who owns the pool |
+| Seat Invited | `offers.seat_invited` | a buyer invites somebody to one of their seats | the invited person |
+| Seat Accepted | `offers.seat_accepted` | an invited person takes their seat | that person |
+| Seat Revoked | `offers.seat_revoked` | a seat is taken back, taken or only invited | the seat's person |
+| Seat Pool Closed | `offers.seat_pool_closed` | a pool closes, for example after a refund; its seats lose access with it | the buyer who owns the pool |
+| Offer Sold Out | `offers.sold_out` | once, when an offer reaches its quantity limit | none: for your team or a waiting list |
+| Coupon Redeemed | `offers.coupon_redeemed` | a paid purchase used a coupon | the buyer |
+| Offer Link Switched | `offers.link_switched` | a short link starts sending visitors to its fallback, after its date or because it sold out | none |
+
+**Filters.** Every Offers trigger can be narrowed to one offer. Coupon Redeemed also filters by
+the code, ignoring case; Offer Link Switched by the reason (`date` or `sold_out`).
+
+**The context** has the shape of the Offers webhooks: `offer {id, handle, name}`, `pool` with
+its `owner {email, name}`, `seat`, `coupon`, and `payment` as on the Payments triggers. **No
+token ever**: neither a seat's acceptance token nor the pool's management token is in the
+context.
+
+**Coupon Redeemed runs once per payment on its own.** The trigger brings a re-entry default of
+"ignore" keyed on `{{ payment.id }}`, so a payment that is delivered twice does not start a
+second run. A re-entry setting chosen on the node, "always" included, still wins.
+
+Offer Link Switched after a date fires on the first visit after it, not at the minute itself:
+nothing watches the clock.
+
 ## Entitlements, Booking, Invoices
 
 | Trigger | Handle | Needs |
 | --- | --- | --- |
 | Access Granted · Pending Confirmation · Renewed · Revoked · Expired | `entitlements.granted` · `entitlements.pending` · `entitlements.renewed` · `entitlements.revoked` · `entitlements.expired` | [Entitlements](/entitlements/) |
 | Booking Made · Rescheduled · Cancelled | `booking.made` · `booking.rescheduled` · `booking.cancelled` | [Booking](/booking/) |
-| Invoice Issued · Credit Note Issued | `invoices.issued` · `invoices.credit_note_issued` | [Invoices](/invoices/) |
+| Invoice Issued · Credit Note Issued · Invoice Delivered | `invoices.issued` · `invoices.credit_note_issued` · `invoices.delivered` | [Invoices](/invoices/); Invoice Delivered needs Invoices 2.3 and Automations 2.21 |
+
+Invoice Delivered fires when an invoice was sent to the buyer. The address it went to is the
+subject of the run, so a follow-up mail reaches the same inbox.
 
 ## The brand comes from the event
 
@@ -170,7 +205,8 @@ With [multi-brand](/guide/brands) on, a flow belongs to a brand. Since 2.20 a si
 starts the flows of **the brand the event belongs to**, not of whatever brand happens to be
 current:
 
-1. an explicit `brandId` on the event (every Courses event carries one from Courses 0.2);
+1. an explicit `brandId` on the event (every Courses event carries one from Courses 0.2, every
+   Offers event from Offers 1.13);
 2. otherwise the `brand_id` of the subscription, payment, partner, commission or grant it
    carries;
 3. for a course event without either, the brand of the course entry's Statamic site, through
@@ -185,12 +221,14 @@ well.
 
 An event with no brand of its own and none current starts nothing and logs
 `Automations: event carries no brand and none is current; no automation started.` An event that
-names a brand that does not exist logs the same way. Without `multi_brand` nothing changes.
+names a brand that does not exist logs the same way. From 2.21 a `brand_id` of `0` counts as
+"no brand" everywhere, not as a brand that does not exist. Without `multi_brand` nothing
+changes.
 
 ## Labels in German
 
-In a German Control Panel, the label, description and group of every Payments, Funnels, Courses
-and Affiliates trigger are German, so searching the library for "abo" finds the subscription
+In a German Control Panel, the label, description and group of every Payments, Funnels, Courses,
+Affiliates, Offers and Invoices trigger are German, so searching the library for "abo" finds the subscription
 triggers. The strings live in the addon's own translation namespace, so a word like "Courses"
 is not translated in other addons as a side effect. The trigger's settings fields are still in
 English.

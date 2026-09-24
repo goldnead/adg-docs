@@ -96,4 +96,5 @@ that says `FRUEHLING` is a question the table answers.
 - [Links and QR codes](/offers/links) — coupon links and the short link that switches
 - [Seats for groups](/offers/seats)
 - [In a template](/offers/templates)
+- [Webhooks](/offers/webhooks) — seats, sold out, coupons and the short link as triggers
 - [Reference](/offers/reference) · [Troubleshooting](/offers/troubleshooting)

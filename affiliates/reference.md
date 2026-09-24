@@ -32,6 +32,10 @@
 | `Goldnead\Affiliates\Events\PartnerApplied` | `$partner` | Somebody signed up through the application form. |
 | `Goldnead\Affiliates\Events\PartnerApproved` | `$partner` | A partner became active: approved in the Control Panel, or on sign-up with automatic approval. |
 
+With [Webhook Manager](/webhook-manager/) installed, the same four moments are webhook triggers:
+`affiliates.commission_earned`, `affiliates.commission_reversed`, `affiliates.partner_applied`,
+`affiliates.partner_approved`. Payload and rules on [Webhooks](/affiliates/webhooks).
+
 ## What it listens to
 
 Only when [Payments](/payments/) is installed, registered by hand once per application:

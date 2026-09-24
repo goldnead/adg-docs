@@ -46,6 +46,14 @@ When LeadHub is installed, eleven more are registered automatically:
 `leadhub.contact.archived`, `leadhub.contact.deleted`, plus
 `leadhub.segment.entered` / `leadhub.segment.left` and `leadhub.score.changed`.
 
+Payments, Invoices, Offers, Funnels, Courses, Affiliates and Marketing register their own. All
+of them, with links to their payloads: [Triggers from the suite](/webhook-manager/suite-triggers).
+
+From 2.10 every label reads **Group: moment**: "Entry: saved", "Form: submitted", "User:
+saved", "Asset: saved", and in German "Eintrag: gespeichert" and so on. The trigger picker groups
+by `source_type`; a group's heading comes from `webhook-manager::messages.trigger_groups.<type>`,
+and a type without a translation takes the prefix its labels share, else its handle.
+
 ## Template namespaces
 
 | Namespace | Available for |
@@ -242,6 +250,8 @@ Node 18+ only if you rebuild the CP bundle from a clone.
 | | |
 | --- | --- |
 | Delivery | queue-first; one record per attempt |
+| Order | not guaranteed; a receiver sorts by the payload's time (`occurred_at` for the suite's triggers) |
+| Idempotency | `X-Webhook-Id` on every request, `Idempotency-Key` with the hook's switch on; the payload's `event_id` when it has one, the first attempt's value on retries (2.10) |
 | Retries | executed by a scheduled command, claimed before dispatch: never twice, and lost rather than duplicated if the process dies mid-claim. Needs the host's `schedule:run` cron |
 | Inbound rate limit | per endpoint, first step of the pipeline; shared across the canonical and legacy prefixes |
 | Failure isolation | a delivery failure never breaks the event that triggered it |

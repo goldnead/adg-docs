@@ -27,6 +27,7 @@ changes every URL on the site and is read while routes are registered,
 | `tracking.meta.access_token` | env `FUNNELS_META_CAPI_TOKEN` | Empty means no server-side events. The pixel still works. |
 | `tracking.meta.test_event_code` | env `FUNNELS_META_TEST_EVENT_CODE` | Sends to the Events Manager's test view. Remove after testing. |
 | `tracking.meta.api_version` | `'v21.0'` | The Graph API version in the URL. |
+| `webhook_manager.enabled` | `true`, env `STATAMIC_FUNNELS_WEBHOOK_MANAGER` | Off, the funnel events are not offered as [Webhook Manager triggers](/funnels/webhooks). Without that addon it does nothing. |
 
 ## `route_prefix`
 
@@ -141,6 +142,7 @@ and two addons granting the same thing is worse than neither.
 | --- | --- |
 | `FUNNELS_META_CAPI_TOKEN` | The Meta Conversions API access token. A secret, so it is not a config value. |
 | `FUNNELS_META_TEST_EVENT_CODE` | Routes server events to the Events Manager's test view. |
+| `STATAMIC_FUNNELS_WEBHOOK_MANAGER` | `webhook_manager.enabled`; `false` hides the funnel triggers in Webhook Manager. |
 
 Every other switch is a config value, because it is a decision about the site rather than
 about the environment it runs in.

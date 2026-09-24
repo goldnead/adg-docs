@@ -93,5 +93,6 @@ recorded in `docs/EXTRACTION.md` in the package.
 - [Who sees a lesson](/courses/visibility)
 - [When a payment fails](/courses/payment-failure)
 - [Bundles and teams](/courses/teams)
+- [Webhooks](/courses/webhooks): the twelve events as Webhook Manager triggers
 - [Reference](/courses/reference): facade, events, tables, routes, permissions
 - [Troubleshooting](/courses/troubleshooting)

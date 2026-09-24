@@ -284,6 +284,7 @@ export const addons = [
     pages: [
       { text: 'Concepts', link: 'concepts' },
       { text: 'Outbound webhooks', link: 'outbound' },
+      { text: 'Triggers from the suite', link: 'suite-triggers' },
       { text: 'Payload templates', link: 'templates' },
       { text: 'Authentication & signing', link: 'auth' },
       { text: 'Deliveries, retries & replay', link: 'deliveries' },
@@ -575,6 +576,7 @@ export const addons = [
       { text: 'The detail page and the communication log', link: 'communications' },
       { text: 'Tax facts and retention', link: 'tax-and-retention' },
       { text: 'Consent, withdrawal and cancellation', link: 'recht' },
+      { text: 'Webhooks', link: 'webhooks' },
     ],
   },
   {
@@ -628,6 +630,7 @@ export const addons = [
       { text: 'Setup fee and countries', link: 'setup-fee' },
       { text: 'Links and QR codes', link: 'links' },
       { text: 'Seats for groups', link: 'seats' },
+      { text: 'Webhooks', link: 'webhooks' },
       { text: 'In a template', link: 'templates' },
     ],
   },
@@ -647,6 +650,7 @@ export const addons = [
       { text: 'Credit notes and refunds', link: 'credit-notes' },
       { text: 'Delivery and storage', link: 'delivery' },
       { text: 'Exports for tax and bookkeeping', link: 'exports' },
+      { text: 'Webhooks', link: 'webhooks' },
     ],
   },
   {
@@ -664,6 +668,7 @@ export const addons = [
       { text: 'The checkout step', link: 'checkout' },
       { text: 'Embedding and in-app browsers', link: 'embedding' },
       { text: 'Tracking code and the Meta pixel', link: 'tracking' },
+      { text: 'Webhooks', link: 'webhooks' },
       { text: 'Landing pages from entries', link: 'landing-pages' },
       { text: 'Deadlines and split tests', link: 'deadlines-and-tests' },
       { text: 'Where people stop', link: 'analytics' },
@@ -685,6 +690,7 @@ export const addons = [
       { text: 'Payouts', link: 'payouts' },
       { text: 'The partner area', link: 'partner-area' },
       { text: 'The Control Panel', link: 'control-panel' },
+      { text: 'Webhooks', link: 'webhooks' },
     ],
   },
   {
@@ -739,6 +745,7 @@ export const addons = [
       { text: 'Who sees a lesson', link: 'visibility' },
       { text: 'When a payment fails', link: 'payment-failure' },
       { text: 'Bundles and teams', link: 'teams' },
+      { text: 'Webhooks', link: 'webhooks' },
     ],
   },
   {
