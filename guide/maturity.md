@@ -1,6 +1,6 @@
 # Maturity
 
-**This suite is work in progress.** Thirty-two packages, twenty-four of them
+**This suite is work in progress.** Thirty-three packages, twenty-four of them
 public inside five weeks. They are tagged, all of them are on Packagist, they
 have documentation, and the documentation reads finished.
 That last part is misleading, so this page says plainly what is behind each
@@ -67,6 +67,6 @@ second place to update and therefore no second place to forget.
 
 A level says how far along an addon is. It says nothing about whether it costs
 money, and the two do not line up: some MIT packages are proven, and some
-commercial ones are new. Twenty-three packages are commercial and exactly one of them
+commercial ones are new. Twenty-four packages are commercial and exactly one of them
 can be bought today. That is a separate problem with a separate page:
 [Licensing](/guide/licensing).

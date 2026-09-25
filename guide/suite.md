@@ -1,10 +1,10 @@
 # The suite
 
-Thirty-two packages, six layers. Every arrow below is a Composer dependency;
+Thirty-three packages, six layers. Every arrow below is a Composer dependency;
 anything not drawn is optional and detected at runtime with `class_exists`,
 which is why you can install any addon without the rest.
 
-All thirty-two are tagged and published on Packagist, so `composer require`
+All thirty-three are tagged and published on Packagist, so `composer require`
 resolves any of them and pulls in whatever it depends on.
 
 ```
@@ -56,7 +56,7 @@ Standalone ───────────────────────
   webhook-manager · automations · activity · notifications ·
   email-templates · preference-center · entitlements ·
   assessments · events · toc · booking · clientrooms · courses ·
-  private-media · consent · smartlinks
+  private-media · consent · smartlinks · accounts
 
   — none of these requires another domain addon.
 ```
@@ -317,6 +317,17 @@ drift apart. Node kinds are data and the wording belongs to the host, which is
 what lets one editor speak two vocabularies. Infrastructure rather than a
 product: it is here for the developer building on it.
 
+**[Accounts](/accounts/)** &nbsp;·&nbsp; `goldnead/statamic-accounts`
+
+What Statamic leaves to you around an account: email verification with a
+middleware, changing the address with confirmation, deleting the account after a
+grace period, and a personal data export as a ZIP with one file per addon. The
+deletion runs every addon's eraser in one transaction and keeps what the law
+says must be kept, payments and invoices. A customer overview in the Control
+Panel puts one person's payments, grants, teams and history on one screen, with
+core's "Sign in as". One table, seven tags, ten events, six mails. Commercial,
+and not sold.
+
 ### Content tooling
 
 **[Events](/events/)** &nbsp;·&nbsp; `goldnead/statamic-events`
@@ -392,6 +403,8 @@ nothing.
 | Courses | Payments | The Course Progress entry sits in the suite's shared nav section instead of under Content |
 | Certificates | Payments | The Certificates entry sits in the suite's shared nav section instead of under Content |
 | Private Media | Entitlements | A file opens for whoever holds the product named by its resource; without Entitlements every request is refused |
+| Accounts | Payments, Entitlements, LeadHub, Notifications, Invoices, Activity | Each one's share of the person in the customer overview, the data export and the deletion; payments and invoices are kept |
+| Accounts | Automations or Webhook Manager | Every account event as a trigger |
 | Products | Offers | The product picker in the offer form lists what the products table holds, brand-scoped, instead of only the config file's handles |
 | Anything with figures to report | Insights | The addon's group appears on the Metrics screen, with the period, the chart and the splits supplied by Insights |
 

@@ -56,7 +56,7 @@ resolve the identity and the brand while you still have them, and pass them in.
 
 ## What is scheduled
 
-Five addons register commands with Laravel's scheduler automatically. Everything
+Six addons register commands with Laravel's scheduler automatically. Everything
 else you schedule yourself.
 
 | Command | Frequency | Registered by | Purpose |
@@ -69,6 +69,7 @@ else you schedule yourself.
 | `automations:run-scheduled` | frequently | Automations | starts time-triggered automations |
 | `webhook-manager:dispatch-retries` | every minute | Webhook Manager | runs the outbound deliveries whose retry is due |
 | `lead-magnets:sweep` | hourly | Lead Magnets | clears confirmation tokens whose window has closed |
+| `accounts:purge` | daily at 03:40 | Accounts | deletes the accounts whose grace period is over |
 
 And the ones you have to register yourself, which is the part most installs get
 wrong:

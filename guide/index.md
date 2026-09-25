@@ -1,8 +1,8 @@
 # Introduction
 
-This site documents thirty-two packages for **Statamic 6**. They are separate
+This site documents thirty-three packages for **Statamic 6**. They are separate
 Composer packages, released and versioned independently, and each one is useful
-on its own. Thirty of them are Statamic addons; Identity Contracts and Flow
+on its own. Thirty-one of them are Statamic addons; Identity Contracts and Flow
 Canvas are plain libraries the addons build on, the first needing Laravel and
 nothing else, the second only PHP. What makes them a suite is that they agree on
 four things: how a brand is scoped, who an actor is, where configuration lives,
@@ -11,7 +11,7 @@ and which addon owns which concern.
 If you only ever install one of them, you can ignore all four. This guide exists
 for the point at which you install the second one.
 
-All thirty-two are tagged and published on Packagist, so a bare
+All thirty-three are tagged and published on Packagist, so a bare
 `composer require` resolves any of them.
 
 ## What is here
@@ -21,11 +21,11 @@ All thirty-two are tagged and published on Packagist, so a bare
 | Foundation | [Brand Context](/brand-context/), [Identity Contracts](/identity-contracts/), [Suppression](/suppression/) | Install-once packages the others build on. Inert on their own. |
 | Integration | [Webhook Manager](/webhook-manager/), [Automations](/automations/) | Getting data in and out of the site, and reacting to events. |
 | CRM & marketing | [LeadHub](/leadhub/), [Marketing](/marketing/), [Preference Center](/preference-center/), [Lead Magnets](/lead-magnets/), [Assessments](/assessments/), [Email Templates](/email-templates/) | Contacts, consent, campaigns. |
-| Platform | [Activity](/activity/), [Notifications](/notifications/), [Entitlements](/entitlements/), [Booking](/booking/), [Client Rooms](/clientrooms/), [Courses](/courses/), [Certificates](/certificates/), [Private Media](/private-media/), [Flow Canvas](/flow-canvas/) | Shared services any domain addon can record into, ask, or build on. |
+| Platform | [Activity](/activity/), [Notifications](/notifications/), [Entitlements](/entitlements/), [Booking](/booking/), [Client Rooms](/clientrooms/), [Courses](/courses/), [Certificates](/certificates/), [Private Media](/private-media/), [Flow Canvas](/flow-canvas/), [Accounts](/accounts/) | Shared services any domain addon can record into, ask, or build on. |
 | Commerce | [Payments](/payments/), [Products](/products/), [Offers](/offers/), [Invoices](/invoices/), [Funnels](/funnels/), [Insights](/insights/), [Affiliates](/affiliates/) | Selling on the site you already run: the till, the thing sold, how it is presented, the document, the figures and the partners who sell with you. |
 | Content | [Events](/events/), [Table of Contents](/toc/), [Inline Edit](/inline-edit/), [Smart Links](/smartlinks/), [Consent](/consent/) | Dated content, editing on the live page, a landing page per song, cookie consent, and front-end helpers for editorial work. |
 
-A one-page tour of all thirty-two, with the dependency graph, is in
+A one-page tour of all thirty-three, with the dependency graph, is in
 [The suite](/guide/suite). If you know the problem but not the addon, read
 [Choosing an addon](/guide/choosing).
 

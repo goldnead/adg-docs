@@ -237,6 +237,7 @@ work around: a ledger you can quietly edit is not a ledger.
 | Affiliates | — | none; partners, clicks, referrals, commissions and payouts are the books of the programme and are kept |
 | Offers | — | none; seat pools keep the names and addresses of the invited people |
 | Invoices | — | none; export archives stay on `export.disk` until you delete them |
+| Accounts | `accounts:purge` | deletes accounts whose grace period is over, **scheduled** daily at 03:40; a deletion request keeps the user id, without address or name, as the record |
 
 ::: warning Nothing here prunes itself
 Deliveries and run logs are the two tables that grow fastest, and neither
@@ -256,6 +257,10 @@ Named plainly rather than implied:
 - LeadHub has **no GDPR anonymisation command** of its own and no manual contact
   merge UI. Archiving and deleting a contact are what exist today.
 - Notifications has no retention command in v1.
-- There is no cross-addon "erase this person everywhere" operation. A deletion
-  request today means: delete or archive the LeadHub contact, unsubscribe and
-  suppress in Marketing, and run `activity:anonymize --contact=<uuid>`.
+- "Erase this person everywhere" exists only for a person **with an account**, through
+  [Accounts](/accounts/deletion): its deletion runs the erasers of Entitlements, LeadHub,
+  Notifications, Teams and Activity in one transaction, keeps Payments and Invoices, and
+  records which was which. Marketing and Suppression have no eraser there. For a
+  subscriber without an account, a deletion request still means: delete or archive the
+  LeadHub contact, unsubscribe and suppress in Marketing, and run
+  `activity:anonymize --contact=<uuid>`.

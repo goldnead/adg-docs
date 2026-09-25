@@ -36,7 +36,7 @@ export const LAYERS = {
  * How far along each addon is.
  *
  * The suite reads finished. It is not: twenty-four packages went public inside
- * five weeks and eight more came later, twenty-three of the thirty-two are
+ * five weeks and nine more came later, twenty-four of the thirty-three are
  * declared commercial, and exactly one can be bought. A reader
  * deciding whether to put one of these on a client site has no
  * way to tell a package that has run several brands for months from one that
@@ -101,6 +101,7 @@ export const MATURITY_BY_SLUG = {
   certificates: 'experimental',
   smartlinks: 'experimental',
   affiliates: 'experimental',
+  accounts: 'experimental',
 }
 
 /** The exceptions a one-word level would misrepresent. */
@@ -125,6 +126,8 @@ export const MATURITY_NOTES = {
     'Built on 23 September 2026 for a band site and exercised in the playground: the landing page, the counting redirect, the platform badge in the entry form, the link cleanup, the dead-link badges and filter, and accepting and rejecting suggestions on the Control Panel screen. Installed on that band site, anders-band.de, in a local copy only; not live there or on any other site yet. On 23 September 2026 auto-fill ran read-only against the live Deezer and Apple Music APIs on that band\'s catalogue: all 39 songs with a Deezer link identified, no link found that was wrong. Spotify and Tidal have not run against their APIs, for want of credentials, and are covered by tests with faked responses only; YouTube was not part of that run. On Packagist at 0.2.1.',
   affiliates:
     'Built on 23 September 2026 and exercised in the playground against Payments and Offers: attribution by link and by coupon, commissions, refunds before and after a payout, joint ventures, payout lists and the partner area. No real sale has been attributed, and no production site uses it yet. On Packagist at 0.2.0.',
+  accounts:
+    'Built on 25 September 2026 and exercised in the playground: verification, the address change, deletion with its blockers, the export and the customer overview. ChoirLive is being moved onto it; no production site uses it yet. On Packagist at 0.1.0.',
   'inline-edit':
     'Built on 19 September 2026 and running on the public demo, but on no client site yet. On Packagist since the same day, so the install below resolves.',
 }
@@ -214,6 +217,12 @@ export const SALES_BY_SLUG = {
   // Ob "not-sold" oder "suite-only" entscheidet Adrian; die EULA bewegt sich
   // zuerst, dann dieser Eintrag. Bis dahin meldet sync-licenses genau diese Zeile.
   affiliates: 'not-sold',
+  // OFFEN (25.09.2026): Adrian hat entschieden, dass Accounts, Teams und App API
+  // Teil der Suite-Lizenz werden. Schedule A der EULA bewegt sich erst, wenn alle
+  // drei getaggt sind (Branch eula-accounts-teams-app-api). Bis dahin steht
+  // Accounts hier als nicht verkauft, und sync-licenses meldet genau diese Zeile,
+  // weil Schedule A das Paket noch nicht nennt.
+  accounts: 'not-sold',
 }
 
 export const salesOf = (slug) => SALES_BY_SLUG[slug] ?? null
@@ -814,6 +823,27 @@ export const addons = [
       { text: 'What is in here, and what is not', link: 'concepts' },
       { text: 'Kinds are data', link: 'kinds' },
       { text: 'Using it in your own addon', link: 'consuming' },
+    ],
+  },
+  {
+    slug: 'accounts',
+    name: 'Accounts',
+    package: 'goldnead/statamic-accounts',
+    license: 'Commercial',
+    layer: 'platform',
+    tagline:
+      'What Statamic leaves to you around an account: email verification, changing the address, deletion with a grace period, a data export, and a customer overview in the Control Panel.',
+    icon: '◉',
+    // Nothing has gone wrong in the field yet, so there is no troubleshooting
+    // page to write honestly. The known gaps are on the overview page.
+    troubleshooting: false,
+    pages: [
+      { text: 'Tags and forms', link: 'frontend' },
+      { text: 'Deleting an account', link: 'deletion' },
+      { text: 'The data export', link: 'export' },
+      { text: 'Events', link: 'events' },
+      { text: 'Mails', link: 'mails' },
+      { text: 'The Control Panel', link: 'control-panel' },
     ],
   },
 ]

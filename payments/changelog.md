@@ -12,6 +12,48 @@ Release notes for `goldnead/statamic-payments`, as published with the package.
 Cross-version upgrade notes for the whole suite are in
 [Upgrading](/guide/upgrading).
 
+## 1.27.0 — 2026-09-25
+
+### Upgrading
+
+- No migration, no new permission, no new config key. Payments without `for` behave as before,
+  except that a refund, chargeback, pause or end now touches only the grants of that purchase.
+- A caller that put `entitlement_subject` into `meta` itself (statamic-teams until its next
+  release) now gets an `InvalidArgumentException`; pass `for` instead.
+- A subclass of `EntitlementsBridge` that overrides `grantSlug()`, `grantLine()` or `extendFor()`
+  must widen `string $subject` to `mixed $subject`: the subject is now resolved before it gets there.
+
+### Added
+
+- **Buying for someone else (a team): `$details['for']`.** A saved Eloquent model, a Statamic user
+  or a `SubjectReference`, checked at the till (resolvable type, existing record; otherwise the
+  address, with a warning). Stored as `meta.entitlement_subject = {type, id}`, which is now a
+  reserved key: passing it inside `meta` throws. The entitlements bridge then grants, renews,
+  pauses, closes and revokes for that subject instead of the buyer's address.
+- **Refund, chargeback, pause and end touch only this purchase's grants**: `source =
+  statamic-payments` and `source_ref` among the payment's and its subscription's provider ids
+  (current, previous, first payment). Before, a refund revoked every grant of the buyer on that
+  product, including a second purchase and one made by hand.
+- **A renewal extends this subscription's own grant** instead of calling entitlements' `renew()`,
+  which took any grant of the subject and could push a grant made by hand (or another
+  subscription's) forward. Never shortens, fires `EntitlementRenewed`, grants only when the
+  subscription has no grant of its own. Same for a pause in `keep` mode.
+- A price change that restarts the agreement at the provider remembers the old provider id, so its
+  grants and late cycles are still found.
+- **A subscription keeps billing and subject data of its first payment**: an allow-list
+  (`entitlement_subject`, `team_id`, `team_uuid`, `paid_by`, `company`, `address`,
+  `address_fields`, `vat_id`), extendable with `Subscriptions::inheritMeta(...)`. Cycles, follow-up
+  offers and resumed checkouts keep the subject too. Agreements created before this release find
+  the subject on their first payment.
+- **Team billing address for the invoice.** A `meta.address` in the fields statamic-teams writes
+  (`company`, `name`, `line1`, `line2`, `postal_code`, `city`, `country`; one of them is enough)
+  becomes the text statamic-invoices prints; `meta.company` is filled from it when not set, the
+  fields stay under `meta.address_fields`. An address given as text, or with fields of its own
+  (`street`, …), is kept as it was.
+- **Control Panel:** payments and subscriptions show "Bought for: Team …" in the listing and the
+  detail; names are loaded once per page. The search finds a payment or subscription by the team's
+  name. The payment detail shows the company when it differs from the name.
+
 ## 1.26.0 — 2026-09-24
 
 ### Upgrading

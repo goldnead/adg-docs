@@ -30,7 +30,7 @@ const hasArt = (slug) => Boolean(ART[slug])
 
 /**
  * The card is where somebody decides which addon to open, so it is where the
- * level has to be. Thirty-two cards that all look equally finished is the
+ * level has to be. Thirty-three cards that all look equally finished is the
  * misleading part of this page, not the wording of any one tagline.
  */
 const maturity = (slug) => MATURITY[maturityOf(slug)] ?? null

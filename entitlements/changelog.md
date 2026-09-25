@@ -16,7 +16,50 @@ All notable changes to this package are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this package
 follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.5.0] — 2026-09-25
+
+### Notes
+
+- `consume()` and `release()` are new in this release; no released API changes. `consume()`
+  returns `?UsageReceipt`: check with `! consume(...)` or `=== null`. Code written against the
+  development branch, where it briefly returned `bool`, must drop `=== false` / `=== true`.
+
+### Added
+
+- **Limits.** Products carry limits (`key => number|null`), set in the Control Panel
+  (`Entitlements → Limits`), with `Entitlements::setLimits()` or in `entitlements.limits.products`.
+  Two kinds: usage per `month`/`year`, counted here (`consume()`, `release()`, `resetUsage()`), and
+  stock the app counts (`withinLimit()`). `limit()`, `remaining()`, `quota()`, `quotasFor()` read them.
+  Highest value over every grant that gives access; usage counts at the subject holding the grant.
+  Bookings are atomic (conditional UPDATE, `insertOrIgnore` against a unique index), raced for real
+  on MySQL and Postgres in CI. New tables `entitlement_limits` and `entitlement_usages`.
+- **Further subjects.** `Entitlements::extendSubjects()` and `Contracts\SubjectExpander` (or the tag
+  `entitlements.subject-expanders`): a team's grants count for its members in `decide()`, `allows()`,
+  `activeProductSlugsFor()` and every limit. Never in `forSubject()` or writes.
+- Events `LimitReached`, `UsageConsumed`, `UsageReset`; `entitlements:announce` also announces
+  periods that ended.
+- Webhook Manager: all eight events are triggers (`entitlements.*`). Automations: the three limit
+  events are triggers.
+- "Limit reached" mail as an email-templates template (`entitlements-limit-reached`), off by default,
+  switched on per brand in the settings. `Entitlements::mailRecipientsUsing()`.
+- Settings: `limits.fallback_product`, `limits.period_anchor`, `mail.limit_reached.enabled`,
+  `mail.limit_reached.template`.
+- Control Panel: limits per product, the subject's limits on a grant with a reset, and a wiring page.
+  New permission `manage entitlements limits`.
+- A Statamic user (file or Eloquent repository) is accepted as a subject.
+- `consume()` returns a `UsageReceipt` (null when refused); `release(..., receipt:)` gives a booking
+  back into its own period and holder, up to what was booked. The server keeps every receipt
+  (table `entitlement_usage_receipts`) and checks a release against that copy only: the id is the
+  one thing read from what the caller presents; the brand must be the current one, the key the one
+  asked about, the holder the subject or one it acts for. `resetUsage()` closes the open receipts
+  of the counter it resets, in the same transaction. Claim and deduction in one transaction,
+  never below zero. Without a receipt a release stays in the current period and logs when it finds
+  nothing.
+- Fallback product per subject type (`limits.fallback_products`) and `Entitlements::fallbackUsing()`.
+- `-1` in `limits.products` reads as unlimited; stored limits refuse it.
+- Period anchor per key (`limits.keys.<key>.anchor`).
+- Several teams at equal height resolve to the smallest subject key; `withinLimit()` records a
+  count only for the holder itself.
 
 ### Fixed
 
