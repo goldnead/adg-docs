@@ -12,6 +12,12 @@ Release notes for `goldnead/statamic-activity`, as published with the package.
 Cross-version upgrade notes for the whole suite are in
 [Upgrading](/guide/upgrading).
 
+## 1.4.2 — 2026-09-25
+
+### Fixed
+
+- The German intro of the ledger no longer uses a dash ("Rohe, unveränderliche Fakten, nur zum Lesen. …"). A test keeps the German texts free of them.
+
 ## 1.4.1 — 2026-09-08
 
 ### Fixed: the test bed carried one test's saved settings into the next one on MySQL

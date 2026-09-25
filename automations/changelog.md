@@ -12,6 +12,13 @@ Release notes for `goldnead/statamic-automations`, as published with the package
 Cross-version upgrade notes for the whole suite are in
 [Upgrading](/guide/upgrading).
 
+## 2.22.1 — 2026-09-25
+
+### Fixed
+
+- The empty state and the row actions of the automations list are translated into German ("Build your first automation", "Start from a template" and nine more stood in English).
+- German texts no longer use dashes as punctuation (six strings). A test keeps the list page translated and the German JSON free of them.
+
 ## 2.22.0 — 2026-09-24
 
 ### Upgrading

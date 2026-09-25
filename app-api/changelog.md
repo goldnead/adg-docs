@@ -12,6 +12,13 @@ Release notes for `goldnead/statamic-app-api`, as published with the package.
 Cross-version upgrade notes for the whole suite are in
 [Upgrading](/guide/upgrading).
 
+## 0.1.1 — 2026-09-25
+
+### Fixed
+
+- A 4xx answer of the addon (for instance 400 `stateful_origin_required` on an anonymous request) is no longer written to the error log; 5xx still are.
+- `lang/de.json` no longer translates "Events", "Activity", "Automations" and "Webhook Manager" globally (it renamed the Events addon to "Ereignisse" in the addon list), and no longer overrides Statamic's "User" and "None". The CP page uses keys under `app-api::cp`.
+
 ## 0.1.0 — 2026-09-25
 
 ### Added
