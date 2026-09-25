@@ -36,7 +36,7 @@ export const LAYERS = {
  * How far along each addon is.
  *
  * The suite reads finished. It is not: twenty-four packages went public inside
- * five weeks and eleven more came later, twenty-six of the thirty-five are
+ * five weeks and twelve more came later, twenty-seven of the thirty-six are
  * declared commercial, and exactly one can be bought. A reader
  * deciding whether to put one of these on a client site has no
  * way to tell a package that has run several brands for months from one that
@@ -104,6 +104,7 @@ export const MATURITY_BY_SLUG = {
   accounts: 'experimental',
   teams: 'experimental',
   'app-api': 'experimental',
+  inbox: 'experimental',
 }
 
 /** The exceptions a one-word level would misrepresent. */
@@ -134,6 +135,8 @@ export const MATURITY_NOTES = {
     'Built on 25 September 2026 and exercised in the playground and against a first app being moved onto it: invitations, join codes, roles, team grants in Entitlements and a team as buyer in Payments. No production site uses it yet. On Packagist at 0.1.0.',
   'app-api':
     'Built on 25 September 2026: about fifty endpoints, exercised by its test suite and against a first single-page app being moved onto it. No production app uses it yet. The order form text needs a legal check by whoever ships the app. On Packagist at 0.1.0.',
+  inbox:
+    'Built on 25 September 2026 and exercised in the playground against a faked IMAP server, and against one real Google Workspace mailbox in a test conversation. No production site uses it yet. Tagged 0.1.0, but not on Packagist: the repository is private.',
   'inline-edit':
     'Built on 19 September 2026 and running on the public demo, but on no client site yet. On Packagist since the same day, so the install below resolves.',
 }
@@ -174,7 +177,7 @@ export const SALES = {
   },
   'not-sold': {
     label: 'Not sold',
-    short: 'Commercial and on Packagist, but not part of the Suite as sold today.',
+    short: 'Commercial, but not part of the Suite as sold today.',
   },
 }
 
@@ -227,6 +230,10 @@ export const SALES_BY_SLUG = {
   accounts: 'suite-only',
   teams: 'suite-only',
   'app-api': 'suite-only',
+  // OFFEN (25.09.2026): Inbox steht nicht in Schedule A der EULA und ist nicht
+  // auf Packagist. Ob "not-sold" oder "suite-only" entscheidet Adrian; die EULA
+  // bewegt sich zuerst. Bis dahin meldet sync-licenses genau diese Zeile.
+  inbox: 'not-sold',
 }
 
 export const salesOf = (slug) => SALES_BY_SLUG[slug] ?? null
@@ -884,6 +891,24 @@ export const addons = [
       { text: 'Sessions, confirmation and tokens', link: 'sessions' },
       { text: 'Errors', link: 'errors' },
       { text: 'Your own routes', link: 'own-routes' },
+    ],
+  },
+  {
+    slug: 'inbox',
+    name: 'Inbox',
+    package: 'goldnead/statamic-inbox',
+    license: 'Commercial',
+    layer: 'crm',
+    tagline:
+      'Your existing mailbox as conversations in the Control Panel: fetched over IMAP, linked to LeadHub contacts, answered over the mailbox\'s own SMTP.',
+    icon: '✉',
+    troubleshooting: false,
+    pages: [
+      { text: 'Mailboxes and app passwords', link: 'mailboxes' },
+      { text: 'Reading conversations', link: 'conversations' },
+      { text: 'Replying', link: 'replying' },
+      { text: 'LeadHub and the suite', link: 'suite' },
+      { text: 'Security', link: 'security' },
     ],
   },
 ]

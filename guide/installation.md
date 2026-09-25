@@ -19,7 +19,7 @@ integrations are resolved at boot, not at install time, so installing Webhook
 Manager after LeadHub wires the LeadHub triggers just as installing it before
 would.
 
-The table below covers all thirty-five: which own database tables, and which
+The table below covers all thirty-six: which own database tables, and which
 show up in the Control Panel.
 
 ::: tip What "ships a CP screen" counts
@@ -27,7 +27,7 @@ A screen of its own: the addon registers a Control Panel route, a utility, or a
 nav entry. A fieldtype, a Bard button or a blueprint extension does not count,
 because none of them gives you a page to open.
 
-Twenty-seven of the thirty-five also register a section on the **shared settings
+Twenty-eight of the thirty-six also register a section on the **shared settings
 screen**. That is not a screen of their own, so it reads "no" in the table, but
 you will still find those addons in the Control Panel under Settings. Brand
 Context provides that screen rather than registering a section on it, and
@@ -72,6 +72,7 @@ register no section on it.
 | [Accounts](/accounts/installation) | yes (`account_requests`) | yes, the customer list, the overview and the wiring screen, under Users |
 | [Teams](/teams/installation) | yes (`teams`, `team_members`, `team_invitations`, `team_roles`) | yes, the team list and the wiring screen, under Users |
 | [App API](/app-api/installation) | no; tokens use Sanctum's `personal_access_tokens` when switched on | yes, one page under Tools |
+| [Inbox](/inbox/installation) | yes (five, from `inbox_mailboxes` to `inbox_fetch_failures`) | yes, the inbox and the mailbox screens, under Tools |
 
 No addon in the suite adds a column to another addon's table. Where one needs a
 neighbour's data it reads it through that neighbour's API, so removing one needs
@@ -104,7 +105,7 @@ when your application has an unusual notion of who an actor is.
 Each addon publishes its config under its own tag. Publishing is optional; the
 packaged defaults are the documented ones.
 
-**Thirty-three of the thirty-five have a config file.** Products and Flow Canvas
+**Thirty-four of the thirty-six have a config file.** Products and Flow Canvas
 ship none, so there is no tag for them and nothing missing.
 
 ```bash
@@ -120,6 +121,7 @@ php artisan vendor:publish --tag=email-templates-config
 php artisan vendor:publish --tag=entitlements-config
 php artisan vendor:publish --tag=events-config
 php artisan vendor:publish --tag=identity-contracts-config
+php artisan vendor:publish --tag=inbox-config
 php artisan vendor:publish --tag=invoices-config
 php artisan vendor:publish --tag=lead-magnets-config
 php artisan vendor:publish --tag=leadhub-config
@@ -222,10 +224,11 @@ person to assign to.
 
 ## Installing from a local checkout
 
-**All thirty-five packages are on Packagist**, so the normal case needs nothing
+**Thirty-five of the thirty-six packages are on Packagist**, so the normal case needs nothing
 but `composer require`, and the sibling packages an addon depends on resolve on
 their own. None of the packages declares a `repositories` block, and you do not
-need one either.
+need one either. The exception is [Inbox](/inbox/installation), which is not on
+Packagist yet and needs a VCS repository with access to it.
 
 The exception is development. If you are working against a local checkout of
 one of the packages, add a path or VCS repository to your own `composer.json`:

@@ -12,9 +12,9 @@
 
 **Laravel 11 is not supported by any package in the suite.** Every one of them
 requires `^12.0|^13.0` or narrower, or inherits that floor from `statamic/cms
-^6.0`, and Brand Context — a dependency of twenty of the thirty-five — requires
+^6.0`, and Brand Context — a dependency of twenty-one of the thirty-six — requires
 `^12.40|^13.0`, which sets the real floor for most installs. Assessments,
-Certificates and Affiliates declare that same `^12.40|^13.0` themselves, on top of
+Certificates, Affiliates and Inbox declare that same `^12.40|^13.0` themselves, on top of
 depending on Brand Context, and Courses, Private Media, Smart Links, Accounts, Teams and App API declare it without
 depending on Brand Context. Ten
 packages, Client Rooms and Table of Contents among them, declare no Laravel
@@ -75,7 +75,7 @@ for you:
 | `statamic-products` | `statamic-payments` | A product is read through the payment catalogue, and contributing to it needs `^1.15`. |
 | `statamic-lead-magnets` | `statamic-entitlements` | The grant behind a confirmed download is an entitlement. |
 | `statamic-certificates` | `statamic-courses` | A certificate is issued on `CourseCompleted`; "completed" is Courses' word. |
-| twenty of the thirty-five | `statamic-brand-context` | See [Multi-brand](#multi-brand) below. |
+| twenty-one of the thirty-six | `statamic-brand-context` | See [Multi-brand](#multi-brand) below. |
 
 Everything beyond that is a `suggest` plus a runtime `class_exists` check. The
 version constraints that matter when both are installed:
@@ -140,13 +140,14 @@ install that had LeadHub. Always resolve the root first.
 | Accounts | yes, `dist/build/` | yes |
 | Teams | yes, `dist/build/` | yes |
 | App API | yes, `dist/build/` | yes |
+| Inbox | yes, `dist/build/` | yes |
 | others | no CP JavaScript of their own | no |
 
 Brand Context is easy to overlook in that list: it is mostly an invisible
 foundation package, but it does ship an Inertia CP page for brand membership
 and therefore a compiled bundle of its own.
 
-Assessments, Client Rooms, Courses, Certificates, Smart Links, Affiliates, Accounts, Teams and App API build
+Assessments, Client Rooms, Courses, Certificates, Smart Links, Affiliates, Accounts, Teams, App API and Inbox build
 to `dist/` rather than `resources/dist/`.
 Either is fine: the path is the addon's `$vite.publicDirectory`, and Statamic
 reads whichever the service provider declares.

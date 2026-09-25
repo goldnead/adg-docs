@@ -15,6 +15,7 @@ works, just badly. This page starts from the problem.
 | Send a newsletter | [Marketing](/marketing/) | Automations' send-email action, which is for one-off transactional mail |
 | Send one email in response to one event | [Automations](/automations/nodes) | Marketing, which is built around lists and consent |
 | Let editors write the email HTML | [Email Templates](/email-templates/) | |
+| Read and answer the mail of an existing mailbox next to the contact it came from | [Inbox](/inbox/) | copying addresses between the mail client and the CRM, which forgets half the conversations |
 | Take money for something | [Payments](/payments/) | a posted price, which is how a €19 thing sells for a cent |
 | Sell the same product twice at different prices | [Offers](/offers/) | two products, which makes the catalogue lie |
 | Give a German buyer a proper invoice | [Invoices](/invoices/) | a receipt email, which is not one |

@@ -56,7 +56,7 @@ resolve the identity and the brand while you still have them, and pass them in.
 
 ## What is scheduled
 
-Seven addons register commands with Laravel's scheduler automatically. Everything
+Eight addons register commands with Laravel's scheduler automatically. Everything
 else you schedule yourself.
 
 | Command | Frequency | Registered by | Purpose |
@@ -71,6 +71,7 @@ else you schedule yourself.
 | `lead-magnets:sweep` | hourly | Lead Magnets | clears confirmation tokens whose window has closed |
 | `accounts:purge` | daily at 03:40 | Accounts | deletes the accounts whose grace period is over |
 | `app-api:prune-exports` | hourly | App API | deletes data exports whose download link has expired |
+| `inbox:fetch` | every minute, without overlapping | Inbox | fetches new mail of every active mailbox over IMAP, one lock per mailbox |
 
 And the ones you have to register yourself, which is the part most installs get
 wrong:

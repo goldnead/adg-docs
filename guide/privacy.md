@@ -237,6 +237,7 @@ work around: a ledger you can quietly edit is not a ledger.
 | Affiliates | — | none; partners, clicks, referrals, commissions and payouts are the books of the programme and are kept |
 | Offers | — | none; seat pools keep the names and addresses of the invited people |
 | Invoices | — | none; export archives stay on `export.disk` until you delete them |
+| Inbox | — | none; fetched mail, replies and attachments on the private disk are kept, and 0.1.0 has no command to prune them |
 | Accounts | `accounts:purge` | deletes accounts whose grace period is over, **scheduled** daily at 03:40; a deletion request keeps the user id, without address or name, as the record |
 
 ::: warning Nothing here prunes itself

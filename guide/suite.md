@@ -1,11 +1,13 @@
 # The suite
 
-Thirty-five packages, six layers. Every arrow below is a Composer dependency;
+Thirty-six packages, six layers. Every arrow below is a Composer dependency;
 anything not drawn is optional and detected at runtime with `class_exists`,
 which is why you can install any addon without the rest.
 
-All thirty-five are tagged and published on Packagist, so `composer require`
-resolves any of them and pulls in whatever it depends on.
+All thirty-six are tagged, and thirty-five are published on Packagist, so
+`composer require` resolves them and pulls in whatever they depend on. Inbox is
+not on Packagist yet; its [installation page](/inbox/installation) says how to
+pull it in.
 
 ```
 Foundation ──────────────────────────────────────────────────────────
@@ -56,7 +58,8 @@ Standalone ───────────────────────
   webhook-manager · automations · activity · notifications ·
   email-templates · preference-center · entitlements ·
   assessments · events · toc · booking · clientrooms · courses ·
-  private-media · consent · smartlinks · accounts · teams · app-api
+  private-media · consent · smartlinks · accounts · teams · app-api ·
+  inbox
 
   — none of these requires another domain addon.
 ```
@@ -78,7 +81,7 @@ are worth naming, because they look like dependencies and are not:
 `notifications` rather than an optional extra: both ask the gate before they
 queue mail, and a gate that might not be there would be no gate at all.
 
-## The thirty-five
+## The thirty-six
 
 ### Foundation
 
@@ -181,6 +184,16 @@ detected when installed.
 Email templates as native Statamic entries with a Bard body, rendered to email
 HTML at send time, with Statamic's own Live Preview wired up. Marketing and
 Automations consume it optionally; neither depends on it.
+
+**[Inbox](/inbox/)** &nbsp;·&nbsp; `goldnead/statamic-inbox`
+
+Your existing mailbox as conversations in the Control Panel. It fetches INBOX and
+Sent over IMAP every minute, threads the mail into conversations, and replies over
+the mailbox's own SMTP, so a reply comes from the real address and lands in the
+normal Sent folder. HTML is sanitised and shown in a sandboxed frame, remote
+images only on a click. With LeadHub installed a conversation is linked to the
+contact with that address and shows up on its timeline. App passwords only in
+this release, so no Microsoft 365. Commercial, not sold, and not on Packagist yet.
 
 ### Commerce
 
@@ -426,6 +439,10 @@ nothing.
 | Teams | Entitlements | A team's grants and limits count for every member; access ends when they leave |
 | Teams | Payments | A team buys, with its billing address; grant, renewals and refunds belong to the team |
 | App API | Accounts, Teams, Entitlements, Payments, Offers | Each one's area of JSON endpoints; without the addon, no routes |
+| Inbox | LeadHub | Conversations linked to the contact with that address, an Emails panel on the contact, received and sent mail on its timeline |
+| Inbox | Suppression | A reply to a hard-bounced, complaining or invalid address is refused |
+| Inbox | Email Templates | The reply form filled from a template with the contact's merge variables |
+| Inbox | Activity or Automations | `inbox.email_received` and `inbox.email_sent` on the ledger, and an "Email received" trigger |
 | Products | Offers | The product picker in the offer form lists what the products table holds, brand-scoped, instead of only the config file's handles |
 | Anything with figures to report | Insights | The addon's group appears on the Metrics screen, with the period, the chart and the splits supplied by Insights |
 
