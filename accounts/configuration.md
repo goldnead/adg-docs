@@ -46,8 +46,8 @@ settings screen needs `manage accounts settings`.
 
 | Key | Default | |
 | --- | --- | --- |
-| `export.enabled` | `true` | Off: the export answers 404, for the customer and in the Control Panel alike. |
-| `export.throttle` | `3,60` | Present in the file, but not read in 0.1.0: the customer's export route is not rate-limited. |
+| `export.enabled` | `true` | Off: the customer's download answers 404. The Control Panel export for admins with `export account data` stays, so a request under Art. 15 GDPR can always be answered. |
+| `export.throttle` | `3,60` | `max,minutes` per person for the customer's download, read on each request (rate limiter `accounts-export`). Since 0.1.1; in 0.1.0 it was not read. |
 
 ## Everything else
 

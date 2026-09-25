@@ -19,7 +19,7 @@ integrations are resolved at boot, not at install time, so installing Webhook
 Manager after LeadHub wires the LeadHub triggers just as installing it before
 would.
 
-The table below covers all thirty-three: which own database tables, and which
+The table below covers all thirty-five: which own database tables, and which
 show up in the Control Panel.
 
 ::: tip What "ships a CP screen" counts
@@ -27,7 +27,7 @@ A screen of its own: the addon registers a Control Panel route, a utility, or a
 nav entry. A fieldtype, a Bard button or a blueprint extension does not count,
 because none of them gives you a page to open.
 
-Twenty-five of the thirty-three also register a section on the **shared settings
+Twenty-seven of the thirty-five also register a section on the **shared settings
 screen**. That is not a screen of their own, so it reads "no" in the table, but
 you will still find those addons in the Control Panel under Settings. Brand
 Context provides that screen rather than registering a section on it, and
@@ -70,6 +70,8 @@ register no section on it.
 | [Consent](/consent/installation) | yes (`consent_records`) | no, a settings section only |
 | [Flow Canvas](/flow-canvas/installation) | no | no |
 | [Accounts](/accounts/installation) | yes (`account_requests`) | yes, the customer list, the overview and the wiring screen, under Users |
+| [Teams](/teams/installation) | yes (`teams`, `team_members`, `team_invitations`, `team_roles`) | yes, the team list and the wiring screen, under Users |
+| [App API](/app-api/installation) | no; tokens use Sanctum's `personal_access_tokens` when switched on | yes, one page under Tools |
 
 No addon in the suite adds a column to another addon's table. Where one needs a
 neighbour's data it reads it through that neighbour's API, so removing one needs
@@ -102,12 +104,13 @@ when your application has an unusual notion of who an actor is.
 Each addon publishes its config under its own tag. Publishing is optional; the
 packaged defaults are the documented ones.
 
-**Thirty-one of the thirty-three have a config file.** Products and Flow Canvas
+**Thirty-three of the thirty-five have a config file.** Products and Flow Canvas
 ship none, so there is no tag for them and nothing missing.
 
 ```bash
 php artisan vendor:publish --tag=accounts-config
 php artisan vendor:publish --tag=activity-config
+php artisan vendor:publish --tag=app-api-config
 php artisan vendor:publish --tag=affiliates-config
 php artisan vendor:publish --tag=assessments-config
 php artisan vendor:publish --tag=brand-context-config
@@ -136,6 +139,7 @@ php artisan vendor:publish --tag=statamic-offers-config
 php artisan vendor:publish --tag=statamic-payments-config
 php artisan vendor:publish --tag=statamic-toc-config
 php artisan vendor:publish --tag=suppression-config
+php artisan vendor:publish --tag=teams-config
 php artisan vendor:publish --tag=webhook-manager-config
 ```
 
@@ -218,7 +222,7 @@ person to assign to.
 
 ## Installing from a local checkout
 
-**All thirty-three packages are on Packagist**, so the normal case needs nothing
+**All thirty-five packages are on Packagist**, so the normal case needs nothing
 but `composer require`, and the sibling packages an addon depends on resolve on
 their own. None of the packages declares a `repositories` block, and you do not
 need one either.

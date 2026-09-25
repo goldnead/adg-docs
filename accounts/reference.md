@@ -73,7 +73,7 @@ middleware group:
 | POST | `email/cancel` | `email.cancel` | |
 | POST | `deletion` | `deletion.request` | `throttle:6,1`, elevated session |
 | POST | `deletion/withdraw` | `deletion.withdraw` | |
-| GET | `export` | `export` | elevated session |
+| GET | `export` | `export` | elevated session, `export.throttle` (since 0.1.1) |
 
 Control Panel routes sit under `/cp/accounts`: the customer list, `wiring`, and
 `customers/{user}` with its actions (export, confirmation resend and mark, deletion schedule

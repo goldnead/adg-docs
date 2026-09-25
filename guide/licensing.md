@@ -89,10 +89,10 @@ members:
 
 ## Buying
 
-**All thirty-three packages are on Packagist**, commercial ones included, and
+**All thirty-five packages are on Packagist**, commercial ones included, and
 every one installs with a bare `composer require`.
 
-Being on Packagist is not the same as being free. **Twenty-four are commercial** and
+Being on Packagist is not the same as being free. **Twenty-six are commercial** and
 **nine are MIT**; the table above is the authoritative list. The commercial ones
 resolve as ordinary Composer packages but are licensed rather than sold.
 

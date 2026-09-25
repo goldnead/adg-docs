@@ -1,10 +1,10 @@
 # The suite
 
-Thirty-three packages, six layers. Every arrow below is a Composer dependency;
+Thirty-five packages, six layers. Every arrow below is a Composer dependency;
 anything not drawn is optional and detected at runtime with `class_exists`,
 which is why you can install any addon without the rest.
 
-All thirty-three are tagged and published on Packagist, so `composer require`
+All thirty-five are tagged and published on Packagist, so `composer require`
 resolves any of them and pulls in whatever it depends on.
 
 ```
@@ -56,7 +56,7 @@ Standalone ───────────────────────
   webhook-manager · automations · activity · notifications ·
   email-templates · preference-center · entitlements ·
   assessments · events · toc · booking · clientrooms · courses ·
-  private-media · consent · smartlinks · accounts
+  private-media · consent · smartlinks · accounts · teams · app-api
 
   — none of these requires another domain addon.
 ```
@@ -78,7 +78,7 @@ are worth naming, because they look like dependencies and are not:
 `notifications` rather than an optional extra: both ask the gate before they
 queue mail, and a gate that might not be there would be no gate at all.
 
-## The thirty-two
+## The thirty-five
 
 ### Foundation
 
@@ -120,6 +120,15 @@ The **orchestration** layer. A visual node-based flow builder in the CP:
 triggers, filters, branches, delays and actions, with test runs against sample
 data and node-by-node run logs. It can delegate webhook delivery to Webhook
 Manager rather than sending its own.
+
+**[App API](/app-api/)** &nbsp;·&nbsp; `goldnead/statamic-app-api`
+
+JSON for single-page apps over Sanctum: Statamic's own login, two-factor,
+passkeys and elevated session behind endpoints, plus the account, teams, access
+and checkout of the sibling addons. It decides nothing itself, and an area whose
+addon is missing has no routes. One error shape, an OpenAPI 3.1 description,
+middlewares for a site's own routes (402 without access, 429 without quota).
+Commercial, and sold only in the Suite.
 
 ### CRM & marketing
 
@@ -328,6 +337,15 @@ Panel puts one person's payments, grants, teams and history on one screen, with
 core's "Sign in as". One table, seven tags, ten events, six mails. Commercial,
 and sold only in the Suite.
 
+**[Teams](/teams/)** &nbsp;·&nbsp; `goldnead/statamic-teams`
+
+Workspaces with members: roles and permissions per team, invitations by link
+bound to the invited address, join codes, a personal team per user. The
+`teams.current` middleware says which team a request is about. A team is a
+subject in Entitlements, so its grants and limits count for every member, and a
+buyer in Payments with its own billing address. Four tables, four mails, ten
+events, an import with fixed ids. Commercial, and sold only in the Suite.
+
 ### Content tooling
 
 **[Events](/events/)** &nbsp;·&nbsp; `goldnead/statamic-events`
@@ -405,6 +423,9 @@ nothing.
 | Private Media | Entitlements | A file opens for whoever holds the product named by its resource; without Entitlements every request is refused |
 | Accounts | Payments, Entitlements, LeadHub, Notifications, Invoices, Activity | Each one's share of the person in the customer overview, the data export and the deletion; payments and invoices are kept |
 | Accounts | Automations or Webhook Manager | Every account event as a trigger |
+| Teams | Entitlements | A team's grants and limits count for every member; access ends when they leave |
+| Teams | Payments | A team buys, with its billing address; grant, renewals and refunds belong to the team |
+| App API | Accounts, Teams, Entitlements, Payments, Offers | Each one's area of JSON endpoints; without the addon, no routes |
 | Products | Offers | The product picker in the offer form lists what the products table holds, brand-scoped, instead of only the config file's handles |
 | Anything with figures to report | Insights | The addon's group appears on the Metrics screen, with the period, the chart and the splits supplied by Insights |
 

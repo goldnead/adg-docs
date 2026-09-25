@@ -36,7 +36,7 @@ export const LAYERS = {
  * How far along each addon is.
  *
  * The suite reads finished. It is not: twenty-four packages went public inside
- * five weeks and nine more came later, twenty-four of the thirty-three are
+ * five weeks and eleven more came later, twenty-six of the thirty-five are
  * declared commercial, and exactly one can be bought. A reader
  * deciding whether to put one of these on a client site has no
  * way to tell a package that has run several brands for months from one that
@@ -102,6 +102,8 @@ export const MATURITY_BY_SLUG = {
   smartlinks: 'experimental',
   affiliates: 'experimental',
   accounts: 'experimental',
+  teams: 'experimental',
+  'app-api': 'experimental',
 }
 
 /** The exceptions a one-word level would misrepresent. */
@@ -127,7 +129,11 @@ export const MATURITY_NOTES = {
   affiliates:
     'Built on 23 September 2026 and exercised in the playground against Payments and Offers: attribution by link and by coupon, commissions, refunds before and after a payout, joint ventures, payout lists and the partner area. No real sale has been attributed, and no production site uses it yet. On Packagist at 0.2.0.',
   accounts:
-    'Built on 25 September 2026 and exercised in the playground: verification, the address change, deletion with its blockers, the export and the customer overview. ChoirLive is being moved onto it; no production site uses it yet. On Packagist at 0.1.0.',
+    'Built on 25 September 2026 and exercised in the playground: verification, the address change, deletion with its blockers, the export and the customer overview. A first app is being moved onto it; no production site uses it yet. On Packagist at 0.1.1.',
+  teams:
+    'Built on 25 September 2026 and exercised in the playground and against a first app being moved onto it: invitations, join codes, roles, team grants in Entitlements and a team as buyer in Payments. No production site uses it yet. On Packagist at 0.1.0.',
+  'app-api':
+    'Built on 25 September 2026: about fifty endpoints, exercised by its test suite and against a first single-page app being moved onto it. No production app uses it yet. The order form text needs a legal check by whoever ships the app. On Packagist at 0.1.0.',
   'inline-edit':
     'Built on 19 September 2026 and running on the public demo, but on no client site yet. On Packagist since the same day, so the install below resolves.',
 }
@@ -217,10 +223,10 @@ export const SALES_BY_SLUG = {
   // Ob "not-sold" oder "suite-only" entscheidet Adrian; die EULA bewegt sich
   // zuerst, dann dieser Eintrag. Bis dahin meldet sync-licenses genau diese Zeile.
   affiliates: 'not-sold',
-  // Seit Schedule A 1.2 in der Suite (Entscheidung Adrian, 25.09.2026), zusammen
-  // mit teams und app-api. Deren Registry-Eintraege kommen mit ihren Doku-Seiten;
-  // bis dahin meldet sync-licenses sie als "in Schedule A but not in the registry".
+  // Seit Schedule A 1.2 (Entscheidung Adrian, 25.09.2026) nur in der Suite.
   accounts: 'suite-only',
+  teams: 'suite-only',
+  'app-api': 'suite-only',
 }
 
 export const salesOf = (slug) => SALES_BY_SLUG[slug] ?? null
@@ -842,6 +848,42 @@ export const addons = [
       { text: 'Events', link: 'events' },
       { text: 'Mails', link: 'mails' },
       { text: 'The Control Panel', link: 'control-panel' },
+    ],
+  },
+  {
+    slug: 'teams',
+    name: 'Teams',
+    package: 'goldnead/statamic-teams',
+    license: 'Commercial',
+    layer: 'platform',
+    tagline:
+      'Workspaces with members, roles per team, invitations and join codes. A team can hold access in Entitlements and buy in Payments.',
+    icon: '◎',
+    troubleshooting: false,
+    pages: [
+      { text: 'Roles, invitations, codes', link: 'concepts' },
+      { text: 'The current team', link: 'current-team' },
+      { text: 'Tags and forms', link: 'frontend' },
+      { text: 'Access and purchases', link: 'access-and-payments' },
+      { text: 'Mails and events', link: 'mails-and-events' },
+      { text: 'Importing teams', link: 'import' },
+    ],
+  },
+  {
+    slug: 'app-api',
+    name: 'App API',
+    package: 'goldnead/statamic-app-api',
+    license: 'Commercial',
+    layer: 'integration',
+    tagline:
+      'A JSON layer for single-page apps over Sanctum: session, account, teams, access and checkout, described in OpenAPI.',
+    icon: '{}',
+    troubleshooting: false,
+    pages: [
+      { text: 'Endpoints', link: 'endpoints' },
+      { text: 'Sessions, confirmation and tokens', link: 'sessions' },
+      { text: 'Errors', link: 'errors' },
+      { text: 'Your own routes', link: 'own-routes' },
     ],
   },
 ]

@@ -199,6 +199,24 @@ export const ART = {
     "light": "#74747c",
     "dark": "#a1a1aa"
   },
+  "accounts": {
+    "from": "#5B8DB8",
+    "to": "#1E3A5F",
+    "light": "#497ba5",
+    "dark": "#5b8db8"
+  },
+  "teams": {
+    "from": "#9AAE3F",
+    "to": "#3D4A14",
+    "light": "#6b7c00",
+    "dark": "#9aae3f"
+  },
+  "app-api": {
+    "from": "#7C3AED",
+    "to": "#0891B2",
+    "light": "#7c3aed",
+    "dark": "#9b62ff"
+  },
   "block-editor": {
     "from": "#57534E",
     "to": "#1C1917",

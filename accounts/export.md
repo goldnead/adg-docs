@@ -51,5 +51,8 @@ A contributor registered later under the same key replaces the shipped one.
 
 ## Switching it off
 
-`export.enabled = false` makes the export answer 404, for the customer and in the Control
-Panel alike.
+`export.enabled = false` makes the customer's download answer 404. The Control Panel export
+stays, so a request under Art. 15 GDPR can always be answered. The customer's download is
+limited to `export.throttle` per person (3 per 60 minutes by default).
+
+In 0.1.0 the switch also closed the Control Panel export, and the limit was not applied.

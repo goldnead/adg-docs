@@ -7,11 +7,11 @@ hero:
   name: Statamic Addons
   text: One suite, one set of docs
   tagline: >
-    Thirty-three packages for Statamic 6: a CRM, email marketing, a visual automation
+    Thirty-five packages for Statamic 6: a CRM, email marketing, a visual automation
     builder, a webhook layer, checkout with products, offers, invoices and a partner programme, an
     activity ledger, notifications, a subscriber preference centre, entitlements,
     gated resources, private media, courses, certificates, assessments, client rooms,
-    customer accounts, events,
+    customer accounts, teams, a JSON API for single-page apps, events,
     smart links for music and content tooling.
     Built to be installed one at a time and to compose when you install the next one.
   # The hero's image block only renders when `image` is set, and the theme's
@@ -69,7 +69,7 @@ features:
 ---
 
 ::: warning This suite is work in progress
-Thirty-three packages, twenty-four of them public inside five weeks, and only some
+Thirty-five packages, twenty-four of them public inside five weeks, and only some
 of them have been proven in production. Every card below carries its level: **Proven** has run
 on live sites for months, **New** is in production but only weeks old, and
 **Experimental** has never been installed anywhere. Read [how far along each
@@ -91,7 +91,7 @@ purpose](/guide/demo).
 
 ## Install what you need
 
-Each addon installs on its own. All thirty-three are on Packagist, so a bare
+Each addon installs on its own. All thirty-five are on Packagist, so a bare
 `composer require` resolves them and pulls in the foundation packages they need.
 Those foundation packages are inert until you configure them.
 

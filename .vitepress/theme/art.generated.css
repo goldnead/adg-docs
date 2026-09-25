@@ -678,6 +678,69 @@ html.dark[data-addon='flow-canvas'] {
   --vp-c-brand-soft: rgba(161, 161, 170, 0.16);
 }
 
+html[data-addon='accounts'] {
+  --gn-accent-from: #5B8DB8;
+  --gn-accent-to: #1E3A5F;
+  --vp-c-brand-1: #497ba5;
+  --vp-c-brand-2: #35668f;
+  --vp-c-brand-3: #5B8DB8;
+  --vp-c-brand-soft: rgba(91, 141, 184, 0.16);
+  --vp-button-brand-bg: #5B8DB8;
+  --vp-button-brand-hover-bg: #1E3A5F;
+  --vp-button-brand-active-bg: #1E3A5F;
+  --vp-button-brand-text: #1a1a1a;
+  --vp-button-brand-hover-text: #ffffff;
+}
+
+html.dark[data-addon='accounts'] {
+  --vp-c-brand-1: #5b8db8;
+  --vp-c-brand-2: #70a3cf;
+  --vp-c-brand-3: #1E3A5F;
+  --vp-c-brand-soft: rgba(91, 141, 184, 0.16);
+}
+
+html[data-addon='teams'] {
+  --gn-accent-from: #9AAE3F;
+  --gn-accent-to: #3D4A14;
+  --vp-c-brand-1: #6b7c00;
+  --vp-c-brand-2: #586700;
+  --vp-c-brand-3: #9AAE3F;
+  --vp-c-brand-soft: rgba(154, 174, 63, 0.16);
+  --vp-button-brand-bg: #9AAE3F;
+  --vp-button-brand-hover-bg: #3D4A14;
+  --vp-button-brand-active-bg: #3D4A14;
+  --vp-button-brand-text: #1a1a1a;
+  --vp-button-brand-hover-text: #ffffff;
+}
+
+html.dark[data-addon='teams'] {
+  --vp-c-brand-1: #9aae3f;
+  --vp-c-brand-2: #b0c457;
+  --vp-c-brand-3: #3D4A14;
+  --vp-c-brand-soft: rgba(154, 174, 63, 0.16);
+}
+
+html[data-addon='app-api'] {
+  --gn-accent-from: #7C3AED;
+  --gn-accent-to: #0891B2;
+  --vp-c-brand-1: #7c3aed;
+  --vp-c-brand-2: #6919d4;
+  --vp-c-brand-3: #7C3AED;
+  --vp-c-brand-soft: rgba(124, 58, 237, 0.16);
+  --vp-button-brand-bg: #7C3AED;
+  --vp-button-brand-hover-bg: #0891B2;
+  --vp-button-brand-active-bg: #0891B2;
+  --vp-button-brand-text: #ffffff;
+  --vp-button-brand-hover-text: #1a1a1a;
+}
+
+html.dark[data-addon='app-api'] {
+  --vp-c-brand-1: #9b62ff;
+  --vp-c-brand-2: #b079ff;
+  --vp-c-brand-3: #0891B2;
+  --vp-c-brand-soft: rgba(155, 98, 255, 0.16);
+}
+
 html[data-addon='block-editor'] {
   --gn-accent-from: #57534E;
   --gn-accent-to: #1C1917;

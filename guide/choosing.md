@@ -24,6 +24,8 @@ works, just badly. This page starts from the problem.
 | Hand a learner who finished a course a certificate a third party can check | [Certificates](/certificates/) | a PDF made by hand, which nobody can verify and nobody can revoke |
 | Stream a video or hand out a file only to the user who may open it | [Private Media](/private-media/) | an asset container with a public URL, which hands the file to anyone who guesses the path |
 | Let customers confirm their address, change it, download their data and delete their account | [Accounts](/accounts/) | a contact form and a manual deletion in every addon, which forgets one of them |
+| Let people work together in a workspace, with roles, invitations and a shared plan | [Teams](/teams/) | a shared login, which nobody can leave and nobody can be removed from |
+| Give a React or Vue app sign-in, account, teams, access and checkout as JSON | [App API](/app-api/) | hand-written controllers around Statamic's auth, which drift from what its own pages do |
 | Record appointments people booked | [Booking](/booking/) | building a calendar, which is a solved problem elsewhere |
 | Ask before setting cookies or loading an embed | [Consent](/consent/) | |
 | Answer "what happened to this person, across every part of the site" | [Activity](/activity/) | LeadHub's timeline, which only knows about the CRM |
