@@ -98,9 +98,9 @@ resolve as ordinary Composer packages but are licensed rather than sold.
 
 The commercial packages are sold in three ways, and which one applies decides
 what you should do about a licence. Nine are meant for individual sale on the
-Statamic Marketplace. Nine are licensed only as part of the Suite, with no
+Statamic Marketplace. Twelve are licensed only as part of the Suite, with no
 individual listing planned. Client Rooms, Assessments, Certificates, Smart
-Links, Affiliates and Accounts are not sold at all yet. The "How it is sold" column above says which is which, for every addon,
+Links and Affiliates are not sold at all yet. The "How it is sold" column above says which is which, for every addon,
 and the same word appears on each addon's own pages.
 
 The grouping is Schedule A of the [Suite EULA](/guide/suite-eula), the contract
@@ -116,13 +116,13 @@ sort it out when the listing goes up. Tags published before the licence changed
 in August 2026 were MIT and stay MIT.
 :::
 
-::: warning Nine are sold only in the Suite
-The nine are <SalesGroup kind="suite-only" />. They carry no individual price and no Marketplace listing, and none is coming. They are licensed as one package at [suite.adriangoldner.dev](https://suite.adriangoldner.dev), under the [Suite EULA](/guide/suite-eula).
+::: warning Twelve are sold only in the Suite
+The twelve are <SalesGroup kind="suite-only" />. They carry no individual price and no Marketplace listing, and none is coming. They are licensed as one package at [suite.adriangoldner.dev](https://suite.adriangoldner.dev), under the [Suite EULA](/guide/suite-eula).
 
-The box above does not apply to these nine. There is no listing to wait for.
+The box above does not apply to these twelve. There is no listing to wait for.
 :::
 
-Client Rooms, Assessments, Certificates, Smart Links, Affiliates and Accounts are
+Client Rooms, Assessments, Certificates, Smart Links and Affiliates are
 commercial as well, and on Packagist, but none of them is part of the Suite as sold today.
 
 Flow Canvas is MIT from 1.2.0 on, and deliberately: Funnels requires it, so a
