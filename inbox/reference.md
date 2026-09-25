@@ -21,13 +21,19 @@ Needs `php artisan schedule:run` every minute on the server.
 ```bash
 php artisan inbox:reclassify --dry-run             # counts only
 php artisan inbox:reclassify [--mailbox=3]         # applies the filter to stored mail
+php artisan inbox:reclassify --reconsider-skipped [--dry-run]   # brings back skipped people
 ```
 
 Applies the [filter](/inbox/filter) to conversations imported earlier. Reads missing headers
 from the server (`BODY.PEEK[HEADER]`, nothing is marked read), deletes bulk and to-yourself
-conversations with their files and writes skip records, and sets unknown people to `new`. Prints
-per mailbox: messages checked, headers read, bulk conversations, to yourself, set to new,
-unchanged, unreadable. Not scheduled.
+conversations with their files and writes skip records, sets unknown people to `new` and takes
+conversations that have become relevant out of it. Prints per mailbox: messages checked, headers
+read, bulk conversations, to yourself, set to new, out of new, unchanged, unreadable.
+
+With `--reconsider-skipped` it goes through the skip records instead (not hidden senders), finds
+each mail by folder and UID or by Message-ID in INBOX and All Mail, imports what no longer counts
+as bulk mail and hashes the records left. Prints: records checked, to import or imported, still
+skipped, not found. Neither is scheduled.
 
 ## Queue job
 
@@ -86,7 +92,7 @@ Under the Control Panel prefix, names prefixed `statamic.cp.`:
 | GET | `inbox/mailboxes/{id}/edit` | `inbox.mailboxes.edit` | `manage inbox mailboxes` |
 | PATCH | `inbox/mailboxes/{id}` | `inbox.mailboxes.update` | `manage inbox mailboxes` |
 | POST | `inbox/mailboxes/{id}/test` | `inbox.mailboxes.test` | `manage inbox mailboxes` |
-| DELETE | `inbox/mailboxes/{id}/rules/{rule}` | `inbox.mailboxes.rules.destroy` | `manage inbox mailboxes` |
+| DELETE | `inbox/mailboxes/{id}/rules/{rule}` | `inbox.mailboxes.rules.destroy` | `reply inbox` |
 
 `GET inbox` answers core's Listing with JSON when asked for it (`tab` one of `open`, `waiting`,
 `closed`, `snoozed`, `new`; `search`, `mailbox`, `filters`, `order`, `perPage` up to 500).
