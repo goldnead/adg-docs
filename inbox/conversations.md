@@ -3,7 +3,7 @@
 <AddonHeader />
 
 **Postfach** under **Tools** opens the conversation list. The nav label carries the number of
-unread conversations, `Postfach (3)`.
+unread relevant conversations, `Postfach (3)`; first contacts in **Neu** are not counted there.
 
 ![The conversation list: a refused app password and two skipped messages above it, tabs Offen, Wartet, Erledigt, Geschlummert, unread conversations with a dot and a "not sent" badge](/screenshots/inbox-conversation-list.png)
 
@@ -11,7 +11,7 @@ The screenshots show the Control Panel in German, the language the strings ship 
 
 ## The list
 
-It is core's listing, with the usual column picker, filters and pagination. Four tabs:
+It is core's listing, with the usual column picker, filters and pagination. Five tabs:
 
 | Tab | German | Holds |
 | --- | --- | --- |
@@ -19,6 +19,10 @@ It is core's listing, with the usual column picker, filters and pagination. Four
 | Waiting | Wartet | The last message is yours; the other side is to answer. |
 | Closed | Erledigt | Marked done. |
 | Snoozed | Geschlummert | Snoozed until a date, whatever the status. |
+| New | Neu | First contacts from people you do not know yet, with their own count. |
+
+The first four show relevant conversations only. Bulk mail never arrives at all; see
+[Only relevant mail](/inbox/filter) for both, and for the actions in **Neu**.
 
 Each row shows the other side (the LeadHub name, else the name the sender gave, else the
 address), the subject with an excerpt of the latest message, the mailbox (only when there is
@@ -42,9 +46,10 @@ conversation by the first rule that matches:
 Otherwise a new conversation opens. Threading never crosses mailboxes. A mail you sent from
 your phone turns up in Sent and joins its conversation like any other.
 
-The newest message decides the state. An incoming one opens the conversation, marks it unread
-and ends a snooze; an outgoing one sets it to waiting. An older message imported late changes
-nothing.
+The newest message decides the state. An incoming one opens the conversation (or files it under
+**Neu** when it is a first contact), marks it unread and ends a snooze; an outgoing one sets it
+to waiting. An older message imported late changes nothing, except that your own answer takes a
+conversation out of **Neu**.
 
 ## A conversation
 

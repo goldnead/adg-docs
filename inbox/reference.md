@@ -18,6 +18,17 @@ that failed as a whole is also logged as an error.
 **Scheduled** by the addon: every minute, `withoutOverlapping(15)`, named `inbox-fetch`.
 Needs `php artisan schedule:run` every minute on the server.
 
+```bash
+php artisan inbox:reclassify --dry-run             # counts only
+php artisan inbox:reclassify [--mailbox=3]         # applies the filter to stored mail
+```
+
+Applies the [filter](/inbox/filter) to conversations imported earlier. Reads missing headers
+from the server (`BODY.PEEK[HEADER]`, nothing is marked read), deletes bulk and to-yourself
+conversations with their files and writes skip records, and sets unknown people to `new`. Prints
+per mailbox: messages checked, headers read, bulk conversations, to yourself, set to new,
+unchanged, unreadable. Not scheduled.
+
 ## Queue job
 
 | Job | Queue | Tries |
@@ -65,6 +76,8 @@ Under the Control Panel prefix, names prefixed `statamic.cp.`:
 | POST | `inbox/conversations/{id}/draft` | `inbox.conversations.draft` | `reply inbox` |
 | POST | `inbox/conversations/{id}/template` | `inbox.conversations.template` | `reply inbox` |
 | POST | `inbox/conversations/{id}/contact` | `inbox.conversations.contact` | `reply inbox` |
+| POST | `inbox/conversations/{id}/accept` | `inbox.conversations.accept` | `reply inbox` |
+| POST | `inbox/conversations/{id}/block` | `inbox.conversations.block` | `reply inbox` |
 | GET | `inbox/attachments/{id}` | `inbox.attachments.show` | `view inbox` |
 | GET | `inbox/mailboxes` | `inbox.mailboxes.index` | `manage inbox mailboxes` |
 | GET | `inbox/mailboxes/create` | `inbox.mailboxes.create` | `manage inbox mailboxes` |
@@ -73,10 +86,13 @@ Under the Control Panel prefix, names prefixed `statamic.cp.`:
 | GET | `inbox/mailboxes/{id}/edit` | `inbox.mailboxes.edit` | `manage inbox mailboxes` |
 | PATCH | `inbox/mailboxes/{id}` | `inbox.mailboxes.update` | `manage inbox mailboxes` |
 | POST | `inbox/mailboxes/{id}/test` | `inbox.mailboxes.test` | `manage inbox mailboxes` |
+| DELETE | `inbox/mailboxes/{id}/rules/{rule}` | `inbox.mailboxes.rules.destroy` | `manage inbox mailboxes` |
 
-`GET inbox` answers core's Listing with JSON when asked for it (`tab`, `search`, `mailbox`,
-`filters`, `order`, `perPage` up to 500). `PATCH inbox/conversations/{id}` accepts `status`
-(`open`, `waiting`, `closed`), `snoozed_until`, `unread` and `contact_id`. There is no route to
+`GET inbox` answers core's Listing with JSON when asked for it (`tab` one of `open`, `waiting`,
+`closed`, `snoozed`, `new`; `search`, `mailbox`, `filters`, `order`, `perPage` up to 500).
+`PATCH inbox/conversations/{id}` accepts `status` (`open`, `waiting`, `closed`),
+`snoozed_until`, `unread` and `contact_id` (a contact LeadHub knows). `POST …/block` takes
+`scope` (`sender` or `domain`) and deletes the covered conversations in Statamic. There is no route to
 delete a mailbox or a conversation, and no front-end route.
 
 ## Tables
@@ -90,6 +106,11 @@ Every table has a `brand_id` and is scoped by Brand Context.
 | `inbox_messages` | Direction (`in`, `out`), Message-ID (unique per mailbox; an overlong one indexed by hash with the full id beside it), `In-Reply-To`, `References`, sender, `to`, `cc`, subject, text, sanitised HTML, text without the quote, `sent_at`, folder and UID, `has_remote_images`, `send_error`, `filed_error`. |
 | `inbox_attachments` | Message, file name, MIME type, Content-ID, size, path on the attachments disk. |
 | `inbox_fetch_failures` | A message that could not be stored: mailbox, folder, UID, error, attempts, first and last seen, `gave_up_at` after three attempts. |
+| `inbox_skipped_messages` | A mail the filter left out: mailbox, folder, UID, Message-ID (unique per mailbox), the other side, reason (`list_header`, `precedence`, `auto_submitted`, `bulk_sender_header`, `noreply_sender`, `bounce`, `mass_outgoing`, `self`, `blocked`), `skipped_at`. No content. |
+| `inbox_block_rules` | A hidden sender or domain of a mailbox: `type` (`sender`, `domain`), `value`. |
+
+Since 0.2 `inbox_mailboxes` also holds `skip_bulk` and `aliases`, `inbox_conversations`
+`accepted_at` (and the status `new`), and `inbox_messages` `filter_headers`.
 
 Deleting a mailbox row cascades to its conversations, messages, attachment rows and failures.
 The files on the attachments disk are not removed by the cascade.

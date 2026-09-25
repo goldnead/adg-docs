@@ -904,6 +904,7 @@ export const addons = [
     pages: [
       { text: 'Mailboxes and app passwords', link: 'mailboxes' },
       { text: 'Reading conversations', link: 'conversations' },
+      { text: 'Only relevant mail', link: 'filter' },
       { text: 'Replying', link: 'replying' },
       { text: 'LeadHub and the suite', link: 'suite' },
       { text: 'Security', link: 'security' },
