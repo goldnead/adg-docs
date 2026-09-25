@@ -217,12 +217,10 @@ export const SALES_BY_SLUG = {
   // Ob "not-sold" oder "suite-only" entscheidet Adrian; die EULA bewegt sich
   // zuerst, dann dieser Eintrag. Bis dahin meldet sync-licenses genau diese Zeile.
   affiliates: 'not-sold',
-  // OFFEN (25.09.2026): Adrian hat entschieden, dass Accounts, Teams und App API
-  // Teil der Suite-Lizenz werden. Schedule A der EULA bewegt sich erst, wenn alle
-  // drei getaggt sind (Branch eula-accounts-teams-app-api). Bis dahin steht
-  // Accounts hier als nicht verkauft, und sync-licenses meldet genau diese Zeile,
-  // weil Schedule A das Paket noch nicht nennt.
-  accounts: 'not-sold',
+  // Seit Schedule A 1.2 in der Suite (Entscheidung Adrian, 25.09.2026), zusammen
+  // mit teams und app-api. Deren Registry-Eintraege kommen mit ihren Doku-Seiten;
+  // bis dahin meldet sync-licenses sie als "in Schedule A but not in the registry".
+  accounts: 'suite-only',
 }
 
 export const salesOf = (slug) => SALES_BY_SLUG[slug] ?? null

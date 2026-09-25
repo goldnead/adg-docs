@@ -19,7 +19,7 @@ Below, "you" means the licensee and "we" means the licensor.
 
 ## Scope, and who may buy
 
-This agreement covers the eighteen commercial packages listed in Schedule A, together the
+This agreement covers the twenty-one commercial packages listed in Schedule A, together the
 goldnead Statamic Addon Suite ("the Suite"). The nine MIT-licensed packages named at the end
 of Schedule A are not covered: they are MIT, and nothing here restricts what you do with them.
 
@@ -279,9 +279,9 @@ place of jurisdiction can be agreed.
 
 ## Schedule A: the packages
 
-Eighteen commercial packages. Nine are intended for individual sale on the Statamic
-Marketplace, and only Table of Contents is listed there today. The other nine are sold only as
-part of the Suite.
+Twenty-one commercial packages. Nine are intended for individual sale on the Statamic
+Marketplace, and only Table of Contents is listed there today. The other twelve are sold only
+as part of the Suite.
 
 **Intended for the Statamic Marketplace**
 
@@ -310,6 +310,9 @@ part of the Suite.
 | Consent | `goldnead/statamic-consent` |
 | Insights | `goldnead/statamic-insights` |
 | Courses | `goldnead/statamic-courses` |
+| Accounts | `goldnead/statamic-accounts` |
+| Teams | `goldnead/statamic-teams` |
+| App API | `goldnead/statamic-app-api` |
 
 **Not covered by this agreement, and MIT-licensed**
 
@@ -332,5 +335,4 @@ Use them under the MIT licence in each package.
 Client Rooms (`goldnead/statamic-clientrooms`), Assessments
 (`goldnead/statamic-assessments`), Certificates (`goldnead/statamic-certificates`), Smart
 Links (`goldnead/statamic-smartlinks`) and Affiliates (`goldnead/statamic-affiliates`). All five
-are commercial. None is published on Packagist,
-and none is part of the Suite as sold today.
+are commercial and published on Packagist, and none is part of the Suite as sold today.

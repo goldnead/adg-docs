@@ -326,7 +326,7 @@ deletion runs every addon's eraser in one transaction and keeps what the law
 says must be kept, payments and invoices. A customer overview in the Control
 Panel puts one person's payments, grants, teams and history on one screen, with
 core's "Sign in as". One table, seven tags, ten events, six mails. Commercial,
-and not sold.
+and sold only in the Suite.
 
 ### Content tooling
 
