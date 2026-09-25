@@ -97,6 +97,7 @@ A refusal is a `Goldnead\Teams\Exceptions\TeamsException` with a stable `reason`
 | `read_only` | 423 | |
 | `role_exists`, `role_protected`, `unknown_permission`, `wildcard_not_allowed`, `invalid_role_handle` | 422 | role editor |
 | `role_in_use` | 409 | `details`: `members`, `invitations` |
+| `role_handle_in_teams` | 409 | `details.teams`: `[{id, name}]` |
 | anything a join guard returns, e.g. `team_full` | 422 | |
 
 ## Middleware

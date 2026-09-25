@@ -132,7 +132,7 @@ export const MATURITY_NOTES = {
   accounts:
     'Built on 25 September 2026 and exercised in the playground: verification, the address change, deletion with its blockers, the export and the customer overview. A first app is being moved onto it; no production site uses it yet. On Packagist at 0.1.1.',
   teams:
-    'Built on 25 September 2026 and exercised in the playground and against a first app being moved onto it: invitations, join codes, roles, team grants in Entitlements and a team as buyer in Payments. Role management in the Control Panel (0.3.0, 26 September 2026) is exercised in the playground only. No production site uses it yet. On Packagist at 0.3.0.',
+    'Built on 25 September 2026 and exercised in the playground and against a first app being moved onto it: invitations, join codes, roles, team grants in Entitlements and a team as buyer in Payments. Role management in the Control Panel (0.3.0, 26 September 2026) is exercised in the playground only. No production site uses it yet. On Packagist at 0.3.1.',
   'app-api':
     'Built on 25 September 2026: about fifty endpoints, exercised by its test suite and against a first single-page app being moved onto it. No production app uses it yet. The order form text needs a legal check by whoever ships the app. On Packagist at 0.1.0.',
   inbox:

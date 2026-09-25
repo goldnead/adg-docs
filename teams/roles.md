@@ -40,8 +40,13 @@ They hold for every caller, the Control Panel and the API alike.
   owner role by a deletion.
 - **A role somebody holds is deleted only with a place to go.** Without `reassign_to` the
   refusal is `role_in_use` (409) with the number of members and open invitations in `details`;
-  the Control Panel asks **Move members first** and offers the other roles. Deleting a team's
-  version of a global role moves nobody: they get the global role back.
+  the Control Panel asks **Move members first** and offers the other roles. Holders are counted
+  inside the deleting transaction and again after it; a holder that appeared in between rolls the
+  deletion back. Deleting a team's version of a global role moves nobody: they get the global role
+  back.
+- **A new global role does not take over team roles.** If teams already use the handle for a role
+  of their own, creating the global role (or resetting a deleted config role) is refused with
+  `role_handle_in_teams` (409), the teams listed in `details.teams`.
 - **Only known permissions.** A role lists permissions from `teams.permissions` and from
   `Teams::registerPermission()`.
 - **Global roles are site business.** With an actor (a signed-in member) every global call is
@@ -50,7 +55,17 @@ They hold for every caller, the Control Panel and the API alike.
   permission `manage team roles` (owners hold it through `*`, `admin` does not by default), and
   only within what they hold: every permission they write, and every permission of a role they
   change, replace, delete or move people into, must be theirs. Their own role is an owner's
-  business. An admin with `change roles` alone cannot touch a role definition.
+  business. An admin with `change roles` alone cannot touch a role definition. Going back from a
+  team's narrower version to the global role grants the global permissions and counts as well:
+  only an owner may restore a global role that holds more than the editor (since 0.3.1).
+
+## When a change takes effect
+
+Roles are read once per request or queue job and kept for its duration; every write through
+Teams empties that store. A job that loops for minutes works with the roles it read first; flush
+`GlobalRoleStore` and `TeamRoleStore` from the container where it must see changes made
+meanwhile. Only a missing `team_global_roles` table falls back to the config; any other database
+error is thrown, so a deleted or narrowed role never gets its config permissions back by accident.
 
 ## Your own permissions
 
