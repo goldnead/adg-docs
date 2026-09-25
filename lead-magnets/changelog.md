@@ -12,6 +12,12 @@ Release notes for `goldnead/statamic-lead-magnets`, as published with the packag
 Cross-version upgrade notes for the whole suite are in
 [Upgrading](/guide/upgrading).
 
+## 3.6.1 — 2026-09-25
+
+### Fixed
+
+- `resources/lang/de.json` no longer translates Statamic's "Disk" globally ("Speicherort" also showed in Statamic's asset container settings). The key was not used by this addon.
+
 ## 3.6.0 — 2026-09-09
 
 ### A missing table is a sentence, not a stack trace

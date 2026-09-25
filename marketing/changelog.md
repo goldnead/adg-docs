@@ -12,6 +12,12 @@ Release notes for `goldnead/statamic-marketing`, as published with the package.
 Cross-version upgrade notes for the whole suite are in
 [Upgrading](/guide/upgrading).
 
+## 2.25.1 — 2026-09-25
+
+### Fixed
+
+- `resources/lang/de.json` no longer translates Statamic's "List", "Schedule" and "Sender" globally ("List" read "Verteiler" on every Statamic screen). The campaign editor uses keys under `marketing::campaigns`.
+
 ## 2.25.0 — 2026-09-22
 
 ### Added: ein Layout lässt sich auch aus Bausteinen bauen

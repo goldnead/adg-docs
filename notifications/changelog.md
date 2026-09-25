@@ -12,6 +12,12 @@ Release notes for `goldnead/statamic-notifications`, as published with the packa
 Cross-version upgrade notes for the whole suite are in
 [Upgrading](/guide/upgrading).
 
+## 1.10.1 — 2026-09-25
+
+### Fixed
+
+- The preference page no longer offers "Lead zugewiesen" and "Follow-up fällig" to subscribers. Both types now apply only to super users and users with the `view leadhub` permission. On a site where every subscriber has an account (ChoirLive) the old line, "has an account", let them through. Sending is unchanged.
+
 ## 1.10.0 — 2026-09-22
 
 ### Fixed: the weekly digest arrived every week with nothing in it

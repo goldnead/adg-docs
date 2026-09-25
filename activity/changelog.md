@@ -12,6 +12,12 @@ Release notes for `goldnead/statamic-activity`, as published with the package.
 Cross-version upgrade notes for the whole suite are in
 [Upgrading](/guide/upgrading).
 
+## 1.4.3 — 2026-09-25
+
+### Fixed
+
+- The settings entry names itself with `settingsTitle()` (brand-context 1.15), in German "Aktivität". It read so only because other addons translated the name "Activity" globally, which they no longer do.
+
 ## 1.4.2 — 2026-09-25
 
 ### Fixed
