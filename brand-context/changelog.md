@@ -12,6 +12,19 @@ Release notes for `goldnead/statamic-brand-context`, as published with the packa
 Cross-version upgrade notes for the whole suite are in
 [Upgrading](/guide/upgrading).
 
+## 1.15.1 — 2026-09-25
+
+### Docs
+
+- README: the settings layer and its optional methods (`settingsTitle()`, `settingsOrder()`,
+  `settingsIcon()`) with their defaults. No code change.
+
+## 1.15.0 — 2026-09-25
+
+### Added
+
+- Optional `settingsTitle()` on a settings provider names its sidebar entry and tab. Without it the addon's name is used, as before. Until now the name was the only way, so an addon that wanted "Postfach-Einstellungen" there translated its own name globally, which renamed it in Statamic's addon list too.
+
 ## 1.14.0 — 2026-09-22
 
 ### Added: eine weiche Kante an der Tableiste, damit Scrollen keine Vermutung bleibt

@@ -64,6 +64,21 @@ app(\Goldnead\BrandContext\Settings\SettingsRegistry::class)->register(Settings:
 The addon still registers its own permission, exactly as before. This package only asks which
 one to check.
 
+### Optional: title, position, icon
+
+Three more static methods, read with `method_exists()`, so a provider written without them keeps
+working:
+
+| Method | Default | What it sets |
+|---|---|---|
+| `settingsTitle(): string` | the addon's name from its package | sidebar entry and tab (since 1.15) |
+| `settingsOrder(): int` | `100`, low sorts first | the tab's position |
+| `settingsIcon(): string` | `sliders-horizontal` | the sidebar icon |
+
+`settingsTitle()` matters most for a host application that registers settings of its own. There
+is no package to take a name from, so the title is derived from the namespace: `choirlive-mail`
+becomes "Choirlive Mail". Return the word you want instead.
+
 ## Field types
 
 | `type` | Control | Notes |

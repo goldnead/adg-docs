@@ -68,6 +68,19 @@ brand. A brand that declares a mail identity and omits the address **sends nothi
 brand that declares none falls back to the seller frozen on *this* invoice rather than the
 host-wide sender, which in a multi-brand setup belongs to somebody else.
 
+### Writing the mail in the Control Panel
+
+Since 2.5, with [Email Templates](/email-templates/) installed, the invoice mail registers there as
+`invoices-invoice` (`delivery.template`, env `INVOICES_MAIL_TEMPLATE`), listed under "Invoices"
+with its occasion and placeholders: `{{ buyer.name }}` (the address when there is no name),
+`{{ buyer.email }}`, `{{ invoice.number }}`, `{{ invoice.date }}`, `{{ amount }}`,
+`{{ seller.name }}`, `{{ site_name }}`. `php please email-templates:import` writes the shipped
+wording as an entry.
+
+Once that entry exists it writes subject and text, in the email-templates layout. The PDF stays
+attached and the sender rules above still apply. **Without an entry, or without the addon, the
+built-in mail goes out unchanged.** Set `delivery.template` to `null` to turn it off.
+
 <Figure
   src="invoices-invoice"
   alt="A rendered German invoice with three lines at two VAT rates, showing net and tax broken out per rate before the total"

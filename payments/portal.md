@@ -34,6 +34,19 @@ Put `route('statamic-payments.portal.request')` and, for the statutory button,
 
 All three, like the switches below, are editable per brand on the shared settings screen.
 
+### Du or Sie
+
+`anrede` (`sie` or `du`, env `STATAMIC_PAYMENTS_ANREDE`, since 1.29) sets how the German texts
+address the buyer: portal, checkout refusals, withdrawal and cancellation pages, the confirmation
+mails, reminders and dunning. The default `sie` is the wording the addon has always shipped. Pick
+the one the rest of your site speaks: an account area that says "du" on one page and "Ihr Vertrag"
+on the next reads like two shops. The statutory button words contain no form of address and are
+the same either way. English is not affected.
+
+The `du` lines ship in `lang/de/du/`. **Published views bypass the setting** if they were published
+before 1.29: they call `__()` directly. Publish them again, or replace `__('statamic-payments::…')`
+in your copies with `\Goldnead\StatamicPayments\Support\Anrede::trans('statamic-payments::…')`.
+
 ## What the buyer may do
 
 | Key | Default | |
