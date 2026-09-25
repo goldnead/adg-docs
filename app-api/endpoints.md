@@ -3,7 +3,7 @@
 <AddonHeader />
 
 **The authoritative description is the OpenAPI 3.1 file:**
-[`openapi.json` for 0.1.0](https://github.com/goldnead/statamic-app-api/blob/v0.1.0/openapi.json)
+[`openapi.json` for 0.2.0](https://github.com/goldnead/statamic-app-api/blob/v0.2.0/openapi.json)
 (every area, 45 paths, request and response bodies, error codes per operation). A running site
 serves its own at `{prefix}/openapi.json`, listing only the areas active there, and
 `php artisan app-api:openapi` writes it to a file. The table below is the overview.
@@ -110,6 +110,46 @@ with the current wording in `details`.
 
 **The order button must read "zahlungspflichtig bestellen"** or an equally unambiguous wording
 (§ 312j BGB). That part is the app's.
+
+## Customer area
+
+Needs [Payments](/payments/) 1.29 or later; documents need [Invoices](/invoices/). Since 0.2.0.
+
+| Method | Path | Needs | |
+| --- | --- | --- | --- |
+| GET | `/billing` | team header | Paid orders and subscriptions (user, and team with `view billing`), `links.cancellation_url`, `links.withdrawal_url`, `display.timezone`, `display.anrede`. |
+| GET | `/billing/payments/{payment}` | team header | One order with `lines` and `documents`. |
+| GET | `/billing/documents` | team header | Invoices and credit notes, newest first. |
+| GET | `/billing/documents/{document}` | team header | The PDF (attachment, `no-store`). |
+| GET | `/billing/subscriptions` | team header | Status, paid until, next charge, price, masked payment method, `actions`. |
+| GET | `/billing/subscriptions/{subscription}` | team header | One subscription. |
+| GET | `/billing/subscriptions/{subscription}/cancel` | team header | What the confirmation page shows before the button. |
+| POST | `/billing/subscriptions/{subscription}/cancel` | team header | Cancel at the end of the paid period (`confirmed: true`). No confirmation step. |
+| GET, POST | `/billing/subscriptions/{subscription}/pause` | team header | Pause preview; pause (`resume_on` optional). |
+| POST | `/billing/subscriptions/{subscription}/resume` | team header | End a pause. |
+| GET, POST | `/billing/subscriptions/{subscription}/switch` | team header | Plans to switch to; switch (`to`). |
+| POST | `/billing/subscriptions/{subscription}/payment-method` | team header | `{url}` of the provider's page for a new payment method (`return_url`: a path on this site). |
+
+The rows and rules are the customer portal's, with the signed-in user in place of the mailed
+link: orders and subscriptions recorded for this user, or carrying the user's **confirmed**
+address; with the team header, the current team's rows for a member with `view billing`. Anything
+else is 404 `not_found`. Changing a team's subscription needs `manage billing`.
+
+Every text comes from Payments, in its form of address (du or Sie) and its display time zone.
+Times are ISO 8601 in that zone, each with a `*_display` twin for the screen.
+
+### Cancelling
+
+`GET …/cancel` gives the confirmation page's content, including the button label
+("Jetzt kündigen"). `POST …/cancel` with `confirmed: true` runs the portal's sequence: the provider
+is asked first, `SubscriptionCancelled` fires, the confirmation goes out by mail (`mail_sent`)
+and is logged at the order. It takes effect at the end of the paid period.
+
+There is no elevated session in the way. § 312k BGB wants the cancellation without extra hurdles,
+and the portal asks for no more than the mailed link. Where a product keeps cancelling out of the
+portal, the answer is 409 `cancel_elsewhere` with the page for cancelling without login; that page
+(`links.cancellation_url`) and the withdrawal function (`links.withdrawal_url`, § 356a BGB) stay
+reachable either way.
 
 ## Tokens
 
