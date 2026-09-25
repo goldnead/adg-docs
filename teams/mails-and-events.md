@@ -37,6 +37,9 @@ Every event extends `Goldnead\Teams\Events\TeamEvent` with a stable `handle()` a
 | `teams.invitation.sent` | |
 | `teams.invitation.accepted` | |
 | `teams.invitation.revoked` | |
+| `teams.role.created` | `role.scope`: `global` or `team`; `team` is `null` for a global role (since 0.3.0) |
+| `teams.role.updated` | `changes`: `label`, `permissions` |
+| `teams.role.deleted` | `reassigned_to`, `reassigned`: where its holders went and how many |
 
 Every payload carries `team_type` at the top level (`personal`, `team` or a type of your own),
 the same value as `team.type`. In Automations each Teams trigger has a **Team type** setting:

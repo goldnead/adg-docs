@@ -7,7 +7,7 @@
 | **Team** | `Goldnead\Teams\Models\Team`: `id`, `uuid`, `name`, `type` (`team`, `personal`, or your own), `owner_id`, `join_method` (`invitation_only` or `join_code`), `join_code`, `settings`, `billing`. |
 | **Membership** | One user in one team: `role`, `meta` (free fields, e.g. a voice part), `is_current`, `joined_at`. Users are stored by string key, so uuids (file users) and integers (Eloquent) both work. |
 | **Invitation** | Addressed to an email, with a role and `meta` copied onto the membership. Expires (7 days by default), is bound to its address, works once. Inviting the same address again replaces the link. |
-| **Role** | Defined in `teams.roles`; a team can add its own in `team_roles`. `owner` holds every permission and cannot be taken from the last owner. |
+| **Role** | Starts from `teams.roles`, changed in the Control Panel, and a team can add or adjust its own. `owner` holds every permission and cannot be taken from the last owner. See [Managing roles](/teams/roles). |
 
 ## Roles
 
@@ -19,9 +19,10 @@ Three ship with the package:
 | `admin` | `invite members`, `remove members`, `change roles`, `update team`, `view billing`, `manage billing` |
 | `member` | none |
 
-Add your own permissions to `teams.permissions` and check them with
-`Teams::can($user, $team, 'your permission')`. A team can define extra roles of its own
-(`team_roles`), for example a section leader who may invite.
+Add your own permissions to `teams.permissions` or with `Teams::registerPermission()` and check
+them with `Teams::can($user, $team, 'your permission')`. Roles are created and changed in the
+Control Panel, globally or for one team, for example a section leader who may invite. See
+[Managing roles](/teams/roles).
 
 ## Nobody hands out more than they hold
 

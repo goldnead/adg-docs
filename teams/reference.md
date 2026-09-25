@@ -52,7 +52,14 @@ Teams::guardJoining(Closure $guard): void             // fn (Team $team, string 
 // Roles
 Teams::can($user, Team $team, string $permission): bool
 Teams::roleOf($user, Team $team): ?string
-Teams::roles(?Team $team = null): array
+Teams::roles(?Team $team = null): array               // scope, source, overrides_global per role
+Teams::permissions(): array                            // handle => label
+Teams::registerPermission(string $handle, ?string $label = null): void
+Teams::createRole(string $handle, string $label, array $permissions = [], ?Team $team = null, $actor = null): array
+Teams::updateRole(string $handle, array $attributes, ?Team $team = null, $actor = null): array
+Teams::deleteRole(string $handle, ?Team $team = null, ?string $reassignTo = null, $actor = null): int
+Teams::resetRole(string $handle): array
+Teams::roleUsage(string $handle, ?Team $team = null): array
 
 // Entitlements and payments
 Teams::entitlementSubject(Team $team)                 // SubjectReference('team', id)
@@ -88,6 +95,8 @@ A refusal is a `Goldnead\Teams\Exceptions\TeamsException` with a stable `reason`
 | `unknown_role`, `last_owner`, `already_owner`, `personal_team`, `team_mismatch`, `team_required` | 422 | |
 | `import_collision` | 409 | a fixed id belongs to another team |
 | `read_only` | 423 | |
+| `role_exists`, `role_protected`, `unknown_permission`, `wildcard_not_allowed`, `invalid_role_handle` | 422 | role editor |
+| `role_in_use` | 409 | `details`: `members`, `invitations` |
 | anything a join guard returns, e.g. `team_full` | 422 | |
 
 ## Middleware
@@ -105,6 +114,7 @@ A refusal is a `Goldnead\Teams\Exceptions\TeamsException` with a stable `reason`
 | `team_members` | one row per user and team: `role`, `meta`, `is_current`, `joined_at` |
 | `team_invitations` | address, role, `meta`, the token as a sha256 hash, expiry, accepted or revoked |
 | `team_roles` | roles a team defined for itself |
+| `team_global_roles` | global roles as changed in the Control Panel; `removed` keeps a deleted config role deleted |
 
 ## Permissions
 
@@ -112,6 +122,7 @@ A refusal is a `Goldnead\Teams\Exceptions\TeamsException` with a stable `reason`
 | --- | --- |
 | `view teams` | **Users → Teams** and the wiring screen |
 | `manage teams` | changes from the Control Panel |
+| `manage team roles` | **Teams → Roles** and the roles panel of a team |
 | `manage teams settings` | the settings section (with Brand Context) |
 
 ## Commands

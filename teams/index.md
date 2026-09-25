@@ -14,6 +14,8 @@ Works with Statamic's file users and Eloquent users alike.
   department), invitations whose token is stored only as a hash, and join codes that survive
   being read aloud. See [Roles, invitations, codes](/teams/concepts).
 - **Roles and permissions per team**, not global. Statamic's roles stay for the Control Panel.
+  Roles are managed in the Control Panel, globally or for one team. See
+  [Managing roles](/teams/roles).
 - **The current team of a request**: the `teams.current` middleware reads it from a header,
   the query, the body or the route and checks that the user is in it. See
   [The current team](/teams/current-team).
@@ -22,7 +24,7 @@ Works with Statamic's file users and Eloquent users alike.
   [Payments](/payments/), with its own billing address. See
   [Access and purchases](/teams/access-and-payments).
 - **Antlers tags and forms** for the usual account pages. See [Tags and forms](/teams/frontend).
-- **Four mails and ten events**, each mail an Email Templates slug, each event a trigger in
+- **Four mails and thirteen events**, each mail an Email Templates slug, each event a trigger in
   Automations and Webhook Manager and an entry in Activity. See
   [Mails and events](/teams/mails-and-events).
 - **Personal team per user** (optional), read-only teams, and an import with fixed ids for

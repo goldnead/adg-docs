@@ -54,7 +54,7 @@ Findings from the ChoirLive end-to-end check.
   Abbuchung" is replaced by "Bezahlt bis".
 - **Cancellation wording:** "Die Kündigung wirkt sofort" contradicted the checkout (end of the paid
   term). Page, confirmation screen and confirmation mail now say: no further charge, the contract
-  ends when the paid period runs out on <date>. Matches what `closeFor()` does with the access.
+  ends when the paid period runs out on &lt;date&gt;. Matches what `closeFor()` does with the access.
 - **Times in the shop's zone:** the cancellation screen and mail, order pages, pause and switch
   notes and the § 312k/§ 356a receipts formatted in `app.timezone`, so a UTC server wrote
   "19:07 Uhr" for 21:07 in Berlin. All go through `LocalTime` now; storage stays UTC.

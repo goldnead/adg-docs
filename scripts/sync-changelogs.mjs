@@ -47,9 +47,23 @@ function escapeInterpolation(markdown) {
         inFence = !inFence
         return line
       }
-      return inFence ? line : line.replaceAll('{{', '&#123;&#123;')
+      return inFence ? line : escapePlaceholders(line.replaceAll('{{', '&#123;&#123;'))
     })
     .join('\n')
+}
+
+/**
+ * Escape a bare placeholder like `<date>` outside inline code.
+ *
+ * A changelog writes "runs out on <date>" as prose; the Vue compiler reads it
+ * as an element without end tag and fails the whole build (payments 1.29,
+ * 26.09.2026). Inside backticks it is code and stays as it is.
+ */
+function escapePlaceholders(line) {
+  return line
+    .split('`')
+    .map((part, index) => (index % 2 === 1 ? part : part.replace(/<([a-z][a-z0-9_.:-]*)>/g, '&lt;$1&gt;')))
+    .join('`')
 }
 
 /**
