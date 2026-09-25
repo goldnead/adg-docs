@@ -61,8 +61,6 @@ Control Panel → Postfach → conversation → reply (text, template, AI draft)
   connected.
 - **Polling, not push.** New mail arrives with the next scheduler run, at most a minute late.
   There is no IMAP IDLE and no inbound webhook.
-- **Not on Packagist.** The repository is private in this release; installing it needs a
-  `repositories` entry and access to the repository. See [Installation](/inbox/installation).
 - **Mailboxes cannot be deleted from the Control Panel.** A mailbox can be switched off
   (`active`), which stops fetching it.
 - **Replies are plain text.** HTML mail is read, not written.

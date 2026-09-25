@@ -39,7 +39,7 @@ apply to any small vendor:
 | Test methods | 2,529 |
 | Packages with CI on every push | 24 of 25 |
 
-Every package but the newest, Inbox, is public on Packagist. You can `composer require` any of them, build with them
+Every package is public on Packagist. You can `composer require` any of them, build with them
 on your own machine, and find out whether they hold up **before** you buy a licence. That is
 deliberate: there is no licence key and no activation, so nothing stops you from evaluating
 the real thing rather than a demo of it.

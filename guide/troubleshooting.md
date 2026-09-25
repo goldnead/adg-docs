@@ -129,8 +129,8 @@ fresh, which produces a half-correct segment. See
 A `composer.json` referencing `../statamic-*` cannot resolve on any machine
 without those sibling directories, including every Docker build. Remove the
 `repositories` block and let the package resolve from Packagist, where
-thirty-five of the thirty-six are published. A path repository is a development convenience
-only. Inbox, the one that is not on Packagist yet, needs a VCS repository instead.
+all thirty-six are published. A path repository is a development convenience
+only.
 
 For private VCS repositories, `preferred-install: source` avoids needing a token
 for the dist zipball, and `COMPOSER_AUTH` must be set **as an environment

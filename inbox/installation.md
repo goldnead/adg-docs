@@ -9,25 +9,10 @@ The IMAP client is `directorytree/imapengine`; it needs no `ext-imap`.
 
 ## Composer
 
-**Inbox is not on Packagist yet.** The repository is private in this release, so Composer
-has to be told where it is, and the machine running `composer install` needs read access to
-`goldnead/statamic-inbox` on GitHub (a token in `auth.json` or an SSH key):
-
-```json
-{
-    "repositories": [
-        { "type": "vcs", "url": "https://github.com/goldnead/statamic-inbox" }
-    ]
-}
-```
-
 ```bash
 composer require goldnead/statamic-inbox
 php artisan migrate
 ```
-
-This is the one package in the suite that needs a `repositories` block. Every sibling it works
-with resolves from Packagist as usual.
 
 The migrations create five tables: `inbox_mailboxes`, `inbox_conversations`, `inbox_messages`,
 `inbox_attachments` and `inbox_fetch_failures`. Every row carries a `brand_id`. Until they

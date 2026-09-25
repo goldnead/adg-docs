@@ -91,9 +91,8 @@ purpose](/guide/demo).
 
 ## Install what you need
 
-Each addon installs on its own. Thirty-five of the thirty-six are on Packagist, so a bare
+Each addon installs on its own. All thirty-six are on Packagist, so a bare
 `composer require` resolves them and pulls in the foundation packages they need.
-[Inbox](/inbox/installation), the newest, is not on Packagist yet.
 Those foundation packages are inert until you configure them.
 
 ```bash

@@ -136,7 +136,7 @@ export const MATURITY_NOTES = {
   'app-api':
     'Built on 25 September 2026: about fifty endpoints, exercised by its test suite and against a first single-page app being moved onto it. No production app uses it yet. The order form text needs a legal check by whoever ships the app. On Packagist at 0.1.0.',
   inbox:
-    'Built on 25 September 2026 and exercised in the playground against a faked IMAP server, and against one real Google Workspace mailbox in a test conversation. No production site uses it yet. Tagged 0.1.0, but not on Packagist: the repository is private.',
+    'Built on 25 September 2026 and exercised in the playground against a faked IMAP server, and against one real Google Workspace mailbox in a test conversation. No production site uses it yet. On Packagist at 0.1.0.',
   'inline-edit':
     'Built on 19 September 2026 and running on the public demo, but on no client site yet. On Packagist since the same day, so the install below resolves.',
 }
@@ -177,7 +177,7 @@ export const SALES = {
   },
   'not-sold': {
     label: 'Not sold',
-    short: 'Commercial, but not part of the Suite as sold today.',
+    short: 'Commercial and on Packagist, but not part of the Suite as sold today.',
   },
 }
 
@@ -230,10 +230,8 @@ export const SALES_BY_SLUG = {
   accounts: 'suite-only',
   teams: 'suite-only',
   'app-api': 'suite-only',
-  // OFFEN (25.09.2026): Inbox steht nicht in Schedule A der EULA und ist nicht
-  // auf Packagist. Ob "not-sold" oder "suite-only" entscheidet Adrian; die EULA
-  // bewegt sich zuerst. Bis dahin meldet sync-licenses genau diese Zeile.
-  inbox: 'not-sold',
+  // Seit Schedule A 1.3 (Entscheidung Adrian, 25.09.2026) nur in der Suite.
+  inbox: 'suite-only',
 }
 
 export const salesOf = (slug) => SALES_BY_SLUG[slug] ?? null

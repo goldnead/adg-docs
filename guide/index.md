@@ -11,9 +11,8 @@ and which addon owns which concern.
 If you only ever install one of them, you can ignore all four. This guide exists
 for the point at which you install the second one.
 
-All thirty-six are tagged. Thirty-five are published on Packagist, so a bare
-`composer require` resolves any of them; [Inbox](/inbox/installation) is not on
-Packagist yet and needs a VCS repository.
+All thirty-six are tagged and published on Packagist, so a bare
+`composer require` resolves any of them.
 
 ## What is here
 

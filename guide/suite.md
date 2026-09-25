@@ -4,10 +4,8 @@ Thirty-six packages, six layers. Every arrow below is a Composer dependency;
 anything not drawn is optional and detected at runtime with `class_exists`,
 which is why you can install any addon without the rest.
 
-All thirty-six are tagged, and thirty-five are published on Packagist, so
-`composer require` resolves them and pulls in whatever they depend on. Inbox is
-not on Packagist yet; its [installation page](/inbox/installation) says how to
-pull it in.
+All thirty-six are tagged and published on Packagist, so `composer require`
+resolves any of them and pulls in whatever it depends on.
 
 ```
 Foundation ──────────────────────────────────────────────────────────
@@ -193,7 +191,7 @@ the mailbox's own SMTP, so a reply comes from the real address and lands in the
 normal Sent folder. HTML is sanitised and shown in a sandboxed frame, remote
 images only on a click. With LeadHub installed a conversation is linked to the
 contact with that address and shows up on its timeline. App passwords only in
-this release, so no Microsoft 365. Commercial, not sold, and not on Packagist yet.
+this release, so no Microsoft 365. Commercial, and sold only in the Suite.
 
 ### Commerce
 
