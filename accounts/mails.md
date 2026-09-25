@@ -8,7 +8,9 @@ Six mails, each a template slug in [Email Templates](/email-templates/):
 | --- | --- | --- |
 | `verify_email` | `accounts-verify-email` | a confirmation link is sent |
 | `confirm_email_change` | `accounts-confirm-email-change` | a new address is requested, to the new address |
+| `email_change_requested` | `accounts-email-change-requested` | a new address is entered, to the current address, before the change counts (since 0.2.0) |
 | `email_changed` | `accounts-email-changed` | the change is confirmed, to the old address |
+| `password_changed` | `accounts-password-changed` | the password was changed, whichever way: profile form, Control Panel, reset link, the host's own code. Not for a new account. Off with `password_change.notify` (since 0.2.0) |
 | `deletion_scheduled` | `accounts-deletion-scheduled` | a deletion is requested, with the withdraw link |
 | `deletion_blocked` | `accounts-deletion-blocked` | a due deletion is blocked, with the reasons and a withdraw link valid for 30 days |
 | `account_deleted` | `accounts-account-deleted` | the account is gone |
@@ -31,6 +33,7 @@ Email Templates). Mails are sent, not queued.
 | `{{ new_email }}`, `{{ old_email }}` | For the address change. |
 | `{{ scheduled_for }}`, `{{ grace_days }}` | For the deletion. |
 | `{{ expires_in_hours }}` | How long the link is valid. |
+| `{{ changed_at }}` | When the password was changed, in the display timezone. |
 | `{{ site_name }}` | `app.name`. |
 
 ## One confirmation mail, not two

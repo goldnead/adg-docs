@@ -36,6 +36,7 @@ screen, which needs `manage payments settings`; only overrides are stored there.
 | `protection.captcha.*` | `off` | `turnstile` or `hcaptcha`, keys in `.env`. **1.25** |
 | `portal.logo_url` · `logo_alt` · `greeting` | `null` | How the customer portal looks. **1.25** |
 | `portal.self_cancel` · `allow_pause` · `allow_switch` | `true` · `false` · `false` | What the buyer may do in the portal. **1.25** |
+| `display_timezone` | `null` (`STATAMIC_PAYMENTS_DISPLAY_TIMEZONE`) | The zone buyers read dates and times in (portal, cancellation screen and mail, reminders). Null: `legal.timezone`, then Statamic's `display_timezone`, then `app.timezone`. Storage stays UTC; never change `app.timezone` to fix a displayed time. **1.28** |
 | `rate_limit` | `60` | Per minute, per IP, on the webhook. |
 | `webhook_manager.enabled` | `true` (`STATAMIC_PAYMENTS_WEBHOOK_MANAGER`) | Off, no payment moment is offered as a trigger in [Webhook Manager](/payments/webhooks). **1.26** |
 | `follow_up.enabled` | `false` | The post-payment offer. Read [Bumps and follow-up offers](/payments/bumps) before switching it on. |

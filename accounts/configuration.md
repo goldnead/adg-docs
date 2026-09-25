@@ -29,8 +29,9 @@ settings screen needs `manage accounts settings`.
 | Key | Default | |
 | --- | --- | --- |
 | `email_change.expire_minutes` | `1440` | Link lifetime. |
-| `email_change.notify_old_address` | `true` | Tell the old address once the change is confirmed. |
+| `email_change.notify_old_address` | `true` | Tell the current address when a new one is entered, and again once the change is confirmed. |
 | `email_change.redirect` | `/` | Where the link lands. |
+| `password_change.notify` | `true` | Send "Your password was changed" to the account's address after any password change (since 0.2.0). |
 
 ## Deletion
 

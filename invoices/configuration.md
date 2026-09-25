@@ -22,6 +22,7 @@ can be changed by whoever can log in is a tax rule that can be changed by whoeve
 | `seller` | env-backed, empty | Frozen onto every invoice |
 | `seller_per_brand` | `[]` | Merged over `seller` for that brand |
 | `small_amount_cent` | `25000` | Where a Kleinbetragsrechnung ends |
+| `display_timezone` | `null` (`INVOICES_DISPLAY_TIMEZONE`) | The calendar of the invoice date and the service date or period. Null: payments' `display_timezone`, then Statamic's, then `app.timezone`. Frozen onto the invoice when written. A recurring product's invoice states a Leistungszeitraum (§ 14 Abs. 4 Nr. 6 UStG) from its rhythm. 2.4 |
 | `tax.*` | see below | |
 | `webhook_manager.enabled` | `true` (`INVOICES_WEBHOOK_MANAGER`) | Off, the three events are no longer offered as [webhook triggers](/invoices/webhooks). 2.3 |
 

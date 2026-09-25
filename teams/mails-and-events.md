@@ -31,12 +31,17 @@ Every event extends `Goldnead\Teams\Events\TeamEvent` with a stable `handle()` a
 | `teams.team.updated` | |
 | `teams.team.deleted` | |
 | `teams.team.ownership_transferred` | |
-| `teams.member.joined` | `via`: `created`, `added`, `invitation`, `join_code` |
+| `teams.member.joined` | `via`: `created`, `added`, `invitation`, `join_code`. Not fired when a personal team is created (since 0.2.0): that is `teams.team.created` alone. |
 | `teams.member.left` | `reason`: `left`, `removed` |
 | `teams.member.role_changed` | |
 | `teams.invitation.sent` | |
 | `teams.invitation.accepted` | |
 | `teams.invitation.revoked` | |
+
+Every payload carries `team_type` at the top level (`personal`, `team` or a type of your own),
+the same value as `team.type`. In Automations each Teams trigger has a **Team type** setting:
+empty fires for every team, a type only for teams of that type. In Webhook Manager, filter on
+`team_type`.
 
 With [Automations](/automations/) each is a trigger (group "Teams"), with
 [Webhook Manager](/webhook-manager/) a webhook trigger (source type `team`), with
