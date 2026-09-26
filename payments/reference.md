@@ -31,6 +31,7 @@ gateway swappable and the whole surface testable without the network.
 | | `available()` | `bool` — can this provider run subscriptions |
 | | `planFor($handle)` | the rhythm a product declares, or `null` |
 | | `refresh($subscription)` | the row after asking the provider, or `null` |
+| `Support\Cancellations` | `cancel($subscription, $email = null)` | `CancellationOutcome`. The whole cancellation: provider first, then the confirmation mail `CancellationConfirmed`, then the line in the payment's log. What the portal button calls; call it from your own API instead of `Subscriptions::cancel()`. Who may cancel is your check. Since 1.29.1. |
 | `Support\FollowUp` | `accept($original, $productHandle, $context = [])` | the new `Payment`, or `null` |
 | | `eligible($payment)` · `available()` · `alreadyTaken($payment, $handle)` | `bool` |
 | `Support\Refunds` | `record($payment, $amountCent, $reference = null)` | `bool` |
@@ -43,6 +44,11 @@ gateway swappable and the whole surface testable without the network.
 | | `Catalogue::extend($resolver)` (static) | `void` |
 
 `CheckoutResult` is a readonly pair: `->payment` and `->checkoutUrl`.
+
+`CancellationOutcome` has `->status` (`cancelled`, `already_ended`, `busy` while a pause or
+switch talks to the provider, `failed` when the provider did not confirm and nothing was
+written), `->cancelled()` for the first two, `->moment`, `->until` (paid until),
+`->confirmationSent`, `->name`, `->email` and `->subscription`.
 
 `Support\Discount` is a readonly value object: `new Discount(code: 'X', amountCent: 500,
 label: null)`, with `against($totalCent)` returning what is actually taken off.

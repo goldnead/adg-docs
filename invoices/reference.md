@@ -102,7 +102,9 @@ None of them is fixed by trying again. Each is a decision somebody has to make.
 `Models\Invoice` · `Models\InvoiceItem` · `Models\InvoiceCounter`.
 
 `Invoice::KIND_INVOICE` and `Invoice::KIND_CREDIT_NOTE`. `$invoice->items()`,
-`$invoice->reverses()`, `$invoice->isCreditNote()`.
+`$invoice->reverses()`, `$invoice->isCreditNote()`, `$invoice->pdf()` (the PDF bytes through
+the bound `PdfRenderer`, since 2.5.1; this is what puts the download button into the
+`statamic-payments` customer portal).
 
 `update()` and `delete()` throw on both `Invoice` and `InvoiceItem`. Creating a line outside
 `InvoiceItem::whileWriting()` throws too. See
