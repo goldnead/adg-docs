@@ -31,7 +31,8 @@ gateway swappable and the whole surface testable without the network.
 | | `available()` | `bool` — can this provider run subscriptions |
 | | `planFor($handle)` | the rhythm a product declares, or `null` |
 | | `refresh($subscription)` | the row after asking the provider, or `null` |
-| `Support\Cancellations` | `cancel($subscription, $email = null)` | `CancellationOutcome`. The whole cancellation: provider first, then the confirmation mail `CancellationConfirmed`, then the line in the payment's log. What the portal button calls; call it from your own API instead of `Subscriptions::cancel()`. Who may cancel is your check. Since 1.29.1. |
+| `Support\Cancellations` | `cancel($subscription, $email = null)` | `CancellationOutcome`. The whole cancellation: provider first, then the confirmation mail `CancellationConfirmed`, then the line in the payment's log. What the portal button calls; call it from your own API instead of `Subscriptions::cancel()`. Who may cancel is your check. Since 1.29.1. Third argument `array $copies` (1.29.2): further addresses that get the same confirmation as a mail of their own; `CancellationOutcome::$copiedTo`. |
+| `Portal\Display` | `ending($subscription, standalone: false)` | `string` or `null`. „Läuft bis …" while a cancelled agreement's paid term runs („Gekündigt, läuft bis …" with `standalone: true`), „Beendet am <end of term>" after. `Subscription::endsAt()` gives the date. Since 1.29.2. |
 | `Support\FollowUp` | `accept($original, $productHandle, $context = [])` | the new `Payment`, or `null` |
 | | `eligible($payment)` · `available()` · `alreadyTaken($payment, $handle)` | `bool` |
 | `Support\Refunds` | `record($payment, $amountCent, $reference = null)` | `bool` |
