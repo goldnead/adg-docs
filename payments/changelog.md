@@ -16,9 +16,9 @@ Cross-version upgrade notes for the whole suite are in
 
 ### Fixed
 
-- A cancelled agreement whose paid term still runs no longer reads „Beendet am <day it was
-  cancelled>" next to „Bezahlt bis <end of term>". The portal says „Gekündigt · Läuft bis
-  <end of term>" while the term runs and „Beendet am <end of term>" afterwards. New
+- A cancelled agreement whose paid term still runs no longer reads „Beendet am &lt;day it was
+  cancelled&gt;" next to „Bezahlt bis &lt;end of term&gt;". The portal says „Gekündigt · Läuft bis
+  &lt;end of term&gt;" while the term runs and „Beendet am &lt;end of term&gt;" afterwards. New
   `Subscription::endsAt()` (end of the paid term where it lies after the stop, else the stop) and
   `Portal\Display::ending($subscription, standalone: false)`; `standalone: true` gives the
   sentence on its own line („Gekündigt, läuft bis 26.09.2027") for an app.

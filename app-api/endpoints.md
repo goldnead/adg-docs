@@ -144,7 +144,7 @@ Times are ISO 8601 in that zone, each with a `*_display` twin for the screen.
 ("Jetzt kündigen"). `POST …/cancel` with `confirmed: true` runs the portal's sequence: the provider
 is asked first, `SubscriptionCancelled` fires, the confirmation goes out by mail (`mail_sent`)
 and is logged at the order. It takes effect at the end of the paid period: `ended_label` reads
-„Gekündigt, läuft bis …" until then and „Beendet am <end of term>" after it, `ends_at` is that
+„Gekündigt, läuft bis …" until then and „Beendet am &lt;end of term&gt;" after it, `ends_at` is that
 date. For a team's agreement a copy of the confirmation goes to the team's billing address when it
 has one and it is another (`copied_to`; setting `billing.cancellation_copy_to_team`, default on).
 Since 0.2.1.
