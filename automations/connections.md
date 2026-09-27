@@ -77,26 +77,49 @@ in the request as `{{ input.channel }}`. In the builder every input accepts toke
 
 **Request.**
 
-- **Method:** `GET`, `POST`, `PUT`, `PATCH` or `DELETE`.
+- **Method:** `GET`, `POST`, `PUT`, `PATCH` or `DELETE` from the list, or **Other
+  method** for any other HTTP method, e.g. `REPORT`, `PROPFIND` or `MKCALENDAR` for
+  WebDAV and CalDAV. It is uppercased on save. <Badge type="tip" text="2.23.0" />
 - **Path:** appended to the base URL, e.g. `/chat.postMessage` or
   `/users/{{ input.user_id }}`. Values in the path are URL-encoded, and a value of `.` or
   `..` is refused.
 - **URL parameters:** one per row, added after the `?`, e.g. `limit` → `10`. A parameter
   whose value comes out empty is left out rather than sent as `?limit=`.
-- **Request content (JSON):** one field per row, e.g. `text` → `{{ input.text }}`. The
-  addon builds the JSON itself, so a quote in a value cannot break the body. A row that is
-  exactly one placeholder keeps the input's type, so a `number` or `toggle` input arrives
-  as a number or a boolean. No content is sent on a `GET` or when the list is empty.
+- **Request content:** *JSON from fields* or *Raw text*.
+  - **JSON from fields:** one field per row, e.g. `text` → `{{ input.text }}`. The
+    addon builds the JSON itself, so a quote in a value cannot break the body. A row that
+    is exactly one placeholder keeps the input's type, so a `number` or `toggle` input
+    arrives as a number or a boolean. No content is sent on a `GET` or when the list is
+    empty.
+  - **Raw text** <Badge type="tip" text="2.23.0" />: the body is a template, sent exactly
+    as written, with its own **Content type** (e.g. `application/xml; charset=utf-8`).
+    `{{ input.x }}` inserts the value as text, `{{ input.x | json }}` as a JSON literal
+    and `{{ input.x | xml }}` escaped for XML. A raw body goes out on a `GET` too. Its
+    content type replaces any `Content-Type` header.
+- **Headers** <Badge type="tip" text="2.23.0" />: sent with this operation only, on top
+  of the connection's default headers, e.g. `Depth` → `1`. Placeholders work here too.
+  The connection's authentication always wins: an operation can neither replace nor read
+  the auth header (see [Security](#security)).
 
 **Response.**
 
-- **Output fields:** name a value from the JSON answer by its dot path, e.g.
+- **Response format** <Badge type="tip" text="2.23.0" />: *Detect automatically*
+  (by the answer's `Content-Type`), *JSON*, *XML* or *Text*. XML is read into an array
+  without namespaces, so `d:href` is `href` and an output path like
+  `multistatus.response.0.href` works. An element that repeats becomes a list.
+- **Output fields:** name a value from the answer by its dot path, e.g.
   `message_id` → `ts` or `user_email` → `data.user.email`.
 - **Fail on an error status:** on by default. Any status outside 2xx then marks the step
   as failed. Switch it off to handle errors yourself with a filter on `status`.
 
-Every operation outputs `status`, your output fields and `body` (the decoded JSON, or the
-raw text if the answer is not JSON).
+Every operation outputs `status`, your output fields, `headers` and `body` (the decoded
+JSON or XML, or the raw text). `headers` are the response headers with their names
+lowercased, masked like the rest of the output and without `set-cookie`, so the ETag of
+an answer is `{{ nodes.<node key>.headers.etag }}`.
+
+Operations saved before 2.23 keep working unchanged: JSON from fields, the answer
+detected automatically, no extra headers. The new columns arrive with one migration, so
+run `php artisan migrate` after updating.
 
 ## Use it in the builder
 
@@ -139,6 +162,15 @@ Slack answers most errors with HTTP 200 and `"ok": false`, so *Fail on an error 
 does not catch them. Add a filter on `{{ nodes.<node key>.ok }}` after the step if you
 need to react to them.
 
+## Connections as credentials
+
+Some built-in actions use a connection only for its base URL and credential, with no
+operations on it: the [CalDAV](/automations/integrations#caldav) actions (base URL = the
+calendar collection, Basic auth with an app password) and the
+[Notion](/automations/integrations#notion) actions (bearer auth). Their forms pick the
+connection from the current brand, so each brand brings its own calendar or workspace
+and no env key is involved.
+
 ## Security
 
 - **Private hosts are blocked.** The base URL must resolve to a public address. Loopback,
@@ -153,6 +185,10 @@ need to react to them.
   `https` stay the only schemes either way.
 - **No redirects.** Calls do not follow redirects, so a credential header cannot be
   carried to another host. A `3xx` counts as a non-2xx status.
+- **The auth header cannot be shadowed.** Header names compare case-insensitively, so a
+  default or operation header named like the auth header (`authorization`, or
+  `X-API-KEY` against `x-api-key`) is dropped, never merged with the credential. `Host`
+  and `Content-Length` cannot be configured: refused on save, dropped at send time.
 - **Secrets never reach the run log.** Credentials are added to the request at the moment
   of the call and are never part of the node's input or the context. If a service echoes
   a credential back, it is replaced by `••••` in the output. Header names like

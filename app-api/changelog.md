@@ -17,8 +17,8 @@ Cross-version upgrade notes for the whole suite are in
 ### Fixed
 
 - A cancelled subscription whose paid term still runs said `ended_label` „Beendet am &lt;day of the
-  cancellation&gt;" next to „Bezahlt bis &lt;end of term&gt;". It now says „Gekündigt, läuft bis &lt;end of
-  term&gt;" while the term runs and „Beendet am &lt;end of term&gt;" after it, the same sentence as the
+  cancellation>" next to „Bezahlt bis &lt;end of term&gt;". It now says „Gekündigt, läuft bis &lt;end of
+  term>" while the term runs and „Beendet am &lt;end of term&gt;" after it, the same sentence as the
   portal (`Portal\Display::ending()`, statamic-payments 1.29.2). New field `ends_at`.
 
 ### Changed

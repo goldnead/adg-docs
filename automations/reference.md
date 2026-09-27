@@ -9,7 +9,7 @@
 | `automations:run-due` | `--brand=` | Resume runs whose delay or wait window has elapsed |
 | `automations:run-scheduled` | `--brand=` | Start time-triggered automations |
 | `automations:prune` | `--days=` · `--keep-failed-days=` · `--dry-run` · `--brand=` | Delete runs past the retention window |
-| `automations:sync` | `--from=auto\|files\|db` · `--strategy=db_wins\|file_wins` · `--brand=` · `--dry-run` · `--watch` | Synchronise definitions with `resources/automations/*.json`. `--brand` required on a multi-brand install. |
+| `automations:sync` | `--from=auto\|files\|db` · `--strategy=db_wins\|update\|file_wins` · `--brand=` · `--dry-run` · `--watch` | Synchronise definitions with `resources/automations/*.json`. `--brand` required on a multi-brand install. |
 
 Only `automations:run-due` and `automations:run-scheduled` are registered with the
 scheduler, both every minute and `withoutOverlapping`. `automations:prune` is **not**
@@ -71,6 +71,7 @@ Eighteen ship built in. Every handle below is also a key under `builtin_nodes` i
 | Throttle / Deduplicate | `throttle` |
 | Set Variable | `set_variable` |
 | Call Automation | `call_automation` |
+| Compose Text | `compose_text` |
 
 `call_automation` is the node `max_call_depth` governs.
 
@@ -94,6 +95,11 @@ Value (`set_global_value`)
 
 **Marketing** — `marketing.subscribe` · `marketing.unsubscribe` ·
 `marketing.send_campaign`
+
+**CalDAV** — `caldav.find_events` · `caldav.upsert_description_block`
+
+**Notion** (read only) — `notion.query_data_source` · `notion.get_pages` ·
+`notion.page_text`
 
 **Pro** — AI (`ai_generate`)
 
@@ -161,6 +167,11 @@ skipped silently so a lapsed licence never crashes a boot.
 ```
 
 What is available depends on the trigger. The builder's token picker lists it.
+
+Filters: `lower` · `upper` · `ucfirst` · `title` · `trim` · `slug` · `length` · `json` ·
+`default:x` · `date:format[,zone]` · `join:sep` · `pluck:key` · `first` · `last` ·
+`split:sep` · `replace:from,to` · `json_decode` · `where:key,value`. See
+[Token filters](/automations/concepts#token-filters).
 
 ## Permissions
 
@@ -255,6 +266,9 @@ ANTHROPIC_BASE_URL=https://api.anthropic.com
 Composer pulls two further packages in as hard dependencies:
 `goldnead/statamic-brand-context` and `inertiajs/inertia-laravel`. See
 [Installation](/automations/installation).
+
+Since 2.23.0 the PHP extensions `ext-dom` and `ext-libxml` are required (XML answers,
+CalDAV). Both are part of almost every PHP build.
 
 Node 18+ only if you rebuild the CP bundle from a clone.
 

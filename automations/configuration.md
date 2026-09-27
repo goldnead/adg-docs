@@ -307,7 +307,9 @@ addons' lists do not — add whatever your own fields are called. A field named
 ],
 ```
 
-Where exported JSON files are written. See
+Where exported JSON files are written. Unset or empty means
+`resource_path('automations')`; a path that is only `/` is refused. Before 2.23.0 the
+unset default wrote to `/`. See
 [Export, import & file sync](/automations/export-import).
 
 ## Secrets

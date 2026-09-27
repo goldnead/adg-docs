@@ -58,11 +58,20 @@ function escapeInterpolation(markdown) {
  * A changelog writes "runs out on <date>" as prose; the Vue compiler reads it
  * as an element without end tag and fails the whole build (payments 1.29,
  * 26.09.2026). Inside backticks it is code and stays as it is.
+ *
+ * Placeholders may hold spaces (`<day of the cancellation>`) and may wrap onto
+ * the next line (`<end of` / `term>`); a re-sync without this undid the hand
+ * fix ee6983c and broke the build again (27.09.2026). Autolinks
+ * (`<https://…>`, `<mailto:…>`) stay links.
  */
 function escapePlaceholders(line) {
   return line
     .split('`')
-    .map((part, index) => (index % 2 === 1 ? part : part.replace(/<([a-z][a-z0-9_.:-]*)>/g, '&lt;$1&gt;')))
+    .map((part, index) =>
+      index % 2 === 1
+        ? part
+        : part.replace(/<(?!https?:|mailto:)([a-z][^<>]*)(>|$)/g, (_, inner, end) => `&lt;${inner}${end ? '&gt;' : ''}`),
+    )
     .join('`')
 }
 

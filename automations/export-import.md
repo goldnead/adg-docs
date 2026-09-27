@@ -20,10 +20,11 @@ of the addon: an older schema is upgraded on the way in rather than rejected.
 
 Drop a JSON file on `/cp/automations/import`.
 
-Three guarantees, all of them deliberate:
+Three guarantees for the default import, all of them deliberate:
 
-- **Imports always create new automations.** Nothing is ever silently overwritten, so an
-  import cannot destroy the flow somebody is running.
+- **An import creates a new automation.** Nothing is ever silently overwritten, so an
+  import cannot destroy the flow somebody is running. A handle that is taken gets a
+  short suffix.
 - **Imported automations start disabled.** You get to look at it before it acts.
 - **Warnings, not failures.** A missing integration or an unknown node type is surfaced
   as a warning on an importable automation, rather than refusing the whole file.
@@ -34,6 +35,29 @@ imports into a site without LeadHub, tells you so, and waits.
 ::: tip Run Validate after an import
 An import warns; validation is where the warning becomes a specific, actionable list.
 :::
+
+### Updating an existing automation <Badge type="tip" text="2.23.0" /> {#updating-an-existing-automation}
+
+To change a live automation from a file instead of adding a copy, switch on **Update the
+automation with the same handle** on the Import page. The same is strategy `update` on
+the API (`"handle_strategy": "update"`) and on the command line
+(`automations:sync --strategy=update`).
+
+- The automation with the file's handle gets the file's name, description, nodes and
+  edges. Its id, uuid, handle, enabled state and run history stay.
+- The graph before the import is saved as a revision, so it is one click away under
+  [Version history](/automations/building#version-history).
+- Nodes whose `node_key` survives keep their uuid.
+- Without an automation of that handle, one is created, as in the default import.
+- A file that says what the automation already holds (order of nodes, edges and config
+  keys aside) writes nothing: no revision, no audit entry, no version bump. The API
+  answers `meta.unchanged: true` and the sync command prints `(unchanged)`, so `--watch`
+  does not pile up revisions.
+
+Over the API it needs the `edit automations` permission in addition to
+`create automations`, and answers `200` with `meta.updated: true`.
+
+The default stays as it was: a new, disabled automation with a suffixed handle.
 
 ## What is in the file, and what is not
 
@@ -81,6 +105,27 @@ Git-based versioning:
 php artisan automations:sync
 ```
 
+An unset or empty `file_storage.path` (the default) means `resource_path('automations')`.
+A path that is only `/` is refused with an error.
+
+::: warning Before 2.23.0 the default path wrote to `/`
+`file_storage.path` ships as `null`, and Laravel's `config($key, $default)` does not fall
+back on null, so *Sync to file* and `automations:sync --from=db` wrote `/{handle}.json`,
+or failed on permissions. If you set the path explicitly as a workaround, it keeps
+working.
+:::
+
+When a file and an automation share a handle, `--strategy` decides:
+
+| Strategy | Effect |
+| --- | --- |
+| `db_wins` (default) | The automation stays, the file is ignored |
+| `update` | The automation is [updated in place](#updating-an-existing-automation) from the file |
+| `file_wins` | The automation is deleted and recreated from the file, disabled, with a new id and uuid |
+
+`file_wins` is destructive, for a fresh deploy. For a deploy that should change live
+automations, use `update`.
+
 ::: warning This is not the same as the other addons' flat driver
 In LeadHub, Marketing and Webhook Manager, `flat` is an alternative **source of truth**
 and the CP writes YAML directly. Here, the database remains the engine's store and the
@@ -117,11 +162,12 @@ in code review:
 1. Build and test the automation in the Control Panel on one environment.
 2. Export it, or let file sync write it to `resources/automations/`.
 3. Commit the JSON. It diffs readably: a changed destination is a changed line.
-4. On deploy, run `php artisan automations:sync`.
+4. On deploy, run `php artisan automations:sync --from=files --strategy=update`.
 5. Enable the automation in the target environment, deliberately.
 
 Step 5 stays manual on purpose. An automation that enabled itself on deploy would start
-acting on production data at the moment of least attention.
+acting on production data at the moment of least attention. With `update`, an automation
+that is already enabled stays enabled, and its runs and history stay attached.
 
 ## Cross-environment moves
 

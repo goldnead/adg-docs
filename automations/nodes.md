@@ -71,7 +71,7 @@ or the `event_triggers` config map, with no listener class of your own.
 
 | Node | Handle | Purpose |
 | --- | --- | --- |
-| **Filter** | `filter` | Stop the flow if conditions are not met. Run status becomes `stopped`. |
+| **Filter** | `filter` | Stop the flow if conditions are not met. Run status becomes `stopped`. Inside a loop it skips only the current item. |
 | **Branch** | `branch` | Split into `true` and `false` paths, both of which can act |
 | **Switch** | `switch` | Route to one of several outputs based on a value |
 | **Stop Flow** | `stop` | End the flow deliberately, with status `stopped` |
@@ -82,6 +82,7 @@ or the `event_triggers` config map, with no listener class of your own.
 | **Throttle / Deduplicate** | `throttle` | Drop duplicate runs sharing a key within a time window |
 | **Set Variable** | `set_variable` | Store computed values under `{{ vars.* }}` for later nodes |
 | **Call Automation** | `call_automation` | Run another automation as a sub-flow |
+| **Compose Text** | `compose_text` | Build a block of plain text from the run data with Antlers |
 
 `Filter` and `Branch` differ only in the false path. Use Filter for "only continue if",
 Branch when both outcomes need to do something. `Switch` is the same idea with more than
@@ -95,6 +96,50 @@ the same way, re-evaluating its conditions each time the command runs.
 every item has been through, the flow continues on **After loop** on its own. There is no
 loop-back edge to draw.
 
+### Inside a loop <Badge type="tip" text="2.23.0" /> {#inside-a-loop}
+
+The loop body sees `{{ item }}`, `{{ index }}` and `{{ loop.* }}`. Nested loops shadow
+the outer loop's variables and restore them afterwards.
+
+| What happens in the body | Effect |
+| --- | --- |
+| A **Filter** does not match | Only this item ends; the next item runs. In nested loops it ends the item of the loop it sits in |
+| A **Stop** node | Ends the whole run, as at the top level |
+| A **Delay** or **Wait Until** | Pauses the whole run and ends the loop (see below) |
+| A node fails, *On item error* `stop` (default) | The whole run fails, as before |
+| A node fails, *On item error* `continue` | Only this item ends; the next item runs |
+
+::: warning Changed in 2.23.0
+Before 2.23 the first item that did not pass a Filter stopped the whole run, and every
+later item was never processed. Outside a loop nothing changes: a Filter still stops the
+run.
+:::
+
+**On item error** (`on_item_error`) is an option on the Loop node. With `continue`, the
+failed node stays in the run log as failed, and the loop's output gains `failed_items`
+(a count) and `failed` (`[{index, error}]`), readable after the loop as
+`{{ nodes.<loop>.failed_items }}`. The run keeps its normal status but carries an error
+message naming the loop, the count and the indexes, e.g. `Loop 'loop': 2 of 5 items
+failed and were skipped (index 1, 3). First error: …`, so it shows on the run, the
+dashboard and the activity list. There is no separate "partial" status, and no failure
+alert for such a run. Only a node's failed result skips the item; an error of the engine
+itself (database, run log) still fails the run.
+
+**A Delay or Wait inside a loop body ends the loop.** The run pauses there and, when it
+resumes, walks on from the Delay as a plain path, not as a loop pass: the rest of that
+item's body runs once, the items after it do not run, and *After loop* is not taken. In
+that rest of the body a Filter stops the run and *On item error* no longer applies.
+Failures of items before the Delay are kept and still show on the finished run. This is
+how loops and delays behaved before 2.23 as well. Put the Delay before or after the
+loop, not inside it.
+
+**Not the same as `_on_error: continue` on a node.** That reserved key keeps a failed
+node from failing the run by moving on: down the node's `error` edge if it has one,
+otherwise down its default edge, so the next step runs without the failed node's output
+and may write incomplete data. The Loop option instead ends the item at the failed node.
+Use `_on_error` when an `error` edge handles the failure, and *On item error* to skip an
+item that cannot be processed.
+
 `Parallel` fans out to every branch connected to it and joins their results before the
 flow continues.
 
@@ -105,6 +150,45 @@ save".
 `Call Automation` runs a second automation as a sub-flow, optionally waiting for its
 result. Nesting is capped by `max_call_depth` (default `3`); see
 [Configuration](/automations/configuration#max_call_depth).
+
+### Compose Text <Badge type="tip" text="2.23.0" /> {#compose-text}
+
+`compose_text` builds a block of plain text with Antlers from the whole run context:
+loops, conditions, modifiers, date formatting in a time zone. Its output is
+`{{ nodes.<key>.text }}` and `{{ nodes.<key>.is_empty }}`. It is the node for a text that
+a single token line cannot express, such as a schedule for a calendar event or a
+summary for a mail.
+
+```antlers
+{{ item.title }}
+
+Zeitplan
+{{ nodes.zeitplan.pages }}{{ properties.Date.start | timezone('Europe/Berlin') | format('H:i') }} {{ title }}
+{{ /nodes.zeitplan.pages }}
+{{ if item.properties.Programm }}
+Programm
+{{ item.properties.Programm | join("\n") }}
+{{ /if }}
+```
+
+- **The template is not token-resolved.** Its field declares `resolve_tokens: false`, so
+  the variables inside a loop reach Antlers instead of being emptied as tokens first.
+  Any schema field can declare it (see [Extending](/automations/extending)).
+- **Sandboxed.** Only the run data is available: no cascade (`site`, `current_user`,
+  globals and config are unknown), no tags except `foreach`, only data modifiers (text,
+  lists, numbers, dates), no PHP, no method calls. A template that uses anything else
+  fails the node with the reason instead of rendering around it.
+- **Data before tags.** A key of the run data named like a tag (`user`, `form`,
+  `collection`) is read as data, so `{{ user.name }}` prints the value.
+- **A budget.** A render stops at 64 KB of text or 50,000 Antlers steps, and the node
+  fails with that reason.
+- **Tidy blank lines** (on by default) strips trailing spaces, keeps at most one blank
+  line in a row and trims start and end. Conditions and loops leave blank lines behind
+  otherwise.
+- A loop body starts right after its opening tag: write `{{ list }}…line…` on one line
+  and the closing tag at the start of the next, or every item gets a blank line of its
+  own.
+- Pure: a test run renders exactly what a real run would.
 
 Filter, Branch and Delay can be switched off wholesale in config
 (`features.filter_nodes`, `features.branch_nodes`, `features.delay_nodes`), which is
@@ -186,6 +270,19 @@ person.
 | Send Campaign | `marketing.send_campaign` | A real send to a real list, not a transactional email |
 
 Available only when [Marketing](/marketing/) is installed.
+
+### CalDAV and Notion <Badge type="tip" text="2.23.0" />
+
+| Action | Handle | Notes |
+| --- | --- | --- |
+| Find Events (CalDAV) | `caldav.find_events` | Events in a range, one `REPORT` |
+| Update Event Description Block (CalDAV) | `caldav.upsert_description_block` | Keeps a marked block in an event's description current; writes only on a change |
+| Query Data Source (Notion) | `notion.query_data_source` | Rows of a data source, read only |
+| Get Pages (Notion) | `notion.get_pages` | Pages by ID or link, read only |
+| Get Page Text (Notion) | `notion.page_text` | A page's text blocks as a tree and as plain text |
+
+Built in, with a [connection](/automations/connections#connections-as-credentials) as the
+credential. Setup, outputs and limits on [Integrations](/automations/integrations#caldav).
 
 ### Pro
 

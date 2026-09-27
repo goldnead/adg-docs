@@ -65,6 +65,39 @@ which is more reliable than remembering.
 environment rather than in an automation definition that gets exported to JSON and
 committed.
 
+A string that is a single token returns the **structured** value (a list stays a list),
+text with several tokens is always a string, and a missing token renders empty.
+
+### Token filters
+
+A token takes a chain of filters after `|`, each with an optional argument after `:`.
+A single token keeps the filtered value's type; inside text, a list is written as JSON.
+
+| Filter | Does | Example |
+| --- | --- | --- |
+| `lower`, `upper`, `ucfirst`, `title`, `trim`, `slug` | text case and cleanup | `{{ form.name \| title }}` |
+| `length` | items of a list, characters of text | `{{ lead.tags \| length }}` |
+| `json` | the value as JSON | `{{ lead \| json }}` |
+| `default:x` | `x` when the value is null or empty | `{{ form.phone \| default:none }}` |
+| `date:format` | formats a date | `{{ entry.date \| date:d.m.Y }}` |
+| `date:format,zone` <Badge type="tip" text="2.23.0" /> | formats a date in a time zone | `{{ item.start \| date:H:i,Europe/Berlin }}` |
+| `join:sep` <Badge type="tip" text="2.23.0" /> | joins a list, default `", "`, `\n` for a line break | `{{ tags \| join:\n }}` |
+| `pluck:key` <Badge type="tip" text="2.23.0" /> | the value of `key` (dot notation) from every item | `{{ nodes.q.pages \| pluck:properties.Status }}` |
+| `first`, `last` <Badge type="tip" text="2.23.0" /> | first or last item of a list, null for an empty one | `{{ nodes.q.pages \| first }}` |
+| `split:sep` <Badge type="tip" text="2.23.0" /> | text to a list, default `,`, parts trimmed | `{{ form.tags \| split }}` |
+| `replace:from,to` <Badge type="tip" text="2.23.0" /> | replaces text | `{{ form.phone \| replace:" ", }}` |
+| `json_decode` <Badge type="tip" text="2.23.0" /> | JSON text to a value; invalid JSON stays text | `{{ webhook.body \| json_decode }}` |
+| `where:key,value` <Badge type="tip" text="2.23.0" /> | the items whose `key` equals `value`, compared as text | `{{ nodes.q.pages \| where:properties.Status,Fix }}` |
+
+Arguments are trimmed. Put an argument in quotes to keep its spaces and to use `|` or `,`
+inside it (`join:" | "`, `replace:",",";"`), and write `\n` or `\t` for a line break or
+a tab. A quote only counts when it opens an argument, right after `:` or `,`, so an
+apostrophe inside a word (`default:it's`) stays text and unquoted arguments behave as
+before. A date filter given a Notion date value formats its start.
+
+For more than a filter chain can say (loops, conditions), use
+[Compose Text](/automations/nodes#compose-text).
+
 ## Test mode
 
 A test run exercises the whole flow — real trigger payload, real token resolution, real

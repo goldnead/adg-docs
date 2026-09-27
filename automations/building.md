@@ -60,6 +60,10 @@ Both evaluate conditions. The difference is what happens when they are false.
 Use **Filter** for "only continue if". Use **Branch** when both outcomes need to do
 something.
 
+Inside a **Loop** body a Filter that does not match skips only the current item, and
+the loop goes on with the next one (since 2.23.0). See
+[Inside a loop](/automations/nodes#inside-a-loop).
+
 A `stopped` run is a normal outcome and not a failure. In the run list it is
 distinguishable from `completed` and from `failed`, which matters when you are asking
 "did this fire and choose not to act, or did it never fire at all".
