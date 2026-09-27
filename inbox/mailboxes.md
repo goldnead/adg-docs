@@ -10,13 +10,15 @@ several, each inside its brand. They are managed under **Postfach → Mailboxes*
 
 ## The form
 
-Three tabs:
+Five tabs:
 
 | Tab | Fields |
 | --- | --- |
 | Account | Label (`name`, only for the list), address, sender name, login, password |
 | Servers | IMAP host, port, encryption; SMTP host, port, encryption (`ssl`, `tls`, `starttls` or `none`) |
 | Folders | Inbox folder (`INBOX`), Sent folder, "put a copy of each reply into the Sent folder", import since, active |
+| Filter | "Skip bulk mail", further own addresses, hidden senders and domains (see [Only relevant mail](/inbox/filter)) |
+| Signatures | The mailbox's signatures, since 0.2.2 (see [Replying → Signatures](/inbox/replying#signatures)) |
 
 Picking a **provider** fills the Servers tab from the [presets](/inbox/configuration#provider-presets)
 and shows a link to that provider's instructions for an app password. "Custom" leaves every
@@ -55,8 +57,9 @@ not show up there twice.
 
 ### Migadu
 
-Preset `migadu`: `imap.migadu.com:993` (SSL), `smtp.migadu.com:465` (SSL). Login is the full
-address. The preset links Migadu's IMAP guide for the password to use.
+Preset `migadu`: `imap.migadu.com:993` (SSL), `smtp.migadu.com:587` (STARTTLS). Login is the
+full address. Until 0.2.1 the preset sent over 465; many hosts block outbound 465, and the
+connection test then times out. The preset links Migadu's IMAP guide for the password to use.
 
 ### manitu
 
@@ -65,7 +68,7 @@ manitu's FAQ.
 
 ### All-Inkl
 
-Preset `all-inkl`: port 993 (SSL) and 465 (SSL), **hosts empty**. All-Inkl names a server per
+Preset `all-inkl`: port 993 (SSL) and 587 (STARTTLS, since 0.2.2; 465 before), **hosts empty**. All-Inkl names a server per
 customer, so enter the server name All-Inkl gave your account for both IMAP and SMTP. Switching
 between presets keeps a host you typed when the new preset has none. The preset links All-Inkl's
 instructions.

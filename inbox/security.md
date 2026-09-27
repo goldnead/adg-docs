@@ -102,6 +102,15 @@ network. It is off by default.
 - A failed send is not retried automatically, so a reply never goes out twice.
 - With Suppression, a reply to a hard-bounced, complaining or invalid address is refused, and a
   suppression list that cannot be read refuses every reply ([Replying](/inbox/replying#suppression)).
+- The HTML copy of a reply (since 0.2.2) is built from the escaped text: no markup from the reply
+  or a signature reaches the mail, only web addresses become links.
+
+## Fixed in 0.2.2
+
+The clean-up that deletes conversations (hiding a sender, `inbox:reclassify`) took a reason given
+as text for a callable when the text named a PHP function. In 0.2.1 only the fixed reasons `self`
+and `blocked` reached it, never outside input, so it was not reachable; the new reason `system`
+would have been. A reason is now only called when it is a closure.
 
 ## Permissions
 

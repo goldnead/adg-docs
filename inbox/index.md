@@ -16,8 +16,8 @@ phone shows the same history as the Control Panel.
 - **Conversations, not single mails.** Messages are threaded by `In-Reply-To`, then
   `References`, then by the other side's address plus the subject within 30 days. The list has
   four tabs: open, waiting, closed and snoozed. See [Reading conversations](/inbox/conversations).
-- **Replies from the Control Panel**, in plain text, with attachments, from a template or from
-  an AI draft. Nothing is sent without a click. See [Replying](/inbox/replying).
+- **Replies from the Control Panel**, in plain text, with attachments and a signature, from a
+  template or from an AI draft. Nothing is sent without a click. See [Replying](/inbox/replying).
 - **LeadHub on both sides.** A conversation shows the contact card; the contact shows an
   "E-Mails" panel with its conversations; received and sent mail go on the contact's timeline.
   See [LeadHub and the suite](/inbox/suite).
@@ -63,7 +63,8 @@ Control Panel → Postfach → conversation → reply (text, template, AI draft)
   There is no IMAP IDLE and no inbound webhook.
 - **Mailboxes cannot be deleted from the Control Panel.** A mailbox can be switched off
   (`active`), which stops fetching it.
-- **Replies are plain text.** HTML mail is read, not written.
+- **Replies have no formatting.** You write plain text; it goes out with an escaped HTML copy
+  in which only links are links. HTML mail is read, not written.
 - **No automatic retry of a failed send.** Sending twice is worse than not sending. A failed
   reply stays on the conversation with its error, and the text can be put back into the form.
 - **The Control Panel strings ship in German.** They are written in English and translated in

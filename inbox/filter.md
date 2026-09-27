@@ -96,6 +96,42 @@ The mailbox address and the **further own addresses** of a mailbox (aliases, one
 **Filter** tab) are never the other side of a conversation. A mail to yourself, or between your
 own addresses, makes no conversation.
 
+Since 0.2.2 this includes **plus addresses**: `info+nl-test-1@example.com` is yours when
+`info@example.com` is the mailbox address or an alias. A test send of a newsletter to such an
+address makes no conversation.
+
+## Mail your website sends
+
+Since 0.2.2. When your website sends mail through the same mailbox (a booking or order
+confirmation, an invoice, an access mail), a copy lands in Sent next to your own mails. Such a
+**system mail**:
+
+- makes no conversation relevant,
+- does not set a conversation to **Wartet**,
+- does not make its recipient a known correspondent.
+
+On its own it opens no conversation: it is skipped with the reason `system`. When the
+conversation exists anyway (the person wrote to you before), it is shown there, folded and
+marked **automatisch**, and changes nothing about the conversation. When that person later
+writes to you, the conversation is a first contact in **Neu** (unless they are a LeadHub
+contact), as for anyone you have not written to yourself.
+
+A mail from Sent is a system mail when, in this order:
+
+1. it carries `Auto-Submitted` (other than `no`), `X-Auto-Response-Suppress` or an `X-Suite-*`
+   header, or a header named in `system_mail.headers`;
+2. otherwise it is **never** one when a person clearly wrote it: a reply sent from the inbox,
+   Gmail's webmail, a mail program in `User-Agent` or `X-Mailer` (Roundcube, Thunderbird, Apple
+   Mail, Outlook and others), or a mail that answers another (`In-Reply-To` or `References`);
+3. its subject starts with one of `system_mail.subjects`;
+4. its Message-ID has the shape Laravel's mailer gives it (32 hex characters) **and** its From
+   name is one of `system_mail.senders`.
+
+The Message-ID alone never decides: Roundcube builds the same shape. The suite's addons set no
+header of their own yet, so their mail is recognised by its subject. The keys are under
+[Configuration → System mail](/inbox/configuration#system-mail). Mail you receive is never a
+system mail.
+
 ## Cleaning up mail imported before 0.2
 
 ```bash
@@ -105,11 +141,13 @@ php artisan inbox:reclassify --mailbox=1        # one mailbox
 ```
 
 For every stored message it reads the headers again from the server, **headers only and with
-PEEK**, so nothing is marked read and nothing moves. Then it deletes bulk conversations and
-conversations with yourself (files included, with skip records), and files unknown people under
-**Neu**; a conversation in **Neu** that has become relevant (a new contact, say) leaves it. A
-conversation whose headers cannot be read is never deleted, but is still filed by relevance. Run
-the dry run first.
+PEEK**, so nothing is marked read and nothing moves. Then it deletes bulk conversations,
+conversations with yourself (your plus addresses included) and conversations made only of
+[system mails](#mail-your-website-sends) nobody took over (files included, with skip records),
+marks system mails in the conversations that stay, and files unknown people under **Neu**; a
+conversation in **Neu** that has become relevant (a new contact, say) leaves it. A conversation
+whose headers cannot be read is never deleted, but is still filed by relevance. Run the dry run
+first; it prints, among others, "to yourself", "only system mails" and "marked as automatic".
 
 New messages store the headers the filter decides on, so a later run needs no server at all.
 

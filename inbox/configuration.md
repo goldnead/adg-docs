@@ -75,12 +75,35 @@ entry to offer another provider in the form.
 | Preset | IMAP | SMTP |
 | --- | --- | --- |
 | `google` (Google Workspace / Gmail) | `imap.gmail.com:993`, SSL | `smtp.gmail.com:587`, TLS |
-| `migadu` | `imap.migadu.com:993`, SSL | `smtp.migadu.com:465`, SSL |
+| `migadu` | `imap.migadu.com:993`, SSL | `smtp.migadu.com:587`, TLS |
 | `manitu` | `imap.manitu.de:993`, SSL | `smtp.manitu.de:587`, TLS |
-| `all-inkl` | your server, port 993, SSL | your server, port 465, SSL |
+| `all-inkl` | your server, port 993, SSL | your server, port 587, TLS |
 
-All-Inkl names a server per customer, so its preset leaves both hosts empty; see
+`TLS` on SMTP means STARTTLS. Migadu and All-Inkl sent over 465 until 0.2.1; many hosts block
+outbound 465. A published `config/inbox.php` keeps its own values, and a saved mailbox keeps its
+port. All-Inkl names a server per customer, so its preset leaves both hosts empty; see
 [Mailboxes → All-Inkl](/inbox/mailboxes#all-inkl).
+
+## System mail
+
+Mails your website sends itself through the same mailbox (confirmations, invoices, access
+mails) are system mails; see [Only relevant mail → Mail your website sends](/inbox/filter#mail-your-website-sends).
+Since 0.2.2.
+
+| Key | Default | |
+| --- | --- | --- |
+| `system_mail.subjects` | the subjects the goldnead suite sends, in both forms of address | A mail from Sent whose subject starts with one of these (case ignored) is a system mail, unless a mail program sent it or it answers another mail. |
+| `system_mail.senders` | `[]` | From names only your website's mailer uses. Together with a Laravel/Symfony Message-ID they mark a system mail. |
+| `system_mail.headers` | `[]` | Further header names that mark a system mail. A trailing `*` matches a prefix. |
+
+The default subjects: "Deine Buchung:", "Deine Bestellung:", "Dein Zugang", "Deine/Ihre
+Rechnung", "Dein/Ihr Kauf ist noch nicht abgeschlossen", "Eingang deiner/Ihrer Kündigung",
+"Eingang deines/Ihres Widerrufs", "Deine/Ihre Zahlung konnte nicht eingezogen werden", "Dein
+Link zu deinen Bestellungen", "Ihr Link zu Ihren Bestellungen", "Bestätigung deiner/Ihrer
+Kündigung", "Deine/Ihre Karte für", "Deine/Ihre Plätze für", "Ein Platz für dich:", "Ein Platz
+für Sie:", "Dein/Ihr Konto bei", "Dein/Ihr Bestätigungscode für", "Bestätige deine
+E-Mail-Adresse", "Bestätigen Sie Ihre E-Mail-Adresse". Publishing the config and changing the
+list replaces it as a whole.
 
 ## Per-brand settings
 

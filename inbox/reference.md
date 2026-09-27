@@ -112,11 +112,13 @@ Every table has a `brand_id` and is scoped by Brand Context.
 | `inbox_messages` | Direction (`in`, `out`), Message-ID (unique per mailbox; an overlong one indexed by hash with the full id beside it), `In-Reply-To`, `References`, sender, `to`, `cc`, subject, text, sanitised HTML, text without the quote, `sent_at`, folder and UID, `has_remote_images`, `send_error`, `filed_error`. |
 | `inbox_attachments` | Message, file name, MIME type, Content-ID, size, path on the attachments disk. |
 | `inbox_fetch_failures` | A message that could not be stored: mailbox, folder, UID, error, attempts, first and last seen, `gave_up_at` after three attempts. |
-| `inbox_skipped_messages` | A mail the filter left out: mailbox, folder, UID, Message-ID (unique per mailbox), the other side, reason (`list_header`, `precedence`, `auto_submitted`, `bulk_sender_header`, `noreply_sender`, `bounce`, `mass_outgoing`, `self`, `blocked`), `skipped_at`. No content. |
+| `inbox_skipped_messages` | A mail the filter left out: mailbox, folder, UID, Message-ID (unique per mailbox), the other side, reason (`list_header`, `precedence`, `auto_submitted`, `bulk_sender_header`, `noreply_sender`, `bounce`, `mass_outgoing`, `self`, `blocked`, `system`), `skipped_at`. No content. |
 | `inbox_block_rules` | A hidden sender or domain of a mailbox: `type` (`sender`, `domain`), `value`. |
 
 Since 0.2 `inbox_mailboxes` also holds `skip_bulk` and `aliases`, `inbox_conversations`
-`accepted_at` (and the status `new`), and `inbox_messages` `filter_headers`.
+`accepted_at` (and the status `new`), and `inbox_messages` `filter_headers`. Since 0.2.2
+`inbox_mailboxes` holds `signatures` (`id`, `name`, `body`, `default`, `tags` each, in the order
+the tag rules are checked) and `inbox_messages` `automatic` (a [system mail](/inbox/filter#mail-your-website-sends)).
 
 Deleting a mailbox row cascades to its conversations, messages, attachment rows and failures.
 The files on the attachments disk are not removed by the cascade.

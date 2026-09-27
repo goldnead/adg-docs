@@ -8,7 +8,11 @@ and AI draft only ever fill the text field. **Nothing is sent without a click on
 
 ## What a reply is
 
-- **Plain text**, up to 100,000 characters, with up to ten attachments of 20 MB each.
+- **Plain text**, up to 100,000 characters, with up to ten attachments of 20 MB each. Since
+  0.2.2 it goes out with an HTML copy as well: everything escaped, line breaks kept, web
+  addresses as links, the quote as a blockquote. No markup you type reaches the mail.
+- **Signed**, if the mailbox has signatures: under the text and above the quote, after the
+  separator `-- ` in the text part. See [Signatures](#signatures).
 - **To** the other side of the conversation, one address. No Cc in this release.
 - **From** the mailbox's address, under its [sender name](/inbox/mailboxes#the-form).
 - **Subject** `Re: ` plus the conversation's subject, never `Re: Re:`.
@@ -17,6 +21,25 @@ and AI draft only ever fill the text field. **Nothing is sent without a click on
   before it.
 - **Quoted underneath**: the answered message, behind a marker line and "On …, … wrote:". The
   marker lets the next answer be cut from the quote exactly.
+
+## Signatures
+
+Since 0.2.2. Each mailbox can have several, on the **Signatures** tab of its form
+("Signaturen"):
+
+- a **name**, only shown in the reply form;
+- the **text**: plain text, line breaks stay, web addresses become links. Two placeholders are
+  filled in when the reply is stored: `{{ sender.name }}` (the mailbox's
+  [sender name](/inbox/mailboxes#the-form)) and `{{ mailbox.email }}`. The buttons "Name
+  einfügen" and "Adresse einfügen" insert them;
+- one of them is the **default** ("Als Standard verwenden");
+- optionally **LeadHub tags**. For a contact with one of those tags that signature is
+  preselected. The order decides: the first signature from the top that fits wins. Without a
+  match, the default.
+
+In the reply form a picker sits under the text, with a preview of the signature and why it is
+preselected ("Passt zum Tag Coaching", "Standard"). **Ohne Signatur** leaves it out. A mailbox
+without signatures shows no picker.
 
 ## What happens on Send
 
@@ -89,11 +112,13 @@ leaves the site.
 
 - a fixed instruction to write only the reply body, in the language of the last message,
   without inventing facts, prices or dates, followed by the **style** from the settings
-  (`ai.style_prompt`), if set;
+  (`ai.style_prompt`), if set; with a signature picked in the form, also the instruction not to
+  sign the reply (no closing line with a name), which overrides the style;
 - the other side: the LeadHub contact's name and address, and the **five newest LeadHub notes**
   on that contact, or only the address when there is no contact;
-- the subject and the **six newest messages** of the conversation, each with direction, sender
-  name or address, date and up to 2,000 characters of its text without the quoted history;
+- the subject and the **six newest messages** of the conversation, each with direction (a
+  [system mail](/inbox/filter#mail-your-website-sends) marked as the website's), sender name or
+  address, date and up to 2,000 characters of its text without the quoted history;
 - your instruction, if any.
 
 Attachments, HTML and other conversations are not sent. Check that sending this to Anthropic
