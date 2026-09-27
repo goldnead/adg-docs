@@ -101,6 +101,13 @@ loop-back edge to draw.
 The loop body sees `{{ item }}`, `{{ index }}` and `{{ loop.* }}`. Nested loops shadow
 the outer loop's variables and restore them afterwards.
 
+**On the canvas** <Badge type="tip" text="2.24.0" />: a Loop and its body sit in one tinted
+frame with the Loop card as its head. The outputs are named on their edges (*For each item*,
+*After loop*), a dashed line runs from each end of the body back into the Loop, and the step on
+*After loop* is always placed below the frame. The button in the frame's head folds the body
+into one card; folds are remembered per browser. All of this is drawn from the graph, nothing
+is saved and the loop-back line is not an edge.
+
 | What happens in the body | Effect |
 | --- | --- |
 | A **Filter** does not match | Only this item ends; the next item runs. In nested loops it ends the item of the loop it sits in |

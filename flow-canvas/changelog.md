@@ -12,6 +12,62 @@ Release notes for `goldnead/statamic-flow-canvas`, as published with the package
 Cross-version upgrade notes for the whole suite are in
 [Upgrading](/guide/upgrading).
 
+## 1.6.0 — 2026-09-27
+
+### Added: scope frames — a loop body drawn as one thing
+
+A host may now tell the canvas which node types open a body instead of continuing the flow:
+
+```js
+<Canvas :scopes="{ loop: { output: 'loop', continuation: 'done' } }"
+        :scope-labels="{ steps: n => …, collapse: title => …, expand: title => … }"
+        :view-state-key="`my-addon.canvas.${id}.collapsed`" />
+```
+
+- **Frame** behind every body (everything reachable from `output`, stopping at the owner and at
+  whatever `continuation` reaches), titled with the owner's name and step count. Nested bodies
+  nest. A synthetic node at negative `zIndex`, pointer-transparent except its fold button.
+- **Way back:** a dashed line with an arrowhead from each end of a body, outside the frame's left
+  edge, into the side of the owner. Ends inside a nested body go back to the nested owner.
+- **Fold:** the title bar's chevron folds a body into one card; edges into and out of the body are
+  drawn to it. Remembered under `viewStateKey` in localStorage (every access guarded), in memory
+  without one.
+- **Layout:** `computeLayout()` takes `insets` (`{ [nodeKey]: { x, top } }`): room either side of
+  the subtree a node roots and above its row. Without it every position is what it was.
+- A scope's open outputs are named beside their "+" (`data.hint` on the adder, also in its
+  `aria-label`) instead of on the stub edge.
+- Pure logic in `composables/useScopeFrames.js` (`computeScopeFrames`, `collapseScopes`,
+  `scopeLayoutInsets`, `scopeFrameRects`, `scopeReturnPath`), tested in
+  `tests/js/scope-frames.test.js`. Styles in `scope-frames.css`, imported by the host into its
+  `addon-utilities` layer.
+- Nothing about frames changes for a host that passes no `scopes` (funnels).
+
+### Changed in the same release (review round 2)
+
+- **The owner is the frame's head.** The frame starts just above the owner card; the head strip
+  holds only the fold chevron and the step count. `layoutScoped()` lays each frame out as one
+  compound node (body first, compact rows, owner centred over the entry), so whatever follows
+  the loop is placed below the whole frame. The continuation leaves the owner's side
+  (`data.sideOutputs` on the card) and runs round the frame (`data.route` on `InsertableEdge`,
+  `scopeDoneRoute()`); its pill and "+" sit under the frame.
+- **Pills.** A scope's outputs are named on their edges (`data.pill`), like a branch's; the card
+  footer legend is hidden for scope owners (`data.hideLegend`).
+- **Way back** is 2px, runs inside its own frame's left padding, arrowhead at the owner.
+- **Folded** bodies stay framed: the block (count, first → last step) sits in the owner's frame
+  with a short way back.
+- **Cards (all hosts).** The title takes the full width and two lines; type and kind badge moved
+  to the line below. Variable chips end in an ellipsis inside the card. Both rules are written
+  against their parent, because the CP loads every addon's stylesheet and an older copy of
+  `.sa-node__title { truncate }` would otherwise win by order.
+- `computeLayout()` gained `insets.left` / `insets.right` and `gaps`; `openOutputsOf()` is exported.
+  `scopeLayoutInsets()` and `scopeFrameRects()` are gone (never released).
+- **Fold control.** Chevron and step count are one button, top-left in the frame's head: core's
+  ghost `Button` (`size="xs"`, 24px high) with `aria-expanded` and a label naming the loop.
+- **One "+" size (all hosts).** A step's append "+" is now the same 24px dashed circle as the
+  insert "+" on an edge (was 36px); only the empty canvas's entry "+" stays larger
+  (`.sa-adder__btn--root`). Hosts that keep their own copy of the adder CSS need the same two
+  rules.
+
 ## 1.5.0 — 2026-09-22
 
 ### Added: an edge fade on the node library's tab bar, so scroll isn't a guess
