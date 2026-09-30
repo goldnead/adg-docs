@@ -1,10 +1,10 @@
 # The suite
 
-Thirty-six packages, six layers. Every arrow below is a Composer dependency;
+Thirty-seven packages, six layers. Every arrow below is a Composer dependency;
 anything not drawn is optional and detected at runtime with `class_exists`,
 which is why you can install any addon without the rest.
 
-All thirty-six are tagged and published on Packagist, so `composer require`
+All thirty-seven are tagged and published on Packagist, so `composer require`
 resolves any of them and pulls in whatever it depends on.
 
 ```
@@ -57,7 +57,7 @@ Standalone ───────────────────────
   email-templates · preference-center · entitlements ·
   assessments · events · toc · booking · clientrooms · courses ·
   private-media · consent · smartlinks · accounts · teams · app-api ·
-  inbox
+  inbox · bard-assist
 
   — none of these requires another domain addon.
 ```
@@ -79,7 +79,7 @@ are worth naming, because they look like dependencies and are not:
 `notifications` rather than an optional extra: both ask the gate before they
 queue mail, and a gate that might not be there would be no gate at all.
 
-## The thirty-six
+## The thirty-seven
 
 ### Foundation
 
@@ -386,6 +386,16 @@ of either. A Bard gets it over the block it belongs to, in the page's own type
 and column width, because a Bard is not a field on a page, it is the page.
 A front end that is not Antlers asks for the same markers from a facade. No
 migrations, and no screen in the Control Panel navigation.
+
+**[Bard Assist](/bard-assist/)** &nbsp;·&nbsp; `goldnead/statamic-bard-assist`
+
+Set suggestions while writing in Bard. The editor types plain paragraphs; for each
+block, TypeSafe's classification model Jev picks one of the field's own sets from
+their `display` and `instructions`, maps each line to a field and a link to an
+entry. Nothing changes without a click, and every set it made can go back to text.
+Suggestions show in the live preview, drawn with the site's own partials. A toggle
+per Bard field, a key for TypeSafe or the Vercel AI Gateway, nothing stored on the
+server. MIT, and not part of the Suite.
 
 **[Smart Links](/smartlinks/)** &nbsp;·&nbsp; `goldnead/statamic-smartlinks`
 

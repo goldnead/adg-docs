@@ -363,6 +363,27 @@ html.dark[data-addon='inline-edit'] {
   --vp-c-brand-soft: rgba(62, 127, 245, 0.16);
 }
 
+html[data-addon='bard-assist'] {
+  --gn-accent-from: #38BDF8;
+  --gn-accent-to: #3730A3;
+  --vp-c-brand-1: #007eb5;
+  --vp-c-brand-2: #00699f;
+  --vp-c-brand-3: #38BDF8;
+  --vp-c-brand-soft: rgba(56, 189, 248, 0.16);
+  --vp-button-brand-bg: #38BDF8;
+  --vp-button-brand-hover-bg: #3730A3;
+  --vp-button-brand-active-bg: #3730A3;
+  --vp-button-brand-text: #1a1a1a;
+  --vp-button-brand-hover-text: #ffffff;
+}
+
+html.dark[data-addon='bard-assist'] {
+  --vp-c-brand-1: #38bdf8;
+  --vp-c-brand-2: #55d4ff;
+  --vp-c-brand-3: #3730A3;
+  --vp-c-brand-soft: rgba(56, 189, 248, 0.16);
+}
+
 html[data-addon='smartlinks'] {
   --gn-accent-from: #12A594;
   --gn-accent-to: #063B37;
@@ -739,6 +760,27 @@ html.dark[data-addon='app-api'] {
   --vp-c-brand-2: #b079ff;
   --vp-c-brand-3: #0891B2;
   --vp-c-brand-soft: rgba(155, 98, 255, 0.16);
+}
+
+html[data-addon='inbox'] {
+  --gn-accent-from: #A8558F;
+  --gn-accent-to: #3D1236;
+  --vp-c-brand-1: #a8558f;
+  --vp-c-brand-2: #91407a;
+  --vp-c-brand-3: #A8558F;
+  --vp-c-brand-soft: rgba(168, 85, 143, 0.16);
+  --vp-button-brand-bg: #A8558F;
+  --vp-button-brand-hover-bg: #3D1236;
+  --vp-button-brand-active-bg: #3D1236;
+  --vp-button-brand-text: #ffffff;
+  --vp-button-brand-hover-text: #ffffff;
+}
+
+html.dark[data-addon='inbox'] {
+  --vp-c-brand-1: #bc67a1;
+  --vp-c-brand-2: #d37cb7;
+  --vp-c-brand-3: #3D1236;
+  --vp-c-brand-soft: rgba(188, 103, 161, 0.16);
 }
 
 html[data-addon='block-editor'] {

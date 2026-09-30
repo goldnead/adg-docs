@@ -109,6 +109,12 @@ export const ART = {
     "light": "#2f6fe4",
     "dark": "#3e7ff5"
   },
+  "bard-assist": {
+    "from": "#38BDF8",
+    "to": "#3730A3",
+    "light": "#007eb5",
+    "dark": "#38bdf8"
+  },
   "smartlinks": {
     "from": "#12A594",
     "to": "#063B37",
@@ -216,6 +222,12 @@ export const ART = {
     "to": "#0891B2",
     "light": "#7c3aed",
     "dark": "#9b62ff"
+  },
+  "inbox": {
+    "from": "#A8558F",
+    "to": "#3D1236",
+    "light": "#a8558f",
+    "dark": "#bc67a1"
   },
   "block-editor": {
     "from": "#57534E",

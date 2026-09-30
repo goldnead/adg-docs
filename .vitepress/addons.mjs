@@ -36,7 +36,7 @@ export const LAYERS = {
  * How far along each addon is.
  *
  * The suite reads finished. It is not: twenty-four packages went public inside
- * five weeks and twelve more came later, twenty-seven of the thirty-six are
+ * five weeks and thirteen more came later, twenty-seven of the thirty-seven are
  * declared commercial, and exactly one can be bought. A reader
  * deciding whether to put one of these on a client site has no
  * way to tell a package that has run several brands for months from one that
@@ -105,6 +105,7 @@ export const MATURITY_BY_SLUG = {
   teams: 'experimental',
   'app-api': 'experimental',
   inbox: 'experimental',
+  'bard-assist': 'experimental',
 }
 
 /** The exceptions a one-word level would misrepresent. */
@@ -139,6 +140,8 @@ export const MATURITY_NOTES = {
     'Built on 25 September 2026 and exercised in the playground against a faked IMAP server, and against one real Google Workspace mailbox in a test conversation. No production site uses it yet. On Packagist at 0.1.0.',
   'inline-edit':
     'Built on 19 September 2026 and running on the public demo, but on no client site yet. On Packagist since the same day, so the install below resolves.',
+  'bard-assist':
+    'Built on 30 September 2026 and exercised on one local test site; no production site uses it yet. Every suggestion comes from Jev, a young classification model by TypeSafe, so the same paragraph can get a different set on another run. That is why nothing is applied without a click. On Packagist at 1.0.0.',
 }
 
 export const maturityOf = (slug) => MATURITY_BY_SLUG[slug] ?? null
@@ -232,6 +235,11 @@ export const SALES_BY_SLUG = {
   'app-api': 'suite-only',
   // Seit Schedule A 1.3 (Entscheidung Adrian, 25.09.2026) nur in der Suite.
   inbox: 'suite-only',
+  // OFFEN (30.09.2026): Bard Assist ist MIT und kostenlos (Adrian), steht aber
+  // noch nicht in Schedule A der EULA. Ob es in die MIT-Tabelle dort kommt,
+  // entscheidet Adrian; die EULA bewegt sich zuerst. Bis dahin meldet
+  // sync-licenses genau diese Zeile.
+  'bard-assist': 'free',
 }
 
 export const salesOf = (slug) => SALES_BY_SLUG[slug] ?? null
@@ -551,6 +559,23 @@ export const addons = [
       { text: 'Permissions and safety', link: 'permissions' },
       { text: 'A front end that is not Antlers', link: 'headless' },
       { text: 'Static caching', link: 'static-caching' },
+    ],
+  },
+  {
+    slug: 'bard-assist',
+    name: 'Bard Assist',
+    package: 'goldnead/statamic-bard-assist',
+    layer: 'content',
+    license: 'MIT',
+    tagline:
+      'Write plain text in Bard. It suggests which of your sets each paragraph should become, and fills in the set\'s fields.',
+    icon: '✦',
+    statamic: 'Statamic 6.34+',
+    pages: [
+      { text: 'Setting up a field', link: 'setup' },
+      { text: 'Writing with it', link: 'writing' },
+      { text: 'Live preview', link: 'live-preview' },
+      { text: 'Privacy and security', link: 'privacy' },
     ],
   },
   {

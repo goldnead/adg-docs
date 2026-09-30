@@ -89,11 +89,11 @@ members:
 
 ## Buying
 
-**All thirty-six packages are on Packagist**, commercial ones included, and
+**All thirty-seven packages are on Packagist**, commercial ones included, and
 every one installs with a bare `composer require`.
 
 Being on Packagist is not the same as being free. **Twenty-seven are commercial** and
-**nine are MIT**; the table above is the authoritative list. The commercial ones
+**ten are MIT**; the table above is the authoritative list. The commercial ones
 resolve as ordinary Composer packages but are licensed rather than sold.
 
 The commercial packages are sold in three ways, and which one applies decides
@@ -129,6 +129,10 @@ Flow Canvas is MIT from 1.2.0 on, and deliberately: Funnels requires it, so a
 commercial editor behind a commercial addon would have meant two licences for
 one purchase. A shared foundation that our own addons consume belongs with
 Brand Context and Identity Contracts, not in the shop.
+
+[Bard Assist](/bard-assist/) is MIT and free as well, and it is not part of the Suite. It
+is not named in Schedule A of the Suite EULA yet; the EULA covers only the packages it
+lists, so nothing in it applies to Bard Assist either way.
 
 For the MIT packages there is nothing further to do. `composer require` is the
 whole transaction.

@@ -4,7 +4,7 @@ defineProps({
   statamic: { type: String, default: '6.0+' },
   // Laravel 11 is supported by no package in the suite: every one of them
   // requires ^12.0|^13.0 or narrower, or inherits that floor from statamic/cms.
-  // Brand Context, a dependency of twenty-one of the thirty-six, requires
+  // Brand Context, a dependency of twenty-one of the thirty-seven, requires
   // ^12.40|^13.0, and Assessments, Courses, Private Media, Certificates,
   // Smart Links, Affiliates, Accounts, Teams, App API and Inbox declare that
   // same range themselves.

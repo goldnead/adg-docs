@@ -79,6 +79,12 @@ const MAP = [
   // ships: the package has tags and no front end of its own.
   ['courses', 'screenshots/progress.png', 'courses-progress'],
   ['courses', 'screenshots/lessons.png', 'courses-lessons'],
+
+  // Only the two the repo ships. The menu, the accepted set, the bar and the
+  // blueprint toggle were shot from the same local test site straight into
+  // public/screenshots, and are not in the package.
+  ['bard-assist', 'docs/screenshot.png', 'bard-assist-live-preview'],
+  ['bard-assist', 'docs/screenshot-dark.png', 'bard-assist-fields-dark'],
 ]
 
 await mkdir(OUT, { recursive: true })
