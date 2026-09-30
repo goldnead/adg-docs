@@ -35,6 +35,13 @@ each mail by folder and UID or by Message-ID in INBOX and All Mail, imports what
 as bulk mail and hashes the records left. Prints: records checked, to import or imported, still
 skipped, not found. Neither is scheduled.
 
+```bash
+php artisan inbox:summary [--json] [--details] [--wartet=7] [--brand=]
+```
+
+Read only: per mailbox the numbers new, open and unread, waiting too long, snoozed until
+today, and fetch problems. Not scheduled. See [For agents (CLI)](/inbox/agents). **0.2.3+**
+
 ## Queue job
 
 | Job | Queue | Tries |

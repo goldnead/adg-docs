@@ -355,6 +355,7 @@ export const addons = [
       { text: 'CRM connectors', link: 'crm-connectors' },
       { text: 'Storage drivers', link: 'storage' },
       { text: 'Extending', link: 'extending' },
+      { text: 'For agents (CLI)', link: 'agents' },
     ],
   },
   {
@@ -908,6 +909,7 @@ export const addons = [
       { text: 'Only relevant mail', link: 'filter' },
       { text: 'Replying', link: 'replying' },
       { text: 'LeadHub and the suite', link: 'suite' },
+      { text: 'For agents (CLI)', link: 'agents' },
       { text: 'Security', link: 'security' },
     ],
   },

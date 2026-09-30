@@ -14,8 +14,10 @@
 | `leadhub:migrate-flat-brands [--brand=] [--dry-run]` | Move the pre-brand flat layout into a brand directory. Only moves; never overwrites; no-op on a second run. **1.11+** |
 | `leadhub:brand-integrity [--repair]` | Verify the per-brand unique indexes and rows |
 | `leadhub:scoring:import [--dry-run] [--force] [--brand=]` | Copy the config point table into the per-brand table |
+| `leadhub:kontakt {suche} [--json] [--timeline=20] [--brand=]` | Read-only contact lookup for agents: profile, timeline, open follow-ups, tasks, deals. See [For agents](/leadhub/agents). **2.14+** |
+| `leadhub:heute [--json] [--brand=]` | Read-only: new contacts, follow-ups and tasks due today. See [For agents](/leadhub/agents). **2.14+** |
 
-That is the complete list: the addon registers eight commands and no others.
+That is the complete list: the addon registers ten commands and no others.
 
 All brand-aware commands iterate every brand by default and take `--brand=<handle|id>`
 to narrow the run. The three scheduled ones gained that in **1.10.3**; before it they
