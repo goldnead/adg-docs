@@ -4,9 +4,10 @@ description: "Der Lizenzvertrag für die Addon-Suite als Paket: drei Stufen, was
 
 # Suite EULA
 
-::: info VERSION 1.3, FREIGEGEBEN AM 25.09.2026
-Dieser Text gilt für Lizenzen, die ab diesem Tag gekauft werden. Gegenüber 1.2 (ebenfalls
-25.09.2026) ändert sich nur Schedule A: Inbox gehört zur Suite. Gegenüber 1.1 (06.09.2026) kamen
+::: info VERSION 1.4, FREIGEGEBEN AM 30.09.2026
+Dieser Text gilt für Lizenzen, die ab diesem Tag gekauft werden. Gegenüber 1.3 (25.09.2026)
+ändert sich nur Schedule A: Bard Assist steht in der Liste der MIT-Pakete, die der Vertrag
+ausdrücklich nicht erfasst. Mit 1.3 kam Inbox zur Suite. Gegenüber 1.1 (06.09.2026) kamen
 mit 1.2 Accounts, Teams und App API dazu, und der Absatz zu den nicht verkauften Paketen sagt
 richtig, dass sie auf Packagist liegen. Er ist kein Rechtsrat, und er
 ist anwaltlich nicht geprüft.

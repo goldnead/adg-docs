@@ -235,10 +235,7 @@ export const SALES_BY_SLUG = {
   'app-api': 'suite-only',
   // Seit Schedule A 1.3 (Entscheidung Adrian, 25.09.2026) nur in der Suite.
   inbox: 'suite-only',
-  // OFFEN (30.09.2026): Bard Assist ist MIT und kostenlos (Adrian), steht aber
-  // noch nicht in Schedule A der EULA. Ob es in die MIT-Tabelle dort kommt,
-  // entscheidet Adrian; die EULA bewegt sich zuerst. Bis dahin meldet
-  // sync-licenses genau diese Zeile.
+  // Seit Schedule A 1.4 (Entscheidung Adrian, 30.09.2026) in der MIT-Tabelle, nicht erfasst.
   'bard-assist': 'free',
 }
 
