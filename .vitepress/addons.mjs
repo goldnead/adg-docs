@@ -378,6 +378,7 @@ export const addons = [
       { text: 'Front-end forms', link: 'forms' },
       { text: 'Campaigns & broadcasts', link: 'campaigns' },
       { text: 'Sequences', link: 'sequences' },
+      { text: 'Campaign series', link: 'series' },
       { text: 'Sending', link: 'sending' },
       { text: 'Tracking', link: 'tracking' },
       { text: 'Unsubscribes & suppression', link: 'suppression' },

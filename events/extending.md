@@ -20,6 +20,7 @@ use Goldnead\Events\Events\OccurrenceCancelled;
 | `OccurrenceScheduled` | `Occurrence $occurrence` | On every new date |
 | `OccurrenceRescheduled` | `Occurrence $occurrence`, `CarbonImmutable $previousStartsAt`, `?CarbonImmutable $previousEndsAt` | After a window actually changed |
 | `OccurrenceCancelled` | `Occurrence $occurrence`, `?string $reason` | On the first cancellation only |
+| `OccurrencePresaleChanged` | `Occurrence $occurrence`, `?CarbonImmutable $previousPresaleStartsAt` | When `presale_starts_at` is set, moved or cleared. Not on creation: a new date announces itself through `OccurrenceScheduled` |
 
 ```php
 Event::listen(OccurrenceCancelled::class, function (OccurrenceCancelled $cancelled) {

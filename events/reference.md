@@ -167,6 +167,7 @@ Goldnead\Events\Enums\Visibility: string
 | `Events\OccurrenceScheduled` | `readonly Occurrence $occurrence` |
 | `Events\OccurrenceRescheduled` | `readonly Occurrence $occurrence`, `readonly CarbonImmutable $previousStartsAt`, `readonly ?CarbonImmutable $previousEndsAt` |
 | `Events\OccurrenceCancelled` | `readonly Occurrence $occurrence`, `readonly ?string $reason` |
+| `Events\OccurrencePresaleChanged` | `readonly Occurrence $occurrence`, `readonly ?CarbonImmutable $previousPresaleStartsAt` |
 
 There is no `EventUnpublished` and no occurrence-deleted event.
 
@@ -217,6 +218,7 @@ index bytes.
 | `uuid` | `uuid`, unique | no | |
 | `starts_at` | `timestamp`, UTC | no | |
 | `ends_at` | `timestamp`, UTC | yes | |
+| `presale_starts_at` | `timestamp`, UTC | yes | |
 | `all_day` | `boolean` | no | `false` |
 | `timezone` | `string(64)` | yes | |
 | `status` | `string(16)` | no | |

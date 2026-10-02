@@ -54,11 +54,43 @@ Operators: `eq`, `neq`, `in`, `not_in`, `contains`, `starts_with`, `gt`, `gte`, 
 
 `has` / `has_not` a timeline event key, optionally `within_days`.
 
+### `geo`
+
+`within_km` / `outside_km` a postal code, by radius:
+
+```json
+{ "type": "geo", "operator": "within_km", "plz": "89073", "value": 50, "country": "DE" }
+```
+
+The segment editor has it as *Kontakt wohnt im Umkreis von / außerhalb von [km] um Postleitzahl
+[PLZ] ([Land])*, with a live count like the other conditions. Below it the editor shows the resolved
+centre (*Mittelpunkt: 89073 Ulm*) or, in red, that the postal code directory does not know the
+code. Below the count it says how many contacts have no postal code. Countries come from
+`leadhub.postal_codes.countries`. Without `country` the evaluator's default, DE, applies.
+
+A contact without a postal code matches **neither** operator: not knowing where somebody is is not
+the same as being far away. A postal code and country are visible on the contact (location panel,
+editable in the sidebar) and are normalised on save (`" 79 098 "` becomes `79098`, `de` becomes
+`DE`).
+
 ::: warning An empty rule set matches nobody
 Express "everyone" as **no segment at all**, not as an empty segment. This is deliberate: a
 segment that silently meant "all contacts" would be one config mistake away from mailing your
 entire database.
 :::
+
+## Radius conditions and managed segments
+
+Since 2.15 the segment editor keeps every condition shape intact on the way through the form: custom
+fields, `geo` and nested groups. Before that, saving a segment turned anything that was not a tag or
+an event condition into a `field` condition, and those conditions matched nobody afterwards.
+
+A segment can be **managed** by another addon: `managed_by` holds `source`, `label` and `url`, set
+through `SegmentRepository::create()` / `update()` (`null` releases it) and not settable from the
+Control Panel form. The segment list shows *Verwaltet von …* with a link to `url`. Name, handle and
+rules are read-only in the editor and ignored by the update on the server too, because the owner's
+next sync would write them back. Description and active stay editable. The campaign series in
+[Marketing](/marketing/series) manage their radius segments this way.
 
 ## How membership stays fresh
 

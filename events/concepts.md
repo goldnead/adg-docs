@@ -27,6 +27,12 @@ events                        event_occurrences
                                 sequence     RFC 5545 SEQUENCE
 ```
 
+`presale_starts_at` is optional and stored in UTC like `starts_at`: when the tickets go on sale, as
+opposed to when the room opens. The Control Panel shows it as *Vorverkauf ab* in the Tickets section
+of the date form, in the event's timezone. A presale after the date itself is refused. Setting,
+moving or clearing it fires `OccurrencePresaleChanged`, which `statamic-marketing` listens to for
+presale campaign series.
+
 The slug is unique per brand, not globally. Two brands may each have a `sommerkonzert`.
 
 ## Ids are never exposed
