@@ -1,8 +1,8 @@
 # Introduction
 
-This site documents thirty-seven packages for **Statamic 6**. They are separate
+This site documents thirty-eight packages for **Statamic 6**. They are separate
 Composer packages, released and versioned independently, and each one is useful
-on its own. Thirty-five of them are Statamic addons; Identity Contracts and Flow
+on its own. Thirty-six of them are Statamic addons; Identity Contracts and Flow
 Canvas are plain libraries the addons build on, the first needing Laravel and
 nothing else, the second only PHP. What makes them a suite is that they agree on
 four things: how a brand is scoped, who an actor is, where configuration lives,
@@ -11,7 +11,7 @@ and which addon owns which concern.
 If you only ever install one of them, you can ignore all four. This guide exists
 for the point at which you install the second one.
 
-All thirty-seven are tagged and published on Packagist, so a bare
+All thirty-eight are tagged and published on Packagist, so a bare
 `composer require` resolves any of them.
 
 ## What is here
@@ -23,9 +23,9 @@ All thirty-seven are tagged and published on Packagist, so a bare
 | CRM & marketing | [LeadHub](/leadhub/), [Marketing](/marketing/), [Preference Center](/preference-center/), [Lead Magnets](/lead-magnets/), [Assessments](/assessments/), [Email Templates](/email-templates/), [Inbox](/inbox/) | Contacts, consent, campaigns, and the conversations you have with them. |
 | Platform | [Activity](/activity/), [Notifications](/notifications/), [Entitlements](/entitlements/), [Booking](/booking/), [Client Rooms](/clientrooms/), [Courses](/courses/), [Certificates](/certificates/), [Private Media](/private-media/), [Flow Canvas](/flow-canvas/), [Accounts](/accounts/), [Teams](/teams/) | Shared services any domain addon can record into, ask, or build on. |
 | Commerce | [Payments](/payments/), [Products](/products/), [Offers](/offers/), [Invoices](/invoices/), [Funnels](/funnels/), [Insights](/insights/), [Affiliates](/affiliates/) | Selling on the site you already run: the till, the thing sold, how it is presented, the document, the figures and the partners who sell with you. |
-| Content | [Events](/events/), [Table of Contents](/toc/), [Inline Edit](/inline-edit/), [Bard Assist](/bard-assist/), [Smart Links](/smartlinks/), [Consent](/consent/) | Dated content, editing on the live page, set suggestions while writing in Bard, a landing page per song, cookie consent, and front-end helpers for editorial work. |
+| Content | [Events](/events/), [Table of Contents](/toc/), [Inline Edit](/inline-edit/), [Bard Assist](/bard-assist/), [Bard Footnotes](/bard-footnotes/), [Smart Links](/smartlinks/), [Consent](/consent/) | Dated content, editing on the live page, set suggestions and footnotes while writing in Bard, a landing page per song, cookie consent, and front-end helpers for editorial work. |
 
-A one-page tour of all thirty-seven, with the dependency graph, is in
+A one-page tour of all thirty-eight, with the dependency graph, is in
 [The suite](/guide/suite). If you know the problem but not the addon, read
 [Choosing an addon](/guide/choosing).
 

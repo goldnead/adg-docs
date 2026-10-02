@@ -115,6 +115,12 @@ export const ART = {
     "light": "#007eb5",
     "dark": "#38bdf8"
   },
+  "bard-footnotes": {
+    "from": "#4F46E5",
+    "to": "#312E81",
+    "light": "#4f46e5",
+    "dark": "#7072ff"
+  },
   "smartlinks": {
     "from": "#12A594",
     "to": "#063B37",

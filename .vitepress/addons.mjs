@@ -36,7 +36,7 @@ export const LAYERS = {
  * How far along each addon is.
  *
  * The suite reads finished. It is not: twenty-four packages went public inside
- * five weeks and thirteen more came later, twenty-seven of the thirty-seven are
+ * five weeks and fourteen more came later, twenty-seven of the thirty-eight are
  * declared commercial, and exactly one can be bought. A reader
  * deciding whether to put one of these on a client site has no
  * way to tell a package that has run several brands for months from one that
@@ -106,6 +106,7 @@ export const MATURITY_BY_SLUG = {
   'app-api': 'experimental',
   inbox: 'experimental',
   'bard-assist': 'experimental',
+  'bard-footnotes': 'experimental',
 }
 
 /** The exceptions a one-word level would misrepresent. */
@@ -142,6 +143,8 @@ export const MATURITY_NOTES = {
     'Built on 19 September 2026 and running on the public demo, but on no client site yet. On Packagist since the same day, so the install below resolves.',
   'bard-assist':
     'Built on 30 September 2026 and exercised on one local test site; no production site uses it yet. Every suggestion comes from Jev, a young classification model by TypeSafe, so the same paragraph can get a different set on another run. That is why nothing is applied without a click. On Packagist at 1.0.0.',
+  'bard-footnotes':
+    'The logic comes from the knowledge articles on adriangoldner.com; the packaged addon is not running on a production site yet.',
 }
 
 export const maturityOf = (slug) => MATURITY_BY_SLUG[slug] ?? null
@@ -237,6 +240,10 @@ export const SALES_BY_SLUG = {
   inbox: 'suite-only',
   // Seit Schedule A 1.4 (Entscheidung Adrian, 30.09.2026) in der MIT-Tabelle, nicht erfasst.
   'bard-assist': 'free',
+  // OFFEN (02.10.2026): Bard Footnotes steht noch nicht in Schedule A der EULA.
+  // MIT und gratis, wie bard-assist es seit 1.4 ist. Die EULA bewegt sich zuerst,
+  // dann dieser Eintrag. Bis dahin meldet sync-licenses genau diese Zeile.
+  'bard-footnotes': 'free',
 }
 
 export const salesOf = (slug) => SALES_BY_SLUG[slug] ?? null
@@ -574,6 +581,29 @@ export const addons = [
       { text: 'Writing with it', link: 'writing' },
       { text: 'Live preview', link: 'live-preview' },
       { text: 'Privacy and security', link: 'privacy' },
+    ],
+  },
+  {
+    slug: 'bard-footnotes',
+    name: 'Bard Footnotes',
+    package: 'goldnead/statamic-bard-footnotes',
+    layer: 'content',
+    license: 'MIT',
+    tagline:
+      'Footnotes for Bard: type [1], keep the sources in a grid, get superscript links and a source list.',
+    icon: '¹',
+    statamic: 'Statamic 5 or 6',
+    // The addon ships no config file, so there is nothing to configure; and
+    // nothing has gone wrong in the field yet, so no troubleshooting page.
+    configuration: false,
+    troubleshooting: false,
+    pages: [
+      { text: 'Writing with markers', link: 'writing' },
+      { text: 'The footnotes modifier', link: 'modifier' },
+      { text: 'The footnotes tag', link: 'tag' },
+      { text: 'Bard with sets', link: 'sets' },
+      { text: 'From PHP', link: 'php' },
+      { text: 'Styling and translations', link: 'styling' },
     ],
   },
   {

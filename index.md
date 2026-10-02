@@ -91,7 +91,7 @@ purpose](/guide/demo).
 
 ## Install what you need
 
-Each addon installs on its own. All thirty-seven are on Packagist, so a bare
+Each addon installs on its own. All thirty-eight are on Packagist, so a bare
 `composer require` resolves them and pulls in the foundation packages they need.
 Those foundation packages are inert until you configure them.
 

@@ -384,6 +384,27 @@ html.dark[data-addon='bard-assist'] {
   --vp-c-brand-soft: rgba(56, 189, 248, 0.16);
 }
 
+html[data-addon='bard-footnotes'] {
+  --gn-accent-from: #4F46E5;
+  --gn-accent-to: #312E81;
+  --vp-c-brand-1: #4f46e5;
+  --vp-c-brand-2: #402bcd;
+  --vp-c-brand-3: #4F46E5;
+  --vp-c-brand-soft: rgba(79, 70, 229, 0.16);
+  --vp-button-brand-bg: #4F46E5;
+  --vp-button-brand-hover-bg: #312E81;
+  --vp-button-brand-active-bg: #312E81;
+  --vp-button-brand-text: #ffffff;
+  --vp-button-brand-hover-text: #ffffff;
+}
+
+html.dark[data-addon='bard-footnotes'] {
+  --vp-c-brand-1: #7072ff;
+  --vp-c-brand-2: #8389ff;
+  --vp-c-brand-3: #312E81;
+  --vp-c-brand-soft: rgba(112, 114, 255, 0.16);
+}
+
 html[data-addon='smartlinks'] {
   --gn-accent-from: #12A594;
   --gn-accent-to: #063B37;

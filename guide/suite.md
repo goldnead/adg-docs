@@ -1,10 +1,10 @@
 # The suite
 
-Thirty-seven packages, six layers. Every arrow below is a Composer dependency;
+Thirty-eight packages, six layers. Every arrow below is a Composer dependency;
 anything not drawn is optional and detected at runtime with `class_exists`,
 which is why you can install any addon without the rest.
 
-All thirty-seven are tagged and published on Packagist, so `composer require`
+All thirty-eight are tagged and published on Packagist, so `composer require`
 resolves any of them and pulls in whatever it depends on.
 
 ```
@@ -57,7 +57,7 @@ Standalone ───────────────────────
   email-templates · preference-center · entitlements ·
   assessments · events · toc · booking · clientrooms · courses ·
   private-media · consent · smartlinks · accounts · teams · app-api ·
-  inbox · bard-assist
+  inbox · bard-assist · bard-footnotes
 
   — none of these requires another domain addon.
 ```
@@ -79,7 +79,7 @@ are worth naming, because they look like dependencies and are not:
 `notifications` rather than an optional extra: both ask the gate before they
 queue mail, and a gate that might not be there would be no gate at all.
 
-## The thirty-seven
+## The thirty-eight
 
 ### Foundation
 
@@ -372,8 +372,8 @@ and a private event never does.
 A tag and a modifier that build a nested table of contents from a Bard field, a
 Markdown field or any HTML string, and add matching anchor ids to the rendered
 headings. No migrations and no CP screens; it does ship a config file and a
-publishable view. It is also the one addon in the suite that still supports
-Statamic 5 alongside 6.
+publishable view. It also still runs on Statamic 5 alongside 6, as does Bard
+Footnotes and no other addon in the suite.
 
 **[Inline Edit](/inline-edit/)** &nbsp;·&nbsp; `goldnead/statamic-inline-edit`
 
@@ -396,6 +396,14 @@ entry. Nothing changes without a click, and every set it made can go back to tex
 Suggestions show in the live preview, drawn with the site's own partials. A toggle
 per Bard field, a key for TypeSafe or the Vercel AI Gateway, nothing stored on the
 server. MIT, and not part of the Suite.
+
+**[Bard Footnotes](/bard-footnotes/)** &nbsp;·&nbsp; `goldnead/statamic-bard-footnotes`
+
+Footnotes for Bard. The editor types `[1]` where a source belongs, the sources sit in
+a grid field, and on output the markers become superscript links into a numbered
+source list with back links. A marker without a matching source stays text, and so
+does everything inside links, headings and code. No migrations, no screen in the
+Control Panel, one fieldset to import. MIT, and not part of the Suite.
 
 **[Smart Links](/smartlinks/)** &nbsp;·&nbsp; `goldnead/statamic-smartlinks`
 

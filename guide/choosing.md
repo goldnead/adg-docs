@@ -39,6 +39,7 @@ works, just badly. This page starts from the problem.
 | Let a subscriber change what they receive, without an account | [Preference Center](/preference-center/) | Marketing's unsubscribe page, which only ends one list |
 | Put a table of contents on an article | [Table of Contents](/toc/) | |
 | Let editors write plain paragraphs and turn them into the right Bard sets | [Bard Assist](/bard-assist/) | |
+| Cite sources in an article with superscript numbers and a source list | [Bard Footnotes](/bard-footnotes/) | |
 | Give each song one link that sends listeners to their platform, and see which platform they pick | [Smart Links](/smartlinks/) | a list of streaming links with hand-typed labels, which drift away from the URLs they describe |
 
 ## Transport or orchestration

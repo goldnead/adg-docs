@@ -89,11 +89,11 @@ members:
 
 ## Buying
 
-**All thirty-seven packages are on Packagist**, commercial ones included, and
+**All thirty-eight packages are on Packagist**, commercial ones included, and
 every one installs with a bare `composer require`.
 
 Being on Packagist is not the same as being free. **Twenty-seven are commercial** and
-**ten are MIT**; the table above is the authoritative list. The commercial ones
+**eleven are MIT**; the table above is the authoritative list. The commercial ones
 resolve as ordinary Composer packages but are licensed rather than sold.
 
 The commercial packages are sold in three ways, and which one applies decides
@@ -133,6 +133,10 @@ Brand Context and Identity Contracts, not in the shop.
 [Bard Assist](/bard-assist/) is MIT and free as well, and it is not part of the Suite. It
 is not named in Schedule A of the Suite EULA yet; the EULA covers only the packages it
 lists, so nothing in it applies to Bard Assist either way.
+
+[Bard Footnotes](/bard-footnotes/) is MIT and free the same way, and also not part of the
+Suite. It is not named in Schedule A of the Suite EULA yet; the EULA covers only the
+packages it lists, so nothing in it applies to Bard Footnotes either way.
 
 For the MIT packages there is nothing further to do. `composer require` is the
 whole transaction.

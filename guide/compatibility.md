@@ -12,20 +12,22 @@
 
 **Laravel 11 is not supported by any package in the suite.** Every one of them
 requires `^12.0|^13.0` or narrower, or inherits that floor from `statamic/cms
-^6.0`, and Brand Context — a dependency of twenty-one of the thirty-seven — requires
+^6.0`, and Brand Context — a dependency of twenty-one of the thirty-eight — requires
 `^12.40|^13.0`, which sets the real floor for most installs. Assessments,
 Certificates, Affiliates and Inbox declare that same `^12.40|^13.0` themselves, on top of
 depending on Brand Context, and Courses, Private Media, Smart Links, Accounts, Teams and App API declare it without
-depending on Brand Context. Eleven
-packages, Client Rooms, Table of Contents and Bard Assist among them, declare no Laravel
+depending on Brand Context. Twelve
+packages, Client Rooms, Table of Contents, Bard Assist and Bard Footnotes among them, declare no Laravel
 constraint of their own and take whatever the rest of the install takes.
 
 Statamic 5 is not supported by the suite. LeadHub's v0.3 Control Panel rewrite moved
 to Inertia + Vue 3, which is Statamic 6 only; pin to `^0.2.x` if you are stuck on
 Statamic 5, and expect no further releases on that line.
 
-[Table of Contents](/toc/) is the partial exception, because it has no Control Panel
-screen to be tied to a Statamic version: 2.x runs on Statamic 5 as well as 6. Its v1
+[Table of Contents](/toc/) and [Bard Footnotes](/bard-footnotes/) are the partial
+exceptions, because neither has a Control Panel screen to be tied to a Statamic
+version: Table of Contents 2.x runs on Statamic 5 as well as 6, and Bard Footnotes
+requires `statamic/cms ^5.0|^6.0` from its first release. The toc v1
 line went back to Statamic 3 on PHP 7.4 and is no longer maintained; `v1.10` stays
 installable for anyone already pinned to it.
 
@@ -75,7 +77,7 @@ for you:
 | `statamic-products` | `statamic-payments` | A product is read through the payment catalogue, and contributing to it needs `^1.15`. |
 | `statamic-lead-magnets` | `statamic-entitlements` | The grant behind a confirmed download is an entitlement. |
 | `statamic-certificates` | `statamic-courses` | A certificate is issued on `CourseCompleted`; "completed" is Courses' word. |
-| twenty-one of the thirty-seven | `statamic-brand-context` | See [Multi-brand](#multi-brand) below. |
+| twenty-one of the thirty-eight | `statamic-brand-context` | See [Multi-brand](#multi-brand) below. |
 
 Everything beyond that is a `suggest` plus a runtime `class_exists` check. The
 version constraints that matter when both are installed:

@@ -1,6 +1,6 @@
 # Maturity
 
-**This suite is work in progress.** Thirty-seven packages, twenty-four of them
+**This suite is work in progress.** Thirty-eight packages, twenty-four of them
 public inside five weeks. They are tagged, all of them are on Packagist, they
 have documentation, and the documentation reads finished.
 That last part is misleading, so this page says plainly what is behind each

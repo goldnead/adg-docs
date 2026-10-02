@@ -19,7 +19,7 @@ integrations are resolved at boot, not at install time, so installing Webhook
 Manager after LeadHub wires the LeadHub triggers just as installing it before
 would.
 
-The table below covers all thirty-seven: which own database tables, and which
+The table below covers all thirty-eight: which own database tables, and which
 show up in the Control Panel.
 
 ::: tip What "ships a CP screen" counts
@@ -27,7 +27,7 @@ A screen of its own: the addon registers a Control Panel route, a utility, or a
 nav entry. A fieldtype, a Bard button or a blueprint extension does not count,
 because none of them gives you a page to open.
 
-Twenty-eight of the thirty-seven also register a section on the **shared settings
+Twenty-eight of the thirty-eight also register a section on the **shared settings
 screen**. That is not a screen of their own, so it reads "no" in the table, but
 you will still find those addons in the Control Panel under Settings. Brand
 Context provides that screen rather than registering a section on it, and
@@ -55,6 +55,7 @@ register no section on it.
 | [Table of Contents](/toc/installation) | no | no, a settings section only |
 | [Inline Edit](/inline-edit/installation) | no | no nav entry, but a CP bundle that must be published |
 | [Bard Assist](/bard-assist/installation) | no | no, a toggle in the Bard field's settings |
+| [Bard Footnotes](/bard-footnotes/installation) | no | no |
 | [Smart Links](/smartlinks/installation) | yes (`smartlinks_clicks`, `smartlinks_suggestions`, `smartlinks_link_status`); the songs themselves are entries in your own collections | yes |
 | [Payments](/payments/installation) | yes (ten, from `payments` to `payment_subscription_notices`) | yes, four utilities |
 | [Products](/products/installation) | yes (`products`) | yes, one utility |
@@ -106,8 +107,8 @@ when your application has an unusual notion of who an actor is.
 Each addon publishes its config under its own tag. Publishing is optional; the
 packaged defaults are the documented ones.
 
-**Thirty-five of the thirty-seven have a config file.** Products and Flow Canvas
-ship none, so there is no tag for them and nothing missing.
+**Thirty-six of the thirty-eight have a config file.** Products, Flow Canvas and
+Bard Footnotes ship none, so there is no tag for them and nothing missing.
 
 ```bash
 php artisan vendor:publish --tag=accounts-config
@@ -226,7 +227,7 @@ person to assign to.
 
 ## Installing from a local checkout
 
-**All thirty-seven packages are on Packagist**, so the normal case needs nothing
+**All thirty-eight packages are on Packagist**, so the normal case needs nothing
 but `composer require`, and the sibling packages an addon depends on resolve on
 their own. None of the packages declares a `repositories` block, and you do not
 need one either.
