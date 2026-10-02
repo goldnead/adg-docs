@@ -12,6 +12,117 @@ Release notes for `goldnead/statamic-inline-edit`, as published with the package
 Cross-version upgrade notes for the whole suite are in
 [Upgrading](/guide/upgrading).
 
+## 1.8.1
+
+### A grid list stood one letter per line in the editor
+
+1.8.0 copied `grid-template-columns` along with a list's grid. Its computed
+value is the resolved track in pixels, read on a probe that is shrink-to-fit,
+so every item in the editor was a few pixels wide. It is no longer copied; a
+list gets one implicit column the editor's width.
+
+### Escape on an untouched field could count as a change
+
+Escape wrote the remembered text back as plain text. Where the template had
+dressed a value in markup of its own (a line break, a nowrap span), that
+flattened it, the text then read differently from its baseline, and opening
+and leaving a field without typing showed "1 unsaved". Escape now restores the
+markup as it was.
+
+## 1.8.0
+
+### Lists drawn with grid and `::before` looked bare in the editor
+
+A page that spaces its list items with `display: grid; row-gap` on the `ul`
+and draws its markers as `li::before` (list style off, absolutely positioned
+pseudo element) still looked different in the in-place editor: no gap, no
+marker. The probes now also read `display`, `row-gap`, `column-gap`,
+`grid-template-columns` and `flex-direction` of lists (only block, grid and
+flex), `position` of list items and quotes, and the `::before` and `::after`
+of `li` and `blockquote` whenever they have content. Nothing else gets a
+pseudo rule, so the editor's own placeholder and handles are left alone.
+
+### One cell of a grid can be edited on the page
+
+`InlineEdit::cell($entry, $grid, $rowId, $column, $label = null)` marks one
+cell: the row with this id, this column. For a site whose copy lives in grid
+rows (a headline, a button label, a list item, each its own row), which had no
+way in until now.
+
+- The row is named by the id core persists on it (`RowId`), never by its
+  position, so a row moved in the control panel between render and save cannot
+  pull the edit onto its neighbour. Rows without an id (written by a script,
+  never saved in the control panel) get no marker.
+- The address travels as the field handle `grid.rowId.column`. The script in
+  the browser is unchanged; it sends what the marker said.
+- Plain text columns only (the `fieldtypes` list). Toggles, selects, markdown
+  and assets inside a row get no marker and are refused on save.
+- The save route checks every cell from scratch: a real grid on the blueprint,
+  a text column, a row that carries this id right now, the ceiling, the
+  column's own validation rules. It writes that one value into the stored
+  rows and nothing else; the grid's own `process()` is not run, because it
+  rebuilds every row.
+- Entries under revisions get no cell marker, as the save route refuses them.
+- Refused as well, marker and save alike: a row id that occurs twice in the
+  grid (no guessing which row), a column the blueprint marks `read_only`,
+  `hidden` or `computed`, and a localization that inherits the grid from its
+  origin (one cell would copy the whole grid into the localization).
+
+Known limits:
+
+- Validation sees only the one column. A rule that compares columns of the same
+  row (`required_if`, `same`) cannot see the other cells and does not fire.
+- Clearing a cell stores `""`, not `null` as the control panel does for an
+  emptied text field. Both read as empty.
+
+## 1.7.2
+
+### The save bar vanished while a field was open in place
+
+With the bottom bar up ("Edit page"), opening a Bard in place took the bar
+away, and the frame's own Save button sits under the whole field. On a long
+Bard that meant scrolling a screen away from the words to find it.
+
+The bar now stays while a field is open in place, and its buttons work on
+that field: Save tells the frame to save (the frame runs the same action its
+own button does, with the same validation, and answers `saved` as before,
+which closes and reloads), Discard closes the field the way the frame's own
+close button does. The buttons are enabled in that state even at a change
+count of zero, because there is exactly one thing to save and it lives in the
+frame. The frame's own buttons stay. The frame only accepts such messages
+from the window that framed it, marked `statamic-inline-edit-host`, the same
+handshake the typography already uses.
+
+### Bard content in the editor did not take the page's own shapes, lists worst
+
+The typography the page hands to the in-place editor is read from probe
+elements, and the probes missed the forms in which a page really styles a
+list:
+
+- Lists indented by `margin-left` (rather than padding) sat flush left in
+  the editor; the margin was never read.
+- ProseMirror wraps every list item's text in a paragraph, and Bard's
+  augmented output puts that same `<li><p>` on the page. A page that resets
+  the paragraph margin inside list items (the common prose reset) had the
+  editor take the ordinary paragraph margin instead, spreading every item
+  apart. There is a probe for the paragraph inside an item now.
+- A list nested in a list item took the outer list's indent and marker.
+- The list marker itself is a pseudo element: a page styling `li::marker`
+  in its own colour or size was not copied. Chrome and Safari expose the
+  marker's computed style; on Firefox the marker keeps inheriting from the
+  item, which is what it does on the page when nothing is said about it.
+- A quote lost its `margin-left` indent, and a horizontal rule kept the
+  frame's own bottom border where the page draws only the top one.
+- Inline marks (links, strong, em, code) were probed as bare children of
+  the field instead of inside a paragraph where they occur, so each came
+  back one font size too small, and code was hit by the monospace default
+  size on top of it.
+
+The browser suite now compares the computed styles of `ul`, `li`, `li > p`,
+`ul ul`, `li::marker`, `blockquote`, `hr`, `a`, `strong`, `em` and `code`
+between the page and the editor over it, against a fixture page that styles
+its lists its own way. Nine of those comparisons failed before, none after.
+
 ## 1.7.1
 
 ### Inserting a Bard set in inline/cp mode failed with 403

@@ -12,6 +12,190 @@ Release notes for `goldnead/statamic-marketing`, as published with the package.
 Cross-version upgrade notes for the whole suite are in
 [Upgrading](/guide/upgrading).
 
+## Unreleased
+
+## 2.26.0 — 2026-10-01
+
+### Fixed: Kampagnenserie, Runde 5
+
+- **Nie nach dem Konzert.** Ein Serien-Kind, dessen geplante Versandzeit am oder nach dem Beginn
+  seines Termins läge (VVK + N Tage, oder eine Uhrzeit später als das Konzert), wird nicht angelegt
+  (`skipped_too_late`) bzw. entfernt und ins Log geschrieben. Zusätzlich verweigert
+  `StartCampaignJob` jedes Serien-Kind, dessen Konzert schon begonnen hat: Log-Fehler, niemand
+  bekommt etwas.
+- **Sync entkoppelt.** Termin-Ereignisse laufen nicht mehr synchron im CP-Request, sondern stoßen
+  `SyncSeriesJob` an: nach dem Commit, `ShouldBeUnique` je Marke für zehn Sekunden (ein Import mit
+  dreißig Terminen = ein Lauf), Marke im Job. Mit dem `sync`-Treiber läuft er sofort wie bisher; der
+  tägliche Befehl bleibt.
+- **Kein Überschreiben eines laufenden Versands.** Der Abgleich schreibt ein Kind nur zurück, solange
+  es noch wartet oder geplant ist: unter Eloquent als `UPDATE … WHERE status IN (…)`
+  (`EloquentCampaignRepository::saveIfStatusIn()`), mit Dateien durch erneutes Lesen direkt vor dem
+  Schreiben.
+- Ein Kind, das mit seinem Vorverkaufsdatum verschwindet, zählt als `removed` und steht im Log.
+- Ohne Tabelle `leadhub_postal_codes` (LeadHub mit Dateien) bricht der Lauf nicht mehr ab; Orte ohne
+  Koordinaten fehlen dann nur bei den weiteren Konzerten.
+- Ticket- und Termin-Links nur noch `http(s)`; sonst entfällt Knopf bzw. Link.
+- Dunkelmodus färbt nur die Überschriften der Bausteine um, nicht jede `h3` im Text.
+- `managed_by.url` am Segment ist relativ, damit CLI- und CP-Lauf denselben Wert schreiben; das
+  Segment wird nur angefasst, wenn sich Regel, Name oder Vermerk wirklich ändern.
+
+### Changed: Bausteine wie in der ANDERS-Mail
+
+- **Schriftgrößen** des Terminkastens nach der ANDERS-Mail als Vorgabe, je Baustein einstellbar wie
+  die Farben: Datum 24 px, Ort 18 px, Adresse 16 px/165 % in der Textfarbe (neues Feld), Knopf
+  14 px regulär. Der Text-Baustein hat eine einstellbare Überschriftgröße (Vorgabe bleibt 22 px,
+  damit vorhandene Layouts beim nächsten Speichern nicht umspringen; die ANDERS-Überschrift ist 36).
+- **Text vor und nach dem Kasten.** `&#123;&#123; terminkasten }}` und `&#123;&#123; weitere_termine }}` auf einer
+  eigenen Zeile im Kampagnentext setzen Kasten bzw. Liste genau dorthin, im Stil des gleichnamigen
+  Bausteins im Layout (sonst im Theme). Steht ein Platzhalter im Text, tritt der feste Baustein des
+  Layouts zurück, die Mail zeigt ihn nie doppelt. Die Hilfe unter dem Editor nennt sie bei
+  Serien-Vorlagen und -Kindern, zusammen mit den Termin-Feldern.
+- **Preheader in der Mail.** Block-Layouts zeigen ihn wie ANDERS als Kopfzeile über der Mail, mit
+  „Im Browser lesen", wenn es eine Webfassung gibt (`web_url`), und versteckt als erste Zeile für
+  die Postfach-Vorschau; jedes andere Layout (eingebaut oder von Hand) bekommt die versteckte Zeile
+  nach `<body>`, sofern es `&#123;&#123; preheader }}` nicht selbst ausgibt. Platzhalter im Preheader werden
+  eingesetzt.
+- **Weitere Konzerte** schreiben das Datum wie der Kasten („Samstag, den 05.12.26 um 20 Uhr"), in
+  einem Stück ohne Umbruch, Stadt und Ort darunter.
+
+### Added: VVK-Serie, weitere Termine, Terminkasten-Bausteine
+
+- **VVK-Serie.** Neue Serien-Einstellung `anchor`: `concert` (wie bisher, `days_before`) oder
+  `presale` mit `days_after_presale` (Vorgabe 0): Versand am Tag des Vorverkaufsstarts (+ N) um
+  `send_time`, nie vor dem Beginn des Vorverkaufs. Termine ohne Vorverkaufsdatum werden
+  übersprungen und als `skipped_no_presale` gezählt (im Editor wie „ohne PLZ"); läuft der
+  Vorverkauf schon und kommt das Konzert noch, geht die Mail sofort nach Freigabe. Braucht
+  `presale_starts_at` aus statamic-events 2.7; davor wird jeder Termin einer VVK-Serie übersprungen
+  und der Editor sagt es. Das Segment heißt dann „Vorverkauf: <Stadt> <PLZ> (&lt;km&gt; km)".
+- **Momentaufnahme erweitert** (`meta['event']`): `weekday` („Samstag"), `date_short` („17.10.26"),
+  `time_label` („20 Uhr" / „20:30 Uhr"), `street`, `presale_starts_at`, `presale_date`, in der
+  Zeitzone des Termins.
+- **Weitere Termine** (`meta['more_events']`, Einstellungen `more_enabled`, `more_radius_km` 100,
+  `more_limit` 3): spätere, nicht abgesagte Termine derselben Auswahl, deren Ort höchstens so weit
+  vom Ort dieses Termins liegt — Abstand über LeadHubs `PostalCode::distanceKm()` zwischen den
+  Koordinaten des Termins oder seiner PLZ. Nur Anzeige; die Zielgruppe bleibt der Umkreis des
+  Haupttermins. Die Termin-Listener gleichen deshalb jetzt alle Serien ab statt nur den einen
+  Termin, und hören auch auf `OccurrencePresaleChanged` (statamic-events 2.7).
+- **Bausteine „Terminkasten" und „Weitere Termine"** für Block-Layouts, nach den ANDERS-Mails:
+  Tag in Worten, Ort in der Akzentfarbe, Straße, „PLZ Stadt", Knopf „Tickets buchen" (Beschriftung
+  einstellbar), bzw. eine Zeile je weiterem Termin mit Link. Farben aus dem Layout-Theme, je Baustein
+  überschreibbar (Hintergrund, Akzent, Knopf). Ohne Termin bzw. ohne weitere Termine entfällt der
+  Baustein ganz. Tabellen, Inline-Styles, Knopf als `bgcolor`-Tabelle wie der Knopf-Baustein,
+  Spalten unter 620 px untereinander. Die Layout-Vorschau zeigt sie mit Beispielterminen;
+  `&#123;&#123; more_events }}…&#123;&#123; /more_events }}` und die Felder darin gelten nicht als unbekannte Variablen.
+- **Segmente von der Serie verwaltet:** SeriesSync setzt `managed_by` (statamic-leadhub 2.15) beim
+  Anlegen und beim Abgleich — `Serie „<Vorlagenname>"` mit Link auf die Vorlage. Auf älterem
+  LeadHub entfällt das Feld still, der Abgleich läuft weiter.
+- Die Zielgruppe auf der Freigabe-Seite und die Empfängerzahl in der Kinderliste der Vorlage
+  verlinken auf das Segment in LeadHub. Die Freigabe zeigt beim Termin „Vorverkauf ab …".
+- `SeriesSync::EMPTY_RESULT` und der Sync-Rückgabewert tragen zusätzlich `skipped_no_presale`.
+
+### Added: Kampagnenserie aus Terminen (Backend)
+
+Für jeden kommenden Termin aus `statamic-events` entsteht aus einer Vorlage-Kampagne automatisch eine
+Kampagne an die Kontakte im PLZ-Umkreis des Termins, N Tage vorher eingeplant — und erst nach einer
+Freigabe wird sie wirklich versendet. Was in MailerLite Handarbeit war (je Konzert eine Kampagne, je
+Konzert ein Umkreis-Segment), läuft jetzt über den Terminkalender.
+
+**Die Serie ist eine Kampagne.** Eine Kampagne mit `status = series` ist die Vorlage; Inhalt, Betreff,
+Liste, Layout, Marke, Mailklasse kommen aus dem normalen Kampagnen-Editor, die Serien-Einstellungen
+(Umkreis, Tage vorher, Uhrzeit, Ereignis-Auswahl) liegen in `meta['series']`. Erzeugte Kampagnen
+tragen den neuen Status `awaiting_approval`: nicht sendbar, nicht in `due()`, von
+`marketing:send-scheduled` ignoriert. Erst `CampaignSender::approve()` — per CP-Endpunkt, Rechte wie
+„Planen" — stellt sie auf `scheduled`; `withdraw()` nimmt die Freigabe zurück.
+
+**Ein idempotenter Sync ist der Kern** (`src/Series/SeriesSync.php`). Schlüssel sind
+`source_key = "occurrence:<uuid>"` und `series = <handle der Vorlage>`; zweimal laufen ändert nichts.
+Je Termin entsteht ein LeadHub-Segment „Konzert: <Stadt> <PLZ> (&lt;km&gt; km)" mit der vorhandenen
+`geo`-Bedingung (`within_km`) — Flo sieht dasselbe wie heute. Absagen und Löschungen räumen die
+nicht gesendeten Kinder und deren Segmente weg, Gesendetes bleibt unangetastet. Auslöser: Listener
+auf `OccurrenceScheduled/Rescheduled/Cancelled`, der tägliche `marketing:series-sync` und das
+Speichern einer Vorlage.
+
+**Fail closed für Serien:** Hat eine erzeugte Kampagne ihr Segment nicht (fehlend, inaktiv, oder
+LeadHub kann es nicht auflösen), bekommt sie **niemand** — mit Fehler im Log. Das bestehende
+fail-open für gewöhnliche Kampagnen bleibt unverändert. Das gilt jetzt auch für ein **leeres oder
+fehlendes Segment-Handle** (vorher ging so eine Kampagne an die ganze Liste); im CP sind Liste und
+Segment einer Serien-Kampagne gesperrt.
+
+**Nach Review nachgezogen:** Das Segment heißt `series-<Vorlage>-<Termin-UUID>`, je Vorlage und Termin
+eines (zwei Vorlagen mit verschiedenem Radius überschrieben sich vorher). Vorlagen sind im CP
+bearbeitbar (und lösen den Sync beim Speichern aus); Löschen einer Vorlage räumt ihre ungesendeten
+Kinder und unbenutzten Segmente sofort weg. Der Termin-Listener fängt Fehler ab und meldet sie, statt
+die Aktion der Termine-Erweiterung zu brechen; die Segment-Anlage verträgt einen parallelen Lauf.
+Kinder entveröffentlichter oder aus `event_ids` genommener Termine werden entfernt; ein freigegebenes
+Kind mit vergangener Sendezeit bleibt freigegeben; `unschedule()` stellt ein Serien-Kind wieder auf
+`awaiting_approval` statt auf Entwurf; die Automations-Aktion „E-Mail senden" lehnt Vorlagen und
+wartende Kinder ab.
+
+`&#123;&#123; event:city }}`, `&#123;&#123; event:date }}` & Co. stehen im Betreff, Preheader und Inhalt
+(`meta['event']` als Momentaufnahme, beim Sync nachgezogen); die Vorlage zeigt in der Vorschau
+Beispielwerte. `statamic-events` bleibt optional (`suggest`, Brücke hinter `class_exists`), der
+LeadHub-Constraint steigt dafür auf `^2.14` (Geo-Segmente).
+
+### Added: Kampagnenserie im CP (Vorlage, Liste, Freigabe)
+
+**Liste:** Reiter „Alle", „Wartet auf Freigabe" und „Serien" mit Zähler über der Kampagnenliste
+(`?status=` in der Adresse, ersetzen die leeren gespeicherten Ansichten). Status stehen jetzt in der
+Sprache des CP („Entwurf", „Serie", „Wartet auf Freigabe" …) statt als Rohwert; neue Spalte
+„Versand" mit „sofort nach Freigabe" für wartende Kampagnen ohne Zeit. Unter dem Namen sagt eine
+Vorlage, wie viele Kampagnen sie erzeugt hat, ein Kind seinen Termin.
+
+**Editor:** Abschnitt „Als Serie für Termine" mit Schalter (Entwurf ↔ Vorlage, zurück nur ohne
+Kinder), Umkreis, Tage vorher, Uhrzeit, Events (leer = alle), Land und der Platzhalter-Hilfe
+`&#123;&#123; event:city }}` & Co. Darunter die erzeugten Kampagnen mit Stadt, Termin, Versand, Status und
+Kontakten im Umkreis, plus der Hinweis „N Termine ohne Postleitzahl werden übersprungen" (live
+gezählt, `SeriesSync::missingPostalCodes()`). Speichern meldet das Sync-Ergebnis. Ohne
+`statamic-events` steht dort nur ein Satz. Vorlagen zeigen keinen Versand-Block und kein
+Segment-Feld; Kinder zeigen den Weg zur Vorlage und Liste/Segment gesperrt. Die Live-Vorschau
+rendert `&#123;&#123; event:… }}` mit dem Beispieltermin bzw. der Momentaufnahme des Kindes.
+
+**Freigabe:** Die Seite einer wartenden Kampagne fasst zusammen, was rausgeht (Betreff mit
+eingesetzten Platzhaltern, Absender, Segment mit Kontaktzahl, Liste, Termin, Versandzeit oder
+„sofort nach Freigabe") neben der Vorschau der Mail. „Freigeben" ist die Hauptaktion im Kopf (mit
+Rückfrage, auch in der Befehlspalette), eine freigegebene Kampagne bietet „Zurückziehen". Fehler
+der Freigabe erscheinen wie die übrigen Versandfehler über der Seite.
+
+Neue Validierung beim Speichern: `series_enabled`, `series.radius_km` (1–1000),
+`series.days_before` (0–365), `series.send_time` (`H:i`), `series.event_ids`, `series.country`
+(zwei Buchstaben). Fehlt `series_enabled` im Request, bleibt die Serie wie sie ist.
+
+### Changed: Kampagnenserie im CP, zweite Runde
+
+- **Eine wartende Kampagne ist bearbeitbar** (Text, Betreff, Preheader; Liste und Segment bleiben
+  gesperrt). Speichern lässt sie auf „Wartet auf Freigabe"; der Abgleich zieht weiter nur
+  Termin-Momentaufnahme, Versandzeit und Segmentregel nach und lässt den Text stehen. Der Editor
+  zeigt dann keinen Versand-Block, sondern den Weg zur Freigabe, und zählt das eigene
+  Umkreis-Segment live statt LeadHubs noch leerer Mitgliedschaft.
+- **Freigabe-Seite:** Zeile „Preheader" (mit eingesetzten Platzhaltern), der Absender, der wirklich
+  verwendet wird (Marken-Absender aus `settings.mail` vor dem der Kampagne, dieselbe Reihenfolge wie
+  `CampaignMail`, neu als `CampaignMail::senderUnder()`; eine verweigernde Marke steht als Warnung
+  da), „Testmail an mich senden" (dieselbe Route und dasselbe Recht wie im Editor, mit den Angaben
+  dieses Termins), Desktop/Handy-Umschalter an der Vorschau und der Satz „Ohne Freigabe geht diese
+  Mail nicht raus" mit Versandzeit.
+- **Liste:** Betreffzeilen von Kindern mit eingesetztem Termin (`CampaignRenderer::headline()`),
+  Kontakte im Umkreis als Empfängerzahl wartender und geplanter Kinder (fünf Minuten gecacht),
+  relative Zeit unter dem Versand („in 12 Tagen"), ein sichtbarer Knopf „Prüfen" an wartenden
+  Zeilen, und der Reiter „Wartet auf Freigabe" nach nächstem Versand sortiert (sofortige zuerst).
+  Der Name einer wartenden Kampagne führt zur Freigabe.
+- **Brotkrumen:** Kampagnen-, Sequenz-, Listen- und Layout-Seiten heißen „Marketing / Kampagnen"
+  usw. statt „Marketing / Übersicht" — der Übersichts-Eintrag beanspruchte bisher jede Adresse
+  unter `marketing/`.
+- Die Vorschau begrüßt eine Beispielperson („Hallo Alex,") statt „Hallo ,".
+
+### Changed: Kampagnenseite vor dem Versand, Vorlagen-Vorschau, Absender eines Kindes
+
+- **Kein Bericht vor dem Versand.** Die Seite einer Kampagne zeigt die Kennzahlen-Reiter erst ab
+  `sending`/`sent` (für alle Kampagnen, nicht nur Serien-Kinder). Davor stehen der Verlauf
+  („Geplant …") und „Geht an bis zu N Abonnent:innen der Liste" — die abonnierten Mitglieder der
+  Liste, durch das Segment live eingegrenzt wie beim Versand; Sperrliste und Abmeldungen fallen erst
+  dort heraus. Auf der Freigabe steht dieselbe Zahl neben „N Kontakte im Umkreis".
+- **Vorschau einer Vorlage mit echtem Termin.** Hat die Vorlage schon Kampagnen erzeugt, rendert die
+  Live-Vorschau mit dem Termin der ersten (Auswahl „Vorschau für" in der Vorschau-Leiste), die
+  gespeicherte Vorschau ebenso; der Beispieltermin nur, solange es keinen gibt.
+- **Absender eines Kindes nur lesend**, mit dem wirklich verwendeten Absender wie auf der Freigabe,
+  statt der Eingabefelder mit ihren Hinweisen zur Marken-Konfiguration.
+
 ## 2.25.1 — 2026-09-25
 
 ### Fixed
