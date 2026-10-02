@@ -7,12 +7,12 @@ hero:
   name: Statamic Addons
   text: One suite, one set of docs
   tagline: >
-    Thirty-seven packages for Statamic 6: a CRM, an inbox for your mailbox, email marketing, a visual automation
+    Thirty-eight packages for Statamic 6: a CRM, an inbox for your mailbox, email marketing, a visual automation
     builder, a webhook layer, checkout with products, offers, invoices and a partner programme, an
     activity ledger, notifications, a subscriber preference centre, entitlements,
     gated resources, private media, courses, certificates, assessments, client rooms,
     customer accounts, teams, a JSON API for single-page apps, events,
-    smart links for music and content tooling.
+    smart links for music and content tooling like footnotes for Bard.
     Built to be installed one at a time and to compose when you install the next one.
   # The hero's image block only renders when `image` is set, and the theme's
   # `home-hero-image` slot replaces what goes inside it with <SuiteMosaic />.
@@ -69,7 +69,7 @@ features:
 ---
 
 ::: warning This suite is work in progress
-Thirty-seven packages, twenty-four of them public inside five weeks, and only some
+Thirty-eight packages, twenty-four of them public inside five weeks, and only some
 of them have been proven in production. Every card below carries its level: **Proven** has run
 on live sites for months, **New** is in production but only weeks old, and
 **Experimental** has never been installed anywhere. Read [how far along each

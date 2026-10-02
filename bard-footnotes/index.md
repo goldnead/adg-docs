@@ -35,8 +35,8 @@ out on output and the numbering closes the gaps.
 
 <Figure
   src="bard-footnotes-frontend"
-  alt="The frontend: the article with a superscript 1 behind a sentence, and below it the source list under the heading Quellen, with a back arrow per row"
-  caption="The frontend. The typed [1] has become a superscript link; the source list under “Quellen” carries the jump target and the ↩ back link. The script tag typed as a source text is printed as escaped text, and the javascript: address from the same grid is not a link at all — by design, since nothing from a content field should end up in an href unvetted." />
+  alt="The frontend: the article with a superscript 1 behind a sentence, and below it the source list under the heading Sources, with a back arrow per row"
+  caption="The frontend. The typed [1] has become a superscript link; the source list under “Sources” carries the jump target and the ↩ back link. The script tag typed as a source text is printed as escaped text, and the javascript: address from the same grid is not a link at all — by design, since nothing from a content field should end up in an href unvetted." />
 
 ## What you get
 

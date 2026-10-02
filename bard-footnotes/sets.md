@@ -14,7 +14,7 @@ modifier's result as the data of a pair — the same mechanism
 ```antlers
 {{ content | footnotes }}
     {{ if type == 'text' }}{{ text }}{{ /if }}
-    {{ if type == 'quote' }}<blockquote>{{ quote }}</blockquote>{{ /if }}
+    {{ if type == 'quote' }}<blockquote>{{ quote | entities }}</blockquote>{{ /if }}
 {{ /content }}
 ```
 
