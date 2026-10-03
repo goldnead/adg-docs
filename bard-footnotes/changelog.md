@@ -14,6 +14,54 @@ Cross-version upgrade notes for the whole suite are in
 
 All notable changes to `statamic-bard-footnotes` will be documented in this file.
 
+## 2.0.0 - 2026-10-03
+
+### Breaking: footnotes move into the text
+
+- Requires Statamic 6 and PHP 8.2. For Statamic 5, stay on the `1.x` branch — see
+  UPGRADE.md for the manual migration.
+- Removed the `sources` grid fieldset and typed `[n]` markers: no more `Footnotes::render()`,
+  `renderSets()`, `renderValue()`, the `&#123;&#123; | footnotes }}` modifier, or the fieldset import.
+  Footnotes are now created with a **Footnote** toolbar button in Bard — an inline node storing
+  its source (`text`, optional `url`), rendered as a superscript link.
+- Numbers are derived, never stored: order of first occurrence, same source = same number
+  (same trimmed URL, else same text — whitespace collapsed, case-insensitive). The editor shows
+  the live number; clicking a footnote reopens its popover.
+- Numbering runs across the whole field, Bard sets included; a Bard field nested inside a set
+  remains its own document.
+- Markup: `<sup class="footnote-ref"><a href="#fn-n" id="fnref-n" aria-label="Footnote n">n</a></sup>`,
+  jump target on first occurrence only. The CP bundle (button, popover, node view) is committed
+  under `dist/` and published with `vendor:publish --tag=statamic-bard-footnotes`.
+- The `&#123;&#123; footnotes }}` tag reads the field from the template context by handle
+  (`field="content"` — a `:content` binding arrives as rendered HTML). `cited` is gone: every
+  listed source is cited by definition. The pair loop now yields `number`, `text`, `url`.
+- `Footnotes::sources()` returns `list<{number, text, url}>` for a raw Bard value.
+
+### Refined: editing reused sources, CP polish
+
+- Opening a footnote selects the source it cites in the popover ("New source" only for
+  unmatched ones); the select is labeled, the inputs use placeholders, and the link field
+  is marked optional.
+- Editing a reused source updates every footnote citing it — one transaction, with a hint
+  ("Used N times. Changes apply to every place.") when it applies. Removing a footnote
+  still only removes that one spot.
+- The popover focuses the source text field on open, like Bard's link toolbar.
+- The toolbar button inserts the footnote at the end of the selection; selected text is kept
+  (it used to be replaced) and is not taken over as the source.
+- Picking another existing source, or "New source", in a footnote's popover re-points only that
+  footnote; before, it overwrote every place citing the old source. Editing the source it
+  already cites still changes all of them, and the "Used N times" hint now shows only then.
+- A footnote with neither text nor link is ignored: no number, no list entry, no markup.
+- The source key treats Unicode whitespace (NBSP, U+FEFF, U+0085, `\p{Z}`) the same in PHP and
+  in the editor, so numbers in the CP and on the page can no longer disagree.
+- `&#123;&#123; footnotes field="…" }}` logs one warning in debug mode when the field is missing or not a
+  Bard value.
+- Limits documented: `save_html: true` is unsupported (the saved HTML shows `[source]` instead of
+  an empty superscript), and a Bard field nested in a set reuses the ids `fn-1` … of the outer list.
+- The superscript in the editor is link-colored, underlines on hover, highlights when
+  selected, and carries the source as tooltip; the toolbar icon is its own shape
+  (text line, superscript 1, footnote rule).
+
 ## 1.0.0 - 2026-10-02
 
 ### First release

@@ -55,7 +55,7 @@ register no section on it.
 | [Table of Contents](/toc/installation) | no | no, a settings section only |
 | [Inline Edit](/inline-edit/installation) | no | no nav entry, but a CP bundle that must be published |
 | [Bard Assist](/bard-assist/installation) | no | no, a toggle in the Bard field's settings |
-| [Bard Footnotes](/bard-footnotes/installation) | no | no |
+| [Bard Footnotes](/bard-footnotes/installation) | no | no nav entry, but a CP bundle that must be published |
 | [Smart Links](/smartlinks/installation) | yes (`smartlinks_clicks`, `smartlinks_suggestions`, `smartlinks_link_status`); the songs themselves are entries in your own collections | yes |
 | [Payments](/payments/installation) | yes (ten, from `payments` to `payment_subscription_notices`) | yes, four utilities |
 | [Products](/products/installation) | yes (`products`) | yes, one utility |

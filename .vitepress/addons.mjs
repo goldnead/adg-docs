@@ -590,20 +590,21 @@ export const addons = [
     layer: 'content',
     license: 'MIT',
     tagline:
-      'Footnotes for Bard: type [1], keep the sources in a grid, get superscript links and a source list.',
+      'Footnotes for Bard: a toolbar button, superscript numbers in the text and a source list that builds itself.',
     icon: '¹',
-    statamic: 'Statamic 5 or 6',
+    // 2.0 is Statamic 6 only; Statamic 5 stays on the 1.x branch.
+    statamic: 'Statamic 6',
     // The addon ships no config file, so there is nothing to configure; and
     // nothing has gone wrong in the field yet, so no troubleshooting page.
     configuration: false,
     troubleshooting: false,
     pages: [
-      { text: 'Writing with markers', link: 'writing' },
-      { text: 'The footnotes modifier', link: 'modifier' },
+      { text: 'Writing with the button', link: 'writing' },
       { text: 'The footnotes tag', link: 'tag' },
       { text: 'Bard with sets', link: 'sets' },
       { text: 'From PHP', link: 'php' },
       { text: 'Styling and translations', link: 'styling' },
+      { text: 'Upgrading from 1.x', link: 'upgrading' },
     ],
   },
   {

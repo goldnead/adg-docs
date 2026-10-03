@@ -24,12 +24,14 @@ Statamic 5 is not supported by the suite. LeadHub's v0.3 Control Panel rewrite m
 to Inertia + Vue 3, which is Statamic 6 only; pin to `^0.2.x` if you are stuck on
 Statamic 5, and expect no further releases on that line.
 
-[Table of Contents](/toc/) and [Bard Footnotes](/bard-footnotes/) are the partial
-exceptions, because neither has a Control Panel screen to be tied to a Statamic
-version: Table of Contents 2.x runs on Statamic 5 as well as 6, and Bard Footnotes
-requires `statamic/cms ^5.0|^6.0` from its first release. The toc v1
-line went back to Statamic 3 on PHP 7.4 and is no longer maintained; `v1.10` stays
-installable for anyone already pinned to it.
+[Table of Contents](/toc/) is the partial exception, because it has no Control
+Panel screen to be tied to a Statamic version: Table of Contents 2.x runs on
+Statamic 5 as well as 6. The toc v1 line went back to Statamic 3 on PHP 7.4 and is
+no longer maintained; `v1.10` stays installable for anyone already pinned to it.
+
+[Bard Footnotes](/bard-footnotes/) was one too in 1.x, which ran on Statamic 5 as
+well. 2.0 moved the footnote into a Bard toolbar button and a Control Panel
+bundle and requires `statamic/cms ^6.0`; Statamic 5 stays on the `1.x` branch.
 
 ## Databases
 

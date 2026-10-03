@@ -1,49 +1,82 @@
-# Writing with markers
+# Writing with the button
 
 <AddonHeader />
 
-For the editor, the whole addon is one habit: where a claim needs a source, type
-`[1]` — plain text, in brackets, the number of the source. Save the entry. The
-numbering is the order of the rows in the **sources** grid below the article:
-row one is `[1]`, row two is `[2]`, and so on up to `[99]`.
+For the editor, the whole addon is one button. Where a claim needs a source,
+place the cursor and click **Footnote** in Bard's toolbar. A panel opens at the
+side; fill in the source, add a link if it lives online, and apply.
 
 <Figure
-  src="bard-footnotes-sets"
-  alt="The Control Panel: a Bard field with a text set and a quote block, and the sources grid below with rows of source text and link"
-  caption="A Bard field with sets, the typed markers inside the text sets, and the sources grid below. The number of a marker is the row it points at, wherever in the text it stands." />
+  src="bard-footnotes-new"
+  alt="The Control Panel with the Footnote panel open for a new footnote: the select reads New source, below it an empty Source field and an optional link field"
+  caption="The panel for a new footnote: the select at the top on “New source”, the source field focused, the link field marked optional. The editor on the left already shows three numbers." />
 
-Everything else happens on output. What you type is what is stored — which is
-why the markers survive every save, the live preview, inline editing, and a
-move of the text into another entry.
+A footnote stores its source and nothing else. The number is derived from the
+document and shown live in the editor, so there is nothing to renumber when you
+add, move or delete one.
 
-## What becomes a link
+## The panel
 
-- `[1]` to `[99]`, when a source with that number exists: a superscript link to
-  the source list, and a back link from the list to the first occurrence
-- Cite the same source twice: both `[1]` become links; only the first carries
-  the jump target the back link returns to
+- **Source** is required text: a book, a study, a name and a date
+- **Link** is optional and only reaches the page when it starts with `http://` or
+  `https://`
+- The select at the top offers the sources **already cited in this field**.
+  Picking one fills the source and link with its text and link, so citing it
+  again is one click and the second place gets the same number
+- **Apply Footnote** inserts the footnote at the cursor
 
-## What stays text
+With text selected, the footnote is inserted at the **end of the selection**. The
+selected text stays exactly as it is and is not taken over as the source.
 
-- **A number without a source.** `[4]` when the grid has three rows stays `[4]`,
-  and `[0]` always stays `[0]`. Fixing it means adding the row, not editing the text
-- **Everything inside a link.** `Link [1]` in the middle of an anchor keeps its
-  brackets — a marker inside a link would break the link's own meaning
-- **Headings, h1 through h6.** A heading carries no sentence that needs a
-  source, and a superscript in a heading line breaks the line's rhythm
-- **`pre` and `code`.** `arr[1]` in a code block is code, not a citation; it is
-  left alone on purpose
+A footnote with neither text nor link has no source: it gets no number, no list
+entry and renders nothing.
 
-If a marker you expected to become a link stays text, one of the four above is
-the reason — or the number is higher than the count of source rows.
+## What counts as the same source
 
-## The sources grid
+Two footnotes are the same source when they carry the same link (trimmed), or,
+without a link, the same text: whitespace trimmed and collapsed, Unicode spaces
+such as a non-breaking space included, case-insensitive. The Control Panel and
+the rendered page apply exactly the same rule, so the number you see while
+writing is the number on the page.
 
-One row per source: the **source text** (a book, a study, a name and a date)
-and, when it lives online, a **link**. Order the rows in the order you cite
-them; the numbering follows the rows, and a link only reaches the page when it
-starts with `http://` or `https://`.
+## Seeing a source
 
-An empty row does no harm: rows without text drop out on output, and the
-numbering closes the gap. Deleting a row in the middle renumbers everything
-below it — the markers follow the rows, so check the text when you reorder.
+Hover a number in the editor and its source shows as a tooltip.
+
+<Figure
+  src="bard-footnotes-hover"
+  alt="An editor excerpt: the pointer rests on the superscript 2 and a tooltip shows the source text, which reads Eigene Beobachtung followed by a script tag"
+  caption="Hovering the 2 shows its source. The test data deliberately uses a script tag as the source text: it appears here as plain text, and on the page it is escaped the same way." />
+
+## Changing a footnote
+
+Click a number in the text to open the panel again. The select shows the source
+this footnote cites, and the panel can do three things.
+
+**Edit the source it cites.** Changing the text or the link of a source that is
+used in more than one place changes **every** place that cites it, in one step.
+The panel says so: "Used 2 times. Changes apply to every place."
+
+<Figure
+  src="bard-footnotes-edit-shared"
+  alt="The Control Panel with the Footnote panel open on an existing footnote: the select shows the first source, a hint reads Used 2 times, and the source and link fields are filled in. In the editor on the left the numbers 1, 2, 1 and 3 are visible"
+  caption="Editing a source that appears twice. The hint under the select says it is used 2 times; applying the change updates both places. The editor on the left shows the live numbers 1, 2, 1, 3." />
+
+**Switch to another source.** Pick a different source in the select, or “New
+source”, and only **this** footnote is re-pointed. The other places citing the
+old source keep it.
+
+**Remove it.** **Remove Footnote** deletes this one footnote and nothing else,
+even when its source is cited elsewhere.
+
+::: tip The difference to remember
+Editing the text of the source a footnote cites changes every place that cites it.
+Choosing another source changes only the one you opened.
+:::
+
+## If the button is missing
+
+The button appears only in Bard fields whose blueprint lists `footnote` under
+`buttons`; see [Installation](/bard-footnotes/installation#the-button).
+Footnotes already in the text of a field without the button still display and can
+be edited by clicking them.

@@ -2,8 +2,9 @@
 
 <AddonHeader />
 
-No assets are published and nothing needs a build step. The shipped markup
-carries three classes and the ids, and two small rules cover the essentials:
+No frontend assets are published and nothing on the page needs a build step. The
+shipped markup carries a few classes and the ids, and three small rules cover the
+essentials:
 
 ```css
 sup.footnote-ref {
@@ -29,13 +30,13 @@ set it to whatever your header measures.
 
 | Selector / id | Where it is |
 | --- | --- |
-| `sup.footnote-ref` | around every linked marker in the text |
+| `sup.footnote-ref` | around every footnote reference in the text |
 | `.footnotes` | the `section` around the whole list |
 | `.footnotes ol` / `.footnotes li` | the ordered list and its rows |
 | `#footnotes-title` | the `h2` with the list heading |
-| `#fn-n` | the list entry of source `n` — the marker's jump target |
-| `#fnref-n` | the first occurrence of marker `n` — the back link's target |
-| `.footnote-back` | the `↩` back link, on cited sources only |
+| `#fn-n` | the list entry of source `n`, the reference's jump target |
+| `#fnref-n` | the first occurrence of source `n` in the text, the back link's target |
+| `.footnote-back` | the `↩` back link, one per source |
 
 ## Your own view
 
@@ -48,8 +49,8 @@ php artisan vendor:publish --tag=bard-footnotes-views
 
 That copies `list.antlers.html` to `resources/views/vendor/bard-footnotes/`,
 and the tag renders your copy from then on. The shipped file is the contract:
-an ordered list, `id="fn-n"` per row, `| entities` on text and url, the back
-link only when a source is cited. Keep those four and the rest — classes,
+an ordered list, `id="fn-n"` per row, `| entities` on text and url, a back
+link to `#fnref-n` per source. Keep those four and the rest — classes,
 wrappers, wording — is yours.
 
 ::: tip The pair needs no publishing
@@ -59,9 +60,10 @@ lives in your template already.
 
 ## Translations
 
-The strings that render — the list heading, the marker's `aria-label`, the back
-link's `aria-label` — ship for English and German under
-`bard-footnotes::messages`:
+The strings that render on the page — the list heading, the reference's
+`aria-label`, the back link's `aria-label` — ship for English and German under
+`bard-footnotes::messages`. The Control Panel panel's labels live in the same
+file:
 
 | Key | English | German |
 | --- | --- | --- |

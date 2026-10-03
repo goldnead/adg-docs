@@ -399,11 +399,11 @@ server. MIT, and not part of the Suite.
 
 **[Bard Footnotes](/bard-footnotes/)** &nbsp;·&nbsp; `goldnead/statamic-bard-footnotes`
 
-Footnotes for Bard. The editor types `[1]` where a source belongs, the sources sit in
-a grid field, and on output the markers become superscript links into a numbered
-source list with back links. A marker without a matching source stays text, and so
-does everything inside links, headings and code. No migrations, no screen in the
-Control Panel, one fieldset to import. MIT, and not part of the Suite.
+Footnotes for Bard. A toolbar button opens a panel for the source and an optional
+link, or offers a source already cited in the field. The footnote is an inline node,
+`{{ content }}` renders it as a superscript number, and one tag prints the numbered
+source list with back links. Statamic 6 only; Statamic 5 stays on 1.x. No migrations,
+no config file, a Control Panel bundle to publish once. MIT, and not part of the Suite.
 
 **[Smart Links](/smartlinks/)** &nbsp;·&nbsp; `goldnead/statamic-smartlinks`
 
