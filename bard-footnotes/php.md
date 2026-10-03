@@ -42,10 +42,34 @@ footnote with neither text nor URL, which is never numbered, listed or rendered.
 
 **`Footnotes::number($value): mixed`** is the augment hook itself: it walks one
 field's document and writes the derived number into every footnote node. You
-rarely call it yourself.
+rarely call it yourself, except when you render a field in parts, see below. It
+is idempotent: a document in which every footnote with a source already carries a
+number comes back unchanged.
 
 **`Footnotes::raw($value): mixed`** turns a Bard value into its raw document: a
 `Value` into its raw content, a collection into its items, an array into itself.
+
+## Rendering a Bard field in parts
+
+The augment hook numbers whatever document it is given. If your app renders one
+Bard field in parts, say one `Augmentor::convertToHtml()` call per stretch of text
+between two sets, the hook runs once per part and every part would start again at
+1. Number the whole document first, then split it:
+
+```php
+use Goldnead\BardFootnotes\Footnotes;
+use Statamic\Fieldtypes\Bard\Augmentor;
+
+$numbered = Footnotes::number($entry->content->raw()); // the whole field, once
+
+foreach ($stretchesBetweenSets($numbered) as $part) {
+    $html .= (new Augmentor($bardFieldtype))->convertToHtml($part);
+}
+```
+
+Because `Footnotes::number()` is idempotent, the hook keeps the field-wide numbers
+in each part, and `id="fnref-n"` stays on the first occurrence in the whole field.
+A partly numbered document is numbered anew.
 
 ## In Blade
 

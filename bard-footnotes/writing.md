@@ -15,7 +15,46 @@ A footnote stores its source and nothing else. The number is derived from the
 document and shown live in the editor, so there is nothing to renumber when you
 add, move or delete one.
 
+## Where sources live
+
+Under the editor. As soon as a Bard field holds at least one footnote, a
+**Sources (N)** list appears directly below it, in number order and live on every
+change. It is the place to see every source of the field at a glance and to edit
+any of them. A field without footnotes shows nothing.
+
+<Figure
+  src="bard-footnotes-overview"
+  alt="A whole entry in the Control Panel: text with superscript numbers, a quote set, and below the editor the list Sources (2) with number, source, citation count and two icon buttons per row"
+  caption="The whole entry: numbers in the text, a quote set, and under the editor the list “Sources (2)”. Each row shows the number, the source (↗ when it has a link), how often it is cited and two icon buttons." />
+
+Each row carries:
+
+- the **number** and the **source**; a source with a link shows ↗ and opens the
+  link in a new tab
+- the number of citations, such as **2×**
+- **Go to citation** selects the first place that cites the source and scrolls to
+  it. Click again and the button reads **Next citation**: it moves on to the next
+  place, and after the last one starts over
+- **Edit** opens the source in the panel
+
+**Edit** opens the panel as **Edit Source N**. It has no source select, only the
+source and its link, and the hint "Used N times. Changes apply to every place."
+**Apply Source** changes every place that cites it. While the panel is open, all
+places of that source are highlighted in the editor.
+
+<Figure
+  src="bard-footnotes-edit-source"
+  alt="The Control Panel with the panel Edit Source 1 opened from the Sources list: no select, a hint that the source is used 2 times, the source and link fields and the button Apply Source. In the editor both places citing source 1 are highlighted"
+  caption="“Edit Source 1”, opened from the list. Both places that cite source 1 are highlighted in the text while the panel is open." />
+
+The list is for seeing and editing, not for removing: a footnote is removed in the
+text, see [Changing a footnote](#changing-a-footnote). The list has no Edit button
+in a read-only field. In Bard's fullscreen mode it is a card of its own under the
+editor.
+
 ## The panel
+
+This is the panel behind the toolbar button and behind a number in the text.
 
 - **Source** is required text: a book, a study, a name and a date
 - **Link** is optional and only reaches the page when it starts with `http://` or
@@ -50,7 +89,8 @@ Hover a number in the editor and its source shows as a tooltip.
 
 ## Changing a footnote
 
-Click a number in the text to open the panel again. The select shows the source
+Click a number in the text to open the panel again. (To edit a source without
+hunting for its number, use **Edit** in the [Sources list](#where-sources-live).) The select shows the source
 this footnote cites, and the panel can do three things.
 
 **Edit the source it cites.** Changing the text or the link of a source that is
@@ -60,7 +100,7 @@ The panel says so: "Used 2 times. Changes apply to every place."
 <Figure
   src="bard-footnotes-edit-shared"
   alt="The Control Panel with the Footnote panel open on an existing footnote: the select shows the first source, a hint reads Used 2 times, and the source and link fields are filled in. In the editor on the left the numbers 1 and 2 stand before a quote set, and 1 again after it"
-  caption="Editing a source that appears twice. The hint under the select says it is used 2 times; applying the change updates both places. The editor on the left shows the live numbers 1, 2 and, after the quote set, 1 again." />
+  caption="The panel opened from a number in the text, with the source select. The source appears twice: the hint under the select says it is used 2 times; applying the change updates both places. The editor on the left shows the live numbers 1, 2 and, after the quote set, 1 again." />
 
 **Switch to another source.** Pick a different source in the select, or “New
 source”, and only **this** footnote is re-pointed. The other places citing the

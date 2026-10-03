@@ -14,6 +14,36 @@ Cross-version upgrade notes for the whole suite are in
 
 All notable changes to `statamic-bard-footnotes` will be documented in this file.
 
+## 2.1.0 - 2026-10-03
+
+### Sources under the field
+
+- A Bard field citing at least one source shows **Sources (N)** under the editor, styled like
+  core's footer toolbar: number, source text (↗ for links, new tab), citation count, and two
+  icon buttons — **Go to citation** / **Next citation** (selects the first citation and scrolls
+  to it; again for the next) and **Edit**. Edit opens "Edit Source n": no source select, only
+  text and link, Apply Source changes every place of that source (nothing is merged), and those
+  places are highlighted in the text while the panel is open. Live on every change, in number
+  order; no Edit in read-only fields. No remove: footnotes are removed in the text.
+- Mounted by a ProseMirror plugin view through TipTap's `VueRenderer` (same app context and
+  provides as a node view), right after the editor frame and before core's footer toolbar.
+  Rebuilt with the editor when Bard enters or leaves fullscreen, where it is a card of its own
+  under the editor card. Nothing is mounted in a field without footnotes.
+- New pure helpers in `footnotes.js`, tested against a real ProseMirror schema: `hasFootnotes`,
+  `nextCitation`, `isHttpUrl`, the `citationHighlightPlugin` with its `setCitationHighlight`
+  command (not recorded for undo); `reusedCount` learns `wholeSource`.
+- New strings (en/de): `sources_heading`, `cited_count`, `cited_times`, `open_link`,
+  `go_to_citation`, `next_citation`, `edit`, `edit_source`, `apply_source`.
+
+### Rendering a field in parts
+
+- `Footnotes::number()` is idempotent: a document whose every footnote with a source already
+  carries a `number` comes back unchanged (with its `first` flags). Number the whole field once,
+  split it, render each part through `Augmentor::convertToHtml()`: the numbers run across all
+  parts and `fnref-n` sits only on the first occurrence in the whole field. Before, the hook
+  restarted at 1 in every part. A partly numbered document is numbered anew. See "Rendering a
+  Bard field in parts" in the README.
+
 ## 2.0.0 - 2026-10-03
 
 ### Breaking: footnotes move into the text

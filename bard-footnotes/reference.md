@@ -20,6 +20,14 @@ The button is opt-in per field. The `footnote` node itself is always registered,
 so footnotes display and can be edited in fields that do not list the button.
 Requires `save_html: false`, the default.
 
+## The Sources list
+
+Shown under a Bard field that cites at least one source, titled **Sources (N)**.
+Per row: number, source (↗ for a link), citation count, **Go to citation** /
+**Next citation** and **Edit**. Edit opens **Edit Source N** (source and link, no
+select; **Apply Source** changes every place). There is no remove in the list, and
+no Edit in a read-only field.
+
 ## The node
 
 An inline node `footnote` in the Bard document. It stores two attributes:
@@ -86,6 +94,7 @@ public static function key(?string $text, ?string $url): string;
 public static function isEmpty(?string $text, ?string $url): bool;
 
 // The augment hook: writes the derived number into every footnote node.
+// Idempotent: a fully numbered document comes back unchanged.
 public static function number(mixed $value): mixed;
 
 // A Bard value to its raw document.

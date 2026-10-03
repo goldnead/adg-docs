@@ -37,6 +37,9 @@ second field, no typed `[1]`, no numbers to keep in sync by hand.
 
 - **A toolbar button** and a panel for source and link, with the sources already
   cited in the field on offer — [Writing with the button](/bard-footnotes/writing)
+- **A Sources list under the editor** that appears once the field holds a footnote:
+  number, source, citation count, jump to the citation, edit a source for every
+  place at once — [Where sources live](/bard-footnotes/writing#where-sources-live)
 - **A tag** that prints the source list, either from the shipped view or as a
   pair loop — [the footnotes tag](/bard-footnotes/tag)
 - **Rendering for free**: `{{ content }}` turns every footnote into its
