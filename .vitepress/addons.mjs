@@ -511,6 +511,7 @@ export const addons = [
       { text: 'Granting & revoking', link: 'granting' },
       { text: 'The state machine', link: 'states' },
       { text: 'Extending', link: 'extending' },
+      { text: 'Control Panel', link: 'control-panel' },
     ],
   },
   {
