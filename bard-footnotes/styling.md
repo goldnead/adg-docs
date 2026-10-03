@@ -73,6 +73,6 @@ file:
 
 Statamic resolves the site's locale against these automatically. Another
 language, or different wording, needs no fork: a
-`resources/lang/vendor/bard-footnotes/<locale>/messages.php` in your app
+`lang/vendor/bard-footnotes/<locale>/messages.php` in your app
 overrides the package strings — Laravel's standard mechanism for package
 translations, and it survives `composer update`.

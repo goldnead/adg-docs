@@ -30,8 +30,8 @@ second field, no typed `[1]`, no numbers to keep in sync by hand.
 
 <Figure
   src="bard-footnotes-frontend"
-  alt="The frontend: the article with a superscript 1 behind a sentence, and below it the source list under the heading Sources, with a back arrow per row"
-  caption="The frontend: superscript links in the text, the source list under “Sources” with a ↩ back link per row." />
+  alt="The frontend: a paragraph with footnotes 1 and 2, a quote set, a paragraph citing source 1 again, and below it the source list under the heading Sources, with a back arrow per row"
+  caption="The frontend: superscript links in the text, numbered across the quote set; the second citation of the NIDCD source reuses number 1. Below, the source list under “Sources” with a ↩ back link per row." />
 
 ## What you get
 

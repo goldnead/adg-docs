@@ -59,8 +59,8 @@ The panel says so: "Used 2 times. Changes apply to every place."
 
 <Figure
   src="bard-footnotes-edit-shared"
-  alt="The Control Panel with the Footnote panel open on an existing footnote: the select shows the first source, a hint reads Used 2 times, and the source and link fields are filled in. In the editor on the left the numbers 1, 2, 1 and 3 are visible"
-  caption="Editing a source that appears twice. The hint under the select says it is used 2 times; applying the change updates both places. The editor on the left shows the live numbers 1, 2, 1, 3." />
+  alt="The Control Panel with the Footnote panel open on an existing footnote: the select shows the first source, a hint reads Used 2 times, and the source and link fields are filled in. In the editor on the left the numbers 1 and 2 stand before a quote set, and 1 again after it"
+  caption="Editing a source that appears twice. The hint under the select says it is used 2 times; applying the change updates both places. The editor on the left shows the live numbers 1, 2 and, after the quote set, 1 again." />
 
 **Switch to another source.** Pick a different source in the select, or “New
 source”, and only **this** footnote is re-pointed. The other places citing the
