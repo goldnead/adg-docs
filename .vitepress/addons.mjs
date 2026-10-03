@@ -667,6 +667,7 @@ export const addons = [
       { text: 'The kind and the pointer', link: 'kinds' },
       { text: 'The handle is a promise', link: 'handles' },
       { text: 'In the payment catalogue', link: 'catalogue' },
+      { text: 'Accesses', link: 'accesses' },
     ],
   },
   {

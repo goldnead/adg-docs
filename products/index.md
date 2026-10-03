@@ -98,4 +98,5 @@ config line before.
 - [The kind and the pointer](/products/kinds) — six kinds, three answers
 - [The handle is a promise](/products/handles) — why it is unique, and when it freezes
 - [In the payment catalogue](/products/catalogue) — the two seams, and what wins
+- [Accesses](/products/accesses) — the record behind a grant slug, and what it contains
 - [Reference](/products/reference) · [Troubleshooting](/products/troubleshooting)

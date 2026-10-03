@@ -12,6 +12,67 @@ Release notes for `goldnead/statamic-products`, as published with the package.
 Cross-version upgrade notes for the whole suite are in
 [Upgrading](/guide/upgrading).
 
+## 1.7.0 — 2026-10-03
+
+Minor: new table, new API, nothing removed.
+
+### Added: accesses, the record behind a grant slug
+
+New table `product_accesses` (run `php artisan migrate`), model `Access`, and a Control Panel
+screen **Accesses** with its own permission (`access product-accesses utility`), a list and a
+detail page with tabs and a sidebar like the product's. An access keeps what a slug opens: ordered
+contents (`access`, `course`, `file`, `event`, plus kinds a site registers through
+`ContentKinds::register()`), credit lines for sessions, and whether it opens the members area.
+
+The rules that protect data outside this addon:
+
+- a nested access may not lead back to itself;
+- the handle freezes once a grant in `statamic-entitlements` carries it, and such an access
+  cannot be deleted;
+- a credit line's `line` is assigned by the model and never reused, and after a grant a line can
+  be ended but not deleted.
+
+Pointers show found, gone or cannot be checked, like a product's `ref`
+(`RefTarget::forContent()`).
+
+The credit-line rules hold in the model as well, for imports that bypass the form: the counter
+never falls behind the stored one, a duplicate or previously issued `line` is refused, and after a
+grant the handle, every line and every ended line stay as they are. Saving the detail page from a
+stale tab is refused with 409 instead of overwriting the newer state.
+
+Session types come from the site through `SessionTypes::register($id, $label)`; the form then
+picks by name and refuses unknown ones. Files and the cover use core's assets field and asset
+browser, limited to the containers the site allows through `AccessContainers::allow()`; without a
+registration client-room containers are left out. Files from other containers are refused.
+
+### Changed: "Opens" on a product is a picker over the accesses
+
+Still stores slugs; payments and entitlements see no difference. Slugs without an access record
+stay valid and are listed as unresolved. `ref` is optional when a granted slug is an access.
+
+### Added: a transitive `PackageResolver` for statamic-entitlements
+
+With `goldnead/statamic-entitlements` ^1.4 installed, a grant on an access also covers what it
+contains, nested accesses included: `Entitlements::allows($user, 'cvt-101')` is true for a grant on
+an access holding `cvt-101` two levels down. A course is found by its entry id and by the slug
+`statamic-courses` asks about. Bound only in place of entitlements' `NullPackageResolver`, so a
+resolver the site binds itself keeps winning. Without entitlements nothing is bound and the addon
+boots as before (CI has a leg without it).
+
+**`active` does not touch existing grants.** It only decides whether an access is offered and
+granted anew; a retired access resolves like an active one, directly and nested, as the switch in
+the Control Panel says ("existing grants stay valid"). Taking access away is `revoke()` in
+statamic-entitlements. Cycles end, brands do not split the graph, all accesses are read once per request, and
+a save in the same request is seen by the next read.
+
+### Added: `Accesses::find($slug)`, a read API for sites
+
+`->expand()` (every slug a grant covers, transitive; the inverse of the resolver),
+`->creditLines()` (this access only, never through nesting; ended lines left out unless
+`includeEnded: true`, for replaying an old grant), `->contentsOf($kind)` (nested accesses included,
+in order, each `ref` once) and `->model()`. `find()` also returns inactive accesses, with their
+full contents.
+
 ## 1.6.2 — 2026-09-22
 
 ### Fixed: the product title in the listing centered instead of aligning left
