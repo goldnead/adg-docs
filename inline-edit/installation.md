@@ -6,20 +6,29 @@
 
 ```bash
 composer require goldnead/statamic-inline-edit
-php artisan vendor:publish --tag=statamic-inline-edit-assets --force
+```
+
+That is all on a standard Statamic site. Its `composer.json` runs `php artisan statamic:install`
+after every `composer install` and `composer update`, and since 1.11.1 that publishes all of this
+addon's files with `--force`: the stylesheet and the script for the public page, and the control
+panel bundle.
+
+If your site does not run `statamic:install` from Composer, run the publish yourself, on every
+deploy, next to `vendor:publish` for everything else:
+
+```bash
 php artisan vendor:publish --tag=statamic-inline-edit --force
 ```
 
-**Neither publish is optional, and neither is `--force`.** The stylesheet and the script are
-served from `public/vendor/statamic-inline-edit/`, so a stale copy there is an editor talking
-to a newer save route. That fails in a way nobody can reproduce from the repository. Put all
-three lines in the deploy script, next to `vendor:publish` for everything else.
+**`--force` is not optional.** The files are served from `public/vendor/statamic-inline-edit/`,
+so a stale copy there is an editor talking to a newer save route. That fails in a way nobody can
+reproduce from the repository.
 
-::: warning Skipping the second publish breaks the control panel, not just this addon
-The third line publishes the control panel bundle, which Statamic loads through its Vite
+::: warning A missing publish breaks the control panel, not just this addon
+The same tag publishes the control panel bundle, which Statamic loads through its Vite
 manifest. A missing manifest is a hard error on **every** control panel page, not a missing
-feature on one. It is the same tag as the addon slug, and it is easy to miss because it looks
-like a duplicate of the line above it.
+feature on one. Before 1.11.1 the front-end files needed a second tag,
+`statamic-inline-edit-assets`; it still works, and a deploy script that names both is fine.
 :::
 
 There is no migration, no queue and no scheduled task, and the addon adds no screen to the
@@ -55,8 +64,8 @@ simply not editable, so there is no half-finished state to clean up.
 
 | Tag | When |
 | --- | --- |
-| `statamic-inline-edit-assets` | Always, and on every deploy with `--force`. The stylesheet and the scripts for the public page. |
-| `statamic-inline-edit` | Always, and on every deploy with `--force`. The control panel bundle behind the one-field panel. |
+| `statamic-inline-edit` | Published by `statamic:install` on its own; otherwise on every deploy with `--force`. Everything the browser loads: the stylesheet and the scripts for the public page, and the control panel bundle behind the one-field panel. |
+| `statamic-inline-edit-assets` | Not needed since 1.11.1. The stylesheet and the scripts for the public page on their own, kept for deploy scripts that already name it. |
 | `statamic-inline-edit-config` | Only to change a default. See [Configuration](/inline-edit/configuration). |
 | `statamic-inline-edit-translations` | Only to reword the bar, the labels or the messages. |
 

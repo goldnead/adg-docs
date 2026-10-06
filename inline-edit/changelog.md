@@ -12,6 +12,171 @@ Release notes for `goldnead/statamic-inline-edit`, as published with the package
 Cross-version upgrade notes for the whole suite are in
 [Upgrading](/guide/upgrading).
 
+## 1.11.1
+
+### Fixed
+
+- Keyboard focus on a field is visible on every field: a solid ring, offset
+  from the dashed "editable" outline. It used to show only through the kind
+  badge, which fields narrower than 140px never get.
+- Focus no longer drops to the top of the page. Escape or Enter in a text
+  field leaves it on the field; closing the rich editor with Escape gives it
+  back to the field; after the control panel overlay or a field opened in
+  place closes and the page reloads, the field that opened it is focused
+  again. Switching edit mode on from the keyboard moves focus to the first
+  visible field, switching it off moves it to the button that switches it on.
+- The select, date input and switch in the small panel, the markdown source
+  box and the one box of a single-value window are named after their field
+  (`aria-labelledby`), so a screen reader says which field it is.
+- A save error is shown in full, wrapped onto a second line rather than cut at
+  40 characters, and the status message is a live region (`role="status"`), so
+  "Saved" and every refusal are announced.
+
+### Changed
+
+- `composer require` is the whole install on a standard Statamic site. The
+  front-end files are now also published under the addon's own tag
+  (`statamic-inline-edit`), which Statamic publishes with `--force` after
+  `statamic:install`. A site that does not run that from Composer needs one
+  command, `php artisan vendor:publish --tag=statamic-inline-edit --force`.
+  The `statamic-inline-edit-assets` tag still works. Because of `--force`,
+  hand edits to the published files in `public/vendor/statamic-inline-edit/`
+  are now replaced on every `composer install` and `composer update`; style
+  the editor from your own stylesheet instead.
+- On a phone, a save message gets its own row above the buttons.
+- The bar's hint says that Enter opens a field, too.
+- `MARKETPLACE.md` is no longer part of the Composer package.
+
+## 1.11.0
+
+### A small window for text that cannot be typed into in the line
+
+A headline built from two cells, a sentence with a link in it, a word drawn as
+emphasis, a quote wrapped in quotation marks, the same label in six places: the
+page shows these values changed, so typing into the element would save the
+drawing. They now open a window instead.
+
+    InlineEdit::popup($entry, ['rows.a1.text' => 'Line 1', 'rows.a2.text' => 'Line 2'], 'Hero headline');
+    InlineEdit::popup($testimonial, ['quote', 'author_name']);
+    InlineEdit::cell($entry, 'rows', $row['id'], 'text', 'Lead', popup: true);
+
+- New mode `popup` (`data-sie-popup` carries the boxes: address, label, stored
+  value, whether it has lines). One box per value, a one-line input or a
+  textarea as tall as the value; only boxes that changed are sent, each under
+  its own address, through the existing save route and its gates. The page
+  reloads after the save.
+- Addresses are field handles or grid cells of one entry, plain text only, the
+  same gates as a text marker (permission, no revisions, not forbidden, not
+  read-only/hidden/computed, not a picture row). One address failing refuses
+  the whole marker.
+- Pending changes survive closing the window (Escape, Done, a click outside),
+  the window's own Save is the bar's. Ctrl/Cmd+Enter saves from a box.
+- The pending value shows as a small note above the element, not at the size
+  of the headline it sits on.
+- While editing, a click on a link inside a window element is not followed,
+  and a double-click opens the innermost marker only (a button label inside a
+  sentence opens itself, not the sentence's window).
+- `InlineEdit::supports('popup')`.
+
+### The picture card has no "Set Alt"
+
+Core's asset field shows a "Set Alt" badge on the tile, which writes the
+asset's own meta, a place the page never reads. Next to the card's alt text
+field it looked like the same thing. Off on the picture card only
+(`show_set_alt: false`), core's switch; the asset field everywhere else in
+the control panel keeps it.
+
+## 1.10.0
+
+### Alt texts on the picture card
+
+An alt text is never on the page, so there was nothing to double-click. It
+now sits where the picture is dealt with anyway: under the asset browser on
+the card that opens on a picture cell, as a text field "Alt text".
+
+    InlineEdit::cell($entry, 'rows', $row['id'], 'value', 'Hero picture', image: true, alt: $altRow['id']);
+
+- The alt row is another row of the same grid, same column. Its id is signed
+  into the card's address together with the picture's, so the field writes
+  that cell and no other; moved onto another row the signature fails (403).
+- The marker leaves the alt out when the row would not fit: missing, the
+  picture's own row, or a row the site calls a picture (`imageCells`). The
+  card then is the picture alone, as before. Gone or turned into a picture
+  between rendering and saving is 404.
+- Saving sends both fields. A picture that is already there is not written
+  again, an alt text that did not change is not written either, so saving
+  only the alt text changes exactly one line of the entry. An empty picture
+  next to an alt text means "leave the picture" (the picker opens empty for a
+  path outside every container). A bad picture writes neither; an alt text
+  that is not a string is 422. Both go through the column's rules first.
+- Why a row and not the asset's own `alt` field: the same photo stands in
+  different places for different reasons, and an asset's meta lives next to
+  the file, not in the entry; on a site whose content is versioned and the
+  uploads are not, it would not travel with the page.
+
+### Cells the page draws differently: `source: true`
+
+A text cell whose page shows its value changed (`*word*` drawn as emphasis, a
+soft hyphen, two cells as one line) could not be edited safely: the save sent
+the drawing and wrote it over the source. With `source: true` the marker
+carries the stored value as `data-sie-source`; while the cell is edited the
+element shows that instead, opening and leaving it unchanged is not a change,
+and Escape or leaving it untouched puts the drawing back.
+
+### Smaller
+
+- `InlineEdit::supports('alt' | 'source')`, for a site that has to run on
+  more than one version of the addon.
+- The one-field card posts every field of its blueprint, not just the first.
+
+## 1.9.0
+
+### Pictures
+
+Double-click a picture in edit mode, and the control panel's own asset
+browser opens: choose another one or upload one, save, and the page reloads
+with it. A new mode, `image`, for two kinds of target:
+
+- **An `assets` field** on the entry (new config list `images`, default
+  `['assets']`). It opens the one-field card with core's asset field, the
+  browser already open, and is saved exactly as the control panel saves it.
+  Under revisions it falls back to the whole entry form, as everything does.
+- **A text cell in a grid that holds the path of a picture**, the shape a
+  site takes when its pictures live as token rows:
+  `InlineEdit::cell($entry, 'tokens', $rowId, 'value', 'Hero', image: true)`.
+  The cell opens the same browser through a new control panel route,
+  `/cp/inline-edit/image/{collection}/{entry}/{grid.row.column}`, and what is
+  written is the public URL of the chosen asset, nothing else: not a typed
+  string, not a foreign URL, not an asset from a container missing from the
+  new `image_containers` list (default `['assets']`), never a private one.
+  The route's address is **signed** by the marker, so a cell the page never
+  offered as a picture (the headline beside it) cannot be written through it.
+  Same gates as a text cell otherwise: entry policy, revisions, an inherited
+  grid in a localization, a duplicated row id, read-only columns.
+  Only an asset the person may view is taken, and a container from the list
+  that does not exist or is private is skipped rather than fatal.
+- **`InlineEdit::imageCells(callable)`** tells the text save route which
+  rows hold pictures, so it refuses every cell of them. The `image: true` on a
+  marker speaks for one page; the text route is stateless and would otherwise
+  take a foreign URL posted from the console. Row-wide, because a test that
+  looks at a neighbouring column could otherwise be undone in two requests.
+
+On the page: a picture is never an "empty field" (no chip over the image),
+gets the badge "Picture" (drawn on a box with a background picture; an
+`<img>` cannot draw pseudo-elements and keeps the outline only), takes the
+pointer cursor, and a click on a picture
+inside a link no longer follows the link while edit mode is on. The card
+takes the screen while the asset browser is open and gives it back after.
+
+### The card had no portal targets
+
+Core's stacks and modals teleport into `#portal-target-<id>`, which the full
+control panel layout draws and the chrome-less card did not. The asset
+browser, an asset's editor and any other stack had nowhere to go; Browse threw
+inside Vue and showed nothing. The card's layout now draws the targets,
+including core's `stacks-on-stacks` class, without which a stack is zero
+pixels tall.
+
 ## 1.8.1
 
 ### A grid list stood one letter per line in the editor
