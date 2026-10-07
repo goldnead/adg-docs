@@ -12,6 +12,80 @@ Release notes for `goldnead/statamic-invoices`, as published with the package.
 Cross-version upgrade notes for the whole suite are in
 [Upgrading](/guide/upgrading).
 
+## 2.7.0 — 2026-10-04
+
+Proposed version 2.7.0: a new command, new config keys and a migration, so more than a patch.
+
+### Added
+
+- **`invoices:retry`**: a send that failed (renderer, mail server) is tried again by itself,
+  `delivery.retry.max_attempts` sends in all (default 3, `INVOICES_RETRY_MAX_ATTEMPTS`), the gap
+  `delivery.retry.after_minutes` (default 10) doubled per attempt. The addon schedules it every
+  five minutes (`delivery.retry.schedule`, `INVOICES_RETRY_SCHEDULE`); the site needs a running
+  `schedule:run`. Exactly one mail per invoice still holds: only `failed` rows are retried, claimed
+  atomically; `sent`, `sending`, `held` and `failed_final` are never touched.
+- After the last attempt the row is `failed_final`, logged at `error` as
+  `invoices: delivery failed for good, out of attempts`, and shown by `invoices:held`.
+  `invoices:release` still sends it by hand.
+
+- `invoices:release` refuses a `sending` row younger than 10 minutes
+  (`delivery.release_sending_after_minutes`): most likely a send still in flight.
+
+### Changed
+
+- **The greeting is never the full address.** `buyer.name` in the mail template is the stored name,
+  else the part of the address before the `@`; `buyer.email` stays the full address. (An invoice
+  stores no link to a user or customer account, so there is no lookup between the two.)
+- A failed attempt keeps its row as `failed` (it used to remove the claim). `send()` on such an
+  invoice still sends, so a second call after a failure behaves as before.
+
+### Upgrading
+
+- **Run the migration** (`attempts`, `last_error` on `invoice_deliveries`). Without it a failed
+  send cannot be recorded and stays in `sending` until `invoices:release`.
+- Make sure the site's scheduler runs (`php artisan schedule:run` every minute). Hosts that
+  schedule `invoices:retry` themselves set `INVOICES_RETRY_SCHEDULE=false`.
+
+## 2.6.0 — 2026-10-04
+
+The invoice mail can do what adriangoldner.com's own delivery did, so a site no longer needs a
+second path next to it.
+
+### Added
+
+- **Product name in the mail.** The built-in letter shows what was bought ("Leistung"), word for
+  word from the invoice lines; templates get `&#123;&#123; product }}`. Its shipped wording uses it.
+- **`&#123;&#123; portal_url }}`** in templates: the sign-in page of the statamic-payments customer account,
+  empty without one.
+- **Reply-To** from `delivery.reply_to` / `delivery.reply_to_name` (`INVOICES_MAIL_REPLY_TO`,
+  `INVOICES_MAIL_REPLY_TO_NAME`), also on the settings screen. Empty sets none.
+- **Zero-tax guard**, on by default (`delivery.zero_tax_guard.enabled`,
+  `INVOICES_HOLD_UNEXPECTED_ZERO_TAX`, settings screen). An invoice with 0 % on a line whose product
+  has a rated tax class, where the zero came from a rule not listed in
+  `delivery.zero_tax_guard.accept`, is held back: not sent, logged at `error`
+  (`invoices: invoice held back, ...`), recorded as `held`, and noted on the payment where
+  statamic-payments keeps a communication log. The default `accept` holds all four rules `TaxRules`
+  applies (`reverse_charge`, `intra_community_supply`, `export`, `outside_scope`), so it only holds
+  what no rule explains; narrow it to `['reverse_charge', 'intra_community_supply']` to also hold
+  export and `outside_scope` zeros.
+- **`invoices:held`** lists held invoices and ones stuck in `sending`; **`invoices:release
+  {number}`** sends one as it is, logged, and refuses one that was already sent.
+- **Exactly one mail per invoice.** New table `invoice_deliveries` records sent and held invoices;
+  a repeated `InvoiceIssued`, a second `InvoiceDelivery::send()` or a concurrent attempt that loses
+  the claim sends nothing, a failed attempt leaves the way open for the next one.
+- On email-templates before 2.8 (no registry) the mail is offered to `email-templates:import` as a
+  tagged source, the way statamic-entitlements does it.
+
+### Upgrading
+
+- **Run the migration** (`invoice_deliveries`). Without it, delivery fails and is logged; no
+  invoice is lost, but none is sent.
+- Nothing that went out before is held by default. To have the guard stop export and
+  `outside_scope` zeros you never decided on, narrow `delivery.zero_tax_guard.accept`.
+- The built-in mail gains the "Leistung" row; its wording is otherwise unchanged. A published copy
+  of the view (`invoices-views`) does not get it by itself; `$produkt` is passed to it.
+- Template placeholders grew by `product` and `portal_url`. Existing entries are not touched.
+
 ## 2.5.1 — 2026-09-26
 
 ### Fixed

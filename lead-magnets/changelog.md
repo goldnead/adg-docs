@@ -12,6 +12,77 @@ Release notes for `goldnead/statamic-lead-magnets`, as published with the packag
 Cross-version upgrade notes for the whole suite are in
 [Upgrading](/guide/upgrading).
 
+## 3.8.0 — 2026-10-07
+
+### One confirmation for the file and the mailing list
+
+A resource can couple its mailing list to its own confirmation (*Subscribe through this
+confirmation*). The reader confirms once: the file is delivered and the address is subscribed, and
+marketing sends no second confirmation for that subscription. Off by default; every existing
+resource behaves as before.
+
+- Takes effect only with double opt-in on, a mailing list named and a **disclosure** sentence
+  (`list_consent_text`). The CP refuses the switch without all three.
+- The disclosure is in the confirmation mail (Blade view and the new template variable
+  `&#123;&#123; list_consent_text }}`) and on the confirmation page. The grant keeps a copy taken when the
+  confirmation went out (`meta.list_consent`), so the consent record names what the reader was
+  shown even if the sentence changes later.
+- **Opening the link is not consent.** For a coupled grant `GET /confirm/{token}` shows the
+  disclosure and a button and changes nothing; the new `POST /confirm/{token}`
+  (`lead-magnets.confirm.store`) confirms. Uncoupled resources keep confirming on GET.
+- The subscription goes through marketing's public `subscribe()` with `skip_confirmation` and
+  `meta.consent`: method, list, wording, source (`lead-magnets:<handle>`), `requested_at`,
+  `confirmed_at`. An editor reinstating a pending grant does not count as the reader's consent:
+  the list then asks for its own confirmation, as before. Neither does a press whose activation
+  failed or lost the race (held in memory for the one activation, `ListConsentPress`), nor an old
+  copy of the disclosure on a grant asked for again (every request drops it).
+- Switching coupling off stops confirmation mails already sent from subscribing into the list.
+- A confirmation template that leaves the disclosure out, and a confirmed subscription that cannot
+  be recorded (marketing missing, list missing), are named in the log.
+- Unsubscribing from the list does not touch the grant; the file stays downloadable.
+
+### Mail templates per resource
+
+`confirmation_template` and `delivery_template` on a resource name an email-templates slug for
+that resource's mails; empty falls back to `lead-magnets.mail.*_template`.
+
+- New migration `add_list_consent_and_templates_to_lead_magnet_resources_table`. Run
+  `php artisan migrate`.
+- Published `mail/confirmation*.blade.php` views do not show the disclosure; republish them or
+  add it.
+
+## 3.7.0 — 2026-10-04
+
+### Several files per resource
+
+A resource carries an ordered list of files, each with a label and a group. The delivery mail lists all
+of them grouped, every file with its own signed, expiring link, and the plain download link opens an
+overview page with the same list. The Control Panel edits the list with core's grid and asset fields,
+laid out like the downloads of a statamic-courses material: a group once, its files underneath
+("Add group" / "Add file"), each file picked and optionally labelled, drag to reorder.
+
+- Download names are `Title - Group - Label.ext`, with a German-spelled ASCII fallback (`Übe` → `Uebe`).
+- In the mail and on the page every file is its own 44px-high row.
+- **Republish published mail views.** A delivery view published into your site, or an email-templates
+  template written before the list, does not list the files. Republish the views or add `&#123;&#123; file_list }}`;
+  the log carries a warning when a multi-file delivery goes out through such a template.
+- The stored list stays flat; a list saved while this was in development reads as group blocks.
+
+- Existing single-file resources are unchanged and need no data migration: a resource without a list is
+  read as a list of one, keeps its direct link and its file name.
+- New migration `add_files_to_lead_magnet_resources_table`: `files` (JSON, null on every existing row)
+  and `file_key` on downloads. Run `php artisan migrate`.
+- New signed route `lead-magnets.download.file` (`/download/{grant}/{file}`). The file key is part of
+  the signature and stays stable across reordering.
+- With a list, `max_downloads` counts per file instead of per grant.
+- Email-templates: the new variable `&#123;&#123; file_list }}` (grouped list as HTML).
+- The form still accepts the old `file_asset` field as a list of one.
+
+### Fixed
+
+- The plain-text part of the confirmation and delivery mails HTML-escaped the signed URL, so `&` became
+  `&amp;` and the link in the text part answered 403. Text views now write the URL as is.
+
 ## 3.6.1 — 2026-09-25
 
 ### Fixed

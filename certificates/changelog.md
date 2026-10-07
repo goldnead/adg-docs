@@ -12,6 +12,12 @@ Release notes for `goldnead/statamic-certificates`, as published with the packag
 Cross-version upgrade notes for the whole suite are in
 [Upgrading](/guide/upgrading).
 
+## 0.1.3 (2026-10-04)
+
+### Changed
+- Works with statamic-courses 0.4 (`^0.1 || ^0.2 || ^0.3 || ^0.4`). A course entry of kind
+  `material` has no progress, so it never reaches the completion that issues a certificate.
+
 ## 0.1.2 (2026-09-24)
 
 ### Changed
