@@ -70,7 +70,7 @@ function escapePlaceholders(line) {
     .map((part, index) =>
       index % 2 === 1
         ? part
-        : part.replace(/<(?!https?:|mailto:)([a-z][^<>]*)(>|$)/g, (_, inner, end) => `&lt;${inner}${end ? '&gt;' : ''}`),
+        : part.replace(/<(?!https?:|mailto:)([a-zA-Z][^<>]*)(>|$)/g, (_, inner, end) => `&lt;${inner}${end ? '&gt;' : ''}`),
     )
     .join('`')
 }

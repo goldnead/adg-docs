@@ -66,7 +66,7 @@ Cross-version upgrade notes for the whole suite are in
   übersprungen und als `skipped_no_presale` gezählt (im Editor wie „ohne PLZ"); läuft der
   Vorverkauf schon und kommt das Konzert noch, geht die Mail sofort nach Freigabe. Braucht
   `presale_starts_at` aus statamic-events 2.7; davor wird jeder Termin einer VVK-Serie übersprungen
-  und der Editor sagt es. Das Segment heißt dann „Vorverkauf: <Stadt> <PLZ> (&lt;km&gt; km)".
+  und der Editor sagt es. Das Segment heißt dann „Vorverkauf: &lt;Stadt&gt; &lt;PLZ&gt; (&lt;km&gt; km)".
 - **Momentaufnahme erweitert** (`meta['event']`): `weekday` („Samstag"), `date_short` („17.10.26"),
   `time_label` („20 Uhr" / „20:30 Uhr"), `street`, `presale_starts_at`, `presale_date`, in der
   Zeitzone des Termins.
@@ -106,7 +106,7 @@ tragen den neuen Status `awaiting_approval`: nicht sendbar, nicht in `due()`, vo
 
 **Ein idempotenter Sync ist der Kern** (`src/Series/SeriesSync.php`). Schlüssel sind
 `source_key = "occurrence:<uuid>"` und `series = <handle der Vorlage>`; zweimal laufen ändert nichts.
-Je Termin entsteht ein LeadHub-Segment „Konzert: <Stadt> <PLZ> (&lt;km&gt; km)" mit der vorhandenen
+Je Termin entsteht ein LeadHub-Segment „Konzert: &lt;Stadt&gt; &lt;PLZ&gt; (&lt;km&gt; km)" mit der vorhandenen
 `geo`-Bedingung (`within_km`) — Flo sieht dasselbe wie heute. Absagen und Löschungen räumen die
 nicht gesendeten Kinder und deren Segmente weg, Gesendetes bleibt unangetastet. Auslöser: Listener
 auf `OccurrenceScheduled/Rescheduled/Cancelled`, der tägliche `marketing:series-sync` und das

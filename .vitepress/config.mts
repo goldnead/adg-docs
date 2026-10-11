@@ -46,6 +46,8 @@ export default defineConfig({
   head: [
     ['link', { rel: 'icon', href: '/favicon.svg', type: 'image/svg+xml' }],
     ['meta', { name: 'theme-color', content: '#e8b931' }],
+    // Rybbit, cookie-free, self-hosted (site 18). Covered by /privacy-notice.
+    ['script', { defer: '', src: 'https://tr.adriangoldner.com/api/script.js', 'data-site-id': '18' }],
     ['meta', { property: 'og:type', content: 'website' }],
     ['meta', { property: 'og:site_name', content: 'goldnead Statamic Addons' }],
     // Every page now has a 1200x630 share image, so the small card is a waste.
@@ -217,7 +219,7 @@ export default defineConfig({
 
     footer: {
       message:
-        'Built by <a href="https://adriangoldner.dev">adriangoldner.dev</a>. Statamic is a trademark of Wilderborn.',
+        'Built by <a href="https://adriangoldner.dev">adriangoldner.dev</a>. Statamic is a trademark of Wilderborn. <a href="/privacy-notice">Privacy</a> · <a href="https://adriangoldner.com/impressum">Legal notice</a>',
       copyright: `© ${new Date().getFullYear()} Adrian Goldner`,
     },
 
