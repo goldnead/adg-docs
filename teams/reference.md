@@ -116,6 +116,9 @@ A refusal is a `Goldnead\Teams\Exceptions\TeamsException` with a stable `reason`
 | `team_invitations` | address, role, `meta`, the token as a sha256 hash, expiry, accepted or revoked |
 | `team_roles` | roles a team defined for itself |
 | `team_global_roles` | global roles as changed in the Control Panel; `removed` keeps a deleted config role deleted |
+| `team_claims` | moderated claims on a host resource, see [Claiming a resource](/teams/claims) |
+| `team_claim_limit_locks` | one row per claimant, the lock the claim limits are enforced under |
+| `team_claim_outbox` | a durable record that a claim was requested or decided |
 
 ## Permissions
 

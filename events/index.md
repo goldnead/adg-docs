@@ -59,7 +59,7 @@ Named rather than left to be discovered:
 
 | Not here | Where it is going |
 | --- | --- |
-| RSVP, capacity, waiting lists | v1.1 |
+| Capacity, waiting lists | Not built. [RSVP](/events/rsvp) is, since 2.8.0 |
 | Reminders | v1.2, over [Notifications](/notifications/) |
 | Recurrence rules | No generator. Dates are entered one at a time |
 | Access gating, attendance | Not planned for the 1.x line |

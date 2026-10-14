@@ -19,7 +19,7 @@ integrations are resolved at boot, not at install time, so installing Webhook
 Manager after LeadHub wires the LeadHub triggers just as installing it before
 would.
 
-The table below covers all thirty-eight: which own database tables, and which
+The table below covers all forty-one: which own database tables, and which
 show up in the Control Panel.
 
 ::: tip What "ships a CP screen" counts
@@ -27,7 +27,7 @@ A screen of its own: the addon registers a Control Panel route, a utility, or a
 nav entry. A fieldtype, a Bard button or a blueprint extension does not count,
 because none of them gives you a page to open.
 
-Twenty-eight of the thirty-eight also register a section on the **shared settings
+Twenty-eight of the forty-one also register a section on the **shared settings
 screen**. That is not a screen of their own, so it reads "no" in the table, but
 you will still find those addons in the Control Panel under Settings. Brand
 Context provides that screen rather than registering a section on it, and
@@ -72,7 +72,10 @@ register no section on it.
 | [Consent](/consent/installation) | yes (`consent_records`) | no, a settings section only |
 | [Flow Canvas](/flow-canvas/installation) | no | no |
 | [Accounts](/accounts/installation) | yes (`account_requests`) | yes, the customer list, the overview and the wiring screen, under Users |
-| [Teams](/teams/installation) | yes (`teams`, `team_members`, `team_invitations`, `team_roles`) | yes, the team list and the wiring screen, under Users |
+| [Teams](/teams/installation) | yes (`teams`, `team_members`, `team_invitations`, `team_roles`, plus three for claims) | yes, the team list and the wiring screen, under Users |
+| [Directory](/directory/installation) | yes (`directory_profiles`, a projection of Statamic entries) | yes, the profile listing, under Tools |
+| [Messaging](/messaging/installation) | yes (`conversations`, `conversation_participants`, `messages`) | yes, moderation under Tools |
+| [Community](/community/installation) | yes (five, from `community_rooms` to `community_reactions`) | yes, Posts, Comments and Rooms |
 | [App API](/app-api/installation) | no; tokens use Sanctum's `personal_access_tokens` when switched on | yes, one page under Tools |
 | [Inbox](/inbox/installation) | yes (five, from `inbox_mailboxes` to `inbox_fetch_failures`) | yes, the inbox and the mailbox screens, under Tools |
 
@@ -107,7 +110,7 @@ when your application has an unusual notion of who an actor is.
 Each addon publishes its config under its own tag. Publishing is optional; the
 packaged defaults are the documented ones.
 
-**Thirty-six of the thirty-eight have a config file.** Products, Flow Canvas and
+**Thirty-nine of the forty-one have a config file.** Products, Flow Canvas and
 Bard Footnotes ship none, so there is no tag for them and nothing missing.
 
 ```bash
@@ -119,7 +122,9 @@ php artisan vendor:publish --tag=assessments-config
 php artisan vendor:publish --tag=bard-assist-config
 php artisan vendor:publish --tag=brand-context-config
 php artisan vendor:publish --tag=certificates-config
+php artisan vendor:publish --tag=community-config
 php artisan vendor:publish --tag=courses-config
+php artisan vendor:publish --tag=directory-config
 php artisan vendor:publish --tag=email-templates-config
 php artisan vendor:publish --tag=entitlements-config
 php artisan vendor:publish --tag=events-config
@@ -129,6 +134,7 @@ php artisan vendor:publish --tag=invoices-config
 php artisan vendor:publish --tag=lead-magnets-config
 php artisan vendor:publish --tag=leadhub-config
 php artisan vendor:publish --tag=marketing-config
+php artisan vendor:publish --tag=messaging-config
 php artisan vendor:publish --tag=notifications-config
 php artisan vendor:publish --tag=preference-center-config
 php artisan vendor:publish --tag=private-media-config
@@ -227,7 +233,7 @@ person to assign to.
 
 ## Installing from a local checkout
 
-**All thirty-eight packages are on Packagist**, so the normal case needs nothing
+**All forty-one packages are on Packagist**, so the normal case needs nothing
 but `composer require`, and the sibling packages an addon depends on resolve on
 their own. None of the packages declares a `repositories` block, and you do not
 need one either.

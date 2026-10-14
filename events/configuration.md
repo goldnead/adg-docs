@@ -127,6 +127,16 @@ There is no `bridges.notifications` and no `bridges.automations`. Automations re
 domain events through Laravel's dispatcher without anything in this package, and reminders are
 not built. See [Extending](/events/extending).
 
+## `rsvp`
+
+```php
+'rsvp' => [
+    'enabled' => false,
+],
+```
+
+Off by default; with it off the addon behaves exactly as before. See [RSVP](/events/rsvp).
+
 ## The route prefix is not configurable
 
 `/!/events/` is fixed, and that is a decision rather than an omission. A calendar subscription

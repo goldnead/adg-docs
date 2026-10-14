@@ -112,6 +112,22 @@ re-fetches through the normal authorised endpoint.
 That design is the security property: a socket subscriber can never see more than the API would have given
 them. See [Realtime](/notifications/realtime).
 
+## `deferred`
+
+```php
+'deferred' => [
+    'channels' => ['in_app', 'mail'],
+    'max_attempts' => env('NOTIFICATIONS_DEFERRED_MAX_ATTEMPTS', 5),
+    'backoff_seconds' => env('NOTIFICATIONS_DEFERRED_BACKOFF', 60),
+],
+```
+
+Settings for `Notifications::notifyDeferred()`. `channels` are the channels that may carry a
+deferred row; only channels that report an outcome qualify. `max_attempts` is the number of
+failed attempts per delivery before it is marked failed. `backoff_seconds` is the base of the
+exponential delay: after the nth failed attempt, base × 2^(n-1). Nothing is sent until
+`notifications:dispatch-pending` runs. See [Deferred delivery](/notifications/deferred).
+
 ## `list_limit`
 
 ```php
@@ -187,6 +203,8 @@ from. See [Preferences](/notifications/preferences).
 NOTIFICATIONS_ENABLED=true
 NOTIFICATIONS_DIGEST_FREQUENCY=weekly
 NOTIFICATIONS_REALTIME=false
+NOTIFICATIONS_DEFERRED_MAX_ATTEMPTS=5
+NOTIFICATIONS_DEFERRED_BACKOFF=60
 NOTIFICATIONS_CP_ENABLED=true
 NOTIFICATIONS_SOURCE_LEADHUB=true
 NOTIFICATIONS_PREFERENCES_URL=https://example.com/account/notifications

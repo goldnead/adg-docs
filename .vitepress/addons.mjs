@@ -36,7 +36,7 @@ export const LAYERS = {
  * How far along each addon is.
  *
  * The suite reads finished. It is not: twenty-four packages went public inside
- * five weeks and fourteen more came later, twenty-seven of the thirty-eight are
+ * five weeks and seventeen more came later, thirty of the forty-one are
  * declared commercial, and exactly one can be bought. A reader
  * deciding whether to put one of these on a client site has no
  * way to tell a package that has run several brands for months from one that
@@ -103,6 +103,9 @@ export const MATURITY_BY_SLUG = {
   affiliates: 'experimental',
   accounts: 'experimental',
   teams: 'experimental',
+  directory: 'experimental',
+  messaging: 'experimental',
+  community: 'experimental',
   'app-api': 'experimental',
   inbox: 'experimental',
   'bard-assist': 'experimental',
@@ -134,7 +137,13 @@ export const MATURITY_NOTES = {
   accounts:
     'Built on 25 September 2026 and exercised in the playground: verification, the address change, deletion with its blockers, the export and the customer overview. A first app is being moved onto it; no production site uses it yet. On Packagist at 0.1.1.',
   teams:
-    'Built on 25 September 2026 and exercised in the playground and against a first app being moved onto it: invitations, join codes, roles, team grants in Entitlements and a team as buyer in Payments. Role management in the Control Panel (0.3.0, 26 September 2026) is exercised in the playground only. No production site uses it yet. On Packagist at 0.3.1.',
+    'Built on 25 September 2026 and exercised in the playground and against a first app being moved onto it: invitations, join codes, roles, team grants in Entitlements and a team as buyer in Payments. Role management in the Control Panel (0.3.0, 26 September 2026) is exercised in the playground only. The moderated resource claims of 0.4.0 (15 October 2026) are covered by the test suite. No production site uses it yet. On Packagist at 0.4.0.',
+  directory:
+    'Built for the move of the choir directory chorgesucht onto the suite and released on 15 October 2026 (0.1.1). Covered by its test suite; no production site uses it yet. On Packagist at 0.1.1.',
+  messaging:
+    'Built for the move of chorgesucht onto the suite and released on 15 October 2026 (0.1.1). Covered by its test suite on SQLite and MySQL; the realtime path needs a Reverb server of your own. No production site uses it yet. On Packagist at 0.1.1.',
+  community:
+    'Built for the move of chorgesucht onto the suite and released on 15 October 2026 (0.1.1). Covered by its test suite on SQLite and MySQL; no production site uses it yet. On Packagist at 0.1.1.',
   'app-api':
     'Built on 25 September 2026: about fifty endpoints, exercised by its test suite and against a first single-page app being moved onto it. No production app uses it yet. The order form text needs a legal check by whoever ships the app. On Packagist at 0.1.0.',
   inbox:
@@ -235,6 +244,12 @@ export const SALES_BY_SLUG = {
   // Seit Schedule A 1.2 (Entscheidung Adrian, 25.09.2026) nur in der Suite.
   accounts: 'suite-only',
   teams: 'suite-only',
+  // OFFEN (15.10.2026): Directory, Messaging und Community stehen noch nicht in Schedule A
+  // der EULA (composer: proprietary). Ob "not-sold" oder "suite-only" entscheidet Adrian;
+  // die EULA bewegt sich zuerst. Bis dahin meldet sync-licenses genau diese Zeilen.
+  directory: 'not-sold',
+  messaging: 'not-sold',
+  community: 'not-sold',
   'app-api': 'suite-only',
   // Seit Schedule A 1.3 (Entscheidung Adrian, 25.09.2026) nur in der Suite.
   inbox: 'suite-only',
@@ -494,6 +509,7 @@ export const addons = [
       { text: 'Preferences', link: 'preferences' },
       { text: 'Channels & digests', link: 'digests' },
       { text: 'Realtime', link: 'realtime' },
+      { text: 'Deferred delivery', link: 'deferred' },
       { text: 'Laravel interop', link: 'laravel-interop' },
     ],
   },
@@ -529,6 +545,7 @@ export const addons = [
       { text: 'Timezones', link: 'timezones' },
       { text: 'Calendar feeds & ICS', link: 'calendar-feeds' },
       { text: 'Antlers tags', link: 'tags' },
+      { text: 'RSVP and programme', link: 'rsvp' },
       { text: 'Extending', link: 'extending' },
     ],
   },
@@ -930,6 +947,60 @@ export const addons = [
       { text: 'Access and purchases', link: 'access-and-payments' },
       { text: 'Mails and events', link: 'mails-and-events' },
       { text: 'Importing teams', link: 'import' },
+      { text: 'Claiming a resource', link: 'claims' },
+    ],
+  },
+  {
+    slug: 'directory',
+    name: 'Directory',
+    package: 'goldnead/statamic-directory',
+    license: 'Commercial',
+    layer: 'platform',
+    tagline:
+      'A public, searchable directory of profiles kept as Statamic entries. A fast SQL projection with radius search, filters per type, and profiles a team can claim.',
+    icon: '⌖',
+    php: 'PHP 8.3+',
+    troubleshooting: false,
+    pages: [
+      { text: 'Searching profiles', link: 'search' },
+      { text: 'Profile types', link: 'types' },
+      { text: 'Claiming a profile', link: 'claiming' },
+      { text: 'The Control Panel', link: 'control-panel' },
+    ],
+  },
+  {
+    slug: 'messaging',
+    name: 'Messaging',
+    package: 'goldnead/statamic-messaging',
+    license: 'Commercial',
+    layer: 'platform',
+    tagline:
+      'Conversations between a person and a team or another person: anonymous requests, encrypted texts, moderation and realtime over Laravel Reverb.',
+    icon: '✎',
+    troubleshooting: false,
+    pages: [
+      { text: 'Conversations', link: 'conversations' },
+      { text: 'Encrypted messages', link: 'encryption' },
+      { text: 'Realtime in 3 steps', link: 'realtime' },
+      { text: 'The Control Panel', link: 'control-panel' },
+      { text: 'Personal data', link: 'personal-data' },
+    ],
+  },
+  {
+    slug: 'community',
+    name: 'Community',
+    package: 'goldnead/statamic-community',
+    license: 'Commercial',
+    layer: 'platform',
+    tagline:
+      'Curated rooms, posts, comments and reactions with a chronological feed, pre-moderation and a moderation backend in the Control Panel.',
+    icon: '❖',
+    troubleshooting: false,
+    pages: [
+      { text: 'Rooms, posts and the feed', link: 'posts' },
+      { text: 'Rules and moderation', link: 'moderation' },
+      { text: 'The Control Panel', link: 'control-panel' },
+      { text: 'Personal data', link: 'personal-data' },
     ],
   },
   {

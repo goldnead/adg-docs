@@ -34,6 +34,8 @@ None of them could be reused by the next domain that needed notifying, which is 
 - **Idempotency** via a dedupe key
 - **A read-only CP inspector** at **Tools → Notifications**
 - **Optional realtime** — a content-free refresh signal
+- **Deferred delivery** — `notifyDeferred()` writes now and a command sends later, with retry and
+  backoff. See [Deferred delivery](/notifications/deferred)
 - **Four figures for [Insights](/insights/what-the-family-reports#notifications)**, offered
   at boot and simply absent when that addon is not installed
 
@@ -98,4 +100,5 @@ guessed rather than derived.
 - [Preferences](/notifications/preferences)
 - [Channels & digests](/notifications/digests)
 - [Realtime](/notifications/realtime)
+- [Deferred delivery](/notifications/deferred)
 - [Laravel interop](/notifications/laravel-interop)

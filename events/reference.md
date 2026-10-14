@@ -208,6 +208,12 @@ Indexes: `evt_brand_slug_unique` unique `(brand_id, slug)`, `evt_brand_type_stat
 `slug` is `191` rather than `255` because a utf8mb4 `varchar(255)` costs 1020 of InnoDB's 3072
 index bytes.
 
+### `event_rsvps`
+
+Added in 2.8.0. `id`, `brand_id`, `event_id` (cascades on delete), `user_id` (string, 64),
+`status` (`going`, `interested`, `not_going`), timestamps. Unique on `(brand_id, event_id,
+user_id)`.
+
 ### `event_occurrences`
 
 | Column | Type | Null | Default |
@@ -248,6 +254,7 @@ There is no CHECK constraint for the location rule. It lives in the model.
 | `{{ events:count }}` | The same. `limit` does not reduce the count |
 | `{{ events:feed_url }}` | `type` |
 | `{{ events:ics_url }}` | `occurrence` |
+| `{{ events:rsvp }}` | `event` (the event's uuid). Counts and the visitor's own answer, see [RSVP](/events/rsvp) |
 
 Shapes are in [Antlers tags](/events/tags#listing-dates).
 

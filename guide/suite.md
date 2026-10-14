@@ -1,10 +1,10 @@
 # The suite
 
-Thirty-eight packages, six layers. Every arrow below is a Composer dependency;
+Forty-one packages, six layers. Every arrow below is a Composer dependency;
 anything not drawn is optional and detected at runtime with `class_exists`,
 which is why you can install any addon without the rest.
 
-All thirty-eight are tagged and published on Packagist, so `composer require`
+All forty-one are tagged and published on Packagist, so `composer require`
 resolves any of them and pulls in whatever it depends on.
 
 ```
@@ -33,6 +33,9 @@ Between the domain addons ──────────────────
   marketing     ──requires──▶  leadhub
   lead-magnets  ──requires──▶  entitlements
   certificates  ──requires──▶  courses
+  directory     ──requires──▶  teams
+  messaging     ──requires──▶  teams
+  community     ──requires──▶  teams
 
 Commerce ────────────────────────────────────────────────────────────
 
@@ -79,7 +82,7 @@ are worth naming, because they look like dependencies and are not:
 `notifications` rather than an optional extra: both ask the gate before they
 queue mail, and a gate that might not be there would be no gate at all.
 
-## The thirty-eight
+## The forty-one
 
 ### Foundation
 
@@ -355,7 +358,27 @@ bound to the invited address, join codes, a personal team per user. The
 `teams.current` middleware says which team a request is about. A team is a
 subject in Entitlements, so its grants and limits count for every member, and a
 buyer in Payments with its own billing address. Four tables, four mails, ten
-events, an import with fixed ids. Commercial, and sold only in the Suite.
+events, an import with fixed ids. Since 0.4.0 also moderated claims on a resource
+of your site. Commercial, and sold only in the Suite.
+
+**[Directory](/directory/)** &nbsp;·&nbsp; `goldnead/statamic-directory`
+
+A public, searchable directory of profiles kept as Statamic entries: a
+disposable SQL projection with text, city and radius search, filters per
+profile type, and a claim adapter so a team can take over a profile. Requires
+Teams. Commercial.
+
+**[Messaging](/messaging/)** &nbsp;·&nbsp; `goldnead/statamic-messaging`
+
+Conversations between a person and a team or another person, with anonymous
+requests, encrypted message texts, a moderation backend that never shows
+content, and realtime over Laravel Reverb. Requires Teams. Commercial.
+
+**[Community](/community/)** &nbsp;·&nbsp; `goldnead/statamic-community`
+
+Curated rooms, posts, comments and reactions with a chronological feed,
+optional pre-moderation and a moderation backend in the Control Panel. Requires
+Teams. Commercial.
 
 ### Content tooling
 

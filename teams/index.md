@@ -29,6 +29,10 @@ Works with Statamic's file users and Eloquent users alike.
   [Mails and events](/teams/mails-and-events).
 - **Personal team per user** (optional), read-only teams, and an import with fixed ids for
   moving an existing app. See [Importing teams](/teams/import).
+- **Moderated resource claims** (0.4.0). A team can claim a resource of your site, a
+  [Directory](/directory/) profile for example: someone requests, a reviewer decides, approval
+  creates the team and binds the resource in one transaction. Opt-in, with per-account limits
+  and a persistent outbox. See [Claiming a resource](/teams/claims).
 
 ## What it is not
 
@@ -73,4 +77,5 @@ Teams::checkout($team, 'plan', $payer)   Payments, for: team, billing from the t
 - [Access and purchases](/teams/access-and-payments)
 - [Mails and events](/teams/mails-and-events)
 - [Importing teams](/teams/import)
+- [Claiming a resource](/teams/claims)
 - [Reference](/teams/reference): facade, refusals, tables, permissions

@@ -12,7 +12,7 @@
 
 **Laravel 11 is not supported by any package in the suite.** Every one of them
 requires `^12.0|^13.0` or narrower, or inherits that floor from `statamic/cms
-^6.0`, and Brand Context — a dependency of twenty-one of the thirty-eight — requires
+^6.0`, and Brand Context — a dependency of twenty-one of the forty-one — requires
 `^12.40|^13.0`, which sets the real floor for most installs. Assessments,
 Certificates, Affiliates and Inbox declare that same `^12.40|^13.0` themselves, on top of
 depending on Brand Context, and Courses, Private Media, Smart Links, Accounts, Teams and App API declare it without
@@ -79,7 +79,7 @@ for you:
 | `statamic-products` | `statamic-payments` | A product is read through the payment catalogue, and contributing to it needs `^1.15`. |
 | `statamic-lead-magnets` | `statamic-entitlements` | The grant behind a confirmed download is an entitlement. |
 | `statamic-certificates` | `statamic-courses` | A certificate is issued on `CourseCompleted`; "completed" is Courses' word. |
-| twenty-one of the thirty-eight | `statamic-brand-context` | See [Multi-brand](#multi-brand) below. |
+| twenty-one of the forty-one | `statamic-brand-context` | See [Multi-brand](#multi-brand) below. |
 
 Everything beyond that is a `suggest` plus a runtime `class_exists` check. The
 version constraints that matter when both are installed:

@@ -57,4 +57,9 @@ editable under **Settings → Addon settings**.
 | `routes.prefix` | `teams` | |
 | `routes.middleware` | `['web']` | |
 | `routes.join_limits.per_user` / `per_ip` | `10` / `30` | Attempts per hour at joining by code. |
+| `claims.resources` | `[]` | Resource type to adapter class. Empty: nothing can be claimed. See [Claiming a resource](/teams/claims). |
+| `claims.policy` | `DenyClaimPolicy` | The `ClaimPolicy` that decides who may request and review. The default denies both. |
+| `claims.limits.max_per_account` | `3` | Claim requests per account within the window. |
+| `claims.limits.window_minutes` | `1440` | |
+| `claims.limits.rejected_cooldown_minutes` | `1440` | How long after a rejection the same account may not ask again for the same resource. |
 | `integrations.*` | `true` | Automations, Webhook Manager, Activity, Entitlements, Email Templates. Read while booting. |

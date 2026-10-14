@@ -18,7 +18,17 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html). Tag names, Antlers tag parameters,
 config keys and facade methods are part of the public API from the first release.
 
-## [Unreleased]
+## [2.8.0] — 2026-10-15
+
+### Added: RSVP and a programme per event
+
+- `events.rsvp.enabled`, off by default; nothing changes for installs that leave it off.
+- `event_rsvps` table (unique per event and account), `Rsvps` service (`toggle`, `set`, `remove`,
+  `list`, `counts`, `statusFor`, `eraseFor`), `RsvpPolicy`, and `&#123;&#123; events:rsvp event="..." }}`.
+  Only signed-in accounts answer; only `manage events` sees names; everyone else gets numbers.
+- `events.program` (JSON), a time and title grid in the event form.
+- No accounts contributor: this addon does not know `statamic-accounts`, so `composer.json` suggests
+  it and `Rsvps::eraseFor()` is the call to make on deletion.
 
 ## [2.7.0] — 2026-10-01
 

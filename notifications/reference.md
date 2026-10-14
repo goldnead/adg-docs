@@ -8,6 +8,7 @@
 | --- | --- |
 | `notifications:send-digests [--frequency=] [--brand=] [--now=…] [--dry-run]` | Send digests for a window. **Not scheduled for you.** |
 | `notifications:uniqueness-integrity [--database=] [--repair]` | Verify the unique indexes and the rows in them |
+| `notifications:dispatch-pending [--limit=100]` | Send the due rows of the [deferred queue](/notifications/deferred). **Not scheduled for you.** |
 
 | Option | Meaning |
 | --- | --- |
@@ -201,6 +202,7 @@ tell an operator it restricts anything.
 | `notification_items` | — |
 | `notification_preferences` | recipient, type, channel |
 | `notification_digest_runs` | brand, recipient, frequency, window start |
+| `notification_deliveries` | one row per item and channel that owes a [deferred](/notifications/deferred) send: status, attempts, `available_at`, `accepted_at`, `outcome_code` |
 
 Every collected digest item is stamped `digested_at`.
 

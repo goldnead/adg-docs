@@ -55,6 +55,10 @@ const MAP = [
   ['payments', 'screenshots/03-payments-unfulfilled.png', 'payments-unfulfilled'],
   ['payments', 'screenshots/04-follow-up-offer.png', 'payments-follow-up-offer'],
 
+  ['community', 'screenshots/posts.png', 'community-posts'],
+  ['community', 'screenshots/comments.png', 'community-comments'],
+  ['community', 'screenshots/room-form.png', 'community-room-form'],
+
   ['insights', 'screenshots/01-revenue-overview.png', 'insights-revenue'],
   ['insights', 'screenshots/02-revenue-dark.png', 'insights-revenue-dark'],
   ['insights', 'screenshots/03-attribution.png', 'insights-attribution'],
