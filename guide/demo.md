@@ -34,6 +34,27 @@ No account needed for the public sites:
 - `/sonderzeichen` — a brand whose name carries the characters that break
   mail headers, URLs and HTML attributes
 
+## Chorfinder: a made-up choir platform
+
+Three addons ship no public pages on purpose ([Messaging](/messaging/),
+[Community](/community/) and the claims of [Teams](/teams/claims)), and
+[Directory](/directory/) only has a search. The demo builds the pages on their
+services, so you can see what a site gets out of them. Everything is invented:
+choirs, people, posts. Only the cities are real.
+
+- `/chorfinder/verzeichnis`: the search with a radius around six cities
+  ([Directory](/directory/search)), and `/chorfinder/verzeichnis/ansprueche`,
+  where a moderator decides claims ([Claiming a resource](/teams/claims)).
+- `/chorfinder/nachrichten`: conversations with a team, anonymous or open
+  ([Conversations](/messaging/conversations)).
+- `/chorfinder/community`: six rooms, posts, comments, reactions, moderation.
+- `/chorfinder/veranstaltungen`: RSVPs and the programme ([RSVP](/events/rsvp)).
+- `/chorfinder/meldungen`: the queue of [deferred delivery](/notifications/deferred).
+
+Pick one of four people at the top of each page. Mail goes to the system log,
+never to an address. Realtime messaging is off here, there is no websocket
+server behind the demo.
+
 ## Working in two brands at once
 
 The demo runs in multi-brand mode, so the CP shows the brand switcher. Lists
