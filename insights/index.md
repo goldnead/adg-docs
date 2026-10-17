@@ -30,7 +30,7 @@ without a line of this addon changing.
 | --- | --- |
 | [Revenue](/insights/reading-the-numbers) | Net revenue, paid, orders, average order, over time, by campaign, by product |
 | [Subscriptions](/insights/subscriptions) | MRR, ARR, running and new subscriptions, customer and revenue churn per month, charges due in 30 days, a twelve-month forecast |
-| [Metrics](/insights/what-the-family-reports) | All fifty-eight, in fourteen groups |
+| [Metrics](/insights/what-the-family-reports) | All fifty-eight, in fourteen groups, plus [Website](/insights/what-the-family-reports#website) when [configured](/insights/configuration#website-statistics) |
 | [Reports](/insights/reference#reports) | Ten tables shipped with the addon: revenue by month and by product, payments by country, cart abandonment, order bumps and post-purchase offers, active access by product, and four on subscriptions: MRR movements, retention by start month, charges due, forecast |
 
 Reports and the Subscriptions screen are the places this addon reads a sibling's table

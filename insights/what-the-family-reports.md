@@ -9,8 +9,10 @@ counts.
 Each contributor keeps its metrics in an `INSIGHTS_METRICS` constant on its service provider,
 one class to one handle, and that constant is the only way a figure reaches the registry.
 Counting the entries across the fourteen providers gives fifty-eight, and those are the handles
-below. Insights itself registers no metrics. It owns the period, the chart, the screens and six
-reports of its own.
+below. Insights itself registers no figure from a sibling's tables. It owns the period, the chart,
+the screens and its own reports, and since 1.4.0 it registers [six more figures of its own](#website)
+when a [website analytics source](/insights/configuration#website-statistics) is configured. Those
+are not counted in the fifty-eight, because they are not a contribution from the family.
 
 Nothing here is computed by Insights. Every row is a query living in the addon that owns
 the table. The last column paraphrases what each metric says about itself on screen; where
@@ -263,6 +265,36 @@ The metric returns seconds to one decimal, and the screen rounds: an average und
 second reads `0 s`. The exact milliseconds and the p50/p95/p99 percentiles are on Webhook
 Manager's [own insights screen](/webhook-manager/deliveries#insights), which is a different
 screen with a different job.
+
+## Website
+
+From Insights itself, since 1.4.0. The one group no sibling owns: what the site's readers did,
+read from a self-hosted [Rybbit](https://rybbit.io) instance. It exists only when the
+[environment is set](/insights/configuration#website-statistics); without it there is no
+Website heading, no tile and no table.
+
+| Handle | Figure | Unit | What it counts |
+| --- | --- | --- | --- |
+| `website.visitors` | Visitors | count | People, not visits. Somebody back on three days is one visitor for the period and one on each of the three days, so the daily bars add up to more than the total. |
+| `website.sessions` | Sessions | count | Visits. One person can have several; a visit that goes quiet for half an hour and resumes is two. |
+| `website.pageviews` | Pageviews | count | Pages opened. |
+| `website.bounce_rate` | Bounce rate | percent | Share of sessions that saw one page and nothing else. No answer in a window with no sessions. |
+| `website.pages_per_session` | Pages per session | count | Pageviews divided by sessions. No answer in a window with no sessions. |
+| `website.session_duration` | Session length | duration | Average time a visit lasted. A visit of one page has no second timestamp and weighs on the average as nought. |
+
+No splits. The three derived figures (bounce rate, pages per session, session length) answer a dash rather than `0 %` in a window with no sessions, and so
+does a figure the service did not send at all.
+
+Five tables join the Reports list under the same heading, each the twenty busiest values by
+visitors, with pageviews and a bounce rate beside them:
+
+| Handle | Table |
+| --- | --- |
+| `website.top_pages` | Most read pages |
+| `website.referrers` | Where visitors came from. Somebody who typed the address or followed a bookmark arrives with no referrer and is one row, **Direct**. |
+| `website.countries` | Visitors by country, with the country spelled out. By where the connection came from, not necessarily where the person lives. |
+| `website.devices` | Desktop, mobile, tablet, as the browser described itself |
+| `website.browsers` | As the browser described itself. Bots are filtered by the analytics service, not here. |
 
 ## Three exceptions that are decisions
 

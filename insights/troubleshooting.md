@@ -136,6 +136,31 @@ An unresolved brand is **not** one of the causes. On a multi-brand install with 
 picked, the tiles stay and read zero — see
 [which figures narrow by brand](/insights/reading-the-numbers#a-figure-over-a-brand-scoped-table-counts-the-current-brand).
 
+## There is no Website group
+
+The group is registered only when `STATAMIC_INSIGHTS_WEBSITE_URL`, `STATAMIC_INSIGHTS_WEBSITE_KEY`
+and `STATAMIC_INSIGHTS_WEBSITE_SITE` are all set and non-blank. One missing and nothing appears, by
+design: [why](/insights/configuration#why-nothing-appears-until-it-is-set). There is no setting for
+it in the Control Panel. Set the variables in the `.env` and clear the config cache.
+
+## The Website tiles are there but fail, or read nothing
+
+A tile that fails costs its own tile and a line in `laravel.log`. Check the address first: the
+base address of the service, without `/api`, reachable from the **server**. If the log says the
+service answered `200` and no data, something sits in front of it, an access proxy usually, and
+the address reaches a login page instead of the service. A certificate error behind a CDN is what
+`STATAMIC_INSIGHTS_WEBSITE_VERIFY` is for; see
+[the internal address](/insights/configuration#the-internal-address-not-the-tracking-domain).
+
+A figure that reads zero while the site is visited is a different problem, and not in this
+addon: the service filters bots per site, and a headless browser with the default user agent
+produces no event.
+
+## The daily bars add up to more than the visitors total
+
+They should. Visitors are people, not visits: someone who returns on three days is one visitor
+for the period and one on each of the three days. That is correct and will not change.
+
 ## One tile is missing while the rest of its group is there
 
 That metric threw. Failures are contained per metric on purpose, so a contributor

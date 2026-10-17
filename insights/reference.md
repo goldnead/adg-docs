@@ -22,6 +22,17 @@ grant separately.
 | --- | --- | --- |
 | `statamic-insights.currency` | `null` | Falls back to `statamic-payments.currency`, then to the busiest currency in the data |
 | `statamic-insights.default_period` | `30d` | `7d`, `30d`, `90d`, `12m`, `ytd`, `all` |
+| `statamic-insights.website.url` | `null` | `STATAMIC_INSIGHTS_WEBSITE_URL`. Required for the Website group |
+| `statamic-insights.website.key` | `null` | `STATAMIC_INSIGHTS_WEBSITE_KEY`. Required; a credential |
+| `statamic-insights.website.site_id` | `null` | `STATAMIC_INSIGHTS_WEBSITE_SITE`. Required |
+| `statamic-insights.website.timezone` | `null` | Follows `app.timezone` when unset |
+| `statamic-insights.website.cache` | `300` | Seconds an answer is kept |
+| `statamic-insights.website.timeout` | `8` | Seconds |
+| `statamic-insights.website.verify` | `true` | TLS verification |
+
+The `website` keys are environment only and are described under
+[Website statistics](/insights/configuration#website-statistics). Without the first three the
+group is not registered at all.
 
 ## Routes
 
@@ -107,6 +118,12 @@ The last four are the [subscription figures](/insights/subscriptions). They take
 currency as a filter through `HasFilterOptions` rather than a currency column, and the
 report screen draws a switch for every filter that has more than one option. Any report may
 offer filters that way.
+
+Five more, `website.top_pages`, `website.referrers`, `website.countries`, `website.devices` and
+`website.browsers`, read the website analytics service rather than a table. They are not in the
+list above because they exist only when the service is
+[configured](/insights/configuration#website-statistics), and are described under
+[Website](/insights/what-the-family-reports#website).
 
 Column units are `count`, `currency`, `percent`, `text`, `code`, `month` and `date`. A
 currency cell reads the row's own `currency`, which is why two currencies are two rows and
